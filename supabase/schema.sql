@@ -1,0 +1,174 @@
+-- Choreon MVP: 初期スキーマ定義
+-- Supabaseの SQL Editor でそのまま実行するか、`supabase db push` 等で適用する。
+-- 適用後は、必ずファイル末尾の「適用後の確認クエリ」を実行し、
+-- GRANT状況とRLSポリシーが意図通りであることを確認すること
+-- (個人ルール: Supabaseのテーブル作成ルール参照)。
+
+-- =========================================
+-- 1. projects
+-- =========================================
+create table public.projects (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  title text not null,
+  stage_width integer not null default 8,
+  stage_height integer not null default 8,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index projects_user_id_idx on public.projects (user_id);
+
+-- updated_at を自動更新するトリガー
+create function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+create trigger projects_set_updated_at
+  before update on public.projects
+  for each row
+  execute function public.set_updated_at();
+
+-- =========================================
+-- 2. dancers
+-- =========================================
+create table public.dancers (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects (id) on delete cascade,
+  name text not null,
+  color text not null default '#3b82f6',
+  initial_direction numeric not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index dancers_project_id_idx on public.dancers (project_id);
+
+-- =========================================
+-- 3. scenes
+-- =========================================
+create table public.scenes (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects (id) on delete cascade,
+  name text not null,
+  order_index integer not null,
+  created_at timestamptz not null default now()
+);
+
+create index scenes_project_id_idx on public.scenes (project_id);
+
+-- =========================================
+-- 4. positions (scene_id, dancer_id の複合PK)
+-- =========================================
+create table public.positions (
+  scene_id uuid not null references public.scenes (id) on delete cascade,
+  dancer_id uuid not null references public.dancers (id) on delete cascade,
+  x_coordinate numeric not null default 0,
+  y_coordinate numeric not null default 0,
+  rotation_angle numeric not null default 0,
+  primary key (scene_id, dancer_id)
+);
+
+create index positions_dancer_id_idx on public.positions (dancer_id);
+
+-- =========================================
+-- RLS: 個人データ方針(anonには一切権限を持たせない)
+-- =========================================
+alter table public.projects enable row level security;
+alter table public.dancers enable row level security;
+alter table public.scenes enable row level security;
+alter table public.positions enable row level security;
+
+revoke all on public.projects from anon;
+revoke all on public.dancers from anon;
+revoke all on public.scenes from anon;
+revoke all on public.positions from anon;
+
+-- projects: 自分の行のみ操作可
+create policy "Users can manage their own projects"
+on public.projects
+for all
+to authenticated
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+-- dancers: 親projectの所有者のみ操作可(project_id経由でuser_idを辿る)
+create policy "Users can manage dancers in their own projects"
+on public.dancers
+for all
+to authenticated
+using (
+  exists (
+    select 1 from public.projects
+    where projects.id = dancers.project_id
+      and projects.user_id = auth.uid()
+  )
+)
+with check (
+  exists (
+    select 1 from public.projects
+    where projects.id = dancers.project_id
+      and projects.user_id = auth.uid()
+  )
+);
+
+-- scenes: 親projectの所有者のみ操作可
+create policy "Users can manage scenes in their own projects"
+on public.scenes
+for all
+to authenticated
+using (
+  exists (
+    select 1 from public.projects
+    where projects.id = scenes.project_id
+      and projects.user_id = auth.uid()
+  )
+)
+with check (
+  exists (
+    select 1 from public.projects
+    where projects.id = scenes.project_id
+      and projects.user_id = auth.uid()
+  )
+);
+
+-- positions: scene_id経由でproject所有者を辿る
+create policy "Users can manage positions in their own projects"
+on public.positions
+for all
+to authenticated
+using (
+  exists (
+    select 1 from public.scenes
+    join public.projects on projects.id = scenes.project_id
+    where scenes.id = positions.scene_id
+      and projects.user_id = auth.uid()
+  )
+)
+with check (
+  exists (
+    select 1 from public.scenes
+    join public.projects on projects.id = scenes.project_id
+    where scenes.id = positions.scene_id
+      and projects.user_id = auth.uid()
+  )
+);
+
+-- =========================================
+-- 適用後の確認クエリ(個人ルール: 必ず実行して確認する)
+-- =========================================
+
+-- 1. GRANT状況の確認(anonの行が出てこないことを確認する)
+-- select grantee, privilege_type
+-- from information_schema.role_table_grants
+-- where table_name in ('projects', 'dancers', 'scenes', 'positions');
+
+-- 2. RLSポリシーの確認(上記4テーブル分のポリシーが想定通り出ることを確認する)
+-- select schemaname, tablename, policyname, cmd, roles
+-- from pg_policies
+-- where tablename in ('projects', 'dancers', 'scenes', 'positions');
