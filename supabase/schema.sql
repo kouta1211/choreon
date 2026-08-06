@@ -7,12 +7,16 @@
 -- =========================================
 -- 1. projects
 -- =========================================
+-- stage_width/stage_heightの1ユニットは実寸90cm相当を想定
+-- (features/canvas/lib/physicalLimits.tsのMETERS_PER_STAGE_UNITと対応させること)。
+-- 実際のステージは正方形になることは稀なため、デフォルトは横15×縦10ユニット
+-- (13.5m×9m相当)にしている
 create table public.projects (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   title text not null,
-  stage_width integer not null default 8,
-  stage_height integer not null default 8,
+  stage_width integer not null default 15,
+  stage_height integer not null default 10,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -172,3 +176,13 @@ where table_name in ('projects', 'dancers', 'scenes', 'positions');
 select schemaname, tablename, policyname, cmd, roles
 from pg_policies
 where tablename in ('projects', 'dancers', 'scenes', 'positions');
+
+-- =========================================
+-- マイグレーション: デフォルトステージサイズを15×10に変更
+-- (このファイルの`create table`はDB初期構築時のみ実行される。既に
+-- projectsテーブルが存在するSupabaseプロジェクトでは、下記を
+-- SQL Editorで別途実行してカラムのデフォルト値を更新すること。
+-- 既存行のstage_width/stage_heightは変更されない)
+-- =========================================
+alter table public.projects alter column stage_width set default 15;
+alter table public.projects alter column stage_height set default 10;
