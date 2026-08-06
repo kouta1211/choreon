@@ -7,6 +7,7 @@ import { listScenes } from "@/features/scene/api/scenes";
 import { listPositionsByScenes } from "@/features/scene/api/positions";
 import { CanvasBoard } from "@/features/canvas/components/CanvasBoard";
 import { AddDancerForm } from "@/features/dancer/components/AddDancerForm";
+import { DancerInspector } from "@/features/dancer/components/DancerInspector";
 import { SceneTimeline } from "@/features/scene/components/SceneTimeline";
 import { Toast } from "@/features/canvas/components/Toast";
 import { Card } from "@/components/ui/Card";
@@ -52,6 +53,7 @@ export default async function ProjectPage(
         initialScenes={scenes}
         initialPositions={positions}
       />
+      <DancerInspector />
       <Toast />
     </div>
   );

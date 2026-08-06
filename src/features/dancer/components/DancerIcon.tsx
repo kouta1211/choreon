@@ -17,9 +17,11 @@ type Props = {
 export function DancerMarker({
   dancer,
   rotationAngle,
+  isSelected = false,
 }: {
   dancer: Dancer;
   rotationAngle: number;
+  isSelected?: boolean;
 }) {
   return (
     <>
@@ -33,7 +35,9 @@ export function DancerMarker({
         }}
       />
       <div
-        className="flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-xs font-bold text-white"
+        className={`flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-xs font-bold text-white ${
+          isSelected ? "ring-2 ring-indigo-500 ring-offset-2" : ""
+        }`}
         style={{ backgroundColor: dancer.color }}
       >
         {dancer.name.slice(0, 1)}

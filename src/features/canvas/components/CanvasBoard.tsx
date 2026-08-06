@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { DndContext, type DragEndEvent } from "@dnd-kit/core";
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
 import { Stage } from "@/features/canvas/components/Stage";
 import { DraggableDancerIcon } from "@/features/dancer/components/DraggableDancerIcon";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
@@ -38,6 +44,12 @@ export function CanvasBoard({
   initialPositions,
 }: Props) {
   const stageRef = useRef<HTMLDivElement>(null);
+  // 指が数px動いただけでドラッグ扱いになると、ダンサーをタップして
+  // 選択する操作(DancerInspectorを開く)がしづらくなるため、
+  // 8px以上動いてから初めてドラッグとみなす
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+  );
   const hydrate = useProjectStore((state) => state.hydrate);
   const dancers = useProjectStore((state) => state.dancers);
   const updateDancerPosition = useProjectStore(
@@ -115,6 +127,7 @@ export function CanvasBoard({
 
   return (
     <DndContext
+      sensors={sensors}
       onDragStart={(event) => setDraggingDancerId(String(event.active.id))}
       onDragEnd={handleDragEnd}
     >

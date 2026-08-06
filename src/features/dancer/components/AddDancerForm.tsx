@@ -8,16 +8,8 @@ import { createDancer } from "@/features/dancer/api/dancers";
 import { upsertPosition } from "@/features/scene/api/positions";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
+import { DANCER_COLOR_PALETTE } from "@/features/dancer/constants";
 import type { Project } from "@/features/project/types";
-
-const COLOR_PALETTE = [
-  "#3b82f6",
-  "#ef4444",
-  "#10b981",
-  "#f59e0b",
-  "#8b5cf6",
-  "#ec4899",
-];
 
 type Props = {
   project: Project;
@@ -48,7 +40,9 @@ export function AddDancerForm({ project }: Props) {
     setIsSubmitting(true);
     const id = crypto.randomUUID();
     const color =
-      COLOR_PALETTE[Object.keys(dancers).length % COLOR_PALETTE.length];
+      DANCER_COLOR_PALETTE[
+        Object.keys(dancers).length % DANCER_COLOR_PALETTE.length
+      ];
     const dancer = {
       id,
       projectId: project.id,
