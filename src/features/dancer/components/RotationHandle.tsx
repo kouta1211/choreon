@@ -91,6 +91,8 @@ export function RotationHandle({
       <div
         role="slider"
         aria-label="向きを変更"
+        aria-valuemin={0}
+        aria-valuemax={359}
         aria-valuenow={Math.round(angle)}
         className="absolute left-0 top-0 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 touch-none items-center justify-center"
         style={{ transform: `translateY(-${HANDLE_DISTANCE_PX}px)` }}
