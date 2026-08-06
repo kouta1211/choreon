@@ -18,6 +18,8 @@ type Props = {
   stageHeightUnits: number;
   /** 回転ハンドルで指を離したときに呼ばれる。Supabase保存はCanvasBoard側に集約する */
   onRotateEnd?: (dancerId: string, rotationAngle: number) => void;
+  /** 「顔被りチェック」表示中、手前のダンサーに隠れていると判定されたか */
+  isBlocked?: boolean;
 };
 
 /**
@@ -43,6 +45,7 @@ export function DraggableDancerIcon({
   stageWidthUnits,
   stageHeightUnits,
   onRotateEnd,
+  isBlocked = false,
 }: Props) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
@@ -103,6 +106,7 @@ export function DraggableDancerIcon({
         isSelected={isSelected}
         isRotating={liveRotation !== null}
         isFocused={isFocused}
+        isBlocked={isBlocked}
       />
       {isSelected && (
         <RotationHandle

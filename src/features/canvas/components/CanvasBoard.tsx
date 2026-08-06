@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -20,6 +20,7 @@ import {
   pixelDeltaToUnitDelta,
   snapToCenterline,
 } from "@/features/canvas/lib/dragMath";
+import { findBlockedDancerIds } from "@/features/canvas/lib/blindSpot";
 import { Switch } from "@/components/ui/Switch";
 import { createClient } from "@/lib/supabase/client";
 import { upsertPosition } from "@/features/scene/api/positions";
@@ -75,8 +76,21 @@ export function CanvasBoard({
   const toggleSymmetryMode = useUIStore((state) => state.toggleSymmetryMode);
   const isPathVisible = useUIStore((state) => state.isPathVisible);
   const togglePathVisible = useUIStore((state) => state.togglePathVisible);
+  const isBlindSpotCheckVisible = useUIStore(
+    (state) => state.isBlindSpotCheckVisible,
+  );
+  const toggleBlindSpotCheckVisible = useUIStore(
+    (state) => state.toggleBlindSpotCheckVisible,
+  );
   const positions = useProjectStore(
     (state) => state.positionsBySceneId[selectedSceneId ?? ""] ?? EMPTY_POSITIONS,
+  );
+  const blockedDancerIds = useMemo(
+    () =>
+      isBlindSpotCheckVisible
+        ? findBlockedDancerIds(positions)
+        : new Set<string>(),
+    [isBlindSpotCheckVisible, positions],
   );
   // 選択中シーンの「次」のシーン。導線表示(次のシーンへどう動くか)に使う
   const selectedSceneIndex = scenes.findIndex((s) => s.id === selectedSceneId);
@@ -218,6 +232,11 @@ export function CanvasBoard({
           onChange={togglePathVisible}
           label="導線を表示"
         />
+        <Switch
+          checked={isBlindSpotCheckVisible}
+          onChange={toggleBlindSpotCheckVisible}
+          label="顔被りチェック"
+        />
       </div>
       <DndContext
         sensors={sensors}
@@ -252,6 +271,7 @@ export function CanvasBoard({
                 stageWidthUnits={project.stageWidth}
                 stageHeightUnits={project.stageHeight}
                 onRotateEnd={handleRotateEnd}
+                isBlocked={blockedDancerIds.has(dancer.id)}
               />
             );
           })}

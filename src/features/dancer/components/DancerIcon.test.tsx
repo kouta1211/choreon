@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { DancerIcon } from "./DancerIcon";
+import { DancerIcon, DancerMarker } from "./DancerIcon";
 import type { Dancer } from "@/features/dancer/types";
 
 function makeDancer(overrides: Partial<Dancer> = {}): Dancer {
@@ -44,5 +44,25 @@ describe("DancerIcon", () => {
     const icon = screen.getByTestId("dancer-icon");
     expect(icon.style.left).toBe("25%");
     expect(icon.style.top).toBe("75%");
+  });
+});
+
+describe("DancerMarker", () => {
+  it("isBlockedのとき、色をダンサー本来の色ではなく警告色にする", () => {
+    render(
+      <DancerMarker dancer={makeDancer()} rotationAngle={0} isBlocked />,
+    );
+    expect(screen.getByTestId("dancer-body")).toHaveAttribute(
+      "fill",
+      "#dc2626",
+    );
+  });
+
+  it("isBlockedでなければダンサー本来の色のまま", () => {
+    render(<DancerMarker dancer={makeDancer()} rotationAngle={0} />);
+    expect(screen.getByTestId("dancer-body")).toHaveAttribute(
+      "fill",
+      "#3b82f6",
+    );
   });
 });

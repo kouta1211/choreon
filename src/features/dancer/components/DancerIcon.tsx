@@ -30,6 +30,7 @@ export function DancerMarker({
   isSelected = false,
   isRotating = false,
   isFocused = false,
+  isBlocked = false,
 }: {
   dancer: Dancer;
   rotationAngle: number;
@@ -42,7 +43,12 @@ export function DancerMarker({
    * (選択はインスペクターを開くための一時的な状態、フォーカスは
    * シーンをまたいで維持される「自分を目立たせる」ための状態) */
   isFocused?: boolean;
+  /** 「顔被りチェック」で、手前の他のダンサーに隠れていると判定された場合true。
+   * trueの間は自分の色ではなく警告色で塗る */
+  isBlocked?: boolean;
 }) {
+  const bodyColor = isBlocked ? "#dc2626" : dancer.color;
+
   return (
     <>
       <motion.div
@@ -78,17 +84,18 @@ export function DancerMarker({
           {/* 肩(向きの手がかり)。頭からずれた位置にあるため、回転すると
               頭の周りを振り子のように動いて見える */}
           <ellipse
+            data-testid="dancer-body"
             cx={16}
             cy={22}
             rx={10}
             ry={6}
-            fill={dancer.color}
+            fill={bodyColor}
             stroke="rgba(0,0,0,0.15)"
           />
           {/* 鼻先(正面方向の手がかり) */}
           <polygon
             points="16,4 12,10 20,10"
-            fill={dancer.color}
+            fill={bodyColor}
             stroke="rgba(0,0,0,0.15)"
           />
           {/* 頭。回転の中心と一致しているため、回転してもその場から動かない */}
@@ -96,7 +103,7 @@ export function DancerMarker({
             cx={16}
             cy={16}
             r={8}
-            fill={dancer.color}
+            fill={bodyColor}
             stroke="rgba(0,0,0,0.15)"
           />
         </svg>
