@@ -34,6 +34,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       dancers: {
         Row: {
@@ -60,6 +61,14 @@ export type Database = {
           initial_direction?: number;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "dancers_project_id_fkey";
+            columns: ["project_id"];
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       scenes: {
         Row: {
@@ -83,6 +92,14 @@ export type Database = {
           order_index?: number;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "scenes_project_id_fkey";
+            columns: ["project_id"];
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       positions: {
         Row: {
@@ -106,7 +123,25 @@ export type Database = {
           y_coordinate?: number;
           rotation_angle?: number;
         };
+        Relationships: [
+          {
+            foreignKeyName: "positions_scene_id_fkey";
+            columns: ["scene_id"];
+            referencedRelation: "scenes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "positions_dancer_id_fkey";
+            columns: ["dancer_id"];
+            referencedRelation: "dancers";
+            referencedColumns: ["id"];
+          },
+        ];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 };
