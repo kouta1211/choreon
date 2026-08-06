@@ -46,3 +46,37 @@ export async function createScene(
   if (error) throw error;
   return toScene(data);
 }
+
+export async function renameScene(
+  supabase: SupabaseClient<Database>,
+  sceneId: string,
+  name: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("scenes")
+    .update({ name })
+    .eq("id", sceneId);
+
+  if (error) throw error;
+}
+
+export async function updateSceneOrder(
+  supabase: SupabaseClient<Database>,
+  sceneId: string,
+  orderIndex: number,
+): Promise<void> {
+  const { error } = await supabase
+    .from("scenes")
+    .update({ order_index: orderIndex })
+    .eq("id", sceneId);
+
+  if (error) throw error;
+}
+
+export async function deleteScene(
+  supabase: SupabaseClient<Database>,
+  sceneId: string,
+): Promise<void> {
+  const { error } = await supabase.from("scenes").delete().eq("id", sceneId);
+  if (error) throw error;
+}

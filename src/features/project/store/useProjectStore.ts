@@ -29,8 +29,10 @@ type ProjectState = {
 
   // --- Scene ---
   addScene: (scene: Scene) => void;
-  // Supabaseへの保存に失敗したとき、addSceneを取り消すためのロールバック用
+  // Supabaseへの保存に失敗したとき、addSceneを取り消すためのロールバック用。
+  // 実際の削除(確定後更新)にも流用する
   removeScene: (sceneId: string) => void;
+  renameScene: (sceneId: string, name: string) => void;
   reorderScenes: (orderedSceneIds: string[]) => void;
 
   // --- Position ---
@@ -107,6 +109,13 @@ export const useProjectStore = create<ProjectState>((set) => ({
         positionsBySceneId,
       };
     }),
+
+  renameScene: (sceneId, name) =>
+    set((state) => ({
+      scenes: state.scenes.map((scene) =>
+        scene.id === sceneId ? { ...scene, name } : scene,
+      ),
+    })),
 
   reorderScenes: (orderedSceneIds) =>
     set((state) => {
