@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getProject } from "@/features/project/api/projects";
+import { Stage } from "@/features/canvas/components/Stage";
 
 export default async function ProjectPage(
   props: PageProps<"/projects/[projectId]">,
@@ -15,16 +16,16 @@ export default async function ProjectPage(
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-zinc-50 px-4 text-center dark:bg-black">
-      <h1 className="text-xl font-semibold text-black dark:text-zinc-50">
-        {project.title}
-      </h1>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
-        フォーメーションエディタは準備中です。
-      </p>
-      <Link href="/" className="text-sm underline">
-        プロジェクト一覧に戻る
-      </Link>
+    <div className="flex flex-1 flex-col gap-4 bg-zinc-50 px-4 py-6 dark:bg-black">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-black dark:text-zinc-50">
+          {project.title}
+        </h1>
+        <Link href="/" className="text-sm underline">
+          プロジェクト一覧に戻る
+        </Link>
+      </div>
+      <Stage widthUnits={project.stageWidth} heightUnits={project.stageHeight} />
     </div>
   );
 }
