@@ -1,10 +1,16 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AddDancerForm } from "./AddDancerForm";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
-import { DRAFT_SCENE_ID } from "@/features/scene/constants";
+import { useUIStore } from "@/features/canvas/store/useUIStore";
+import * as dancersApi from "@/features/dancer/api/dancers";
+import * as positionsApi from "@/features/scene/api/positions";
 import type { Project } from "@/features/project/types";
+
+vi.mock("@/lib/supabase/client", () => ({
+  createClient: () => ({}),
+}));
 
 function makeProject(overrides: Partial<Project> = {}): Project {
   return {
@@ -20,16 +26,47 @@ function makeProject(overrides: Partial<Project> = {}): Project {
 }
 
 afterEach(() => {
+  vi.restoreAllMocks();
   useProjectStore.setState({
     project: null,
     dancers: {},
     scenes: [],
     positionsBySceneId: {},
   });
+  useUIStore.setState({
+    selectedSceneId: null,
+    selectedDancerId: null,
+    isGridVisible: true,
+    draggingDancerId: null,
+    toast: null,
+  });
 });
 
 describe("AddDancerForm", () => {
-  it("送信するとステージ中央の位置でダンサーがstoreに追加される", async () => {
+  it("選択中のシーンが無い場合は入力・送信できない", () => {
+    render(<AddDancerForm project={makeProject()} />);
+    expect(screen.getByPlaceholderText("ダンサー名")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "追加" })).toBeDisabled();
+  });
+
+  it("送信するとステージ中央の位置でダンサーがローカルとSupabaseの両方に追加される", async () => {
+    useUIStore.setState({ selectedSceneId: "scene-1" });
+    vi.spyOn(dancersApi, "createDancer").mockResolvedValue({
+      id: "irrelevant",
+      projectId: "project-1",
+      name: "あいり",
+      color: "#3b82f6",
+      initialDirection: 0,
+      createdAt: "2026-01-01T00:00:00.000Z",
+    });
+    vi.spyOn(positionsApi, "upsertPosition").mockResolvedValue({
+      sceneId: "scene-1",
+      dancerId: "irrelevant",
+      xCoordinate: 4,
+      yCoordinate: 4,
+      rotationAngle: 0,
+    });
+
     const user = userEvent.setup();
     const project = makeProject();
     render(<AddDancerForm project={project} />);
@@ -41,22 +78,29 @@ describe("AddDancerForm", () => {
     expect(dancers).toHaveLength(1);
     expect(dancers[0].name).toBe("あいり");
 
-    const positions = useProjectStore.getState().positionsBySceneId[
-      DRAFT_SCENE_ID
-    ];
-    const position = positions[dancers[0].id];
+    const position =
+      useProjectStore.getState().positionsBySceneId["scene-1"][dancers[0].id];
     expect(position.xCoordinate).toBe(project.stageWidth / 2);
     expect(position.yCoordinate).toBe(project.stageHeight / 2);
+
+    await waitFor(() => {
+      expect(dancersApi.createDancer).toHaveBeenCalledOnce();
+    });
   });
 
-  it("送信後に入力欄をクリアする", async () => {
+  it("保存に失敗したらローカルの追加を取り消してトースト表示する", async () => {
+    useUIStore.setState({ selectedSceneId: "scene-1" });
+    vi.spyOn(dancersApi, "createDancer").mockRejectedValue(new Error("network"));
+
     const user = userEvent.setup();
     render(<AddDancerForm project={makeProject()} />);
 
-    const input = screen.getByPlaceholderText("ダンサー名");
-    await user.type(input, "あいり");
+    await user.type(screen.getByPlaceholderText("ダンサー名"), "あいり");
     await user.click(screen.getByRole("button", { name: "追加" }));
 
-    expect(input).toHaveValue("");
+    await waitFor(() => {
+      expect(Object.values(useProjectStore.getState().dancers)).toHaveLength(0);
+    });
+    expect(useUIStore.getState().toast?.type).toBe("error");
   });
 });

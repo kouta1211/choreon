@@ -14,7 +14,7 @@ type UIState = {
   draggingDancerId: string | null;
   toast: Toast | null;
 
-  selectScene: (sceneId: string) => void;
+  selectScene: (sceneId: string | null) => void;
   selectDancer: (dancerId: string | null) => void;
   toggleGrid: () => void;
   setDraggingDancerId: (dancerId: string | null) => void;

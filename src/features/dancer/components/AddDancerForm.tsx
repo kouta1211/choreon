@@ -2,7 +2,10 @@
 
 import { useState, type FormEvent } from "react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
-import { DRAFT_SCENE_ID } from "@/features/scene/constants";
+import { useUIStore } from "@/features/canvas/store/useUIStore";
+import { createClient } from "@/lib/supabase/client";
+import { createDancer } from "@/features/dancer/api/dancers";
+import { upsertPosition } from "@/features/scene/api/positions";
 import type { Project } from "@/features/project/types";
 
 const COLOR_PALETTE = [
@@ -19,40 +22,61 @@ type Props = {
 };
 
 /**
- * ダンサーをローカルのZustand storeにだけ追加するフォーム(Supabase未連携)。
- * ステージ中央に初期配置し、そのままCanvasBoard上でドラッグして動かせる。
+ * ダンサーをステージ中央に追加するフォーム。まずローカルstoreへ楽観的に
+ * 反映し、その後ろでSupabaseへ保存する。保存に失敗した場合はローカルの
+ * 表示も元に戻す(removeDancerでロールバック)。
  */
 export function AddDancerForm({ project }: Props) {
   const [name, setName] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const dancers = useProjectStore((state) => state.dancers);
   const addDancer = useProjectStore((state) => state.addDancer);
+  const removeDancer = useProjectStore((state) => state.removeDancer);
   const updateDancerPosition = useProjectStore(
     (state) => state.updateDancerPosition,
   );
+  const selectedSceneId = useUIStore((state) => state.selectedSceneId);
+  const showToast = useUIStore((state) => state.showToast);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmedName = name.trim();
-    if (!trimmedName) return;
+    if (!trimmedName || !selectedSceneId) return;
 
+    setIsSubmitting(true);
     const id = crypto.randomUUID();
     const color =
       COLOR_PALETTE[Object.keys(dancers).length % COLOR_PALETTE.length];
-
-    addDancer({
+    const dancer = {
       id,
       projectId: project.id,
       name: trimmedName,
       color,
       initialDirection: 0,
       createdAt: new Date().toISOString(),
-    });
-    updateDancerPosition(DRAFT_SCENE_ID, id, {
+    };
+    const position = {
+      sceneId: selectedSceneId,
+      dancerId: id,
       xCoordinate: project.stageWidth / 2,
       yCoordinate: project.stageHeight / 2,
       rotationAngle: 0,
-    });
+    };
+
+    addDancer(dancer);
+    updateDancerPosition(position.sceneId, position.dancerId, position);
     setName("");
+
+    try {
+      const supabase = createClient();
+      await createDancer(supabase, dancer);
+      await upsertPosition(supabase, position);
+    } catch {
+      removeDancer(id);
+      showToast({ message: "ダンサーの追加に失敗しました", type: "error" });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -63,11 +87,13 @@ export function AddDancerForm({ project }: Props) {
         placeholder="ダンサー名"
         value={name}
         onChange={(event) => setName(event.target.value)}
-        className="flex-1 rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+        disabled={!selectedSceneId}
+        className="flex-1 rounded border border-zinc-300 px-3 py-2 text-sm disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800"
       />
       <button
         type="submit"
-        className="rounded bg-black px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-black"
+        disabled={!selectedSceneId || isSubmitting}
+        className="rounded bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-white dark:text-black"
       >
         追加
       </button>

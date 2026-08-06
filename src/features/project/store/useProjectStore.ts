@@ -29,6 +29,8 @@ type ProjectState = {
 
   // --- Scene ---
   addScene: (scene: Scene) => void;
+  // Supabaseへの保存に失敗したとき、addSceneを取り消すためのロールバック用
+  removeScene: (sceneId: string) => void;
   reorderScenes: (orderedSceneIds: string[]) => void;
 
   // --- Position ---
@@ -77,6 +79,16 @@ export const useProjectStore = create<ProjectState>((set) => ({
       dancers: Object.fromEntries(
         Object.entries(state.dancers).filter(([id]) => id !== dancerId),
       ),
+      // 各シーンの positions からも該当ダンサーの分を消しておかないと、
+      // ロールバック後にゴーストの位置データが残ってしまう
+      positionsBySceneId: Object.fromEntries(
+        Object.entries(state.positionsBySceneId).map(([sceneId, positions]) => [
+          sceneId,
+          Object.fromEntries(
+            Object.entries(positions).filter(([id]) => id !== dancerId),
+          ),
+        ]),
+      ),
     })),
 
   addScene: (scene) =>
@@ -85,6 +97,16 @@ export const useProjectStore = create<ProjectState>((set) => ({
         (a, b) => a.orderIndex - b.orderIndex,
       ),
     })),
+
+  removeScene: (sceneId) =>
+    set((state) => {
+      const positionsBySceneId = { ...state.positionsBySceneId };
+      delete positionsBySceneId[sceneId];
+      return {
+        scenes: state.scenes.filter((scene) => scene.id !== sceneId),
+        positionsBySceneId,
+      };
+    }),
 
   reorderScenes: (orderedSceneIds) =>
     set((state) => {

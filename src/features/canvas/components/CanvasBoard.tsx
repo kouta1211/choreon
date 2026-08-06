@@ -1,17 +1,23 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { DndContext, type DragEndEvent } from "@dnd-kit/core";
 import { Stage } from "@/features/canvas/components/Stage";
 import { DraggableDancerIcon } from "@/features/dancer/components/DraggableDancerIcon";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { clamp, pixelDeltaToUnitDelta } from "@/features/canvas/lib/dragMath";
-import { DRAFT_SCENE_ID } from "@/features/scene/constants";
+import { createClient } from "@/lib/supabase/client";
+import { upsertPosition } from "@/features/scene/api/positions";
 import type { Project } from "@/features/project/types";
+import type { Dancer } from "@/features/dancer/types";
+import type { Position, Scene } from "@/features/scene/types";
 
 type Props = {
   project: Project;
+  initialDancers: Dancer[];
+  initialScenes: Scene[];
+  initialPositions: Position[];
 };
 
 // セレクタで `?? {}` すると呼び出すたびに新しいオブジェクトを返してしまい、
@@ -25,24 +31,59 @@ const EMPTY_POSITIONS = {};
  * ここではonDragEndで1回だけstoreにコミットする(キャンバス全体の再描画を
  * ドラッグ中に何度も発生させないため)。
  */
-export function CanvasBoard({ project }: Props) {
+export function CanvasBoard({
+  project,
+  initialDancers,
+  initialScenes,
+  initialPositions,
+}: Props) {
   const stageRef = useRef<HTMLDivElement>(null);
+  const hydrate = useProjectStore((state) => state.hydrate);
   const dancers = useProjectStore((state) => state.dancers);
-  const positions = useProjectStore(
-    (state) => state.positionsBySceneId[DRAFT_SCENE_ID] ?? EMPTY_POSITIONS,
-  );
   const updateDancerPosition = useProjectStore(
     (state) => state.updateDancerPosition,
   );
+  const selectedSceneId = useUIStore((state) => state.selectedSceneId);
+  const selectScene = useUIStore((state) => state.selectScene);
   const setDraggingDancerId = useUIStore((state) => state.setDraggingDancerId);
+  const showToast = useUIStore((state) => state.showToast);
+  const positions = useProjectStore(
+    (state) => state.positionsBySceneId[selectedSceneId ?? ""] ?? EMPTY_POSITIONS,
+  );
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  // サーバーから取得済みのデータ(props)をZustand storeへ同期する。
+  // 「Reactの外にある別のシステム(ここではグローバルなstore)にデータを渡す」
+  // ケースなので、これはuseEffectの正当な用途にあたる
+  // (単なるprops→state変換ならuseEffect無しで済むケースが多いが、今回は違う)
+  useEffect(() => {
+    hydrate({
+      project,
+      dancers: initialDancers,
+      scenes: initialScenes,
+      positions: initialPositions,
+    });
+    if (initialScenes.length > 0) {
+      selectScene(initialScenes[0].id);
+    }
+    // 別プロジェクトに切り替わったときだけ入れ直せば十分なため、project.idのみを依存にする
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project.id]);
+
+  if (!selectedSceneId) {
+    return (
+      <p className="text-center text-sm text-zinc-500 dark:text-zinc-400">
+        シーンがありません。上のタイムラインから作成してください。
+      </p>
+    );
+  }
+
+  const handleDragEnd = async (event: DragEndEvent) => {
     setDraggingDancerId(null);
 
     const dancerId = String(event.active.id);
-    const current = positions[dancerId];
+    const before = positions[dancerId];
     const stageEl = stageRef.current;
-    if (!current || !stageEl) return;
+    if (!before || !stageEl) return;
 
     const { width, height } = stageEl.getBoundingClientRect();
     const deltaX = pixelDeltaToUnitDelta(event.delta.x, width, project.stageWidth);
@@ -52,11 +93,24 @@ export function CanvasBoard({ project }: Props) {
       project.stageHeight,
     );
 
-    updateDancerPosition(DRAFT_SCENE_ID, dancerId, {
-      xCoordinate: clamp(current.xCoordinate + deltaX, 0, project.stageWidth),
-      yCoordinate: clamp(current.yCoordinate + deltaY, 0, project.stageHeight),
-      rotationAngle: current.rotationAngle,
-    });
+    const after = {
+      sceneId: selectedSceneId,
+      dancerId,
+      xCoordinate: clamp(before.xCoordinate + deltaX, 0, project.stageWidth),
+      yCoordinate: clamp(before.yCoordinate + deltaY, 0, project.stageHeight),
+      rotationAngle: before.rotationAngle,
+    };
+
+    // 楽観的更新: 先に見た目を確定させ、保存に失敗したらdrag前の値に戻す
+    updateDancerPosition(after.sceneId, after.dancerId, after);
+
+    try {
+      const supabase = createClient();
+      await upsertPosition(supabase, after);
+    } catch {
+      updateDancerPosition(selectedSceneId, dancerId, before);
+      showToast({ message: "位置の保存に失敗しました", type: "error" });
+    }
   };
 
   return (
