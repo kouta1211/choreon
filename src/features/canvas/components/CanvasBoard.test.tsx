@@ -109,6 +109,6 @@ describe("CanvasBoard", () => {
       />,
     );
     expect(screen.getByTestId("dancer-icon")).toBeInTheDocument();
-    expect(screen.getByText("あ")).toBeInTheDocument();
+    expect(screen.getByText("あいり")).toBeInTheDocument();
   });
 });

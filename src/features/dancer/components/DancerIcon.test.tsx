@@ -16,7 +16,7 @@ function makeDancer(overrides: Partial<Dancer> = {}): Dancer {
 }
 
 describe("DancerIcon", () => {
-  it("名前の頭文字を表示する", () => {
+  it("名前をそのまま表示する", () => {
     render(
       <DancerIcon
         dancer={makeDancer({ name: "あいり" })}
@@ -27,7 +27,7 @@ describe("DancerIcon", () => {
         stageHeightUnits={8}
       />,
     );
-    expect(screen.getByText("あ")).toBeInTheDocument();
+    expect(screen.getByText("あいり")).toBeInTheDocument();
   });
 
   it("ステージ座標をパーセント位置に変換する", () => {

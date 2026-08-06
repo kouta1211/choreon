@@ -104,12 +104,16 @@ export function DancerMarker({
           />
         </svg>
       </motion.div>
+      {/* 名前ラベル。円の中に収まらない長さもあるため、円の上に
+          常に正立するかたちで表示する(回転する本体とは別レイヤー) */}
       <div
         aria-hidden
-        className="pointer-events-none absolute left-0 top-0 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center text-[11px] font-bold text-white"
-        style={{ width: MARKER_SIZE, height: MARKER_SIZE }}
+        className="pointer-events-none absolute left-0 top-0 whitespace-nowrap rounded bg-zinc-900/80 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white shadow-sm dark:bg-white/90 dark:text-zinc-900"
+        style={{
+          transform: `translate(-50%, -100%) translateY(-${MARKER_SIZE / 2 + 4}px)`,
+        }}
       >
-        {dancer.name.slice(0, 1)}
+        {dancer.name}
       </div>
       {hasExcessiveMove && (
         <div

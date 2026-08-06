@@ -44,7 +44,7 @@ afterEach(() => {
 });
 
 describe("DraggableDancerIcon", () => {
-  it("DancerIconと同じ見た目(頭文字)を表示する", () => {
+  it("DancerIconと同じ見た目(名前)を表示する", () => {
     render(
       <DndContext>
         <DraggableDancerIcon
@@ -57,7 +57,7 @@ describe("DraggableDancerIcon", () => {
         />
       </DndContext>,
     );
-    expect(screen.getByText("あ")).toBeInTheDocument();
+    expect(screen.getByText("あいり")).toBeInTheDocument();
   });
 
   it("dnd-kitのドラッグ用属性が付与される", () => {
