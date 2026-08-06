@@ -8,13 +8,8 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { findBlockedDancerIds } from "@/features/canvas/lib/blindSpot";
 import { findExcessiveMoveDancerIds } from "@/features/canvas/lib/physicalLimits";
 import { EMPTY_POSITIONS } from "@/features/canvas/constants";
-import type { Dancer } from "@/features/dancer/types";
-import type { Position } from "@/features/scene/types";
 
 type Props = {
-  dancers: Record<string, Dancer>;
-  /** 選択中シーンでの各ダンサーの位置 */
-  positions: Record<string, Position>;
   stageWidthUnits: number;
   stageHeightUnits: number;
   /** 回転ハンドルで指を離したときに呼ばれる。Supabase保存はCanvasBoard側に集約する */
@@ -24,22 +19,26 @@ type Props = {
 /**
  * ステージの上に重ねて描画するもの一式(移動導線・ダンサーアイコン・
  * 顔被り/移動距離の警告判定)をまとめたコンポーネント。
- * 「次のシーン」の位置情報や各種トグル(導線表示・顔被りチェック)は
- * ここで自己完結して読み取り、CanvasBoard側はドラッグ操作のハンドラーに
- * 専念できるようにしている。
+ * dancers/positions/「次のシーン」の位置情報・各種トグル(導線表示・
+ * 顔被りチェック)はすべてここで自己完結して読み取る。CanvasBoardは
+ * これらを購読しないことで、ダンサーがドラッグで動くたびにCanvasBoard
+ * 自体が再レンダーされる(→handleDragEnd等が新しい関数参照になり、
+ * DraggableDancerIconのmemoが効かなくなる)のを避けている。
  */
 export function DancerLayer({
-  dancers,
-  positions,
   stageWidthUnits,
   stageHeightUnits,
   onRotateEnd,
 }: Props) {
+  const dancers = useProjectStore((state) => state.dancers);
   const scenes = useProjectStore((state) => state.scenes);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const isPathVisible = useUIStore((state) => state.isPathVisible);
   const isBlindSpotCheckVisible = useUIStore(
     (state) => state.isBlindSpotCheckVisible,
+  );
+  const positions = useProjectStore(
+    (state) => state.positionsBySceneId[selectedSceneId ?? ""] ?? EMPTY_POSITIONS,
   );
 
   // 選択中シーンの「次」のシーン。導線表示・移動距離アラートの両方で

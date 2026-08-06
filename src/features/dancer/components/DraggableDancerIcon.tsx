@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { memo, useCallback, useRef, useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { motion } from "motion/react";
@@ -38,8 +38,14 @@ type Props = {
  * ドラッグ中は見た目だけをliveRotationで即時更新し、指を離した時点で
  * 初めてonRotateEndを呼んで確定させる(位置ドラッグと同じ「ライブ中はローカル、
  * 確定時だけ親に伝える」方針)。
+ *
+ * memo化している: DancerLayerは選択中シーンのpositionsが1件でも変わると
+ * 全ダンサー分map()し直すため、memoが無いと1人動かすだけで他の全アイコンの
+ * コンポーネント関数まで再実行されてしまう。propsが実際に変わったダンサーだけ
+ * 再レンダーされるようにする(onRotateEndがCanvasBoard側でuseCallback化され
+ * 安定した参照になっていることが前提)。
  */
-export function DraggableDancerIcon({
+function DraggableDancerIconImpl({
   dancer,
   x,
   y,
@@ -126,3 +132,5 @@ export function DraggableDancerIcon({
     </motion.div>
   );
 }
+
+export const DraggableDancerIcon = memo(DraggableDancerIconImpl);

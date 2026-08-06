@@ -42,12 +42,18 @@ create trigger projects_set_updated_at
 -- =========================================
 -- 2. dancers
 -- =========================================
+-- 角度系カラムは ::float8 にキャストしてから比較している。numeric型は
+-- 特殊値'NaN'を許容し、かつ NaN >= 0 は(数値としては直感に反して)true に
+-- なるため、numericのまま範囲チェックしてもNaN混入を防げない。float8への
+-- キャストならIEEE754のNaN比較(NaNとのどんな比較も false)になるため、
+-- 範囲外の値と同時にNaNも弾ける
 create table public.dancers (
   id uuid primary key default gen_random_uuid(),
   project_id uuid not null references public.projects (id) on delete cascade,
   name text not null,
   color text not null default '#3b82f6',
-  initial_direction numeric not null default 0,
+  initial_direction numeric not null default 0
+    check (initial_direction::float8 >= 0 and initial_direction::float8 < 360),
   created_at timestamptz not null default now()
 );
 
@@ -69,12 +75,19 @@ create index scenes_project_id_idx on public.scenes (project_id);
 -- =========================================
 -- 4. positions (scene_id, dancer_id の複合PK)
 -- =========================================
+-- x/y座標はアプリ側のclamp()で0以上ステージサイズ以下に収めているが、
+-- ステージサイズはproject単位で可変なため上限はDB側では表現できない
+-- (単純なcheckでは他テーブルの値を参照できないため)。下限(0以上)と
+-- NaN混入の防止だけをDB側の最終防衛ラインとして持たせる
 create table public.positions (
   scene_id uuid not null references public.scenes (id) on delete cascade,
   dancer_id uuid not null references public.dancers (id) on delete cascade,
-  x_coordinate numeric not null default 0,
-  y_coordinate numeric not null default 0,
-  rotation_angle numeric not null default 0,
+  x_coordinate numeric not null default 0
+    check (x_coordinate::float8 >= 0),
+  y_coordinate numeric not null default 0
+    check (y_coordinate::float8 >= 0),
+  rotation_angle numeric not null default 0
+    check (rotation_angle::float8 >= 0 and rotation_angle::float8 < 360),
   primary key (scene_id, dancer_id)
 );
 
@@ -186,3 +199,24 @@ where tablename in ('projects', 'dancers', 'scenes', 'positions');
 -- =========================================
 alter table public.projects alter column stage_width set default 15;
 alter table public.projects alter column stage_height set default 10;
+
+-- =========================================
+-- マイグレーション: 座標・角度カラムにCHECK制約を追加
+-- (既存のSupabaseプロジェクトでは下記をSQL Editorで実行すること。
+-- アプリ側は既にこの範囲でしか値を書き込まないため、通常は失敗しない
+-- はずだが、もし「制約に違反する行があります」等のエラーが出た場合は
+-- 該当行を先に修正してから再実行すること)
+-- =========================================
+alter table public.dancers
+  add constraint dancers_initial_direction_check
+  check (initial_direction::float8 >= 0 and initial_direction::float8 < 360);
+
+alter table public.positions
+  add constraint positions_x_coordinate_check
+  check (x_coordinate::float8 >= 0);
+alter table public.positions
+  add constraint positions_y_coordinate_check
+  check (y_coordinate::float8 >= 0);
+alter table public.positions
+  add constraint positions_rotation_angle_check
+  check (rotation_angle::float8 >= 0 and rotation_angle::float8 < 360);

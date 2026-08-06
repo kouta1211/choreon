@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -20,7 +20,6 @@ import {
   pixelDeltaToUnitDelta,
   snapToCenterline,
 } from "@/features/canvas/lib/dragMath";
-import { EMPTY_POSITIONS } from "@/features/canvas/constants";
 import { createClient } from "@/lib/supabase/client";
 import { upsertPosition } from "@/features/scene/api/positions";
 import type { Project } from "@/features/project/types";
@@ -46,6 +45,13 @@ const SYMMETRY_SNAP_TOLERANCE = 0.3;
  * ドラッグ中はDraggableDancerIcon側がCSS transformだけで見た目を動かし、
  * ここではonDragEndで1回だけstoreにコミットする(キャンバス全体の再描画を
  * ドラッグ中に何度も発生させないため)。
+ *
+ * dancers/positionsはあえて購読しない(DancerLayerが自分で読む)。
+ * ここで購読すると、誰か1人がドラッグで動くたびにCanvasBoard自体が
+ * 再レンダーされ、handleDragEnd/handleRotateEndが毎回新しい関数になって
+ * DraggableDancerIconのmemoが効かなくなってしまうため。位置の読み取りは
+ * ハンドラー内でuseProjectStore.getState()を使い、必要な瞬間だけ
+ * 最新値を取得する(Reactの再レンダーをトリガーしない一回限りの読み取り)。
  */
 export function CanvasBoard({
   project,
@@ -61,7 +67,6 @@ export function CanvasBoard({
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
   const hydrate = useProjectStore((state) => state.hydrate);
-  const dancers = useProjectStore((state) => state.dancers);
   const updateDancerPosition = useProjectStore(
     (state) => state.updateDancerPosition,
   );
@@ -70,9 +75,6 @@ export function CanvasBoard({
   const setDraggingDancerId = useUIStore((state) => state.setDraggingDancerId);
   const showToast = useUIStore((state) => state.showToast);
   const isSymmetryMode = useUIStore((state) => state.isSymmetryMode);
-  const positions = useProjectStore(
-    (state) => state.positionsBySceneId[selectedSceneId ?? ""] ?? EMPTY_POSITIONS,
-  );
 
   // サーバーから取得済みのデータ(props)をZustand storeへ同期する。
   // 「Reactの外にある別のシステム(ここではグローバルなstore)にデータを渡す」
@@ -92,6 +94,129 @@ export function CanvasBoard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.id]);
 
+  const handleDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      setDraggingDancerId(null);
+      if (!selectedSceneId) return;
+
+      const dancerId = String(event.active.id);
+      const currentPositions =
+        useProjectStore.getState().positionsBySceneId[selectedSceneId] ?? {};
+      const before = currentPositions[dancerId];
+      const stageEl = stageRef.current;
+      if (!before || !stageEl) return;
+
+      const { width, height } = stageEl.getBoundingClientRect();
+      const deltaX = pixelDeltaToUnitDelta(
+        event.delta.x,
+        width,
+        project.stageWidth,
+      );
+      const deltaY = pixelDeltaToUnitDelta(
+        event.delta.y,
+        height,
+        project.stageHeight,
+      );
+
+      let nextX = clamp(before.xCoordinate + deltaX, 0, project.stageWidth);
+      const nextY = clamp(before.yCoordinate + deltaY, 0, project.stageHeight);
+
+      // シンメトリーモード中は、中心線付近でドロップするとぴったり中心に吸着させる
+      // (ペア相手も中心に来るので、左右対称の配置を作りやすくするため)
+      if (isSymmetryMode) {
+        nextX = snapToCenterline(
+          nextX,
+          project.stageWidth,
+          SYMMETRY_SNAP_TOLERANCE,
+        );
+      }
+
+      const after = {
+        sceneId: selectedSceneId,
+        dancerId,
+        xCoordinate: nextX,
+        yCoordinate: nextY,
+        rotationAngle: before.rotationAngle,
+      };
+
+      // シンメトリーモード中は、奥行き(Y座標)が最も近い他のダンサーを
+      // ペアとみなし、中心線を挟んだ鏡像の位置へ連動させる
+      const pairId = isSymmetryMode
+        ? findSymmetryPairId(currentPositions, dancerId)
+        : null;
+      const pairBefore = pairId ? currentPositions[pairId] : null;
+      const pairAfter =
+        pairId && pairBefore
+          ? {
+              sceneId: selectedSceneId,
+              dancerId: pairId,
+              xCoordinate: clamp(
+                mirrorXCoordinate(after.xCoordinate, project.stageWidth),
+                0,
+                project.stageWidth,
+              ),
+              yCoordinate: pairBefore.yCoordinate,
+              rotationAngle: pairBefore.rotationAngle,
+            }
+          : null;
+
+      // 楽観的更新: 先に見た目を確定させ、保存に失敗したらdrag前の値に戻す
+      updateDancerPosition(after.sceneId, after.dancerId, after);
+      if (pairAfter) {
+        updateDancerPosition(pairAfter.sceneId, pairAfter.dancerId, pairAfter);
+      }
+
+      try {
+        const supabase = createClient();
+        await upsertPosition(supabase, after);
+        if (pairAfter) {
+          await upsertPosition(supabase, pairAfter);
+        }
+      } catch {
+        updateDancerPosition(selectedSceneId, dancerId, before);
+        if (pairId && pairBefore) {
+          updateDancerPosition(selectedSceneId, pairId, pairBefore);
+        }
+        showToast({ message: "位置の保存に失敗しました", type: "error" });
+      }
+    },
+    [
+      selectedSceneId,
+      isSymmetryMode,
+      project.stageWidth,
+      project.stageHeight,
+      setDraggingDancerId,
+      updateDancerPosition,
+      showToast,
+    ],
+  );
+
+  // 回転ハンドルで指を離したときに1回だけ呼ばれる。位置移動(handleDragEnd)と
+  // 同じ「楽観的更新→Supabase保存→失敗時ロールバック」パターンで、
+  // x/yはそのままにrotationAngleだけ差し替える
+  const handleRotateEnd = useCallback(
+    async (dancerId: string, rotationAngle: number) => {
+      if (!selectedSceneId) return;
+      const before =
+        useProjectStore.getState().positionsBySceneId[selectedSceneId]?.[
+          dancerId
+        ];
+      if (!before) return;
+
+      const after = { ...before, rotationAngle };
+      updateDancerPosition(selectedSceneId, dancerId, after);
+
+      try {
+        const supabase = createClient();
+        await upsertPosition(supabase, after);
+      } catch {
+        updateDancerPosition(selectedSceneId, dancerId, before);
+        showToast({ message: "向きの保存に失敗しました", type: "error" });
+      }
+    },
+    [selectedSceneId, updateDancerPosition, showToast],
+  );
+
   if (!selectedSceneId) {
     return (
       <p className="text-center text-sm text-zinc-400">
@@ -99,100 +224,6 @@ export function CanvasBoard({
       </p>
     );
   }
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    setDraggingDancerId(null);
-
-    const dancerId = String(event.active.id);
-    const before = positions[dancerId];
-    const stageEl = stageRef.current;
-    if (!before || !stageEl) return;
-
-    const { width, height } = stageEl.getBoundingClientRect();
-    const deltaX = pixelDeltaToUnitDelta(event.delta.x, width, project.stageWidth);
-    const deltaY = pixelDeltaToUnitDelta(
-      event.delta.y,
-      height,
-      project.stageHeight,
-    );
-
-    let nextX = clamp(before.xCoordinate + deltaX, 0, project.stageWidth);
-    const nextY = clamp(before.yCoordinate + deltaY, 0, project.stageHeight);
-
-    // シンメトリーモード中は、中心線付近でドロップするとぴったり中心に吸着させる
-    // (ペア相手も中心に来るので、左右対称の配置を作りやすくするため)
-    if (isSymmetryMode) {
-      nextX = snapToCenterline(nextX, project.stageWidth, SYMMETRY_SNAP_TOLERANCE);
-    }
-
-    const after = {
-      sceneId: selectedSceneId,
-      dancerId,
-      xCoordinate: nextX,
-      yCoordinate: nextY,
-      rotationAngle: before.rotationAngle,
-    };
-
-    // シンメトリーモード中は、奥行き(Y座標)が最も近い他のダンサーを
-    // ペアとみなし、中心線を挟んだ鏡像の位置へ連動させる
-    const pairId = isSymmetryMode
-      ? findSymmetryPairId(positions, dancerId)
-      : null;
-    const pairBefore = pairId ? positions[pairId] : null;
-    const pairAfter =
-      pairId && pairBefore
-        ? {
-            sceneId: selectedSceneId,
-            dancerId: pairId,
-            xCoordinate: clamp(
-              mirrorXCoordinate(after.xCoordinate, project.stageWidth),
-              0,
-              project.stageWidth,
-            ),
-            yCoordinate: pairBefore.yCoordinate,
-            rotationAngle: pairBefore.rotationAngle,
-          }
-        : null;
-
-    // 楽観的更新: 先に見た目を確定させ、保存に失敗したらdrag前の値に戻す
-    updateDancerPosition(after.sceneId, after.dancerId, after);
-    if (pairAfter) {
-      updateDancerPosition(pairAfter.sceneId, pairAfter.dancerId, pairAfter);
-    }
-
-    try {
-      const supabase = createClient();
-      await upsertPosition(supabase, after);
-      if (pairAfter) {
-        await upsertPosition(supabase, pairAfter);
-      }
-    } catch {
-      updateDancerPosition(selectedSceneId, dancerId, before);
-      if (pairId && pairBefore) {
-        updateDancerPosition(selectedSceneId, pairId, pairBefore);
-      }
-      showToast({ message: "位置の保存に失敗しました", type: "error" });
-    }
-  };
-
-  // 回転ハンドルで指を離したときに1回だけ呼ばれる。位置移動(handleDragEnd)と
-  // 同じ「楽観的更新→Supabase保存→失敗時ロールバック」パターンで、
-  // x/yはそのままにrotationAngleだけ差し替える
-  const handleRotateEnd = async (dancerId: string, rotationAngle: number) => {
-    const before = positions[dancerId];
-    if (!before) return;
-
-    const after = { ...before, rotationAngle };
-    updateDancerPosition(selectedSceneId, dancerId, after);
-
-    try {
-      const supabase = createClient();
-      await upsertPosition(supabase, after);
-    } catch {
-      updateDancerPosition(selectedSceneId, dancerId, before);
-      showToast({ message: "向きの保存に失敗しました", type: "error" });
-    }
-  };
 
   return (
     <div className="space-y-2">
@@ -209,8 +240,6 @@ export function CanvasBoard({
           showCenterline={isSymmetryMode}
         >
           <DancerLayer
-            dancers={dancers}
-            positions={positions}
             stageWidthUnits={project.stageWidth}
             stageHeightUnits={project.stageHeight}
             onRotateEnd={handleRotateEnd}
