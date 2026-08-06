@@ -51,7 +51,7 @@ export default function SignupPage() {
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-4">
         <Card className="w-full max-w-sm space-y-4 text-center">
-          <p className="text-black dark:text-zinc-50">
+          <p className="text-zinc-50">
             確認メールを送信しました。メール内のリンクから登録を完了してください。
           </p>
           <Link href="/login" className="text-sm underline">
@@ -66,7 +66,7 @@ export default function SignupPage() {
     <div className="flex flex-1 flex-col items-center justify-center px-4">
       <Card className="w-full max-w-sm">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <h1 className="text-xl font-semibold text-black dark:text-zinc-50">
+          <h1 className="text-xl font-semibold text-zinc-50">
             新規登録
           </h1>
 
@@ -92,14 +92,14 @@ export default function SignupPage() {
           />
 
           {error && (
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            <p className="text-sm text-red-400">{error}</p>
           )}
 
           <Button type="submit" disabled={isSubmitting} className="w-full">
             {isSubmitting ? "登録中..." : "登録する"}
           </Button>
 
-          <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="text-center text-sm text-zinc-400">
             既にアカウントをお持ちの方は{" "}
             <Link href="/login" className="underline">
               ログイン

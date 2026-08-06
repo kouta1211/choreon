@@ -64,8 +64,8 @@ export function DancerInspector() {
   };
 
   return (
-    <div className="flex items-center gap-3 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800">
-      <span className="text-sm font-medium text-black dark:text-zinc-50">
+    <div className="flex items-center gap-3 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2">
+      <span className="text-sm font-medium text-zinc-50">
         {dancer.name}
       </span>
 
@@ -95,8 +95,8 @@ export function DancerInspector() {
         aria-label="マイ・フォーカス"
         className={`ml-auto rounded p-1.5 ${
           focusedDancerId === dancer.id
-            ? "bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400"
-            : "text-zinc-500 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-700"
+            ? "bg-amber-950 text-amber-400"
+            : "text-zinc-400 hover:bg-zinc-700"
         }`}
       >
         <Focus size={16} />
@@ -107,7 +107,7 @@ export function DancerInspector() {
         onClick={handleDelete}
         disabled={isDeleting}
         aria-label="ダンサーを削除"
-        className="rounded p-1.5 text-zinc-500 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:text-zinc-400 dark:hover:bg-red-950"
+        className="rounded p-1.5 text-zinc-400 hover:bg-red-950 hover:text-red-400 disabled:opacity-50"
       >
         <Trash2 size={16} />
       </button>
@@ -116,7 +116,7 @@ export function DancerInspector() {
         type="button"
         onClick={() => selectDancer(null)}
         aria-label="選択を解除"
-        className="rounded p-1.5 text-zinc-500 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-700"
+        className="rounded p-1.5 text-zinc-400 hover:bg-zinc-700"
       >
         <X size={16} />
       </button>

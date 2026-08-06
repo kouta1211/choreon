@@ -8,7 +8,7 @@ type Props = {
 export function ProjectList({ projects }: Props) {
   if (projects.length === 0) {
     return (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="text-sm text-zinc-400">
         まだプロジェクトがありません。
       </p>
     );
@@ -20,7 +20,7 @@ export function ProjectList({ projects }: Props) {
         <li key={project.id}>
           <Link
             href={`/projects/${project.id}`}
-            className="block rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm text-black shadow-sm transition-colors hover:border-pink-300 hover:bg-pink-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50 dark:hover:border-pink-800 dark:hover:bg-zinc-800"
+            className="block rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-50 shadow-sm transition-colors hover:border-pink-800 hover:bg-zinc-800"
           >
             {project.title}
           </Link>

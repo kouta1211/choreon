@@ -125,7 +125,7 @@ export function CanvasBoard({
 
   if (!selectedSceneId) {
     return (
-      <p className="text-center text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="text-center text-sm text-zinc-400">
         シーンがありません。上のタイムラインから作成してください。
       </p>
     );

@@ -42,7 +42,7 @@ export default async function ProjectPage(
             プロジェクト一覧に戻る
           </Link>
         </AppHeader>
-        <h2 className="text-lg font-semibold text-black dark:text-zinc-50">
+        <h2 className="text-lg font-semibold text-zinc-50">
           {project.title}
         </h2>
         <Card className="space-y-4">

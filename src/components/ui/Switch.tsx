@@ -8,16 +8,14 @@ type Props = {
  * (Button/TextFieldと同じ配色ルールを踏襲している) */
 export function Switch({ checked, onChange, label }: Props) {
   return (
-    <label className="flex w-fit cursor-pointer items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+    <label className="flex w-fit cursor-pointer items-center gap-2 text-sm text-zinc-300">
       <button
         type="button"
         role="switch"
         aria-checked={checked}
         onClick={onChange}
         className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-          checked
-            ? "bg-pink-600 dark:bg-pink-500"
-            : "bg-zinc-300 dark:bg-zinc-700"
+          checked ? "bg-pink-500" : "bg-zinc-700"
         }`}
       >
         <span

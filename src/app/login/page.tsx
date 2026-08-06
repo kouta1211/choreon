@@ -36,7 +36,7 @@ export default function LoginPage() {
     <div className="flex flex-1 flex-col items-center justify-center px-4">
       <Card className="w-full max-w-sm">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <h1 className="text-xl font-semibold text-black dark:text-zinc-50">
+          <h1 className="text-xl font-semibold text-zinc-50">
             ログイン
           </h1>
 
@@ -61,14 +61,14 @@ export default function LoginPage() {
           />
 
           {error && (
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            <p className="text-sm text-red-400">{error}</p>
           )}
 
           <Button type="submit" disabled={isSubmitting} className="w-full">
             {isSubmitting ? "ログイン中..." : "ログイン"}
           </Button>
 
-          <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="text-center text-sm text-zinc-400">
             アカウントをお持ちでない方は{" "}
             <Link href="/signup" className="underline">
               新規登録

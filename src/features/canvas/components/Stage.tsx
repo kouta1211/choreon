@@ -30,13 +30,13 @@ export function Stage({
 
   return (
     <div className="mx-auto w-full max-w-md space-y-1">
-      <p className="text-center text-[10px] font-semibold tracking-widest text-zinc-400 uppercase dark:text-zinc-500">
+      <p className="text-center text-[10px] font-semibold tracking-widest text-zinc-500 uppercase">
         バックステージ
       </p>
       <div
         ref={ref}
-        className={`relative touch-none rounded-xl border-2 border-pink-400 bg-white shadow-sm transition-colors dark:border-pink-600 dark:bg-zinc-900 ${
-          focusedDancerId ? "dark:bg-zinc-950" : ""
+        className={`relative touch-none rounded-xl border-2 border-pink-500 bg-zinc-900 shadow-sm transition-colors ${
+          focusedDancerId ? "bg-zinc-950" : ""
         }`}
         style={{ aspectRatio: `${widthUnits} / ${heightUnits}` }}
         data-testid="stage"
@@ -44,7 +44,7 @@ export function Stage({
         {isGridVisible && (
           <div
             data-testid="stage-grid"
-            className={`pointer-events-none absolute inset-0 rounded-[10px] bg-[linear-gradient(to_right,var(--color-zinc-300)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-zinc-300)_1px,transparent_1px)] transition-opacity dark:bg-[linear-gradient(to_right,var(--color-zinc-700)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-zinc-700)_1px,transparent_1px)] ${
+            className={`pointer-events-none absolute inset-0 rounded-[10px] bg-[linear-gradient(to_right,var(--color-zinc-700)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-zinc-700)_1px,transparent_1px)] transition-opacity ${
               focusedDancerId ? "opacity-40" : ""
             }`}
             style={{ backgroundSize: `${100 / widthUnits}% ${100 / heightUnits}%` }}
@@ -54,7 +54,7 @@ export function Stage({
           <div
             data-testid="stage-centerline"
             aria-hidden
-            className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-pink-400/70 dark:bg-pink-500/70"
+            className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-pink-500/70"
           />
         )}
         {focusedDancerId && (
@@ -65,7 +65,7 @@ export function Stage({
         )}
         {children}
       </div>
-      <p className="text-center text-[10px] font-semibold tracking-widest text-zinc-400 uppercase dark:text-zinc-500">
+      <p className="text-center text-[10px] font-semibold tracking-widest text-zinc-500 uppercase">
         客席側
       </p>
     </div>

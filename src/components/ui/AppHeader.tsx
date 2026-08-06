@@ -12,12 +12,12 @@ type Props = {
  */
 export function AppHeader({ children }: Props) {
   return (
-    <header className="flex items-center justify-between border-b border-zinc-200 pb-4 dark:border-zinc-800">
+    <header className="flex items-center justify-between border-b border-zinc-800 pb-4">
       <div className="flex items-center gap-2">
-        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-pink-600 text-sm font-bold text-white dark:bg-pink-500">
+        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-pink-500 text-sm font-bold text-white">
           C
         </span>
-        <span className="text-xl font-semibold tracking-tight text-black dark:text-zinc-50">
+        <span className="text-xl font-semibold tracking-tight text-zinc-50">
           Choreon
         </span>
       </div>

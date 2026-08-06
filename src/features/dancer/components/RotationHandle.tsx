@@ -85,7 +85,7 @@ export function RotationHandle({
       {/* 本体中心からハンドルへのガイド線(装飾のみ) */}
       <div
         aria-hidden
-        className="absolute left-0 top-0 w-px -translate-x-1/2 -translate-y-full border-l border-dashed border-pink-400 dark:border-pink-600"
+        className="absolute left-0 top-0 w-px -translate-x-1/2 -translate-y-full border-l border-dashed border-pink-500"
         style={{ height: HANDLE_DISTANCE_PX }}
       />
       <div
@@ -101,7 +101,7 @@ export function RotationHandle({
         onPointerUp={handlePointerUp}
       >
         <div
-          className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-pink-500 bg-white text-pink-600 shadow-sm dark:bg-zinc-900 dark:text-pink-400"
+          className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-pink-500 bg-zinc-900 text-pink-400 shadow-sm"
           style={{ transform: `rotate(${-angle}deg)` }}
         >
           <RotateCw size={13} />

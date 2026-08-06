@@ -26,16 +26,14 @@ export function TextField({
       <label
         htmlFor={inputId}
         className={
-          hideLabel
-            ? "sr-only"
-            : "block text-sm text-zinc-600 dark:text-zinc-400"
+          hideLabel ? "sr-only" : "block text-sm text-zinc-400"
         }
       >
         {label}
       </label>
       <input
         id={inputId}
-        className={`w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 ${className}`}
+        className={`w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm focus:border-pink-500 focus:ring-1 focus:ring-pink-500 focus:outline-none disabled:opacity-50 ${className}`}
         {...props}
       />
     </div>

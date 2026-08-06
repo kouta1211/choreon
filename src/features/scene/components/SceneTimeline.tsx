@@ -182,15 +182,15 @@ export function SceneTimeline({ project }: Props) {
               if (event.key === "Enter") event.currentTarget.blur();
               if (event.key === "Escape") setIsRenaming(false);
             }}
-            className="w-full rounded-md border border-pink-400 px-2 py-1 text-sm focus:outline-none dark:bg-zinc-800"
+            className="w-full rounded-md border border-pink-500 bg-zinc-800 px-2 py-1 text-sm focus:outline-none"
           />
         ) : (
-          <div className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400">
+          <div className="flex items-center gap-1 text-zinc-400">
             <button
               type="button"
               onClick={startRename}
               aria-label="シーン名を変更"
-              className="rounded p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+              className="rounded p-1.5 hover:bg-zinc-700"
             >
               <Pencil size={14} />
             </button>
@@ -199,7 +199,7 @@ export function SceneTimeline({ project }: Props) {
               onClick={() => moveSelected(-1)}
               disabled={selectedIndex <= 0}
               aria-label="左のシーンと入れ替える"
-              className="rounded p-1.5 hover:bg-zinc-200 disabled:opacity-30 dark:hover:bg-zinc-700"
+              className="rounded p-1.5 hover:bg-zinc-700 disabled:opacity-30"
             >
               <ChevronLeft size={14} />
             </button>
@@ -208,7 +208,7 @@ export function SceneTimeline({ project }: Props) {
               onClick={() => moveSelected(1)}
               disabled={selectedIndex >= scenes.length - 1}
               aria-label="右のシーンと入れ替える"
-              className="rounded p-1.5 hover:bg-zinc-200 disabled:opacity-30 dark:hover:bg-zinc-700"
+              className="rounded p-1.5 hover:bg-zinc-700 disabled:opacity-30"
             >
               <ChevronRight size={14} />
             </button>
@@ -216,7 +216,7 @@ export function SceneTimeline({ project }: Props) {
               type="button"
               onClick={handleDelete}
               aria-label="シーンを削除"
-              className="ml-auto rounded p-1.5 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
+              className="ml-auto rounded p-1.5 hover:bg-red-950 hover:text-red-400"
             >
               <Trash2 size={14} />
             </button>
