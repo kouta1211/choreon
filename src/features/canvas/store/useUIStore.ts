@@ -19,6 +19,10 @@ type UIState = {
   /** 「マイ・フォーカス」で強調表示中のダンサー。シーンをまたいでも
    * 保持したいUI状態なので、シーン選択と同じくここに置く */
   focusedDancerId: string | null;
+  /** オンの間、選択中シーン→次のシーンへの移動導線をステージ上に描画する */
+  isPathVisible: boolean;
+  /** オンの間、奥のダンサーが手前のダンサーに隠れていないか(顔被り)を判定して警告表示する */
+  isBlindSpotCheckVisible: boolean;
 
   selectScene: (sceneId: string | null) => void;
   selectDancer: (dancerId: string | null) => void;
@@ -28,6 +32,8 @@ type UIState = {
   clearToast: () => void;
   toggleSymmetryMode: () => void;
   setFocusedDancer: (dancerId: string | null) => void;
+  togglePathVisible: () => void;
+  toggleBlindSpotCheckVisible: () => void;
 };
 
 export const useUIStore = create<UIState>((set) => ({
@@ -38,6 +44,8 @@ export const useUIStore = create<UIState>((set) => ({
   toast: null,
   isSymmetryMode: false,
   focusedDancerId: null,
+  isPathVisible: false,
+  isBlindSpotCheckVisible: false,
 
   selectScene: (sceneId) => set({ selectedSceneId: sceneId }),
   selectDancer: (dancerId) => set({ selectedDancerId: dancerId }),
@@ -48,4 +56,10 @@ export const useUIStore = create<UIState>((set) => ({
   toggleSymmetryMode: () =>
     set((state) => ({ isSymmetryMode: !state.isSymmetryMode })),
   setFocusedDancer: (dancerId) => set({ focusedDancerId: dancerId }),
+  togglePathVisible: () =>
+    set((state) => ({ isPathVisible: !state.isPathVisible })),
+  toggleBlindSpotCheckVisible: () =>
+    set((state) => ({
+      isBlindSpotCheckVisible: !state.isBlindSpotCheckVisible,
+    })),
 }));

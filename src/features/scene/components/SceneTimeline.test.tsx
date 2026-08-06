@@ -52,6 +52,8 @@ afterEach(() => {
     toast: null,
     isSymmetryMode: false,
     focusedDancerId: null,
+    isPathVisible: false,
+    isBlindSpotCheckVisible: false,
   });
 });
 

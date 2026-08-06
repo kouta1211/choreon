@@ -9,6 +9,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { Stage } from "@/features/canvas/components/Stage";
+import { PathOverlay } from "@/features/canvas/components/PathOverlay";
 import { DraggableDancerIcon } from "@/features/dancer/components/DraggableDancerIcon";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
@@ -62,6 +63,7 @@ export function CanvasBoard({
   );
   const hydrate = useProjectStore((state) => state.hydrate);
   const dancers = useProjectStore((state) => state.dancers);
+  const scenes = useProjectStore((state) => state.scenes);
   const updateDancerPosition = useProjectStore(
     (state) => state.updateDancerPosition,
   );
@@ -71,8 +73,16 @@ export function CanvasBoard({
   const showToast = useUIStore((state) => state.showToast);
   const isSymmetryMode = useUIStore((state) => state.isSymmetryMode);
   const toggleSymmetryMode = useUIStore((state) => state.toggleSymmetryMode);
+  const isPathVisible = useUIStore((state) => state.isPathVisible);
+  const togglePathVisible = useUIStore((state) => state.togglePathVisible);
   const positions = useProjectStore(
     (state) => state.positionsBySceneId[selectedSceneId ?? ""] ?? EMPTY_POSITIONS,
+  );
+  // 選択中シーンの「次」のシーン。導線表示(次のシーンへどう動くか)に使う
+  const selectedSceneIndex = scenes.findIndex((s) => s.id === selectedSceneId);
+  const nextSceneId = scenes[selectedSceneIndex + 1]?.id;
+  const nextPositions = useProjectStore(
+    (state) => state.positionsBySceneId[nextSceneId ?? ""] ?? EMPTY_POSITIONS,
   );
 
   // サーバーから取得済みのデータ(props)をZustand storeへ同期する。
@@ -197,11 +207,18 @@ export function CanvasBoard({
 
   return (
     <div className="space-y-2">
-      <Switch
-        checked={isSymmetryMode}
-        onChange={toggleSymmetryMode}
-        label="シンメトリーモード"
-      />
+      <div className="flex flex-wrap gap-x-4 gap-y-2">
+        <Switch
+          checked={isSymmetryMode}
+          onChange={toggleSymmetryMode}
+          label="シンメトリーモード"
+        />
+        <Switch
+          checked={isPathVisible}
+          onChange={togglePathVisible}
+          label="導線を表示"
+        />
+      </div>
       <DndContext
         sensors={sensors}
         onDragStart={(event) => setDraggingDancerId(String(event.active.id))}
@@ -213,6 +230,15 @@ export function CanvasBoard({
           heightUnits={project.stageHeight}
           showCenterline={isSymmetryMode}
         >
+          {isPathVisible && (
+            <PathOverlay
+              currentPositions={positions}
+              nextPositions={nextPositions}
+              dancers={dancers}
+              stageWidthUnits={project.stageWidth}
+              stageHeightUnits={project.stageHeight}
+            />
+          )}
           {Object.values(positions).map((position) => {
             const dancer = dancers[position.dancerId];
             if (!dancer) return null;
