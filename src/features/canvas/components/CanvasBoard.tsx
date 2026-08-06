@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -9,8 +9,8 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { Stage } from "@/features/canvas/components/Stage";
-import { PathOverlay } from "@/features/canvas/components/PathOverlay";
-import { DraggableDancerIcon } from "@/features/dancer/components/DraggableDancerIcon";
+import { CanvasToolbar } from "@/features/canvas/components/CanvasToolbar";
+import { DancerLayer } from "@/features/canvas/components/DancerLayer";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import {
@@ -20,9 +20,7 @@ import {
   pixelDeltaToUnitDelta,
   snapToCenterline,
 } from "@/features/canvas/lib/dragMath";
-import { findBlockedDancerIds } from "@/features/canvas/lib/blindSpot";
-import { findExcessiveMoveDancerIds } from "@/features/canvas/lib/physicalLimits";
-import { Switch } from "@/components/ui/Switch";
+import { EMPTY_POSITIONS } from "@/features/canvas/constants";
 import { createClient } from "@/lib/supabase/client";
 import { upsertPosition } from "@/features/scene/api/positions";
 import type { Project } from "@/features/project/types";
@@ -36,16 +34,15 @@ type Props = {
   initialPositions: Position[];
 };
 
-// セレクタで `?? {}` すると呼び出すたびに新しいオブジェクトを返してしまい、
-// Zustandが「状態が変わった」と誤検知して無限に再レンダーし続ける
-// (Maximum update depth exceeded)。フォールバック値は固定参照にしておく
-const EMPTY_POSITIONS = {};
-
 /** 中心線からこの距離(ステージ座標系のユニット)以内ならぴったり吸着させる */
 const SYMMETRY_SNAP_TOLERANCE = 0.3;
 
 /**
- * Stage + ダンサーアイコン + dnd-kitのDndContextをまとめたClient Component。
+ * Stage + トグル行 + dnd-kitのDndContextをまとめたClient Component。
+ * ステージ上に何を描画するか(導線・ダンサーアイコン・警告判定)は
+ * DancerLayerに委譲し、ここではドラッグ/回転の確定処理
+ * (楽観的更新→Supabase保存→失敗時ロールバック)に専念する。
+ *
  * ドラッグ中はDraggableDancerIcon側がCSS transformだけで見た目を動かし、
  * ここではonDragEndで1回だけstoreにコミットする(キャンバス全体の再描画を
  * ドラッグ中に何度も発生させないため)。
@@ -65,7 +62,6 @@ export function CanvasBoard({
   );
   const hydrate = useProjectStore((state) => state.hydrate);
   const dancers = useProjectStore((state) => state.dancers);
-  const scenes = useProjectStore((state) => state.scenes);
   const updateDancerPosition = useProjectStore(
     (state) => state.updateDancerPosition,
   );
@@ -74,35 +70,8 @@ export function CanvasBoard({
   const setDraggingDancerId = useUIStore((state) => state.setDraggingDancerId);
   const showToast = useUIStore((state) => state.showToast);
   const isSymmetryMode = useUIStore((state) => state.isSymmetryMode);
-  const toggleSymmetryMode = useUIStore((state) => state.toggleSymmetryMode);
-  const isPathVisible = useUIStore((state) => state.isPathVisible);
-  const togglePathVisible = useUIStore((state) => state.togglePathVisible);
-  const isBlindSpotCheckVisible = useUIStore(
-    (state) => state.isBlindSpotCheckVisible,
-  );
-  const toggleBlindSpotCheckVisible = useUIStore(
-    (state) => state.toggleBlindSpotCheckVisible,
-  );
   const positions = useProjectStore(
     (state) => state.positionsBySceneId[selectedSceneId ?? ""] ?? EMPTY_POSITIONS,
-  );
-  const blockedDancerIds = useMemo(
-    () =>
-      isBlindSpotCheckVisible
-        ? findBlockedDancerIds(positions)
-        : new Set<string>(),
-    [isBlindSpotCheckVisible, positions],
-  );
-  // 選択中シーンの「次」のシーン。導線表示(次のシーンへどう動くか)に使う
-  const selectedSceneIndex = scenes.findIndex((s) => s.id === selectedSceneId);
-  const nextSceneId = scenes[selectedSceneIndex + 1]?.id;
-  const nextPositions = useProjectStore(
-    (state) => state.positionsBySceneId[nextSceneId ?? ""] ?? EMPTY_POSITIONS,
-  );
-  // 次のシーンへの移動距離が現実的な範囲を超えているダンサー(常時判定、トグルなし)
-  const excessiveMoveDancerIds = useMemo(
-    () => findExcessiveMoveDancerIds(positions, nextPositions),
-    [positions, nextPositions],
   );
 
   // サーバーから取得済みのデータ(props)をZustand storeへ同期する。
@@ -227,23 +196,7 @@ export function CanvasBoard({
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap gap-x-4 gap-y-2">
-        <Switch
-          checked={isSymmetryMode}
-          onChange={toggleSymmetryMode}
-          label="シンメトリーモード"
-        />
-        <Switch
-          checked={isPathVisible}
-          onChange={togglePathVisible}
-          label="導線を表示"
-        />
-        <Switch
-          checked={isBlindSpotCheckVisible}
-          onChange={toggleBlindSpotCheckVisible}
-          label="顔被りチェック"
-        />
-      </div>
+      <CanvasToolbar />
       <DndContext
         sensors={sensors}
         onDragStart={(event) => setDraggingDancerId(String(event.active.id))}
@@ -255,33 +208,13 @@ export function CanvasBoard({
           heightUnits={project.stageHeight}
           showCenterline={isSymmetryMode}
         >
-          {isPathVisible && (
-            <PathOverlay
-              currentPositions={positions}
-              nextPositions={nextPositions}
-              dancers={dancers}
-              stageWidthUnits={project.stageWidth}
-              stageHeightUnits={project.stageHeight}
-            />
-          )}
-          {Object.values(positions).map((position) => {
-            const dancer = dancers[position.dancerId];
-            if (!dancer) return null;
-            return (
-              <DraggableDancerIcon
-                key={dancer.id}
-                dancer={dancer}
-                x={position.xCoordinate}
-                y={position.yCoordinate}
-                rotationAngle={position.rotationAngle}
-                stageWidthUnits={project.stageWidth}
-                stageHeightUnits={project.stageHeight}
-                onRotateEnd={handleRotateEnd}
-                isBlocked={blockedDancerIds.has(dancer.id)}
-                hasExcessiveMove={excessiveMoveDancerIds.has(dancer.id)}
-              />
-            );
-          })}
+          <DancerLayer
+            dancers={dancers}
+            positions={positions}
+            stageWidthUnits={project.stageWidth}
+            stageHeightUnits={project.stageHeight}
+            onRotateEnd={handleRotateEnd}
+          />
         </Stage>
       </DndContext>
     </div>

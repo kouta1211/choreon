@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { createClient } from "@/lib/supabase/client";
@@ -12,7 +11,8 @@ import {
   updateSceneOrder,
 } from "@/features/scene/api/scenes";
 import { upsertPosition } from "@/features/scene/api/positions";
-import { Button } from "@/components/ui/Button";
+import { SceneTabs } from "@/features/scene/components/SceneTabs";
+import { SceneActionsBar } from "@/features/scene/components/SceneActionsBar";
 import type { Project } from "@/features/project/types";
 
 type Props = {
@@ -144,84 +144,31 @@ export function SceneTimeline({ project }: Props) {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2 overflow-x-auto pb-1">
-        {scenes.map((scene) => (
-          <Button
-            key={scene.id}
-            type="button"
-            variant={scene.id === selectedSceneId ? "primary" : "secondary"}
-            onClick={() => {
-              setIsRenaming(false);
-              selectScene(scene.id);
-            }}
-            className="shrink-0 px-3 py-1.5"
-          >
-            {scene.name}
-          </Button>
-        ))}
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={handleAddScene}
-          disabled={isCreating}
-          className="flex shrink-0 items-center gap-1 border-dashed px-3 py-1.5"
-        >
-          <Plus size={14} />
-          シーンを追加
-        </Button>
-      </div>
+      <SceneTabs
+        scenes={scenes}
+        selectedSceneId={selectedSceneId}
+        onSelectScene={(sceneId) => {
+          setIsRenaming(false);
+          selectScene(sceneId);
+        }}
+        onAddScene={handleAddScene}
+        isCreating={isCreating}
+      />
 
-      {selectedScene &&
-        (isRenaming ? (
-          <input
-            autoFocus
-            value={renameValue}
-            onChange={(event) => setRenameValue(event.target.value)}
-            onBlur={commitRename}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") event.currentTarget.blur();
-              if (event.key === "Escape") setIsRenaming(false);
-            }}
-            className="w-full rounded-md border border-pink-500 bg-zinc-800 px-2 py-1 text-sm focus:outline-none"
-          />
-        ) : (
-          <div className="flex items-center gap-1 text-zinc-400">
-            <button
-              type="button"
-              onClick={startRename}
-              aria-label="シーン名を変更"
-              className="rounded p-1.5 hover:bg-zinc-700"
-            >
-              <Pencil size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={() => moveSelected(-1)}
-              disabled={selectedIndex <= 0}
-              aria-label="左のシーンと入れ替える"
-              className="rounded p-1.5 hover:bg-zinc-700 disabled:opacity-30"
-            >
-              <ChevronLeft size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={() => moveSelected(1)}
-              disabled={selectedIndex >= scenes.length - 1}
-              aria-label="右のシーンと入れ替える"
-              className="rounded p-1.5 hover:bg-zinc-700 disabled:opacity-30"
-            >
-              <ChevronRight size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={handleDelete}
-              aria-label="シーンを削除"
-              className="ml-auto rounded p-1.5 hover:bg-red-950 hover:text-red-400"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
-        ))}
+      {selectedScene && (
+        <SceneActionsBar
+          selectedIndex={selectedIndex}
+          sceneCount={scenes.length}
+          isRenaming={isRenaming}
+          renameValue={renameValue}
+          onRenameValueChange={setRenameValue}
+          onStartRename={startRename}
+          onCommitRename={commitRename}
+          onCancelRename={() => setIsRenaming(false)}
+          onMove={moveSelected}
+          onDelete={handleDelete}
+        />
+      )}
     </div>
   );
 }

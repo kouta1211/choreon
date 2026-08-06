@@ -7,3 +7,7 @@ export const DANCER_COLOR_PALETTE = [
   "#8b5cf6",
   "#ec4899",
 ];
+
+/** マーカーの表示サイズ(px)。SVGのviewBox(0..32)をこのサイズへ拡大して描画する。
+ * DancerMarker本体と、その周りに重ねる名前ラベル・警告バッジの位置計算の両方で使う */
+export const MARKER_SIZE = 40;

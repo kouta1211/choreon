@@ -1,7 +1,9 @@
 "use client";
 
 import { motion } from "motion/react";
-import { TriangleAlert } from "lucide-react";
+import { DancerNameLabel } from "@/features/dancer/components/DancerNameLabel";
+import { DancerExcessiveMoveBadge } from "@/features/dancer/components/DancerExcessiveMoveBadge";
+import { MARKER_SIZE } from "@/features/dancer/constants";
 import type { Dancer } from "@/features/dancer/types";
 
 type Props = {
@@ -14,9 +16,6 @@ type Props = {
   stageWidthUnits: number;
   stageHeightUnits: number;
 };
-
-/** マーカーの表示サイズ(px)。SVGのviewBox(0..32)をこのサイズへ拡大して描画する */
-const MARKER_SIZE = 40;
 
 /**
  * 真上から見た人物のシルエット(頭+鼻先)。回転の中心はSVG座標で頭の中心と
@@ -104,29 +103,8 @@ export function DancerMarker({
           />
         </svg>
       </motion.div>
-      {/* 名前ラベル。円の中に収まらない長さもあるため、円の下に
-          常に正立するかたちで表示する(回転する本体とは別レイヤー) */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-0 top-0 whitespace-nowrap text-[10px] font-bold leading-none text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.8)]"
-        style={{
-          transform: `translate(-50%, 0%) translateY(${MARKER_SIZE / 2 + 4}px)`,
-        }}
-      >
-        {dancer.name}
-      </div>
-      {hasExcessiveMove && (
-        <div
-          data-testid="dancer-excessive-move-badge"
-          aria-label="次のシーンへの移動距離が大きすぎます"
-          className="pointer-events-none absolute left-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-white"
-          style={{
-            transform: `translate(-50%, -50%) translate(${MARKER_SIZE / 2 - 4}px, ${-MARKER_SIZE / 2 + 4}px)`,
-          }}
-        >
-          <TriangleAlert size={11} strokeWidth={2.5} />
-        </div>
-      )}
+      <DancerNameLabel name={dancer.name} />
+      {hasExcessiveMove && <DancerExcessiveMoveBadge />}
     </>
   );
 }
