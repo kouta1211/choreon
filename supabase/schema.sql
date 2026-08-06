@@ -164,11 +164,11 @@ with check (
 -- =========================================
 
 -- 1. GRANT状況の確認(anonの行が出てこないことを確認する)
--- select grantee, privilege_type
--- from information_schema.role_table_grants
--- where table_name in ('projects', 'dancers', 'scenes', 'positions');
+select grantee, privilege_type
+from information_schema.role_table_grants
+where table_name in ('projects', 'dancers', 'scenes', 'positions');
 
 -- 2. RLSポリシーの確認(上記4テーブル分のポリシーが想定通り出ることを確認する)
--- select schemaname, tablename, policyname, cmd, roles
--- from pg_policies
--- where tablename in ('projects', 'dancers', 'scenes', 'positions');
+select schemaname, tablename, policyname, cmd, roles
+from pg_policies
+where tablename in ('projects', 'dancers', 'scenes', 'positions');
