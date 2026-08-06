@@ -4,6 +4,7 @@ import { ProjectList } from "@/features/project/components/ProjectList";
 import { CreateProjectForm } from "@/features/project/components/CreateProjectForm";
 import { SignOutButton } from "@/features/auth/components/SignOutButton";
 import { Card } from "@/components/ui/Card";
+import { AppHeader } from "@/components/ui/AppHeader";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -20,12 +21,9 @@ export default async function Home() {
   return (
     <div className="flex flex-1 flex-col px-4 py-8">
       <div className="mx-auto w-full max-w-md space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-black dark:text-zinc-50">
-            Choreon
-          </h1>
+        <AppHeader>
           <SignOutButton />
-        </div>
+        </AppHeader>
 
         <Card>
           <CreateProjectForm userId={user.id} />

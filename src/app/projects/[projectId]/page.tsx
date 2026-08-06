@@ -11,6 +11,7 @@ import { DancerInspector } from "@/features/dancer/components/DancerInspector";
 import { SceneTimeline } from "@/features/scene/components/SceneTimeline";
 import { Toast } from "@/features/canvas/components/Toast";
 import { Card } from "@/components/ui/Card";
+import { AppHeader } from "@/components/ui/AppHeader";
 
 export default async function ProjectPage(
   props: PageProps<"/projects/[projectId]">,
@@ -34,26 +35,28 @@ export default async function ProjectPage(
   );
 
   return (
-    <div className="flex flex-1 flex-col gap-4 px-4 py-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-black dark:text-zinc-50">
+    <div className="flex flex-1 flex-col px-4 py-6">
+      <div className="mx-auto w-full max-w-md space-y-4">
+        <AppHeader>
+          <Link href="/" className="text-sm underline">
+            プロジェクト一覧に戻る
+          </Link>
+        </AppHeader>
+        <h2 className="text-lg font-semibold text-black dark:text-zinc-50">
           {project.title}
-        </h1>
-        <Link href="/" className="text-sm underline">
-          プロジェクト一覧に戻る
-        </Link>
+        </h2>
+        <Card className="space-y-4">
+          <SceneTimeline project={project} />
+          <AddDancerForm project={project} />
+        </Card>
+        <CanvasBoard
+          project={project}
+          initialDancers={dancers}
+          initialScenes={scenes}
+          initialPositions={positions}
+        />
+        <DancerInspector />
       </div>
-      <Card className="space-y-4">
-        <SceneTimeline project={project} />
-        <AddDancerForm project={project} />
-      </Card>
-      <CanvasBoard
-        project={project}
-        initialDancers={dancers}
-        initialScenes={scenes}
-        initialPositions={positions}
-      />
-      <DancerInspector />
       <Toast />
     </div>
   );
