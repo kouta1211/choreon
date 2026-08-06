@@ -1,6 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+const PUBLIC_PATHS = ["/login", "/signup"];
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -27,8 +29,19 @@ export async function updateSession(request: NextRequest) {
 
   // createServerClientとgetUser()の間に処理を挟まない(Supabase公式の注意事項。
   // 挟むとセッションのランダムなログアウトが起きうる)。
-  // ルート保護(未ログイン時のリダイレクト等)は認証画面を作る際にここへ追記する。
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const isPublicPath = PUBLIC_PATHS.includes(request.nextUrl.pathname);
+
+  if (!user && !isPublicPath) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  if (user && isPublicPath) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
 
   return supabaseResponse;
 }
