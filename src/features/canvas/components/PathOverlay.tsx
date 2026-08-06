@@ -71,7 +71,7 @@ export function PathOverlay({
             y1={y1}
             x2={x2}
             y2={y2}
-            stroke={dancers[id]?.color ?? "#6366f1"}
+            stroke={dancers[id]?.color ?? "#ec4899"}
             strokeWidth={2}
             strokeDasharray="6 4"
             strokeLinecap="round"

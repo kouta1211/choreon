@@ -4,7 +4,7 @@ type Props = {
   label: string;
 };
 
-/** ラベル付きのトグルスイッチ。オンでindigo背景、offでzincの枠線のみ
+/** ラベル付きのトグルスイッチ。オンでpink背景、offでzincの枠線のみ
  * (Button/TextFieldと同じ配色ルールを踏襲している) */
 export function Switch({ checked, onChange, label }: Props) {
   return (
@@ -16,7 +16,7 @@ export function Switch({ checked, onChange, label }: Props) {
         onClick={onChange}
         className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
           checked
-            ? "bg-indigo-600 dark:bg-indigo-500"
+            ? "bg-pink-600 dark:bg-pink-500"
             : "bg-zinc-300 dark:bg-zinc-700"
         }`}
       >

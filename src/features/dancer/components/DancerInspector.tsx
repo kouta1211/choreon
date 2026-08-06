@@ -78,7 +78,7 @@ export function DancerInspector() {
             onClick={() => handleColorChange(color)}
             className={`h-5 w-5 rounded-full ${
               dancer.color === color
-                ? "ring-2 ring-indigo-500 ring-offset-1"
+                ? "ring-2 ring-pink-500 ring-offset-1"
                 : ""
             }`}
             style={{ backgroundColor: color }}

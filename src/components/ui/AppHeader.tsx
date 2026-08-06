@@ -14,7 +14,7 @@ export function AppHeader({ children }: Props) {
   return (
     <header className="flex items-center justify-between border-b border-zinc-200 pb-4 dark:border-zinc-800">
       <div className="flex items-center gap-2">
-        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-indigo-600 text-sm font-bold text-white dark:bg-indigo-500">
+        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-pink-600 text-sm font-bold text-white dark:bg-pink-500">
           C
         </span>
         <span className="text-xl font-semibold tracking-tight text-black dark:text-zinc-50">

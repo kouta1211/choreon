@@ -29,37 +29,45 @@ export function Stage({
   const focusedDancerId = useUIStore((state) => state.focusedDancerId);
 
   return (
-    <div
-      ref={ref}
-      className={`relative mx-auto w-full max-w-md touch-none rounded-lg border border-zinc-300 bg-white shadow-sm transition-colors dark:border-zinc-700 dark:bg-zinc-900 ${
-        focusedDancerId ? "dark:bg-zinc-950" : ""
-      }`}
-      style={{ aspectRatio: `${widthUnits} / ${heightUnits}` }}
-      data-testid="stage"
-    >
-      {isGridVisible && (
-        <div
-          data-testid="stage-grid"
-          className={`pointer-events-none absolute inset-0 rounded-lg bg-[linear-gradient(to_right,var(--color-zinc-300)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-zinc-300)_1px,transparent_1px)] transition-opacity dark:bg-[linear-gradient(to_right,var(--color-zinc-700)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-zinc-700)_1px,transparent_1px)] ${
-            focusedDancerId ? "opacity-40" : ""
-          }`}
-          style={{ backgroundSize: `${100 / widthUnits}% ${100 / heightUnits}%` }}
-        />
-      )}
-      {showCenterline && (
-        <div
-          data-testid="stage-centerline"
-          aria-hidden
-          className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-indigo-400/70 dark:bg-indigo-500/70"
-        />
-      )}
-      {focusedDancerId && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-lg bg-black/20"
-        />
-      )}
-      {children}
+    <div className="mx-auto w-full max-w-md space-y-1">
+      <p className="text-center text-[10px] font-semibold tracking-widest text-zinc-400 uppercase dark:text-zinc-500">
+        バックステージ
+      </p>
+      <div
+        ref={ref}
+        className={`relative touch-none rounded-xl border-2 border-pink-400 bg-white shadow-sm transition-colors dark:border-pink-600 dark:bg-zinc-900 ${
+          focusedDancerId ? "dark:bg-zinc-950" : ""
+        }`}
+        style={{ aspectRatio: `${widthUnits} / ${heightUnits}` }}
+        data-testid="stage"
+      >
+        {isGridVisible && (
+          <div
+            data-testid="stage-grid"
+            className={`pointer-events-none absolute inset-0 rounded-[10px] bg-[linear-gradient(to_right,var(--color-zinc-300)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-zinc-300)_1px,transparent_1px)] transition-opacity dark:bg-[linear-gradient(to_right,var(--color-zinc-700)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-zinc-700)_1px,transparent_1px)] ${
+              focusedDancerId ? "opacity-40" : ""
+            }`}
+            style={{ backgroundSize: `${100 / widthUnits}% ${100 / heightUnits}%` }}
+          />
+        )}
+        {showCenterline && (
+          <div
+            data-testid="stage-centerline"
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-pink-400/70 dark:bg-pink-500/70"
+          />
+        )}
+        {focusedDancerId && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 rounded-[10px] bg-black/20"
+          />
+        )}
+        {children}
+      </div>
+      <p className="text-center text-[10px] font-semibold tracking-widest text-zinc-400 uppercase dark:text-zinc-500">
+        客席側
+      </p>
     </div>
   );
 }

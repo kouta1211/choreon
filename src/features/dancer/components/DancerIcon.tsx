@@ -82,7 +82,7 @@ export function DancerMarker({
               cy={16}
               r={15}
               fill="none"
-              stroke="#6366f1"
+              stroke="#ec4899"
               strokeWidth={2}
             />
           )}
@@ -104,13 +104,13 @@ export function DancerMarker({
           />
         </svg>
       </motion.div>
-      {/* 名前ラベル。円の中に収まらない長さもあるため、円の上に
+      {/* 名前ラベル。円の中に収まらない長さもあるため、円の下に
           常に正立するかたちで表示する(回転する本体とは別レイヤー) */}
       <div
         aria-hidden
         className="pointer-events-none absolute left-0 top-0 whitespace-nowrap rounded bg-zinc-900/80 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white shadow-sm dark:bg-white/90 dark:text-zinc-900"
         style={{
-          transform: `translate(-50%, -100%) translateY(-${MARKER_SIZE / 2 + 4}px)`,
+          transform: `translate(-50%, 0%) translateY(${MARKER_SIZE / 2 + 4}px)`,
         }}
       >
         {dancer.name}

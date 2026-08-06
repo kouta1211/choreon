@@ -16,7 +16,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #000000;
+    /* 参考にしているアプリのダークテーマに近い、純黒より少し柔らかい濃いグレー */
+    --background: #121214;
     --foreground: #ededed;
   }
 }

@@ -182,7 +182,7 @@ export function SceneTimeline({ project }: Props) {
               if (event.key === "Enter") event.currentTarget.blur();
               if (event.key === "Escape") setIsRenaming(false);
             }}
-            className="w-full rounded-md border border-indigo-400 px-2 py-1 text-sm focus:outline-none dark:bg-zinc-800"
+            className="w-full rounded-md border border-pink-400 px-2 py-1 text-sm focus:outline-none dark:bg-zinc-800"
           />
         ) : (
           <div className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400">
