@@ -13,6 +13,12 @@ type UIState = {
    * 見た目を動かすため、ここでは「どれがドラッグ中か」だけを持つ */
   draggingDancerId: string | null;
   toast: Toast | null;
+  /** オンの間、ダンサーをドラッグすると中心線を挟んだペアも連動して動く
+   * (CanvasBoard.handleDragEndが読み取って処理する。ここはトグル状態のみ) */
+  isSymmetryMode: boolean;
+  /** 「マイ・フォーカス」で強調表示中のダンサー。シーンをまたいでも
+   * 保持したいUI状態なので、シーン選択と同じくここに置く */
+  focusedDancerId: string | null;
 
   selectScene: (sceneId: string | null) => void;
   selectDancer: (dancerId: string | null) => void;
@@ -20,6 +26,8 @@ type UIState = {
   setDraggingDancerId: (dancerId: string | null) => void;
   showToast: (toast: Toast) => void;
   clearToast: () => void;
+  toggleSymmetryMode: () => void;
+  setFocusedDancer: (dancerId: string | null) => void;
 };
 
 export const useUIStore = create<UIState>((set) => ({
@@ -28,6 +36,8 @@ export const useUIStore = create<UIState>((set) => ({
   isGridVisible: true,
   draggingDancerId: null,
   toast: null,
+  isSymmetryMode: false,
+  focusedDancerId: null,
 
   selectScene: (sceneId) => set({ selectedSceneId: sceneId }),
   selectDancer: (dancerId) => set({ selectedDancerId: dancerId }),
@@ -35,4 +45,7 @@ export const useUIStore = create<UIState>((set) => ({
   setDraggingDancerId: (dancerId) => set({ draggingDancerId: dancerId }),
   showToast: (toast) => set({ toast }),
   clearToast: () => set({ toast: null }),
+  toggleSymmetryMode: () =>
+    set((state) => ({ isSymmetryMode: !state.isSymmetryMode })),
+  setFocusedDancer: (dancerId) => set({ focusedDancerId: dancerId }),
 }));

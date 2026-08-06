@@ -4,7 +4,7 @@ import { Stage } from "./Stage";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 
 afterEach(() => {
-  useUIStore.setState({ isGridVisible: true });
+  useUIStore.setState({ isGridVisible: true, focusedDancerId: null });
 });
 
 describe("Stage", () => {
@@ -26,5 +26,21 @@ describe("Stage", () => {
       </Stage>,
     );
     expect(screen.getByText("dancer")).toBeInTheDocument();
+  });
+
+  it("showCenterlineがtrueのとき中心線を表示する", () => {
+    render(<Stage widthUnits={8} heightUnits={8} showCenterline />);
+    expect(screen.getByTestId("stage-centerline")).toBeInTheDocument();
+  });
+
+  it("showCenterlineを指定しなければ中心線を表示しない", () => {
+    render(<Stage widthUnits={8} heightUnits={8} />);
+    expect(screen.queryByTestId("stage-centerline")).not.toBeInTheDocument();
+  });
+
+  it("誰かがフォーカスされている間はグリッドを暗くする", () => {
+    useUIStore.setState({ focusedDancerId: "dancer-1" });
+    render(<Stage widthUnits={8} heightUnits={8} />);
+    expect(screen.getByTestId("stage-grid").className).toContain("opacity-40");
   });
 });

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { DraggableDancerIcon } from "./DraggableDancerIcon";
@@ -36,6 +36,8 @@ afterEach(() => {
     isGridVisible: true,
     draggingDancerId: null,
     toast: null,
+    isSymmetryMode: false,
+    focusedDancerId: null,
   });
 });
 
@@ -109,6 +111,44 @@ describe("DraggableDancerIcon", () => {
     );
 
     expect(screen.getByTestId("dancer-selection-ring")).toBeInTheDocument();
+  });
+
+  it("フォーカス中のダンサーには強調リングが付く", () => {
+    useUIStore.setState({ focusedDancerId: "dancer-1" });
+    render(
+      <DndContext>
+        <DraggableDancerIcon
+          dancer={makeDancer()}
+          x={2}
+          y={2}
+          rotationAngle={0}
+          stageWidthUnits={8}
+          stageHeightUnits={8}
+        />
+      </DndContext>,
+    );
+
+    expect(screen.getByTestId("dancer-focus-ring")).toBeInTheDocument();
+  });
+
+  it("他のダンサーがフォーカス中のとき、自分は薄く表示される", async () => {
+    useUIStore.setState({ focusedDancerId: "someone-else" });
+    render(
+      <DndContext>
+        <DraggableDancerIcon
+          dancer={makeDancer()}
+          x={2}
+          y={2}
+          rotationAngle={0}
+          stageWidthUnits={8}
+          stageHeightUnits={8}
+        />
+      </DndContext>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("dancer-icon").style.opacity).toBe("0.3");
+    });
   });
 
   it("選択中は回転ハンドルが表示され、確定時にonRotateEndが呼ばれる", async () => {

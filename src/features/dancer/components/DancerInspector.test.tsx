@@ -37,6 +37,8 @@ afterEach(() => {
     isGridVisible: true,
     draggingDancerId: null,
     toast: null,
+    isSymmetryMode: false,
+    focusedDancerId: null,
   });
 });
 
@@ -94,6 +96,34 @@ describe("DancerInspector", () => {
       expect(useProjectStore.getState().dancers["dancer-1"]).toBeUndefined();
     });
     expect(useUIStore.getState().selectedDancerId).toBeNull();
+  });
+
+  it("フォーカスボタンでfocusedDancerIdをトグルする", async () => {
+    useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
+    useUIStore.setState({ selectedDancerId: "dancer-1" });
+    const user = userEvent.setup();
+    render(<DancerInspector />);
+
+    await user.click(screen.getByLabelText("マイ・フォーカス"));
+    expect(useUIStore.getState().focusedDancerId).toBe("dancer-1");
+
+    await user.click(screen.getByLabelText("マイ・フォーカス"));
+    expect(useUIStore.getState().focusedDancerId).toBeNull();
+  });
+
+  it("フォーカス中のダンサーを削除するとフォーカスも解除される", async () => {
+    useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
+    useUIStore.setState({ selectedDancerId: "dancer-1", focusedDancerId: "dancer-1" });
+    vi.spyOn(dancersApi, "deleteDancer").mockResolvedValue(undefined);
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const user = userEvent.setup();
+    render(<DancerInspector />);
+
+    await user.click(screen.getByLabelText("ダンサーを削除"));
+
+    await waitFor(() => {
+      expect(useUIStore.getState().focusedDancerId).toBeNull();
+    });
   });
 
   it("確認をキャンセルすると削除されない", async () => {

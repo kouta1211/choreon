@@ -12,7 +12,14 @@ import { Stage } from "@/features/canvas/components/Stage";
 import { DraggableDancerIcon } from "@/features/dancer/components/DraggableDancerIcon";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import { clamp, pixelDeltaToUnitDelta } from "@/features/canvas/lib/dragMath";
+import {
+  clamp,
+  findSymmetryPairId,
+  mirrorXCoordinate,
+  pixelDeltaToUnitDelta,
+  snapToCenterline,
+} from "@/features/canvas/lib/dragMath";
+import { Switch } from "@/components/ui/Switch";
 import { createClient } from "@/lib/supabase/client";
 import { upsertPosition } from "@/features/scene/api/positions";
 import type { Project } from "@/features/project/types";
@@ -30,6 +37,9 @@ type Props = {
 // Zustandが「状態が変わった」と誤検知して無限に再レンダーし続ける
 // (Maximum update depth exceeded)。フォールバック値は固定参照にしておく
 const EMPTY_POSITIONS = {};
+
+/** 中心線からこの距離(ステージ座標系のユニット)以内ならぴったり吸着させる */
+const SYMMETRY_SNAP_TOLERANCE = 0.3;
 
 /**
  * Stage + ダンサーアイコン + dnd-kitのDndContextをまとめたClient Component。
@@ -59,6 +69,8 @@ export function CanvasBoard({
   const selectScene = useUIStore((state) => state.selectScene);
   const setDraggingDancerId = useUIStore((state) => state.setDraggingDancerId);
   const showToast = useUIStore((state) => state.showToast);
+  const isSymmetryMode = useUIStore((state) => state.isSymmetryMode);
+  const toggleSymmetryMode = useUIStore((state) => state.toggleSymmetryMode);
   const positions = useProjectStore(
     (state) => state.positionsBySceneId[selectedSceneId ?? ""] ?? EMPTY_POSITIONS,
   );
@@ -105,22 +117,61 @@ export function CanvasBoard({
       project.stageHeight,
     );
 
+    let nextX = clamp(before.xCoordinate + deltaX, 0, project.stageWidth);
+    const nextY = clamp(before.yCoordinate + deltaY, 0, project.stageHeight);
+
+    // シンメトリーモード中は、中心線付近でドロップするとぴったり中心に吸着させる
+    // (ペア相手も中心に来るので、左右対称の配置を作りやすくするため)
+    if (isSymmetryMode) {
+      nextX = snapToCenterline(nextX, project.stageWidth, SYMMETRY_SNAP_TOLERANCE);
+    }
+
     const after = {
       sceneId: selectedSceneId,
       dancerId,
-      xCoordinate: clamp(before.xCoordinate + deltaX, 0, project.stageWidth),
-      yCoordinate: clamp(before.yCoordinate + deltaY, 0, project.stageHeight),
+      xCoordinate: nextX,
+      yCoordinate: nextY,
       rotationAngle: before.rotationAngle,
     };
 
+    // シンメトリーモード中は、奥行き(Y座標)が最も近い他のダンサーを
+    // ペアとみなし、中心線を挟んだ鏡像の位置へ連動させる
+    const pairId = isSymmetryMode
+      ? findSymmetryPairId(positions, dancerId)
+      : null;
+    const pairBefore = pairId ? positions[pairId] : null;
+    const pairAfter =
+      pairId && pairBefore
+        ? {
+            sceneId: selectedSceneId,
+            dancerId: pairId,
+            xCoordinate: clamp(
+              mirrorXCoordinate(after.xCoordinate, project.stageWidth),
+              0,
+              project.stageWidth,
+            ),
+            yCoordinate: pairBefore.yCoordinate,
+            rotationAngle: pairBefore.rotationAngle,
+          }
+        : null;
+
     // 楽観的更新: 先に見た目を確定させ、保存に失敗したらdrag前の値に戻す
     updateDancerPosition(after.sceneId, after.dancerId, after);
+    if (pairAfter) {
+      updateDancerPosition(pairAfter.sceneId, pairAfter.dancerId, pairAfter);
+    }
 
     try {
       const supabase = createClient();
       await upsertPosition(supabase, after);
+      if (pairAfter) {
+        await upsertPosition(supabase, pairAfter);
+      }
     } catch {
       updateDancerPosition(selectedSceneId, dancerId, before);
+      if (pairId && pairBefore) {
+        updateDancerPosition(selectedSceneId, pairId, pairBefore);
+      }
       showToast({ message: "位置の保存に失敗しました", type: "error" });
     }
   };
@@ -145,33 +196,41 @@ export function CanvasBoard({
   };
 
   return (
-    <DndContext
-      sensors={sensors}
-      onDragStart={(event) => setDraggingDancerId(String(event.active.id))}
-      onDragEnd={handleDragEnd}
-    >
-      <Stage
-        ref={stageRef}
-        widthUnits={project.stageWidth}
-        heightUnits={project.stageHeight}
+    <div className="space-y-2">
+      <Switch
+        checked={isSymmetryMode}
+        onChange={toggleSymmetryMode}
+        label="シンメトリーモード"
+      />
+      <DndContext
+        sensors={sensors}
+        onDragStart={(event) => setDraggingDancerId(String(event.active.id))}
+        onDragEnd={handleDragEnd}
       >
-        {Object.values(positions).map((position) => {
-          const dancer = dancers[position.dancerId];
-          if (!dancer) return null;
-          return (
-            <DraggableDancerIcon
-              key={dancer.id}
-              dancer={dancer}
-              x={position.xCoordinate}
-              y={position.yCoordinate}
-              rotationAngle={position.rotationAngle}
-              stageWidthUnits={project.stageWidth}
-              stageHeightUnits={project.stageHeight}
-              onRotateEnd={handleRotateEnd}
-            />
-          );
-        })}
-      </Stage>
-    </DndContext>
+        <Stage
+          ref={stageRef}
+          widthUnits={project.stageWidth}
+          heightUnits={project.stageHeight}
+          showCenterline={isSymmetryMode}
+        >
+          {Object.values(positions).map((position) => {
+            const dancer = dancers[position.dancerId];
+            if (!dancer) return null;
+            return (
+              <DraggableDancerIcon
+                key={dancer.id}
+                dancer={dancer}
+                x={position.xCoordinate}
+                y={position.yCoordinate}
+                rotationAngle={position.rotationAngle}
+                stageWidthUnits={project.stageWidth}
+                stageHeightUnits={project.stageHeight}
+                onRotateEnd={handleRotateEnd}
+              />
+            );
+          })}
+        </Stage>
+      </DndContext>
+    </div>
   );
 }

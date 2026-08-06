@@ -52,6 +52,10 @@ export function DraggableDancerIcon({
     (state) => state.selectedDancerId === dancer.id,
   );
   const selectDancer = useUIStore((state) => state.selectDancer);
+  const focusedDancerId = useUIStore((state) => state.focusedDancerId);
+  const isFocused = focusedDancerId === dancer.id;
+  // 誰かがフォーカスされている間、自分以外は薄くして目立たなくする
+  const isDimmed = focusedDancerId !== null && !isFocused;
   const [liveRotation, setLiveRotation] = useState<number | null>(null);
 
   // dnd-kitのsetNodeRefと、回転中心の座標を読み取るための自前refを
@@ -80,7 +84,11 @@ export function DraggableDancerIcon({
       ref={setRefs}
       data-testid="dancer-icon"
       className="absolute touch-none select-none"
-      animate={{ left: `${leftPercent}%`, top: `${topPercent}%` }}
+      animate={{
+        left: `${leftPercent}%`,
+        top: `${topPercent}%`,
+        opacity: isDimmed ? 0.3 : 1,
+      }}
       transition={{ duration: 0.3, ease: "easeOut" }}
       style={{
         transform: transform ? CSS.Translate.toString(transform) : undefined,
@@ -94,6 +102,7 @@ export function DraggableDancerIcon({
         rotationAngle={displayRotation}
         isSelected={isSelected}
         isRotating={liveRotation !== null}
+        isFocused={isFocused}
       />
       {isSelected && (
         <RotationHandle

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2, X } from "lucide-react";
+import { Trash2, X, Focus } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { createClient } from "@/lib/supabase/client";
@@ -22,6 +22,8 @@ export function DancerInspector() {
   const selectedDancerId = useUIStore((state) => state.selectedDancerId);
   const selectDancer = useUIStore((state) => state.selectDancer);
   const showToast = useUIStore((state) => state.showToast);
+  const focusedDancerId = useUIStore((state) => state.focusedDancerId);
+  const setFocusedDancer = useUIStore((state) => state.setFocusedDancer);
   const dancer = useProjectStore((state) =>
     selectedDancerId ? state.dancers[selectedDancerId] : undefined,
   );
@@ -53,6 +55,7 @@ export function DancerInspector() {
       await deleteDancer(supabase, dancer.id);
       removeDancer(dancer.id);
       selectDancer(null);
+      if (focusedDancerId === dancer.id) setFocusedDancer(null);
     } catch {
       showToast({ message: "ダンサーの削除に失敗しました", type: "error" });
     } finally {
@@ -85,10 +88,26 @@ export function DancerInspector() {
 
       <button
         type="button"
+        onClick={() =>
+          setFocusedDancer(focusedDancerId === dancer.id ? null : dancer.id)
+        }
+        aria-pressed={focusedDancerId === dancer.id}
+        aria-label="マイ・フォーカス"
+        className={`ml-auto rounded p-1.5 ${
+          focusedDancerId === dancer.id
+            ? "bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400"
+            : "text-zinc-500 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-700"
+        }`}
+      >
+        <Focus size={16} />
+      </button>
+
+      <button
+        type="button"
         onClick={handleDelete}
         disabled={isDeleting}
         aria-label="ダンサーを削除"
-        className="ml-auto rounded p-1.5 text-zinc-500 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:text-zinc-400 dark:hover:bg-red-950"
+        className="rounded p-1.5 text-zinc-500 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:text-zinc-400 dark:hover:bg-red-950"
       >
         <Trash2 size={16} />
       </button>

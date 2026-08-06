@@ -29,6 +29,7 @@ export function DancerMarker({
   rotationAngle,
   isSelected = false,
   isRotating = false,
+  isFocused = false,
 }: {
   dancer: Dancer;
   rotationAngle: number;
@@ -37,6 +38,10 @@ export function DancerMarker({
    * 指の動きに瞬時追従させ、falseに戻った瞬間(ドロップ確定・シーン切替)
    * だけmotionで滑らかに補間する */
   isRotating?: boolean;
+  /** 「マイ・フォーカス」で強調表示中かどうか。選択(isSelected)とは別の状態
+   * (選択はインスペクターを開くための一時的な状態、フォーカスは
+   * シーンをまたいで維持される「自分を目立たせる」ための状態) */
+  isFocused?: boolean;
 }) {
   return (
     <>
@@ -44,10 +49,21 @@ export function DancerMarker({
         aria-hidden
         className="absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2"
         style={{ width: MARKER_SIZE, height: MARKER_SIZE }}
-        animate={{ rotate: rotationAngle }}
+        animate={{ rotate: rotationAngle, scale: isFocused ? 1.15 : 1 }}
         transition={{ duration: isRotating ? 0 : 0.3, ease: "easeOut" }}
       >
         <svg viewBox="0 0 32 32" className="h-full w-full overflow-visible">
+          {isFocused && (
+            <circle
+              data-testid="dancer-focus-ring"
+              cx={16}
+              cy={16}
+              r={15}
+              fill="none"
+              stroke="#f59e0b"
+              strokeWidth={3}
+            />
+          )}
           {isSelected && (
             <circle
               data-testid="dancer-selection-ring"

@@ -39,6 +39,8 @@ afterEach(() => {
     isGridVisible: true,
     draggingDancerId: null,
     toast: null,
+    isSymmetryMode: false,
+    focusedDancerId: null,
   });
 });
 
