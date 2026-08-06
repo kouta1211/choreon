@@ -9,6 +9,7 @@ import { CanvasBoard } from "@/features/canvas/components/CanvasBoard";
 import { AddDancerForm } from "@/features/dancer/components/AddDancerForm";
 import { SceneTimeline } from "@/features/scene/components/SceneTimeline";
 import { Toast } from "@/features/canvas/components/Toast";
+import { Card } from "@/components/ui/Card";
 
 export default async function ProjectPage(
   props: PageProps<"/projects/[projectId]">,
@@ -32,7 +33,7 @@ export default async function ProjectPage(
   );
 
   return (
-    <div className="flex flex-1 flex-col gap-4 bg-zinc-50 px-4 py-6 dark:bg-black">
+    <div className="flex flex-1 flex-col gap-4 px-4 py-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-black dark:text-zinc-50">
           {project.title}
@@ -41,8 +42,10 @@ export default async function ProjectPage(
           プロジェクト一覧に戻る
         </Link>
       </div>
-      <SceneTimeline project={project} />
-      <AddDancerForm project={project} />
+      <Card className="space-y-4">
+        <SceneTimeline project={project} />
+        <AddDancerForm project={project} />
+      </Card>
       <CanvasBoard
         project={project}
         initialDancers={dancers}

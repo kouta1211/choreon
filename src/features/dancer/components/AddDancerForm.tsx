@@ -6,6 +6,8 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { createClient } from "@/lib/supabase/client";
 import { createDancer } from "@/features/dancer/api/dancers";
 import { upsertPosition } from "@/features/scene/api/positions";
+import { Button } from "@/components/ui/Button";
+import { TextField } from "@/components/ui/TextField";
 import type { Project } from "@/features/project/types";
 
 const COLOR_PALETTE = [
@@ -81,22 +83,19 @@ export function AddDancerForm({ project }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="flex gap-2">
-      <input
+      <TextField
+        label="ダンサー名"
+        hideLabel
         type="text"
         required
         placeholder="ダンサー名"
         value={name}
         onChange={(event) => setName(event.target.value)}
         disabled={!selectedSceneId}
-        className="flex-1 rounded border border-zinc-300 px-3 py-2 text-sm disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800"
       />
-      <button
-        type="submit"
-        disabled={!selectedSceneId || isSubmitting}
-        className="rounded bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-white dark:text-black"
-      >
+      <Button type="submit" disabled={!selectedSceneId || isSubmitting}>
         追加
-      </button>
+      </Button>
     </form>
   );
 }

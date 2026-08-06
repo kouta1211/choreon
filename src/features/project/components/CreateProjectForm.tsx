@@ -4,6 +4,8 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { createProject } from "@/features/project/api/projects";
+import { Button } from "@/components/ui/Button";
+import { TextField } from "@/components/ui/TextField";
 
 type Props = {
   userId: string;
@@ -34,21 +36,18 @@ export function CreateProjectForm({ userId }: Props) {
   return (
     <div className="space-y-2">
       <form onSubmit={handleSubmit} className="flex gap-2">
-        <input
+        <TextField
+          label="新しいプロジェクト名"
+          hideLabel
           type="text"
           required
           placeholder="新しいプロジェクト名"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          className="flex-1 rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
         />
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-white dark:text-black"
-        >
+        <Button type="submit" disabled={isSubmitting}>
           作成
-        </button>
+        </Button>
       </form>
       {error && (
         <p className="text-sm text-red-600 dark:text-red-400">{error}</p>

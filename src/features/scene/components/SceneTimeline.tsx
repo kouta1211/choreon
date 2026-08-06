@@ -5,6 +5,7 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { createClient } from "@/lib/supabase/client";
 import { createScene } from "@/features/scene/api/scenes";
+import { Button } from "@/components/ui/Button";
 import type { Project } from "@/features/project/types";
 
 type Props = {
@@ -53,27 +54,25 @@ export function SceneTimeline({ project }: Props) {
   return (
     <div className="flex items-center gap-2 overflow-x-auto pb-1">
       {scenes.map((scene) => (
-        <button
+        <Button
           key={scene.id}
           type="button"
+          variant={scene.id === selectedSceneId ? "primary" : "secondary"}
           onClick={() => selectScene(scene.id)}
-          className={
-            scene.id === selectedSceneId
-              ? "shrink-0 rounded bg-black px-3 py-1.5 text-sm font-medium text-white dark:bg-white dark:text-black"
-              : "shrink-0 rounded border border-zinc-300 px-3 py-1.5 text-sm text-black dark:border-zinc-700 dark:text-zinc-50"
-          }
+          className="shrink-0 px-3 py-1.5"
         >
           {scene.name}
-        </button>
+        </Button>
       ))}
-      <button
+      <Button
         type="button"
+        variant="secondary"
         onClick={handleAddScene}
         disabled={isCreating}
-        className="shrink-0 rounded border border-dashed border-zinc-400 px-3 py-1.5 text-sm text-zinc-500 disabled:opacity-50 dark:border-zinc-600 dark:text-zinc-400"
+        className="shrink-0 border-dashed px-3 py-1.5"
       >
         + シーンを追加
-      </button>
+      </Button>
     </div>
   );
 }

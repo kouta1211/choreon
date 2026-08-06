@@ -4,6 +4,9 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signUpWithPassword } from "@/features/auth/api/auth";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { TextField } from "@/components/ui/TextField";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -46,53 +49,39 @@ export default function SignupPage() {
 
   if (isEmailSent) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-zinc-50 px-4 text-center dark:bg-black">
-        <p className="text-black dark:text-zinc-50">
-          確認メールを送信しました。メール内のリンクから登録を完了してください。
-        </p>
-        <Link href="/login" className="underline">
-          ログイン画面に戻る
-        </Link>
+      <div className="flex flex-1 flex-col items-center justify-center px-4">
+        <Card className="w-full max-w-sm space-y-4 text-center">
+          <p className="text-black dark:text-zinc-50">
+            確認メールを送信しました。メール内のリンクから登録を完了してください。
+          </p>
+          <Link href="/login" className="text-sm underline">
+            ログイン画面に戻る
+          </Link>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center bg-zinc-50 px-4 dark:bg-black">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm space-y-4 rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900"
-      >
-        <h1 className="text-xl font-semibold text-black dark:text-zinc-50">
-          新規登録
-        </h1>
+    <div className="flex flex-1 flex-col items-center justify-center px-4">
+      <Card className="w-full max-w-sm">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <h1 className="text-xl font-semibold text-black dark:text-zinc-50">
+            新規登録
+          </h1>
 
-        <div className="space-y-1">
-          <label
-            htmlFor="email"
-            className="block text-sm text-zinc-600 dark:text-zinc-400"
-          >
-            メールアドレス
-          </label>
-          <input
+          <TextField
+            label="メールアドレス"
             id="email"
             type="email"
             required
             autoComplete="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
           />
-        </div>
 
-        <div className="space-y-1">
-          <label
-            htmlFor="password"
-            className="block text-sm text-zinc-600 dark:text-zinc-400"
-          >
-            パスワード(6文字以上)
-          </label>
-          <input
+          <TextField
+            label="パスワード(6文字以上)"
             id="password"
             type="password"
             required
@@ -100,29 +89,24 @@ export default function SignupPage() {
             autoComplete="new-password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
           />
-        </div>
 
-        {error && (
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-        )}
+          {error && (
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          )}
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full rounded bg-black py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-white dark:text-black"
-        >
-          {isSubmitting ? "登録中..." : "登録する"}
-        </button>
+          <Button type="submit" disabled={isSubmitting} className="w-full">
+            {isSubmitting ? "登録中..." : "登録する"}
+          </Button>
 
-        <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
-          既にアカウントをお持ちの方は{" "}
-          <Link href="/login" className="underline">
-            ログイン
-          </Link>
-        </p>
-      </form>
+          <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
+            既にアカウントをお持ちの方は{" "}
+            <Link href="/login" className="underline">
+              ログイン
+            </Link>
+          </p>
+        </form>
+      </Card>
     </div>
   );
 }
