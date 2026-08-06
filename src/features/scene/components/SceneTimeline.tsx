@@ -11,6 +11,7 @@ import {
   renameScene as renameSceneApi,
   updateSceneOrder,
 } from "@/features/scene/api/scenes";
+import { upsertPosition } from "@/features/scene/api/positions";
 import { Button } from "@/components/ui/Button";
 import type { Project } from "@/features/project/types";
 
@@ -24,10 +25,14 @@ export function SceneTimeline({ project }: Props) {
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState("");
   const scenes = useProjectStore((state) => state.scenes);
+  const positionsBySceneId = useProjectStore((state) => state.positionsBySceneId);
   const addScene = useProjectStore((state) => state.addScene);
   const removeScene = useProjectStore((state) => state.removeScene);
   const renameScene = useProjectStore((state) => state.renameScene);
   const reorderScenes = useProjectStore((state) => state.reorderScenes);
+  const updateDancerPosition = useProjectStore(
+    (state) => state.updateDancerPosition,
+  );
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const selectScene = useUIStore((state) => state.selectScene);
   const showToast = useUIStore((state) => state.showToast);
@@ -44,14 +49,27 @@ export function SceneTimeline({ project }: Props) {
       name: `シーン${scenes.length + 1}`,
       orderIndex: scenes.length,
     };
+    // 新しいシーンは空(ダンサーが誰もいない)状態からではなく、直前に見ていた
+    // シーンの配置をそのままコピーして始める。フォーメーションは通常シーンごとに
+    // 少しずつ変化していくものなので、毎回ゼロから配置し直すのは不自然なため
+    // (これによりシーン切り替え時のなめらかな移動アニメーションも活きる)
+    const copiedPositions = Object.values(
+      positionsBySceneId[previousSelectedSceneId ?? ""] ?? {},
+    ).map((position) => ({ ...position, sceneId: scene.id }));
 
     // 楽観的更新: 先にローカルへ反映し、保存に失敗したら取り消す
     addScene(scene);
+    for (const position of copiedPositions) {
+      updateDancerPosition(scene.id, position.dancerId, position);
+    }
     selectScene(scene.id);
 
     try {
       const supabase = createClient();
       await createScene(supabase, scene);
+      for (const position of copiedPositions) {
+        await upsertPosition(supabase, position);
+      }
     } catch {
       removeScene(scene.id);
       selectScene(previousSelectedSceneId);

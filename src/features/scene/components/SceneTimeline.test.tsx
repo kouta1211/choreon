@@ -5,6 +5,7 @@ import { SceneTimeline } from "./SceneTimeline";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import * as scenesApi from "@/features/scene/api/scenes";
+import * as positionsApi from "@/features/scene/api/positions";
 import type { Project } from "@/features/project/types";
 import type { Scene } from "@/features/scene/types";
 
@@ -77,6 +78,62 @@ describe("SceneTimeline", () => {
     });
     expect(useUIStore.getState().selectedSceneId).toBe(
       useProjectStore.getState().scenes[0].id,
+    );
+  });
+
+  it("シーン追加時、選択中シーンの配置をコピーする", async () => {
+    useProjectStore.setState({
+      scenes: [makeScene()],
+      dancers: {
+        "dancer-1": {
+          id: "dancer-1",
+          projectId: "project-1",
+          name: "あいり",
+          color: "#3b82f6",
+          initialDirection: 0,
+          createdAt: "2026-01-01T00:00:00.000Z",
+        },
+      },
+      positionsBySceneId: {
+        "scene-1": {
+          "dancer-1": {
+            sceneId: "scene-1",
+            dancerId: "dancer-1",
+            xCoordinate: 3,
+            yCoordinate: 5,
+            rotationAngle: 90,
+          },
+        },
+      },
+    });
+    useUIStore.setState({ selectedSceneId: "scene-1" });
+    vi.spyOn(scenesApi, "createScene").mockResolvedValue(
+      makeScene({ id: "irrelevant" }),
+    );
+    const upsertSpy = vi
+      .spyOn(positionsApi, "upsertPosition")
+      .mockImplementation((_supabase, position) =>
+        Promise.resolve(position),
+      );
+    const user = userEvent.setup();
+
+    render(<SceneTimeline project={makeProject()} />);
+    await user.click(screen.getByText("シーンを追加"));
+
+    await waitFor(() => {
+      expect(useProjectStore.getState().scenes).toHaveLength(2);
+    });
+    const newSceneId = useUIStore.getState().selectedSceneId!;
+    const copied =
+      useProjectStore.getState().positionsBySceneId[newSceneId]["dancer-1"];
+    expect(copied).toMatchObject({
+      xCoordinate: 3,
+      yCoordinate: 5,
+      rotationAngle: 90,
+    });
+    expect(upsertSpy).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ sceneId: newSceneId, dancerId: "dancer-1" }),
     );
   });
 

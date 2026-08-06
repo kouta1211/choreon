@@ -53,7 +53,12 @@ export function RotationHandle({
 }: Props) {
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     event.stopPropagation();
-    event.currentTarget.setPointerCapture(event.pointerId);
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // ポインタが既に離されている等でキャプチャできなくても、
+      // pointerupの角度計算自体はgetCenter経由で行えるため致命的ではない
+    }
   };
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
