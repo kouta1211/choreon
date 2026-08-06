@@ -1,3 +1,6 @@
+"use client";
+
+import { motion } from "motion/react";
 import type { Dancer } from "@/features/dancer/types";
 
 type Props = {
@@ -11,34 +14,81 @@ type Props = {
   stageHeightUnits: number;
 };
 
-/** 円+向き三角形の見た目部分だけを描画する。配置(絶対位置・ドラッグtransform)は
- * 呼び出し側の責務にすることで、DancerIcon(静止表示)とDraggableDancerIcon
- * (ドラッグ表示)の両方から同じ見た目を再利用できるようにしている */
+/** マーカーの表示サイズ(px)。SVGのviewBox(0..32)をこのサイズへ拡大して描画する */
+const MARKER_SIZE = 40;
+
+/**
+ * 真上から見た人物のシルエット(頭+肩)。回転の中心はSVG座標で頭の中心と
+ * 一致させている(頭は円なので回転しても見た目が変わらず、その場に留まる)。
+ * こうすることで、頭の上に重ねる文字ラベルは「回転しない別レイヤー」として
+ * 常に同じ位置に置くだけで済み、角度ごとに位置を再計算する必要がなくなる。
+ * 実際に回転して見えるのは、頭からずれた位置にある肩(向きの手がかり)だけ。
+ */
 export function DancerMarker({
   dancer,
   rotationAngle,
   isSelected = false,
+  isRotating = false,
 }: {
   dancer: Dancer;
   rotationAngle: number;
   isSelected?: boolean;
+  /** 回転ハンドルでドラッグ中はtrue。true の間はアニメーションを挟まず
+   * 指の動きに瞬時追従させ、falseに戻った瞬間(ドロップ確定・シーン切替)
+   * だけmotionで滑らかに補間する */
+  isRotating?: boolean;
 }) {
   return (
     <>
-      {/* 向き表示: 円の中心から見た角度分だけ回転させた三角形を、円の外側に配置する */}
+      <motion.div
+        aria-hidden
+        className="absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2"
+        style={{ width: MARKER_SIZE, height: MARKER_SIZE }}
+        animate={{ rotate: rotationAngle }}
+        transition={{ duration: isRotating ? 0 : 0.3, ease: "easeOut" }}
+      >
+        <svg viewBox="0 0 32 32" className="h-full w-full overflow-visible">
+          {isSelected && (
+            <circle
+              data-testid="dancer-selection-ring"
+              cx={16}
+              cy={16}
+              r={15}
+              fill="none"
+              stroke="#6366f1"
+              strokeWidth={2}
+            />
+          )}
+          {/* 肩(向きの手がかり)。頭からずれた位置にあるため、回転すると
+              頭の周りを振り子のように動いて見える */}
+          <ellipse
+            cx={16}
+            cy={22}
+            rx={10}
+            ry={6}
+            fill={dancer.color}
+            stroke="rgba(0,0,0,0.15)"
+          />
+          {/* 鼻先(正面方向の手がかり) */}
+          <polygon
+            points="16,4 12,10 20,10"
+            fill={dancer.color}
+            stroke="rgba(0,0,0,0.15)"
+          />
+          {/* 頭。回転の中心と一致しているため、回転してもその場から動かない */}
+          <circle
+            cx={16}
+            cy={16}
+            r={8}
+            fill={dancer.color}
+            stroke="rgba(0,0,0,0.15)"
+          />
+        </svg>
+      </motion.div>
       <div
         aria-hidden
-        className="absolute left-0 top-0 h-0 w-0 border-x-4 border-b-8 border-x-transparent"
-        style={{
-          borderBottomColor: dancer.color,
-          transform: `translate(-50%, -50%) rotate(${rotationAngle}deg) translateY(-18px)`,
-        }}
-      />
-      <div
-        className={`flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-xs font-bold text-white ${
-          isSelected ? "ring-2 ring-indigo-500 ring-offset-2" : ""
-        }`}
-        style={{ backgroundColor: dancer.color }}
+        className="pointer-events-none absolute left-0 top-0 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center text-[11px] font-bold text-white"
+        style={{ width: MARKER_SIZE, height: MARKER_SIZE }}
       >
         {dancer.name.slice(0, 1)}
       </div>

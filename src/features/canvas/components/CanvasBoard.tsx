@@ -125,6 +125,25 @@ export function CanvasBoard({
     }
   };
 
+  // 回転ハンドルで指を離したときに1回だけ呼ばれる。位置移動(handleDragEnd)と
+  // 同じ「楽観的更新→Supabase保存→失敗時ロールバック」パターンで、
+  // x/yはそのままにrotationAngleだけ差し替える
+  const handleRotateEnd = async (dancerId: string, rotationAngle: number) => {
+    const before = positions[dancerId];
+    if (!before) return;
+
+    const after = { ...before, rotationAngle };
+    updateDancerPosition(selectedSceneId, dancerId, after);
+
+    try {
+      const supabase = createClient();
+      await upsertPosition(supabase, after);
+    } catch {
+      updateDancerPosition(selectedSceneId, dancerId, before);
+      showToast({ message: "向きの保存に失敗しました", type: "error" });
+    }
+  };
+
   return (
     <DndContext
       sensors={sensors}
@@ -148,6 +167,7 @@ export function CanvasBoard({
               rotationAngle={position.rotationAngle}
               stageWidthUnits={project.stageWidth}
               stageHeightUnits={project.stageHeight}
+              onRotateEnd={handleRotateEnd}
             />
           );
         })}

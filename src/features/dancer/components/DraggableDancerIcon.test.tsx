@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { afterEach, describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { DraggableDancerIcon } from "./DraggableDancerIcon";
@@ -108,6 +108,37 @@ describe("DraggableDancerIcon", () => {
       </DndContext>,
     );
 
-    expect(screen.getByText("あ").className).toContain("ring-2");
+    expect(screen.getByTestId("dancer-selection-ring")).toBeInTheDocument();
+  });
+
+  it("選択中は回転ハンドルが表示され、確定時にonRotateEndが呼ばれる", async () => {
+    useUIStore.setState({ selectedDancerId: "dancer-1" });
+    const handleRotateEnd = vi.fn();
+    render(
+      <DndContext>
+        <DraggableDancerIcon
+          dancer={makeDancer()}
+          x={2}
+          y={2}
+          rotationAngle={0}
+          stageWidthUnits={8}
+          stageHeightUnits={8}
+          onRotateEnd={handleRotateEnd}
+        />
+      </DndContext>,
+    );
+
+    const handle = screen.getByRole("slider", { name: "向きを変更" });
+    expect(handle).toBeInTheDocument();
+
+    handle.setPointerCapture = vi.fn();
+    handle.hasPointerCapture = vi.fn().mockReturnValue(true);
+    fireEvent.pointerDown(handle, { pointerId: 1, clientX: 0, clientY: 0 });
+    fireEvent.pointerUp(handle, { pointerId: 1, clientX: 100, clientY: 0 });
+
+    expect(handleRotateEnd).toHaveBeenCalledWith(
+      "dancer-1",
+      expect.any(Number),
+    );
   });
 });
