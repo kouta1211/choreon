@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getProject } from "@/features/project/api/projects";
-import { Stage } from "@/features/canvas/components/Stage";
+import { CanvasBoard } from "@/features/canvas/components/CanvasBoard";
+import { AddDancerForm } from "@/features/dancer/components/AddDancerForm";
 
 export default async function ProjectPage(
   props: PageProps<"/projects/[projectId]">,
@@ -25,7 +26,11 @@ export default async function ProjectPage(
           プロジェクト一覧に戻る
         </Link>
       </div>
-      <Stage widthUnits={project.stageWidth} heightUnits={project.stageHeight} />
+      <AddDancerForm project={project} />
+      <CanvasBoard project={project} />
+      <p className="text-center text-xs text-zinc-400 dark:text-zinc-500">
+        ※ダンサーの追加・移動はまだこの端末内のみに保存され、リロードすると消えます(Supabase連携は未実装)
+      </p>
     </div>
   );
 }

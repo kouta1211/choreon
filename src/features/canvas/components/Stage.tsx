@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 
 type Props = {
@@ -8,15 +8,20 @@ type Props = {
   widthUnits: number;
   /** ステージの縦幅(projects.stage_height) */
   heightUnits: number;
-  /** 次ステップでDancerIconを配置するためのスロット */
+  /** ダンサーアイコンを配置するためのスロット */
   children?: ReactNode;
+  /** ドラッグ量(px)をステージ座標系に換算する際、実際の描画サイズを
+   * 読み取れるようにするための参照(React 19からforwardRef不要でrefを
+   * 通常のpropsとして受け取れる) */
+  ref?: Ref<HTMLDivElement>;
 };
 
-export function Stage({ widthUnits, heightUnits, children }: Props) {
+export function Stage({ widthUnits, heightUnits, children, ref }: Props) {
   const isGridVisible = useUIStore((state) => state.isGridVisible);
 
   return (
     <div
+      ref={ref}
       className="relative mx-auto w-full max-w-md touch-none border border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-900"
       style={{ aspectRatio: `${widthUnits} / ${heightUnits}` }}
       data-testid="stage"
