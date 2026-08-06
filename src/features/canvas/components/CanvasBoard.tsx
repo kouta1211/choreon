@@ -21,6 +21,7 @@ import {
   snapToCenterline,
 } from "@/features/canvas/lib/dragMath";
 import { findBlockedDancerIds } from "@/features/canvas/lib/blindSpot";
+import { findExcessiveMoveDancerIds } from "@/features/canvas/lib/physicalLimits";
 import { Switch } from "@/components/ui/Switch";
 import { createClient } from "@/lib/supabase/client";
 import { upsertPosition } from "@/features/scene/api/positions";
@@ -97,6 +98,11 @@ export function CanvasBoard({
   const nextSceneId = scenes[selectedSceneIndex + 1]?.id;
   const nextPositions = useProjectStore(
     (state) => state.positionsBySceneId[nextSceneId ?? ""] ?? EMPTY_POSITIONS,
+  );
+  // 次のシーンへの移動距離が現実的な範囲を超えているダンサー(常時判定、トグルなし)
+  const excessiveMoveDancerIds = useMemo(
+    () => findExcessiveMoveDancerIds(positions, nextPositions),
+    [positions, nextPositions],
   );
 
   // サーバーから取得済みのデータ(props)をZustand storeへ同期する。
@@ -272,6 +278,7 @@ export function CanvasBoard({
                 stageHeightUnits={project.stageHeight}
                 onRotateEnd={handleRotateEnd}
                 isBlocked={blockedDancerIds.has(dancer.id)}
+                hasExcessiveMove={excessiveMoveDancerIds.has(dancer.id)}
               />
             );
           })}

@@ -65,4 +65,20 @@ describe("DancerMarker", () => {
       "#3b82f6",
     );
   });
+
+  it("hasExcessiveMoveのとき警告バッジを表示する", () => {
+    render(
+      <DancerMarker dancer={makeDancer()} rotationAngle={0} hasExcessiveMove />,
+    );
+    expect(
+      screen.getByTestId("dancer-excessive-move-badge"),
+    ).toBeInTheDocument();
+  });
+
+  it("hasExcessiveMoveでなければ警告バッジを表示しない", () => {
+    render(<DancerMarker dancer={makeDancer()} rotationAngle={0} />);
+    expect(
+      screen.queryByTestId("dancer-excessive-move-badge"),
+    ).not.toBeInTheDocument();
+  });
 });

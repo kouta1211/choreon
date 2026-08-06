@@ -20,6 +20,8 @@ type Props = {
   onRotateEnd?: (dancerId: string, rotationAngle: number) => void;
   /** 「顔被りチェック」表示中、手前のダンサーに隠れていると判定されたか */
   isBlocked?: boolean;
+  /** 次のシーンへの移動距離が現実的な範囲を超えているか(常時判定) */
+  hasExcessiveMove?: boolean;
 };
 
 /**
@@ -46,6 +48,7 @@ export function DraggableDancerIcon({
   stageHeightUnits,
   onRotateEnd,
   isBlocked = false,
+  hasExcessiveMove = false,
 }: Props) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
@@ -107,6 +110,7 @@ export function DraggableDancerIcon({
         isRotating={liveRotation !== null}
         isFocused={isFocused}
         isBlocked={isBlocked}
+        hasExcessiveMove={hasExcessiveMove}
       />
       {isSelected && (
         <RotationHandle

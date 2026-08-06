@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import { TriangleAlert } from "lucide-react";
 import type { Dancer } from "@/features/dancer/types";
 
 type Props = {
@@ -31,6 +32,7 @@ export function DancerMarker({
   isRotating = false,
   isFocused = false,
   isBlocked = false,
+  hasExcessiveMove = false,
 }: {
   dancer: Dancer;
   rotationAngle: number;
@@ -46,6 +48,9 @@ export function DancerMarker({
   /** 「顔被りチェック」で、手前の他のダンサーに隠れていると判定された場合true。
    * trueの間は自分の色ではなく警告色で塗る */
   isBlocked?: boolean;
+  /** 次のシーンへの移動距離が現実的な範囲を超えている場合true。
+   * 警告バッジを表示する(常時判定、トグルなし) */
+  hasExcessiveMove?: boolean;
 }) {
   const bodyColor = isBlocked ? "#dc2626" : dancer.color;
 
@@ -115,6 +120,18 @@ export function DancerMarker({
       >
         {dancer.name.slice(0, 1)}
       </div>
+      {hasExcessiveMove && (
+        <div
+          data-testid="dancer-excessive-move-badge"
+          aria-label="次のシーンへの移動距離が大きすぎます"
+          className="pointer-events-none absolute left-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-white"
+          style={{
+            transform: `translate(-50%, -50%) translate(${MARKER_SIZE / 2 - 4}px, ${-MARKER_SIZE / 2 + 4}px)`,
+          }}
+        >
+          <TriangleAlert size={11} strokeWidth={2.5} />
+        </div>
+      )}
     </>
   );
 }
