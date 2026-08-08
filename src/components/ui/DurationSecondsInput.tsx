@@ -17,6 +17,13 @@ type Props = {
    * onCommit(null)は呼ばない(シーン自体の遷移時間など、必須の値向け) */
   allowEmpty?: boolean;
   placeholder?: string;
+  /** 数字のうしろに添える語。既定は「秒」。ドックでは「秒でここへ」に
+   * して、この値が"このシーンへ入ってくる時間"だと文で分かるようにする */
+  suffix?: string;
+  /** 配色。sceneはドック(中立の灰)、dancerはインスペクター(そのダンサーの
+   * 側の色)。同じ見た目の秒数入力が2箇所にあると、いまどちらを編集して
+   * いるのか分からなくなるため、地と文字色で区別する */
+  tone?: "scene" | "dancer";
 };
 
 const STEP = 0.1;
@@ -43,6 +50,8 @@ export function DurationSecondsInput({
   max,
   allowEmpty = true,
   placeholder,
+  suffix = "秒",
+  tone = "scene",
 }: Props) {
   const inputId = useId();
 
@@ -69,8 +78,14 @@ export function DurationSecondsInput({
   };
 
   return (
-    <label className="flex items-center gap-1 text-xs text-zinc-400">
-      <Timer size={14} aria-hidden />
+    <label
+      className={`inline-flex w-fit items-center gap-1 rounded-[7px] border px-2 py-[3px] font-mono text-[11px] font-medium focus-within:border-pink-500 ${
+        tone === "dancer"
+          ? "border-zinc-700 bg-zinc-900 text-red-300"
+          : "border-zinc-700 bg-zinc-800 text-zinc-300"
+      }`}
+    >
+      <Timer size={12} aria-hidden className="shrink-0" />
       <span className="sr-only">{label}</span>
       <input
         key={String(value)}
@@ -85,9 +100,13 @@ export function DurationSecondsInput({
         placeholder={placeholder}
         onBlur={commit}
         onKeyDown={handleKeyDown}
-        className="w-14 rounded border border-zinc-700 bg-zinc-800 px-1 py-0.5 text-xs focus:border-pink-500 focus:outline-none"
+        // 数字の桁数ぶんだけの幅にして、チップが間延びしないようにする。
+        // ブラウザ標準のスピナーは幅を食うので隠す
+        className="w-9 bg-transparent text-center outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
-      <span aria-hidden>秒</span>
+      <span aria-hidden className="whitespace-nowrap text-zinc-500">
+        {suffix}
+      </span>
     </label>
   );
 }

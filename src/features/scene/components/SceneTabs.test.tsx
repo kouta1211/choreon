@@ -53,8 +53,6 @@ function renderSceneTabs(
       onSelectScene={onSelectScene}
       onAddScene={() => {}}
       onReorderScenes={() => {}}
-      isPlaying={false}
-      onTogglePlay={() => {}}
       isCreating={false}
       dancers={{ "dancer-1": makeDancer() }}
       positionsBySceneId={{
@@ -105,8 +103,6 @@ describe("SceneTabs", () => {
         onSelectScene={onSelectScene}
         onAddScene={() => {}}
         onReorderScenes={() => {}}
-        isPlaying={false}
-        onTogglePlay={() => {}}
         isCreating={false}
         dancers={{ "dancer-1": makeDancer() }}
         positionsBySceneId={{

@@ -9,7 +9,7 @@ import { EditorHeader } from "@/features/canvas/components/EditorHeader";
 import { DisplaySegment } from "@/features/canvas/components/DisplaySegment";
 import { AddDancerForm } from "@/features/dancer/components/AddDancerForm";
 import { DancerInspector } from "@/features/dancer/components/DancerInspector";
-import { SceneTimeline } from "@/features/scene/components/SceneTimeline";
+import { SceneDock } from "@/features/scene/components/SceneDock";
 
 /**
  * エディタ画面。ページ自体はスクロールさせず、画面の高さ(h-dvh)に
@@ -65,7 +65,7 @@ export default async function ProjectPage(
         </div>
 
         <DancerInspector />
-        <SceneTimeline project={project} />
+        <SceneDock project={project} />
         <AddDancerForm project={project} />
       </div>
     </div>

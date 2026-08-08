@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { SceneTimeline } from "./SceneTimeline";
+import { SceneDock } from "./SceneDock";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
@@ -59,12 +59,12 @@ afterEach(() => {
   });
 });
 
-describe("SceneTimeline", () => {
+describe("SceneDock", () => {
   it("シーンをクリックすると選択状態になる", async () => {
     useProjectStore.setState({ scenes: [makeScene()] });
     const user = userEvent.setup();
 
-    render(<SceneTimeline project={makeProject()} />);
+    render(<SceneDock project={makeProject()} />);
     await user.click(screen.getByText("シーン1"));
 
     expect(useUIStore.getState().selectedSceneId).toBe("scene-1");
@@ -76,8 +76,8 @@ describe("SceneTimeline", () => {
     );
     const user = userEvent.setup();
 
-    render(<SceneTimeline project={makeProject()} />);
-    await user.click(screen.getByText("シーンを追加"));
+    render(<SceneDock project={makeProject()} />);
+    await user.click(screen.getByLabelText("シーンを追加"));
 
     await waitFor(() => {
       expect(useProjectStore.getState().scenes).toHaveLength(1);
@@ -123,8 +123,8 @@ describe("SceneTimeline", () => {
       );
     const user = userEvent.setup();
 
-    render(<SceneTimeline project={makeProject()} />);
-    await user.click(screen.getByText("シーンを追加"));
+    render(<SceneDock project={makeProject()} />);
+    await user.click(screen.getByLabelText("シーンを追加"));
 
     await waitFor(() => {
       expect(useProjectStore.getState().scenes).toHaveLength(2);
@@ -147,8 +147,8 @@ describe("SceneTimeline", () => {
     vi.spyOn(scenesApi, "createScene").mockRejectedValue(new Error("network"));
     const user = userEvent.setup();
 
-    render(<SceneTimeline project={makeProject()} />);
-    await user.click(screen.getByText("シーンを追加"));
+    render(<SceneDock project={makeProject()} />);
+    await user.click(screen.getByLabelText("シーンを追加"));
 
     await waitFor(() => {
       expect(useProjectStore.getState().scenes).toHaveLength(0);
@@ -163,7 +163,7 @@ describe("SceneTimeline", () => {
     vi.spyOn(scenesApi, "renameScene").mockResolvedValue(undefined);
     const user = userEvent.setup();
 
-    render(<SceneTimeline project={makeProject()} />);
+    render(<SceneDock project={makeProject()} />);
     await user.click(screen.getByLabelText("シーン名を変更"));
     const input = screen.getByDisplayValue("シーン1");
     await user.clear(input);
@@ -181,7 +181,7 @@ describe("SceneTimeline", () => {
     vi.spyOn(scenesApi, "updateSceneDuration").mockResolvedValue(undefined);
     const user = userEvent.setup();
 
-    render(<SceneTimeline project={makeProject()} />);
+    render(<SceneDock project={makeProject()} />);
     const input = screen.getByLabelText(/遷移時間/);
     await user.clear(input);
     await user.type(input, "2.5");
@@ -209,7 +209,7 @@ describe("SceneTimeline", () => {
 
     render(
       <>
-        <SceneTimeline project={makeProject()} />
+        <SceneDock project={makeProject()} />
         <ConfirmDialog />
       </>,
     );
