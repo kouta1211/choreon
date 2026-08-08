@@ -3,17 +3,28 @@ import { listProjectSummaries } from "@/features/project/api/projects";
 import { ProjectList } from "@/components/organisms/ProjectList";
 import { CreateProjectForm } from "@/components/organisms/CreateProjectForm";
 import { SignOutButton } from "@/components/organisms/SignOutButton";
+import { GuestEditor } from "@/components/organisms/GuestEditor";
 import { AppHeader } from "@/components/molecules/AppHeader";
 
+/**
+ * トップページ。ログインしているかどうかで役割が変わる。
+ *
+ * - 未ログイン: いきなりエディタ(ゲストモード)。登録を求める前に、
+ *   まず作ってもらう。保存しようとした時点で初めて登録の壁が出る
+ * - ログイン済み: プロジェクト一覧
+ *
+ * 以前はproxy(middleware)が未ログインを全て/loginへ飛ばしていたため、
+ * 何のアプリかを見る前にアカウントを作るかどうかを判断させていた。
+ */
 export default async function Home() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // 未ログイン時はproxy(middleware)側で/loginへリダイレクトされるため、
-  // ここに到達する時点でuserは必ず存在する
-  if (!user) return null;
+  if (!user) {
+    return <GuestEditor />;
+  }
 
   const projects = await listProjectSummaries(supabase);
 
