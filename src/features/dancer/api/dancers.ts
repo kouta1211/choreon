@@ -53,6 +53,19 @@ export async function createDancer(
   return toDancer(data);
 }
 
+export async function updateDancerName(
+  supabase: SupabaseClient<Database>,
+  dancerId: string,
+  name: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("dancers")
+    .update({ name })
+    .eq("id", dancerId);
+
+  if (error) throw error;
+}
+
 export async function updateDancerColor(
   supabase: SupabaseClient<Database>,
   dancerId: string,

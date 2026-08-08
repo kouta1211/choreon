@@ -59,6 +59,81 @@ describe("DancerInspector", () => {
     expect(screen.getByText("あいり")).toBeInTheDocument();
   });
 
+  it("名前を押すと入力欄になり、Enterで確定するとSupabaseにも保存される", async () => {
+    useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
+    useUIStore.setState({ selectedDancerId: "dancer-1" });
+    const updateNameSpy = vi
+      .spyOn(dancersApi, "updateDancerName")
+      .mockResolvedValue(undefined);
+
+    const user = userEvent.setup();
+    render(<DancerInspector />);
+
+    await user.click(screen.getByLabelText("ダンサー名を変更"));
+    await user.clear(screen.getByLabelText("ダンサー名"));
+    await user.type(screen.getByLabelText("ダンサー名"), "みゆ{Enter}");
+
+    expect(useProjectStore.getState().dancers["dancer-1"].name).toBe("みゆ");
+    await waitFor(() => {
+      expect(updateNameSpy).toHaveBeenCalledWith(
+        expect.anything(),
+        "dancer-1",
+        "みゆ",
+      );
+    });
+  });
+
+  it("名前の変更をEscapeで取り消すと元の名前のまま保存もしない", async () => {
+    useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
+    useUIStore.setState({ selectedDancerId: "dancer-1" });
+    const updateNameSpy = vi.spyOn(dancersApi, "updateDancerName");
+
+    const user = userEvent.setup();
+    render(<DancerInspector />);
+
+    await user.click(screen.getByLabelText("ダンサー名を変更"));
+    await user.type(screen.getByLabelText("ダンサー名"), "だめ{Escape}");
+
+    expect(useProjectStore.getState().dancers["dancer-1"].name).toBe("あいり");
+    expect(updateNameSpy).not.toHaveBeenCalled();
+  });
+
+  it("名前を空欄にして確定した場合は変更しない", async () => {
+    useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
+    useUIStore.setState({ selectedDancerId: "dancer-1" });
+    const updateNameSpy = vi.spyOn(dancersApi, "updateDancerName");
+
+    const user = userEvent.setup();
+    render(<DancerInspector />);
+
+    await user.click(screen.getByLabelText("ダンサー名を変更"));
+    await user.clear(screen.getByLabelText("ダンサー名"));
+    await user.keyboard("{Enter}");
+
+    expect(useProjectStore.getState().dancers["dancer-1"].name).toBe("あいり");
+    expect(updateNameSpy).not.toHaveBeenCalled();
+  });
+
+  it("名前の保存に失敗したら元の名前へ戻す", async () => {
+    useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
+    useUIStore.setState({ selectedDancerId: "dancer-1" });
+    vi.spyOn(dancersApi, "updateDancerName").mockRejectedValue(
+      new Error("network"),
+    );
+
+    const user = userEvent.setup();
+    render(<DancerInspector />);
+
+    await user.click(screen.getByLabelText("ダンサー名を変更"));
+    await user.clear(screen.getByLabelText("ダンサー名"));
+    await user.type(screen.getByLabelText("ダンサー名"), "みゆ{Enter}");
+
+    await waitFor(() => {
+      expect(useProjectStore.getState().dancers["dancer-1"].name).toBe("あいり");
+    });
+    expect(useUIStore.getState().toast?.type).toBe("error");
+  });
+
   it("色スウォッチを押すと色が変わりSupabaseにも保存される", async () => {
     useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
     useUIStore.setState({ selectedDancerId: "dancer-1" });

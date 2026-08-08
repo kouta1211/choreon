@@ -5,7 +5,12 @@ import { Trash2, X, Focus } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { createClient } from "@/lib/supabase/client";
-import { updateDancerColor, deleteDancer } from "@/features/dancer/api/dancers";
+import { toUserMessage } from "@/lib/supabase/errors";
+import {
+  updateDancerColor,
+  updateDancerName,
+  deleteDancer,
+} from "@/features/dancer/api/dancers";
 import { upsertPosition } from "@/features/scene/api/positions";
 import { DANCER_COLOR_PALETTE } from "@/features/dancer/constants";
 import { DurationSecondsInput } from "@/components/ui/DurationSecondsInput";
@@ -34,6 +39,14 @@ const MAX_DURATION_SECONDS = 30;
  */
 export function DancerInspector() {
   const [isDeleting, setIsDeleting] = useState(false);
+  // 名前変更中かどうかを「対象のダンサーID + 入力中の文字列」で持つ。
+  // isRenamingという真偽値だけで持つと、変更中に別のダンサーを選び直した
+  // ときに入力欄と中身が前のダンサーのまま残ってしまう。IDごと持っておけば
+  // 選択が変わった時点で自然に閉じる(useEffectで追いかける必要がない)
+  const [renaming, setRenaming] = useState<{
+    dancerId: string;
+    value: string;
+  } | null>(null);
   const selectedDancerId = useUIStore((state) => state.selectedDancerId);
   const selectDancer = useUIStore((state) => state.selectDancer);
   const showToast = useUIStore((state) => state.showToast);
@@ -74,13 +87,37 @@ export function DancerInspector() {
     try {
       const supabase = createClient();
       await upsertPosition(supabase, after);
-    } catch {
+    } catch (error) {
       updateDancerPosition(selectedSceneId, dancer.id, {
         dancerTransitionDurationSeconds:
           before.dancerTransitionDurationSeconds,
       });
       showToast({
-        message: "個別の遷移時間の変更に失敗しました",
+        message: toUserMessage(error, "個別の遷移時間の変更に失敗しました"),
+        type: "error",
+      });
+    }
+  };
+
+  const commitRename = async () => {
+    if (!renaming) return;
+    const { dancerId, value } = renaming;
+    setRenaming(null);
+
+    const trimmed = value.trim();
+    const previous = useProjectStore.getState().dancers[dancerId];
+    if (!previous || !trimmed || trimmed === previous.name) return;
+
+    // 楽観的更新: 色変更と同じく、取り消しが「前の名前に戻すだけ」で済むため
+    addDancer({ ...previous, name: trimmed });
+
+    try {
+      const supabase = createClient();
+      await updateDancerName(supabase, dancerId, trimmed);
+    } catch (error) {
+      addDancer(previous);
+      showToast({
+        message: toUserMessage(error, "ダンサー名の変更に失敗しました"),
         type: "error",
       });
     }
@@ -119,9 +156,34 @@ export function DancerInspector() {
 
   return (
     <div className="flex items-center gap-3 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2">
-      <span className="text-sm font-medium text-zinc-50">
-        {dancer.name}
-      </span>
+      {renaming?.dancerId === dancer.id ? (
+        <input
+          autoFocus
+          name="dancer-name"
+          aria-label="ダンサー名"
+          value={renaming.value}
+          onChange={(event) =>
+            setRenaming({ dancerId: dancer.id, value: event.target.value })
+          }
+          onBlur={commitRename}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") event.currentTarget.blur();
+            if (event.key === "Escape") setRenaming(null);
+          }}
+          className="w-24 shrink-0 rounded-md border border-pink-500 bg-zinc-800 px-2 py-1 text-sm focus:outline-none"
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() =>
+            setRenaming({ dancerId: dancer.id, value: dancer.name })
+          }
+          aria-label="ダンサー名を変更"
+          className="shrink-0 text-sm font-medium text-zinc-50 underline decoration-zinc-600 decoration-dotted underline-offset-4 hover:decoration-pink-400"
+        >
+          {dancer.name}
+        </button>
+      )}
 
       <div className="flex items-center gap-1.5">
         {DANCER_COLOR_PALETTE.map((color) => (
