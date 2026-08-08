@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   clamp,
   findSymmetryPairId,
+  isCloseToInteger,
   mirrorXCoordinate,
   pixelDeltaToUnitDelta,
   snapToCenterline,
+  snapToGrid,
+  unitDeltaToPixelDelta,
 } from "./dragMath";
 
 describe("clamp", () => {
@@ -33,6 +36,41 @@ describe("pixelDeltaToUnitDelta", () => {
 
   it("負の方向の移動も扱える", () => {
     expect(pixelDeltaToUnitDelta(-200, 400, 8)).toBe(-4);
+  });
+});
+
+describe("unitDeltaToPixelDelta", () => {
+  it("pixelDeltaToUnitDeltaの逆変換になっている", () => {
+    expect(unitDeltaToPixelDelta(2, 400, 8)).toBe(100);
+  });
+
+  it("ユニット総数が0のときは0を返す(0除算を避ける)", () => {
+    expect(unitDeltaToPixelDelta(2, 400, 0)).toBe(0);
+  });
+});
+
+describe("snapToGrid", () => {
+  it("最も近い格子線からtolerance以内ならぴったり吸着する", () => {
+    expect(snapToGrid(5.2, 0.3)).toBe(5);
+    expect(snapToGrid(4.8, 0.3)).toBe(5);
+  });
+
+  it("tolerance範囲外ならそのままの値を返す", () => {
+    expect(snapToGrid(5.5, 0.3)).toBe(5.5);
+  });
+});
+
+describe("isCloseToInteger", () => {
+  it("整数ぴったりならtrue", () => {
+    expect(isCloseToInteger(5)).toBe(true);
+  });
+
+  it("誤差の範囲内ならtrue", () => {
+    expect(isCloseToInteger(4.999999999)).toBe(true);
+  });
+
+  it("誤差の範囲を超えるとfalse", () => {
+    expect(isCloseToInteger(4.9)).toBe(false);
   });
 });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import type { PointerEvent as ReactPointerEvent } from "react";
+import { memo, type PointerEvent as ReactPointerEvent } from "react";
 import { RotateCw } from "lucide-react";
 
 type Props = {
@@ -44,8 +44,13 @@ function angleFromPointer(
  * onPointerDownでstopPropagationしているのは、親のDraggableDancerIconに
  * ついているdnd-kitの並進ドラッグ用listenersまでイベントが伝播すると、
  * 回転ハンドルを掴んだつもりが本体の位置移動として扱われてしまうため。
+ *
+ * memo化している: 選択中のダンサーを位置ドラッグしている間、親は毎
+ * pointermoveごとに再レンダーされる。angle(向き)は位置ドラッグ中は
+ * 変わらないため、memoでこのハンドル自体の再レンダーをスキップできる
+ * (ただし呼び出し側がonRotateEnd等をuseCallbackで安定させていることが前提)。
  */
-export function RotationHandle({
+function RotationHandleImpl({
   angle,
   onRotateChange,
   onRotateEnd,
@@ -110,3 +115,5 @@ export function RotationHandle({
     </div>
   );
 }
+
+export const RotationHandle = memo(RotationHandleImpl);

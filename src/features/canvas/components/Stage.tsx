@@ -27,6 +27,7 @@ export function Stage({
 }: Props) {
   const isGridVisible = useUIStore((state) => state.isGridVisible);
   const focusedDancerId = useUIStore((state) => state.focusedDancerId);
+  const dragSnapLine = useUIStore((state) => state.dragSnapLine);
 
   return (
     <div className="mx-auto w-full max-w-md space-y-1">
@@ -55,6 +56,24 @@ export function Stage({
             data-testid="stage-centerline"
             aria-hidden
             className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-pink-500/70"
+          />
+        )}
+        {/* 格子スナップが効いている間、吸着先の格子線をハイライトする。
+            縦横どちらも出ていれば交差点への吸着だと分かる */}
+        {dragSnapLine.x !== null && (
+          <div
+            data-testid="stage-snap-line-x"
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 w-0.5 -translate-x-1/2 bg-pink-400 shadow-[0_0_6px_1px_rgba(244,114,182,0.9)]"
+            style={{ left: `${(dragSnapLine.x / widthUnits) * 100}%` }}
+          />
+        )}
+        {dragSnapLine.y !== null && (
+          <div
+            data-testid="stage-snap-line-y"
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 h-0.5 -translate-y-1/2 bg-pink-400 shadow-[0_0_6px_1px_rgba(244,114,182,0.9)]"
+            style={{ top: `${(dragSnapLine.y / heightUnits) * 100}%` }}
           />
         )}
         {focusedDancerId && (

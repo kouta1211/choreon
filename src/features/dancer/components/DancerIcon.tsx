@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { motion } from "motion/react";
 import { DancerNameLabel } from "@/features/dancer/components/DancerNameLabel";
 import { DancerExcessiveMoveBadge } from "@/features/dancer/components/DancerExcessiveMoveBadge";
@@ -23,8 +24,13 @@ type Props = {
  * こうすることで、頭の上に重ねる文字ラベルは「回転しない別レイヤー」として
  * 常に同じ位置に置くだけで済み、角度ごとに位置を再計算する必要がなくなる。
  * 実際に回転して見えるのは、頭からずれた位置にある鼻先(向きの手がかり)だけ。
+ *
+ * memo化している: 位置ドラッグ中は親のDraggableDancerIconがdnd-kitのcontext
+ * 購読により毎pointermoveごとに再レンダーされる(これ自体はdnd-kitの仕組み上
+ * 避けられない)。このコンポーネントのprops(向き・選択状態・強調表示など)は
+ * 位置ドラッグでは一切変わらないため、memoでSVGの再生成をスキップできる。
  */
-export function DancerMarker({
+function DancerMarkerImpl({
   dancer,
   rotationAngle,
   isSelected = false,
@@ -32,6 +38,8 @@ export function DancerMarker({
   isFocused = false,
   isBlocked = false,
   hasExcessiveMove = false,
+  hasKeyboardFocus = false,
+  transitionDurationSeconds = 0.3,
 }: {
   dancer: Dancer;
   rotationAngle: number;
@@ -50,6 +58,13 @@ export function DancerMarker({
   /** 次のシーンへの移動距離が現実的な範囲を超えている場合true。
    * 警告バッジを表示する(常時判定、トグルなし) */
   hasExcessiveMove?: boolean;
+  /** キーボードフォーカスが当たっているかどうか。isSelectedとは別の状態で、
+   * 「今ここにフォーカスがある=矢印キーで動かせる」ことを示すだけの見た目上の
+   * ヒント。Tabキーでの巡回は無効にしてある(DraggableDancerIconのtabIndex: -1)
+   * ため、フォーカスはクリックによって当たる */
+  hasKeyboardFocus?: boolean;
+  /** シーン切り替え時、向きの補間アニメーションにかける秒数。省略時は0.3秒 */
+  transitionDurationSeconds?: number;
 }) {
   const bodyColor = isBlocked ? "#dc2626" : dancer.color;
 
@@ -60,7 +75,10 @@ export function DancerMarker({
         className="absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2"
         style={{ width: MARKER_SIZE, height: MARKER_SIZE }}
         animate={{ rotate: rotationAngle, scale: isFocused ? 1.15 : 1 }}
-        transition={{ duration: isRotating ? 0 : 0.3, ease: "easeOut" }}
+        transition={{
+          duration: isRotating ? 0 : transitionDurationSeconds,
+          ease: "easeOut",
+        }}
       >
         <svg viewBox="0 0 32 32" className="h-full w-full overflow-visible">
           {isFocused && (
@@ -83,6 +101,20 @@ export function DancerMarker({
               fill="none"
               stroke="#ec4899"
               strokeWidth={2}
+            />
+          )}
+          {/* 選択リングとは別に、キーボードフォーカスがあることだけを示す破線リング。
+              選択中(isSelected)は実線リングと重なって見づらいので出さない */}
+          {hasKeyboardFocus && !isSelected && (
+            <circle
+              data-testid="dancer-keyboard-focus-ring"
+              cx={16}
+              cy={16}
+              r={15}
+              fill="none"
+              stroke="#ec4899"
+              strokeWidth={2}
+              strokeDasharray="3 3"
             />
           )}
           {/* 鼻先(向きの手がかり)。頭からずれた位置にあるため、回転すると
@@ -108,6 +140,8 @@ export function DancerMarker({
     </>
   );
 }
+
+export const DancerMarker = memo(DancerMarkerImpl);
 
 export function DancerIcon({
   dancer,
