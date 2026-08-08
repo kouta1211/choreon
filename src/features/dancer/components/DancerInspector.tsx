@@ -120,9 +120,12 @@ export function DancerInspector() {
     try {
       const supabase = createClient();
       await updateDancerColor(supabase, dancer.id, color);
-    } catch {
+    } catch (error) {
       addDancer(previous);
-      showToast({ message: "色の変更に失敗しました", type: "error" });
+      showToast({
+        message: toUserMessage(error, "色の変更に失敗しました"),
+        type: "error",
+      });
     }
   };
 

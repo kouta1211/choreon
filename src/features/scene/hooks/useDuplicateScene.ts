@@ -6,7 +6,7 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { createClient } from "@/lib/supabase/client";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { createScene, updateSceneOrder } from "@/features/scene/api/scenes";
-import { upsertPosition } from "@/features/scene/api/positions";
+import { upsertPositions } from "@/features/scene/api/positions";
 import { insertSceneIdAfter } from "@/features/scene/lib/sceneReorder";
 import type { Project } from "@/features/project/types";
 import type { Scene } from "@/features/scene/types";
@@ -66,9 +66,7 @@ export function useDuplicateScene(project: Project) {
     try {
       const supabase = createClient();
       await createScene(supabase, duplicate);
-      for (const position of copiedPositions) {
-        await upsertPosition(supabase, position);
-      }
+      await upsertPositions(supabase, copiedPositions);
       // 複製したシーンより後ろは、並び順が1つずつ繰り下がっている
       await Promise.all(
         nextOrder.map((id, index) => updateSceneOrder(supabase, id, index)),

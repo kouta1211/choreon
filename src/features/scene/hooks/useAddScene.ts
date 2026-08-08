@@ -6,7 +6,7 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { createClient } from "@/lib/supabase/client";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { createScene } from "@/features/scene/api/scenes";
-import { upsertPosition } from "@/features/scene/api/positions";
+import { upsertPositions } from "@/features/scene/api/positions";
 import type { Project } from "@/features/project/types";
 
 /**
@@ -58,9 +58,7 @@ export function useAddScene(project: Project) {
     try {
       const supabase = createClient();
       await createScene(supabase, scene);
-      for (const position of copiedPositions) {
-        await upsertPosition(supabase, position);
-      }
+      await upsertPositions(supabase, copiedPositions);
     } catch (error) {
       removeScene(scene.id);
       selectScene(previousSelectedSceneId);
