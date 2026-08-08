@@ -15,6 +15,10 @@ import { DancerMarker } from "./DancerIcon";
 import { RotationHandle } from "./RotationHandle";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { quadraticBezierAt } from "@/features/canvas/lib/curvePath";
+import {
+  DEFAULT_TRANSITION_DURATION_SECONDS,
+  SCENE_TRANSITION_EASE,
+} from "@/features/canvas/constants";
 import type { Dancer } from "@/features/dancer/types";
 
 /** 選択中のダンサーを矢印キーで動かす際の1回あたりの移動量(ステージ座標系のユニット)。
@@ -104,7 +108,7 @@ function DraggableDancerIconImpl({
   stageHeightUnits,
   onRotateEnd,
   onNudge,
-  transitionDurationSeconds = 0.3,
+  transitionDurationSeconds = DEFAULT_TRANSITION_DURATION_SECONDS,
   curveControlX,
   curveControlY,
   isBlocked = false,
@@ -248,7 +252,7 @@ function DraggableDancerIconImpl({
       if (fromLeft === leftPercent && fromTop === topPercent) return;
       const curveAnimation = animate(0, 1, {
         duration: transitionDurationSeconds,
-        ease: "easeOut",
+        ease: SCENE_TRANSITION_EASE,
         onUpdate: (progress) => {
           leftPct.set(
             quadraticBezierAt(fromLeft, controlLeftPercent, leftPercent, progress),
@@ -263,11 +267,11 @@ function DraggableDancerIconImpl({
 
     const leftAnimation = animate(leftPct, leftPercent, {
       duration: transitionDurationSeconds,
-      ease: "easeOut",
+      ease: SCENE_TRANSITION_EASE,
     });
     const topAnimation = animate(topPct, topPercent, {
       duration: transitionDurationSeconds,
-      ease: "easeOut",
+      ease: SCENE_TRANSITION_EASE,
     });
     return () => {
       leftAnimation.stop();
