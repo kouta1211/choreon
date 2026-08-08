@@ -15,6 +15,7 @@ import { upsertPosition } from "@/features/scene/api/positions";
 import { DANCER_COLOR_PALETTE } from "@/features/dancer/constants";
 import { DurationSecondsInput } from "@/components/ui/DurationSecondsInput";
 import { InlineEditableText } from "@/components/ui/InlineEditableText";
+import { Tooltip } from "@/components/ui/Tooltip";
 
 /** ダンサー個別の遷移時間の入力が許容する範囲。schema.sqlのCHECK制約と合わせている */
 const MIN_DURATION_SECONDS = 0.1;
@@ -157,81 +158,114 @@ export function DancerInspector() {
     });
   };
 
+  const isFocused = focusedDancerId === dancer.id;
+
   return (
-    <div className="flex items-center gap-3 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2">
-      {/* keyにダンサーIDを渡して、別のダンサーを選び直したときに
-          編集中の入力欄が持ち越されないようにする(以前は編集中かどうかを
-          対象IDと一緒に持って対処していた処理を、共通部品側に寄せた) */}
-      <InlineEditableText
-        key={dancer.id}
-        value={dancer.name}
-        onCommit={commitRename}
-        label="ダンサー名"
-        textClassName="text-[13px] font-semibold"
+    // ドックの直上に浮かせる(absolute)。通常の流れに置くと、ダンサーを
+    // 選ぶたびにステージが縮んで全員の位置がずれて見え、選んだ瞬間に
+    // 画面が揺れる。高さを取らなければステージは動かない。
+    //
+    // 面にそのダンサーの色を薄く流し、左端に色帯を置く。誰の設定を
+    // いじっているのかを、名前を読まなくても地の色で分かるようにするため
+    <div className="absolute inset-x-0 bottom-full z-20 mx-3 mb-2 flex items-stretch overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800 shadow-xl">
+      <span
+        aria-hidden
+        className="w-1 shrink-0"
+        style={{ backgroundColor: dancer.color }}
       />
-
-      <div className="flex items-center gap-1.5">
-        {DANCER_COLOR_PALETTE.map((color) => (
-          <button
-            key={color}
-            type="button"
-            aria-label={`色を${color}に変更`}
-            onClick={() => handleColorChange(color)}
-            className={`h-5 w-5 rounded-full ${
-              dancer.color === color
-                ? "ring-2 ring-pink-500 ring-offset-1"
-                : ""
-            }`}
-            style={{ backgroundColor: color }}
+      <div
+        className="min-w-0 flex-1 px-2.5 py-2"
+        style={{
+          backgroundImage: `linear-gradient(90deg, ${dancer.color}1f, transparent 65%)`,
+        }}
+      >
+        <div className="flex items-center gap-2">
+          {/* keyにダンサーIDを渡して、別のダンサーを選び直したときに
+              編集中の入力欄が持ち越されないようにする */}
+          <InlineEditableText
+            key={dancer.id}
+            value={dancer.name}
+            onCommit={commitRename}
+            label="ダンサー名"
+            textClassName="text-[13px] font-semibold"
           />
-        ))}
+
+          {selectedSceneId && position && (
+            <DurationSecondsInput
+              key={`${dancer.id}-${selectedSceneId}`}
+              label="このダンサーだけの遷移時間(秒)"
+              value={position.dancerTransitionDurationSeconds ?? null}
+              onCommit={handleDurationOverrideCommit}
+              min={MIN_DURATION_SECONDS}
+              max={MAX_DURATION_SECONDS}
+              placeholder={String(selectedScene?.transitionDurationSeconds ?? 1)}
+              suffix="秒"
+              tone="dancer"
+            />
+          )}
+
+          <Tooltip label="マイ・フォーカス" placement="top">
+            <button
+              type="button"
+              onClick={() => setFocusedDancer(isFocused ? null : dancer.id)}
+              aria-pressed={isFocused}
+              aria-label="マイ・フォーカス"
+              className={`ml-auto flex h-7 w-7 items-center justify-center rounded-lg ${
+                isFocused
+                  ? "bg-amber-950 text-amber-400"
+                  : "text-zinc-500 hover:bg-zinc-700"
+              }`}
+            >
+              <Focus size={15} />
+            </button>
+          </Tooltip>
+
+          <Tooltip label="ダンサーを削除" placement="top">
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={isDeleting}
+              aria-label="ダンサーを削除"
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-500 hover:bg-red-950 hover:text-red-400 disabled:opacity-50"
+            >
+              <Trash2 size={15} />
+            </button>
+          </Tooltip>
+
+          <Tooltip label="選択を解除" placement="top">
+            <button
+              type="button"
+              onClick={() => selectDancer(null)}
+              aria-label="選択を解除"
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-700"
+            >
+              <X size={15} />
+            </button>
+          </Tooltip>
+        </div>
+
+        <div className="mt-2 flex items-center gap-1.5">
+          {DANCER_COLOR_PALETTE.map((color) => (
+            <button
+              key={color}
+              type="button"
+              aria-label={`色を${color}に変更`}
+              onClick={() => handleColorChange(color)}
+              className={`h-[22px] w-[22px] rounded-full ${
+                dancer.color === color
+                  ? "ring-2 ring-pink-500 ring-offset-2 ring-offset-zinc-800"
+                  : ""
+              }`}
+              style={{ backgroundColor: color }}
+            />
+          ))}
+          {isFocused && (
+            <span className="ml-auto text-[10px] text-zinc-500">
+              マイ・フォーカス中
+            </span>
+          )}
+        </div>
       </div>
-
-      {selectedSceneId && position && (
-        <DurationSecondsInput
-          label="このダンサーだけの遷移時間(秒)"
-          value={position.dancerTransitionDurationSeconds ?? null}
-          onCommit={handleDurationOverrideCommit}
-          min={MIN_DURATION_SECONDS}
-          max={MAX_DURATION_SECONDS}
-          placeholder={`既定${selectedScene?.transitionDurationSeconds ?? 1}`}
-        />
-      )}
-
-      <button
-        type="button"
-        onClick={() =>
-          setFocusedDancer(focusedDancerId === dancer.id ? null : dancer.id)
-        }
-        aria-pressed={focusedDancerId === dancer.id}
-        aria-label="マイ・フォーカス"
-        className={`ml-auto rounded p-1.5 ${
-          focusedDancerId === dancer.id
-            ? "bg-amber-950 text-amber-400"
-            : "text-zinc-400 hover:bg-zinc-700"
-        }`}
-      >
-        <Focus size={16} />
-      </button>
-
-      <button
-        type="button"
-        onClick={handleDelete}
-        disabled={isDeleting}
-        aria-label="ダンサーを削除"
-        className="rounded p-1.5 text-zinc-400 hover:bg-red-950 hover:text-red-400 disabled:opacity-50"
-      >
-        <Trash2 size={16} />
-      </button>
-
-      <button
-        type="button"
-        onClick={() => selectDancer(null)}
-        aria-label="選択を解除"
-        className="rounded p-1.5 text-zinc-400 hover:bg-zinc-700"
-      >
-        <X size={16} />
-      </button>
     </div>
   );
 }

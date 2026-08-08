@@ -62,8 +62,12 @@ export default async function ProjectPage(
           />
         </div>
 
-        <DancerInspector />
-        <SceneDock project={project} />
+        {/* インスペクターはドックの直上に浮かせる(absolute)ため、
+            位置の基準としてこのラッパーが要る */}
+        <div className="relative shrink-0">
+          <DancerInspector />
+          <SceneDock project={project} />
+        </div>
         <AddDancerSheet project={project} />
       </div>
     </div>
