@@ -6,11 +6,26 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { createClient } from "@/lib/supabase/client";
 import { updateDancerColor, deleteDancer } from "@/features/dancer/api/dancers";
+import { upsertPosition } from "@/features/scene/api/positions";
 import { DANCER_COLOR_PALETTE } from "@/features/dancer/constants";
+import { DurationSecondsInput } from "@/components/ui/DurationSecondsInput";
+
+/** ダンサー個別の遷移時間の入力が許容する範囲。schema.sqlのCHECK制約と合わせている */
+const MIN_DURATION_SECONDS = 0.1;
+const MAX_DURATION_SECONDS = 30;
 
 /**
- * 選択中のダンサーの色変更・削除を行うパネル。CanvasBoardでダンサーを
- * クリックするとuseUIStore.selectedDancerIdがセットされ、これが表示される。
+ * 選択中のダンサーの色変更・遷移時間の個別上書き・削除を行うパネル。
+ * CanvasBoardでダンサーをクリックするとuseUIStore.selectedDancerIdが
+ * セットされ、これが表示される。
+ *
+ * 遷移時間の入力欄は「このダンサー・この選択中シーンだけ」の上書き
+ * (positions.dancer_transition_duration_seconds)。空欄はシーンの既定値
+ * (scenes.transition_duration_seconds)を使うという意味で、他のダンサーが
+ * 一斉に同じ速さで動く中、このダンサーだけ先に到着/遅れて到着、といった
+ * 演出に使う。表示のリセット(ダンサー選択やシーン切り替えのたびに前の値が
+ * 残らないようにする)はDurationSecondsInput側で行っている
+ * (SceneActionsBarの遷移時間入力と共通の部品)。
  *
  * 削除は他の操作と違って「確定後更新」にしている(先にSupabaseへの削除が
  * 成功してからローカルを更新する)。削除のロールバックは
@@ -24,13 +39,52 @@ export function DancerInspector() {
   const showToast = useUIStore((state) => state.showToast);
   const focusedDancerId = useUIStore((state) => state.focusedDancerId);
   const setFocusedDancer = useUIStore((state) => state.setFocusedDancer);
+  const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const dancer = useProjectStore((state) =>
     selectedDancerId ? state.dancers[selectedDancerId] : undefined,
   );
+  const scenes = useProjectStore((state) => state.scenes);
+  const position = useProjectStore((state) =>
+    selectedSceneId && selectedDancerId
+      ? state.positionsBySceneId[selectedSceneId]?.[selectedDancerId]
+      : undefined,
+  );
   const addDancer = useProjectStore((state) => state.addDancer);
   const removeDancer = useProjectStore((state) => state.removeDancer);
+  const updateDancerPosition = useProjectStore(
+    (state) => state.updateDancerPosition,
+  );
 
   if (!dancer) return null;
+
+  const selectedScene = scenes.find((scene) => scene.id === selectedSceneId);
+
+  // このダンサー・このシーンだけの遷移時間の上書き。空欄=シーンの既定値を使う。
+  // 値の妥当性チェック(範囲外・未変更なら何もしない)はDurationSecondsInput側で
+  // 既に済んでいるので、ここでは確定した値をそのまま保存するだけでよい
+  const handleDurationOverrideCommit = async (parsed: number | null) => {
+    if (!selectedSceneId || !position) return;
+
+    const before = position;
+    const after = { ...position, dancerTransitionDurationSeconds: parsed };
+    updateDancerPosition(selectedSceneId, dancer.id, {
+      dancerTransitionDurationSeconds: parsed,
+    });
+
+    try {
+      const supabase = createClient();
+      await upsertPosition(supabase, after);
+    } catch {
+      updateDancerPosition(selectedSceneId, dancer.id, {
+        dancerTransitionDurationSeconds:
+          before.dancerTransitionDurationSeconds,
+      });
+      showToast({
+        message: "個別の遷移時間の変更に失敗しました",
+        type: "error",
+      });
+    }
+  };
 
   const handleColorChange = async (color: string) => {
     const previous = dancer;
@@ -85,6 +139,17 @@ export function DancerInspector() {
           />
         ))}
       </div>
+
+      {selectedSceneId && position && (
+        <DurationSecondsInput
+          label="このダンサーだけの遷移時間(秒)"
+          value={position.dancerTransitionDurationSeconds ?? null}
+          onCommit={handleDurationOverrideCommit}
+          min={MIN_DURATION_SECONDS}
+          max={MAX_DURATION_SECONDS}
+          placeholder={`既定${selectedScene?.transitionDurationSeconds ?? 1}`}
+        />
+      )}
 
       <button
         type="button"
