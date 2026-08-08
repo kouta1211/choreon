@@ -6,12 +6,17 @@ import {
   FORMATION_TEMPLATES,
   nearestAvailableCount,
   resolveFormationPoints,
+  selectPointsForDancers,
   templatesForCount,
 } from "./formationTemplates";
 
 describe("FORMATION_TEMPLATES", () => {
-  it("2〜8人ぶんのテンプレートが揃っている", () => {
-    expect(availableCounts()).toEqual([2, 3, 4, 5, 6, 7, 8]);
+  it("2〜10人ぶんのテンプレートが揃っている", () => {
+    expect(availableCounts()).toEqual([2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  });
+
+  it("確定仕様どおり全59種ある", () => {
+    expect(FORMATION_TEMPLATES).toHaveLength(59);
   });
 
   it("countと実際の点の数が一致している", () => {
@@ -52,7 +57,7 @@ describe("nearestAvailableCount", () => {
   });
 
   it("多すぎる人数なら一番近い(最大の)人数を返す", () => {
-    expect(nearestAvailableCount(12)).toBe(8);
+    expect(nearestAvailableCount(12)).toBe(10);
   });
 
   it("少なすぎる人数なら最小の人数を返す", () => {
@@ -219,5 +224,34 @@ describe("assignDancersToPoints", () => {
 
   it("誰もいなければ何も返さない", () => {
     expect(assignDancersToPoints([], [{ x: 1, y: 1 }])).toEqual([]);
+  });
+});
+
+describe("selectPointsForDancers", () => {
+  const points = [
+    { x: 1, y: 1 }, // 一番奥
+    { x: 2, y: 3 },
+    { x: 3, y: 5 }, // 一番手前(客席側)
+  ];
+
+  it("点の方が少なければそのまま返す", () => {
+    expect(selectPointsForDancers(points, 5)).toEqual(points);
+  });
+
+  it("点と人数が同じならそのまま返す", () => {
+    expect(selectPointsForDancers(points, 3)).toEqual(points);
+  });
+
+  it("点が多いときは前列(客席側=yが大きい方)から採る", () => {
+    expect(selectPointsForDancers(points, 2)).toEqual([
+      { x: 3, y: 5 },
+      { x: 2, y: 3 },
+    ]);
+  });
+
+  it("元の配列を破壊しない", () => {
+    const original = [...points];
+    selectPointsForDancers(points, 1);
+    expect(points).toEqual(original);
   });
 });

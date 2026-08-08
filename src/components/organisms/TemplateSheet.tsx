@@ -7,9 +7,10 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useApplyTemplate } from "@/features/canvas/hooks/useApplyTemplate";
 import {
+  availableCounts,
   DEFAULT_TRANSFORM,
-  nearestAvailableCount,
   resolveFormationPoints,
+  selectPointsForDancers,
   templatesForCount,
   type FormationSpacing,
   type FormationTemplate,
@@ -30,16 +31,21 @@ const SPACING_LABELS: { value: FormationSpacing; label: string }[] = [
 /**
  * 既成のフォーメーションから選んで、いまのシーンに当てはめるシート。
  *
- * 人数タブは作らない。いまステージにいる人数のテンプレートだけを出す。
- * 「4人の形を見たいのは、4人いるとき」であって、人数を選ばせるのは
- * 手間が増えるだけだから。
+ * 開いた直後はステージにいる人数の形が出る。ただし人数レールで他の人数へ
+ * 切り替えられる。「6人だけど、5人の形の方が近い」という選び方が実際に
+ * あるためで、そのときに何が起きるか(誰が余る/どこが空く)は帯で明示する。
  *
- * 変形(左右反転・前後反転・90°回転・間隔)は、カードのサムネイルにも
- * 反映する。選ぶ前に結果が見えないと、当ててから戻すことになる。
+ * 選んですぐ適用せず、いったん選択状態にして下のボタンで確定させる。
+ * 変形(左右反転・前後反転・90°回転・間隔)を掛けた結果をサムネイルで
+ * 確かめてから決められるようにするため。
  */
 export function TemplateSheet({ project }: Props) {
   const [transform, setTransform] =
     useState<FormationTransform>(DEFAULT_TRANSFORM);
+  /** null = いまステージにいる人数に従う(開き直すたびに追従させたいので、
+   * 具体的な数字ではなく「未選択」を持つ) */
+  const [pickedCount, setPickedCount] = useState<number | null>(null);
+  const [pickedIndex, setPickedIndex] = useState<number | null>(null);
   const isOpen = useUIStore((state) => state.isTemplateSheetOpen);
   const setTemplateSheetOpen = useUIStore(
     (state) => state.setTemplateSheetOpen,
@@ -53,20 +59,24 @@ export function TemplateSheet({ project }: Props) {
 
   const onStage = Object.values(positions ?? {});
   const dancerCount = onStage.length;
-  const templates = templatesForCount(dancerCount);
-  const fallbackCount =
-    templates.length === 0 ? nearestAvailableCount(dancerCount) : null;
-  const shownTemplates =
-    templates.length > 0
-      ? templates
-      : fallbackCount
-        ? templatesForCount(fallbackCount)
-        : [];
+  const counts = availableCounts();
+  const shownCount = pickedCount ?? dancerCount;
+  const templates = templatesForCount(shownCount);
+  const picked = pickedIndex === null ? null : (templates[pickedIndex] ?? null);
+  const dancerColors = onStage.map(
+    (position) => dancers[position.dancerId]?.color ?? "#ec4899",
+  );
 
-  const close = () => setTemplateSheetOpen(false);
+  // 開き直したときに前回の選択が残っていると、意図しない形を当ててしまう
+  const close = () => {
+    setTemplateSheetOpen(false);
+    setPickedCount(null);
+    setPickedIndex(null);
+  };
 
-  const handleApply = async (formation: FormationTemplate) => {
-    await applyTemplate(formation, transform);
+  const handleApply = async () => {
+    if (!picked) return;
+    await applyTemplate(picked, transform);
     close();
   };
 
@@ -74,74 +84,180 @@ export function TemplateSheet({ project }: Props) {
     <BottomSheet
       isOpen={isOpen}
       onClose={close}
-      title={
-        dancerCount >= 2
-          ? `${dancerCount}人のフォーメーション`
-          : "フォーメーション"
-      }
-      titleRight={shownTemplates.length > 0 ? `${shownTemplates.length}種` : undefined}
+      title="フォーメーション"
+      titleRight={templates.length > 0 ? `${templates.length}種` : undefined}
       isTall
       wideMaxWidthClassName="lg:max-w-4xl"
     >
-      <div className="flex flex-col gap-3.5 px-3.5 py-3">
-        {dancerCount < 2 ? (
-          <p className="rounded-xl border border-zinc-800 bg-[#1f1f23] p-4 text-xs leading-relaxed text-zinc-400">
-            フォーメーションを選ぶには
-            <span className="text-zinc-50">2人以上</span>
-            が必要です。ヘッダーの人物アイコンからダンサーを追加してください。
-          </p>
-        ) : (
-          <>
-            <div className="flex flex-wrap items-center gap-1.5">
-              {onStage.map((position) => (
-                <span
-                  key={position.dancerId}
-                  aria-hidden
-                  className="block h-2.5 w-2.5 rounded-full"
-                  style={{
-                    backgroundColor: dancers[position.dancerId]?.color,
-                  }}
-                />
-              ))}
-              <span className="ml-1 text-[11px] text-zinc-500">
-                {fallbackCount
-                  ? `${dancerCount}人ぶんの形はまだありません。近い${fallbackCount}人の形を土台にできます（余る人はいまの位置のまま）`
-                  : `いまステージにいる${dancerCount}人に合わせて表示しています`}
-              </span>
-            </div>
+      {dancerCount < 2 ? (
+        <p className="m-3.5 rounded-xl border border-zinc-800 bg-[#1f1f23] p-4 text-xs leading-relaxed text-zinc-400">
+          フォーメーションを選ぶには
+          <span className="text-zinc-50">2人以上</span>
+          が必要です。ヘッダーの人物アイコンからダンサーを追加してください。
+        </p>
+      ) : (
+        <div className="flex flex-col gap-3 px-3.5 py-3">
+          <CountRail
+            counts={counts}
+            shownCount={shownCount}
+            dancerCount={dancerCount}
+            onChange={(count) => {
+              setPickedCount(count);
+              setPickedIndex(null);
+            }}
+          />
 
-            <TransformControls
-              transform={transform}
-              onChange={setTransform}
-            />
+          <CountMismatchNote
+            shownCount={shownCount}
+            dancerCount={dancerCount}
+            dancerColors={dancerColors}
+          />
 
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-              {shownTemplates.map((formation) => (
+          <TransformControls transform={transform} onChange={setTransform} />
+
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {templates.map((formation, index) => {
+              const isPicked = pickedIndex === index;
+              return (
                 <button
-                  key={`${formation.count}-${formation.name}`}
+                  key={`${formation.count}-${formation.name}-${index}`}
                   type="button"
-                  onClick={() => handleApply(formation)}
-                  disabled={isApplying}
-                  className="flex flex-col gap-1.5 rounded-xl border border-zinc-800 bg-[#1f1f23] p-2 text-left disabled:opacity-50"
+                  aria-pressed={isPicked}
+                  onClick={() => setPickedIndex(index)}
+                  className={`flex flex-col gap-1.5 rounded-xl border p-2 text-left ${
+                    isPicked
+                      ? "border-pink-500 bg-[#241019]"
+                      : "border-zinc-800 bg-[#1f1f23]"
+                  } ${shownCount === dancerCount ? "" : "opacity-75"}`}
                 >
                   <TemplatePreview
                     formation={formation}
                     transform={transform}
                     project={project}
-                    dancerColors={onStage.map(
-                      (position) => dancers[position.dancerId]?.color ?? "#ec4899",
-                    )}
+                    dancerCount={dancerCount}
+                    dancerColors={dancerColors}
                   />
-                  <span className="truncate text-[11px] font-medium text-zinc-300">
+                  <span
+                    className={`truncate text-[11px] font-medium ${
+                      isPicked ? "text-pink-400" : "text-zinc-300"
+                    }`}
+                  >
                     {formation.name}
                   </span>
                 </button>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+              );
+            })}
+          </div>
+
+          {/* 確定ボタン。スクロールしても見失わないよう下端に貼り付ける */}
+          <div className="sticky bottom-0 -mx-3.5 -mb-3 bg-zinc-900/95 px-3.5 pt-2 pb-3 backdrop-blur">
+            <button
+              type="button"
+              onClick={handleApply}
+              disabled={!picked || isApplying}
+              className="h-12 w-full rounded-[11px] bg-pink-500 text-sm font-semibold text-white disabled:bg-zinc-800 disabled:text-zinc-500"
+            >
+              {picked ? `${picked.name}に置き換える` : "この形に置き換える"}
+            </button>
+          </div>
+        </div>
+      )}
     </BottomSheet>
+  );
+}
+
+/** 人数の切り替えレール。いまステージにいる人数には「いま」を出す */
+function CountRail({
+  counts,
+  shownCount,
+  dancerCount,
+  onChange,
+}: {
+  counts: number[];
+  shownCount: number;
+  dancerCount: number;
+  onChange: (count: number) => void;
+}) {
+  return (
+    <div className="scrollbar-hide -mx-3.5 flex gap-1.5 overflow-x-auto px-3.5">
+      {counts.map((count) => {
+        const isShown = count === shownCount;
+        return (
+          <button
+            key={count}
+            type="button"
+            aria-pressed={isShown}
+            onClick={() => onChange(count)}
+            className={`relative flex h-9 shrink-0 items-center rounded-[10px] border px-3 text-xs font-medium ${
+              isShown
+                ? "border-pink-500 bg-pink-500/12 text-pink-400"
+                : "border-zinc-700 text-zinc-400"
+            }`}
+          >
+            <span className="font-mono">{count}</span>人
+            {count === dancerCount && (
+              <span className="ml-1.5 rounded-[5px] bg-pink-500 px-1 py-px text-[9px] font-semibold text-white">
+                いま
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * 人数が食い違うときに、何が起きるかを先に伝える帯。
+ *
+ * 「当ててみたら3人が置き去りになっていた」を防ぐのが目的なので、
+ * 数を入れて具体的に書く。人数が一致しているときは何も出さない
+ * (毎回出すと、正常な状態でも警告が出ているように見える)。
+ */
+function CountMismatchNote({
+  shownCount,
+  dancerCount,
+  dancerColors,
+}: {
+  shownCount: number;
+  dancerCount: number;
+  dancerColors: string[];
+}) {
+  if (shownCount === dancerCount) {
+    return (
+      <div className="flex flex-wrap items-center gap-1.5">
+        {dancerColors.map((color, index) => (
+          <span
+            key={index}
+            aria-hidden
+            className="block h-2.5 w-2.5 rounded-full"
+            style={{ backgroundColor: color }}
+          />
+        ))}
+        <span className="ml-1 text-[11px] text-zinc-500">
+          いまステージにいる{dancerCount}人に合わせて表示しています
+        </span>
+      </div>
+    );
+  }
+
+  const gap = Math.abs(shownCount - dancerCount);
+  return (
+    <p className="rounded-[10px] border border-pink-500/40 bg-pink-500/10 px-3 py-2 text-[11px] leading-relaxed text-pink-200">
+      <span className="font-mono">{shownCount}</span>
+      人ぶんの形です。
+      {shownCount < dancerCount ? (
+        <>
+          余る<span className="font-mono">{gap}</span>
+          人はいまの位置のまま残ります（消えません）。
+        </>
+      ) : (
+        <>
+          <span className="font-mono">{gap}</span>
+          点は空きになります（前列から埋めます）。
+        </>
+      )}
+    </p>
   );
 }
 
@@ -208,16 +324,23 @@ function TransformControls({
   );
 }
 
-/** テンプレートのミニチュア。変形を反映して「選ぶ前に結果が見える」ようにする */
+/**
+ * テンプレートのミニチュア。変形を反映して「選ぶ前に結果が見える」ようにする。
+ *
+ * 人数より点が多い形では、実際に人が入る点だけを色で塗り、残りは輪郭だけの
+ * 灰色にする。「どこが空くのか」は文章より図の方が早く分かる。
+ */
 function TemplatePreview({
   formation,
   transform,
   project,
+  dancerCount,
   dancerColors,
 }: {
   formation: FormationTemplate;
   transform: FormationTransform;
   project: Project;
+  dancerCount: number;
   dancerColors: string[];
 }) {
   const points = resolveFormationPoints(
@@ -226,6 +349,11 @@ function TemplatePreview({
     project.stageWidth,
     project.stageHeight,
   );
+  // selectPointsForDancersは元の配列の要素をそのまま返すので、
+  // 参照の集合として「使われる点」を引ける
+  const used = new Set(selectPointsForDancers(points, dancerCount));
+
+  let filled = 0;
 
   return (
     <span
@@ -239,17 +367,23 @@ function TemplatePreview({
           backgroundSize: `${100 / project.stageWidth}% ${100 / project.stageHeight}%`,
         }}
       />
-      {points.map((point, index) => (
-        <span
-          key={index}
-          className="absolute block h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{
-            left: `${(point.x / project.stageWidth) * 100}%`,
-            top: `${(point.y / project.stageHeight) * 100}%`,
-            backgroundColor: dancerColors[index] ?? "#71717a",
-          }}
-        />
-      ))}
+      {points.map((point, index) => {
+        const isUsed = used.has(point);
+        const color = isUsed ? dancerColors[filled++] : undefined;
+        return (
+          <span
+            key={index}
+            className={`absolute block h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full ${
+              isUsed ? "" : "border border-zinc-600"
+            }`}
+            style={{
+              left: `${(point.x / project.stageWidth) * 100}%`,
+              top: `${(point.y / project.stageHeight) * 100}%`,
+              backgroundColor: color ?? "transparent",
+            }}
+          />
+        );
+      })}
     </span>
   );
 }
