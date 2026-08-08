@@ -216,82 +216,23 @@ from pg_policies
 where tablename in ('projects', 'dancers', 'scenes', 'positions');
 
 -- =========================================
--- マイグレーション: デフォルトステージサイズを15×10に変更
--- (このファイルの`create table`はDB初期構築時のみ実行される。既に
--- projectsテーブルが存在するSupabaseプロジェクトでは、下記を
--- SQL Editorで別途実行してカラムのデフォルト値を更新すること。
--- 既存行のstage_width/stage_heightは変更されない)
+-- 既存プロジェクトへの追いつき(マイグレーション)について
 -- =========================================
-alter table public.projects alter column stage_width set default 15;
-alter table public.projects alter column stage_height set default 10;
-
--- =========================================
--- マイグレーション: 座標・角度カラムにCHECK制約を追加
--- (既存のSupabaseプロジェクトでは下記をSQL Editorで実行すること。
--- アプリ側は既にこの範囲でしか値を書き込まないため、通常は失敗しない
--- はずだが、もし「制約に違反する行があります」等のエラーが出た場合は
--- 該当行を先に修正してから再実行すること)
--- =========================================
-alter table public.dancers
-  add constraint dancers_initial_direction_check
-  check (initial_direction::float8 >= 0 and initial_direction::float8 < 360);
-
-alter table public.positions
-  add constraint positions_x_coordinate_check
-  check (x_coordinate::float8 >= 0);
-alter table public.positions
-  add constraint positions_y_coordinate_check
-  check (y_coordinate::float8 >= 0);
-alter table public.positions
-  add constraint positions_rotation_angle_check
-  check (rotation_angle::float8 >= 0 and rotation_angle::float8 < 360);
-
--- =========================================
--- マイグレーション: シーンに遷移時間(transition_duration_seconds)を追加
--- (既存のSupabaseプロジェクトでは下記をSQL Editorで実行すること。
--- 既存のscenes行にはデフォルト値1が入る。scenesテーブルへの列追加のみで
--- 新規テーブルではないため、GRANT・RLSポリシーの再設定は不要
--- ―列単位ではなく行・テーブル単位で効くため。念のため上記の確認クエリで
--- scenesのGRANT/RLSが変わっていないことだけ確認しておくとよい)
--- =========================================
-alter table public.scenes
-  add column transition_duration_seconds numeric not null default 1;
-alter table public.scenes
-  add constraint scenes_transition_duration_seconds_check
-  check (
-    transition_duration_seconds::float8 > 0
-    and transition_duration_seconds::float8 <= 30
-  );
-
--- =========================================
--- マイグレーション: positionsにダンサー個別の遷移時間・自由曲線パスの
--- 制御点を追加(既存のSupabaseプロジェクトでは下記をSQL Editorで実行すること)
+-- 上の `create table` 群は「最新のスキーマ」であり、DBを新規構築するとき
+-- だけそのまま流せばよい。
 --
--- 3列ともnullを許容する追加的な列(既存行はすべてnullになる=これまで通り
--- シーン一律の速さ・直線移動のまま)。positionsテーブルへの列追加のみで
--- 新規テーブルではないため、GRANT・RLSポリシーの再設定は不要
--- ―列単位ではなく行・テーブル単位で効くため
--- =========================================
-alter table public.positions
-  add column dancer_transition_duration_seconds numeric;
-alter table public.positions
-  add constraint positions_dancer_transition_duration_seconds_check
-  check (
-    dancer_transition_duration_seconds is null
-    or (
-      dancer_transition_duration_seconds::float8 > 0
-      and dancer_transition_duration_seconds::float8 <= 30
-    )
-  );
-
-alter table public.positions
-  add column curve_control_x numeric;
-alter table public.positions
-  add constraint positions_curve_control_x_check
-  check (curve_control_x is null or curve_control_x::float8 = curve_control_x::float8);
-
-alter table public.positions
-  add column curve_control_y numeric;
-alter table public.positions
-  add constraint positions_curve_control_y_check
-  check (curve_control_y is null or curve_control_y::float8 = curve_control_y::float8);
+-- 既にテーブルが存在するSupabaseプロジェクトに後から列や制約を足す場合は、
+-- このファイルではなく supabase/migrations/ 配下のSQLを番号順に
+-- SQL Editorで実行すること。
+--
+--   supabase/migrations/0000_bounds_and_stage_defaults.sql
+--   supabase/migrations/0001_transition_and_curve.sql
+--
+-- どのファイルも「何度実行しても安全」に書いてあるため、適用済みかどうか
+-- 分からない場合はとりあえず流してよい。各ファイル末尾には、意図した列が
+-- 揃ったかを確認するクエリが付いている。
+--
+-- (以前はこのファイルの末尾に追記式でマイグレーションを並べていたが、
+--  そうすると新規構築時は末尾で「列が既にある」と失敗し、既存プロジェクト
+--  では先頭の create table で失敗する、というどちらでも通らないファイルに
+--  なってしまうため分離した)
