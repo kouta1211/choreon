@@ -117,10 +117,8 @@ describe("SceneDock", () => {
       makeScene({ id: "irrelevant" }),
     );
     const upsertSpy = vi
-      .spyOn(positionsApi, "upsertPosition")
-      .mockImplementation((_supabase, position) =>
-        Promise.resolve(position),
-      );
+      .spyOn(positionsApi, "upsertPositions")
+      .mockResolvedValue(undefined);
     const user = userEvent.setup();
 
     render(<SceneDock project={makeProject()} />);
@@ -137,10 +135,11 @@ describe("SceneDock", () => {
       yCoordinate: 5,
       rotationAngle: 90,
     });
-    expect(upsertSpy).toHaveBeenCalledWith(
-      expect.anything(),
+    // 何人いても1回の呼び出しにまとめる(1人ずつだと人数ぶん往復する)
+    expect(upsertSpy).toHaveBeenCalledTimes(1);
+    expect(upsertSpy).toHaveBeenCalledWith(expect.anything(), [
       expect.objectContaining({ sceneId: newSceneId, dancerId: "dancer-1" }),
-    );
+    ]);
   });
 
   it("作成に失敗したらロールバックしてトースト表示する", async () => {
