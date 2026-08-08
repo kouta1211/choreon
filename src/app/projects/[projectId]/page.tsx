@@ -7,6 +7,7 @@ import { listPositionsByScenes } from "@/features/scene/api/positions";
 import { CanvasBoard } from "@/features/canvas/components/CanvasBoard";
 import { EditorHeader } from "@/features/canvas/components/EditorHeader";
 import { AddDancerSheet } from "@/features/dancer/components/AddDancerSheet";
+import { TemplateSheet } from "@/features/canvas/components/TemplateSheet";
 import { DancerInspector } from "@/features/dancer/components/DancerInspector";
 import { SceneDock } from "@/features/scene/components/SceneDock";
 import { SceneSidebar } from "@/features/scene/components/SceneSidebar";
@@ -78,6 +79,7 @@ export default async function ProjectPage(
         </div>
 
         <AddDancerSheet project={project} />
+        <TemplateSheet project={project} />
       </div>
     </div>
   );

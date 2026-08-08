@@ -9,13 +9,15 @@
 -- =========================================
 -- stage_width/stage_heightの1ユニットは実寸90cm相当を想定
 -- (features/canvas/lib/physicalLimits.tsのMETERS_PER_STAGE_UNITと対応させること)。
--- 実際のステージは正方形になることは稀なため、デフォルトは横15×縦10ユニット
--- (13.5m×9m相当)にしている
+-- 実際のステージは正方形になることは稀なため、デフォルトは横14×縦10ユニット
+-- (12.6m×9m相当)にしている。幅を偶数にしているのは、奇数だと中心が
+-- 格子点の間(7.5)に来てしまい、格子に吸着するダンサーを「ちょうど中央」に
+-- 置けなくなるため
 create table public.projects (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   title text not null,
-  stage_width integer not null default 15,
+  stage_width integer not null default 14,
   stage_height integer not null default 10,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

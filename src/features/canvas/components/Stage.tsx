@@ -29,6 +29,10 @@ type Props = {
    * ステージの外に置くと縦を消費してしまうため、余白の少ない
    * スマートフォンではステージの内側に浮かせる */
   overlay?: ReactNode;
+  /** 「客席側」ラベルの行の左端に置くもの(テンプレートの入口)。
+   * ステージの中には重ねない — 常設のボタンをステージ面に置くと、
+   * その下にダンサーが来たときに隠れてしまうため */
+  belowStageLeft?: ReactNode;
   /** シンメトリーモード中、中心(左右対称の軸)に薄い縦線を表示する */
   showCenterline?: boolean;
   /** ドラッグ量(px)をステージ座標系に換算する際、実際の描画サイズを
@@ -51,6 +55,7 @@ export function Stage({
   heightUnits,
   children,
   overlay,
+  belowStageLeft,
   showCenterline = false,
   ref,
 }: Props) {
@@ -121,9 +126,14 @@ export function Stage({
           {overlay}
         </div>
       </div>
-      <p className="text-center text-[10px] font-semibold tracking-[0.16em] text-zinc-600">
-        客席側
-      </p>
+      <div className="relative flex w-full items-center justify-center">
+        {belowStageLeft && (
+          <span className="absolute left-0">{belowStageLeft}</span>
+        )}
+        <p className="text-center text-[10px] font-semibold tracking-[0.16em] text-zinc-600">
+          客席側
+        </p>
+      </div>
     </div>
   );
 }

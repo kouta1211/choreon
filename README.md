@@ -32,6 +32,7 @@ GRANT状況とRLSポリシーが意図通りであることを必ず確認する
 ```
 supabase/migrations/0000_bounds_and_stage_defaults.sql
 supabase/migrations/0001_transition_and_curve.sql
+supabase/migrations/0002_stage_width_14.sql
 ```
 
 どのファイルも「何度実行しても安全」に書いてあるため、適用済みか分からない

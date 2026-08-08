@@ -18,7 +18,7 @@ export type HistoryEntry = {
   /** 連続する同種の操作をまとめる(coalesce)ための種別。
    * 特に矢印キーの微調整は1キーごとに履歴へ積むと、元に戻すのに
    * 何十回も押す羽目になるため、まとめる判断に使う */
-  kind: "move" | "nudge" | "rotate" | "curve";
+  kind: "move" | "nudge" | "rotate" | "curve" | "template";
   changes: PositionChange[];
 };
 

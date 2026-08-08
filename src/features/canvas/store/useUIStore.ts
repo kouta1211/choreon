@@ -59,6 +59,12 @@ type UIState = {
   isSceneSheetOpen: boolean;
   /** ダンサー追加シートを開いているか */
   isAddDancerSheetOpen: boolean;
+  /** フォーメーションのテンプレートシートを開いているか */
+  isTemplateSheetOpen: boolean;
+  /** テンプレートのヒントを×で閉じたシーン。同じシーンでは二度と出さない
+   * (「もう分かっている」という意思表示なので、シーンをまたいで覚える
+   * 必要はないが、同じシーンで何度も出るのは煩わしい) */
+  templateHintDismissedSceneIds: string[];
   /** 表示中の確認ダイアログ。nullなら出ていない */
   confirm: ConfirmRequest | null;
 
@@ -76,6 +82,8 @@ type UIState = {
   setIsPlaying: (isPlaying: boolean) => void;
   setSceneSheetOpen: (isOpen: boolean) => void;
   setAddDancerSheetOpen: (isOpen: boolean) => void;
+  setTemplateSheetOpen: (isOpen: boolean) => void;
+  dismissTemplateHint: (sceneId: string) => void;
   /** 確認ダイアログを出す。実行された場合の処理はrequest.onConfirmに持たせる */
   requestConfirm: (request: ConfirmRequest) => void;
   closeConfirm: () => void;
@@ -96,6 +104,8 @@ export const useUIStore = create<UIState>((set) => ({
   isPlaying: false,
   isSceneSheetOpen: false,
   isAddDancerSheetOpen: false,
+  isTemplateSheetOpen: false,
+  templateHintDismissedSceneIds: [],
   confirm: null,
 
   // 同じシーンを選び直したときにpreviousSceneIdを上書きしない。上書きすると
@@ -134,6 +144,18 @@ export const useUIStore = create<UIState>((set) => ({
   setIsPlaying: (isPlaying) => set({ isPlaying }),
   setSceneSheetOpen: (isOpen) => set({ isSceneSheetOpen: isOpen }),
   setAddDancerSheetOpen: (isOpen) => set({ isAddDancerSheetOpen: isOpen }),
+  setTemplateSheetOpen: (isOpen) => set({ isTemplateSheetOpen: isOpen }),
+  dismissTemplateHint: (sceneId) =>
+    set((state) =>
+      state.templateHintDismissedSceneIds.includes(sceneId)
+        ? {}
+        : {
+            templateHintDismissedSceneIds: [
+              ...state.templateHintDismissedSceneIds,
+              sceneId,
+            ],
+          },
+    ),
   requestConfirm: (request) => set({ confirm: request }),
   closeConfirm: () => set({ confirm: null }),
 }));
