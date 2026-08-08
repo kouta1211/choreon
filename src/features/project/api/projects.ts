@@ -161,6 +161,32 @@ export async function deleteProject(
   if (error) throw error;
 }
 
+/**
+ * 既に手元にあるプロジェクト(ゲストの下書き)をそのまま登録する。
+ *
+ * createProjectと違ってidとステージの広さも指定する。下書きの側で
+ * 既にそれらが決まっていて、シーン・ダンサーもそのidを参照しているため
+ */
+export async function insertProject(
+  supabase: SupabaseClient<Database>,
+  project: Project,
+): Promise<Project> {
+  const { data, error } = await supabase
+    .from("projects")
+    .insert({
+      id: project.id,
+      user_id: project.userId,
+      title: project.title,
+      stage_width: project.stageWidth,
+      stage_height: project.stageHeight,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return toProject(data);
+}
+
 export async function createProject(
   supabase: SupabaseClient<Database>,
   userId: string,

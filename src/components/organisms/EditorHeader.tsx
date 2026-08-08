@@ -4,6 +4,8 @@ import Link from "next/link";
 import { ChevronLeft, UserPlus } from "lucide-react";
 import { ProjectTitle } from "@/components/organisms/ProjectTitle";
 import { DisplayModeMenu } from "@/components/organisms/DisplayModeMenu";
+import { SaveToCloudButton } from "@/components/organisms/SaveToCloudButton";
+import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { Tooltip } from "@/components/atoms/Tooltip";
 import type { Project } from "@/features/project/types";
@@ -28,19 +30,27 @@ export function EditorHeader({ project }: Props) {
   const setAddDancerSheetOpen = useUIStore(
     (state) => state.setAddDancerSheetOpen,
   );
+  // ゲストモードではトップページ自体がこのエディタなので、「戻る」の
+  // 行き先が今いる場所になってしまう。代わりに左端の幅は詰める
+  const isGuest = useProjectStore((state) => state.isGuest);
 
   return (
     <header className="flex items-center gap-1.5 py-1 pr-3 pl-1.5">
-      <Link
-        href="/"
-        aria-label="プロジェクト一覧に戻る"
-        className="flex h-9 w-9 shrink-0 items-center justify-center text-zinc-400"
-      >
-        <ChevronLeft size={20} />
-      </Link>
+      {isGuest ? (
+        <span className="w-1.5 shrink-0" />
+      ) : (
+        <Link
+          href="/"
+          aria-label="プロジェクト一覧に戻る"
+          className="flex h-9 w-9 shrink-0 items-center justify-center text-zinc-400"
+        >
+          <ChevronLeft size={20} />
+        </Link>
+      )}
       <div className="min-w-0 flex-1">
         <ProjectTitle project={project} />
       </div>
+      <SaveToCloudButton />
       <Tooltip label="ダンサーを追加" align="right">
         <button
           type="button"

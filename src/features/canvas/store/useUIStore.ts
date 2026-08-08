@@ -70,6 +70,10 @@ type UIState = {
   templateHintDismissedSceneIds: string[];
   /** 表示中の確認ダイアログ。nullなら出ていない */
   confirm: ConfirmRequest | null;
+  /** 登録/ログインのモーダル。nullなら出ていない。
+   * 画面遷移ではなくモーダルにしているのは、作りかけの作品を見たまま
+   * 登録できるようにするため(「これを残したい」という気持ちが切れない) */
+  authDialogMode: "login" | "signup" | null;
 
   selectScene: (sceneId: string | null) => void;
   selectDancer: (dancerId: string | null) => void;
@@ -90,6 +94,8 @@ type UIState = {
   /** 確認ダイアログを出す。実行された場合の処理はrequest.onConfirmに持たせる */
   requestConfirm: (request: ConfirmRequest) => void;
   closeConfirm: () => void;
+  openAuthDialog: (mode: "login" | "signup") => void;
+  closeAuthDialog: () => void;
 };
 
 export const useUIStore = create<UIState>((set) => ({
@@ -110,6 +116,7 @@ export const useUIStore = create<UIState>((set) => ({
   isTemplateSheetOpen: false,
   templateHintDismissedSceneIds: [],
   confirm: null,
+  authDialogMode: null,
 
   // 同じシーンを選び直したときにpreviousSceneIdを上書きしない。上書きすると
   // 「前のシーン＝今のシーン」になって移動方向が判定できなくなるため
@@ -161,4 +168,6 @@ export const useUIStore = create<UIState>((set) => ({
     ),
   requestConfirm: (request) => set({ confirm: request }),
   closeConfirm: () => set({ confirm: null }),
+  openAuthDialog: (mode) => set({ authDialogMode: mode }),
+  closeAuthDialog: () => set({ authDialogMode: null }),
 }));

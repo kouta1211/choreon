@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toast } from "@/components/organisms/Toast";
 import { ConfirmDialog } from "@/components/organisms/ConfirmDialog";
+import { AuthDialog } from "@/components/organisms/AuthDialog";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             失敗はページ内のテキストで知らせる、という別扱いになっていた */}
         <Toast />
         <ConfirmDialog />
+        <AuthDialog />
       </body>
     </html>
   );

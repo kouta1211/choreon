@@ -49,6 +49,31 @@ export async function createScene(
   return toScene(data);
 }
 
+/** 複数シーンをまとめて作る。ゲストの下書きをクラウドへ移すときに使う
+ * (1シーンずつ作ると往復が増えるだけなので、createDancersと同じ扱い) */
+export async function createScenes(
+  supabase: SupabaseClient<Database>,
+  scenes: Scene[],
+): Promise<Scene[]> {
+  if (scenes.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from("scenes")
+    .insert(
+      scenes.map((scene) => ({
+        id: scene.id,
+        project_id: scene.projectId,
+        name: scene.name,
+        order_index: scene.orderIndex,
+        transition_duration_seconds: scene.transitionDurationSeconds,
+      })),
+    )
+    .select();
+
+  if (error) throw error;
+  return data.map(toScene);
+}
+
 export async function renameScene(
   supabase: SupabaseClient<Database>,
   sceneId: string,
