@@ -11,6 +11,7 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { createClient } from "@/lib/supabase/client";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { upsertPosition } from "@/features/scene/api/positions";
+import { Tooltip } from "@/components/ui/Tooltip";
 
 /** キーボードショートカットを無視する要素。テキスト入力中のCtrl+Zは
  * ブラウザ標準の「入力の取り消し」であってほしいため */
@@ -157,26 +158,28 @@ export function HistoryControls() {
   // 薄くするだけにしているのは、消えると押し場所を覚え直すことになるから
   return (
     <div className="absolute right-2 bottom-2 flex gap-1.5">
+      <Tooltip label="元に戻す (Ctrl+Z)" placement="top">
       <button
         type="button"
         onClick={handleUndo}
         disabled={!canUndo}
         aria-label="元に戻す"
-        title="元に戻す (Ctrl+Z)"
         className="flex h-[38px] w-[38px] items-center justify-center rounded-[11px] border border-zinc-700 bg-zinc-900/90 text-zinc-300 disabled:pointer-events-none disabled:opacity-30"
       >
         <Undo2 size={17} />
       </button>
+      </Tooltip>
+      <Tooltip label="やり直す (Ctrl+Shift+Z)" placement="top">
       <button
         type="button"
         onClick={handleRedo}
         disabled={!canRedo}
         aria-label="やり直す"
-        title="やり直す (Ctrl+Shift+Z)"
         className="flex h-[38px] w-[38px] items-center justify-center rounded-[11px] border border-zinc-700 bg-zinc-900/90 text-zinc-300 disabled:pointer-events-none disabled:opacity-30"
       >
         <Redo2 size={17} />
       </button>
+      </Tooltip>
     </div>
   );
 }

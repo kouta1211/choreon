@@ -18,6 +18,7 @@ import { SceneListSheet } from "@/features/scene/components/SceneListSheet";
 import { getNextSceneId } from "@/features/scene/lib/playback";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
 import { InlineEditableText } from "@/components/ui/InlineEditableText";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { DurationSecondsInput } from "@/components/ui/DurationSecondsInput";
 import type { Project } from "@/features/project/types";
 import type { Scene } from "@/features/scene/types";
@@ -258,6 +259,7 @@ export function SceneDock({ project }: Props) {
             </div>
           </div>
 
+          <Tooltip label="シーンを削除" placement="top">
           <button
             type="button"
             onClick={() => handleDelete(selectedScene)}
@@ -266,6 +268,7 @@ export function SceneDock({ project }: Props) {
           >
             <Trash2 size={15} />
           </button>
+          </Tooltip>
         </div>
       )}
 
