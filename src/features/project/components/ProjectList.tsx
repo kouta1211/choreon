@@ -8,14 +8,18 @@ import { createClient } from "@/lib/supabase/client";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { deleteProject } from "@/features/project/api/projects";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import type { Project } from "@/features/project/types";
+import type { ProjectSummary } from "@/features/project/types";
 
 type Props = {
-  projects: Project[];
+  projects: ProjectSummary[];
 };
 
 /**
- * プロジェクトの一覧。行そのものがエディタへのリンクで、右端に削除ボタンを置く。
+ * プロジェクトの一覧。1行がエディタへのリンクで、右端に削除ボタンを置く。
+ *
+ * タイトルだけが並んでいた頃は、どれがどれだか思い出すのに開くしかなかった。
+ * 先頭シーンの隊形をサムネイルで見せ、シーン数・人数・通しの尺を添えることで、
+ * 開く前に見分けが付くようにしている。
  *
  * 削除は「確定後更新」にしている(先にSupabaseの削除が成功してから
  * router.refresh()で一覧を取り直す)。プロジェクトの削除はcascadeで
@@ -29,13 +33,16 @@ export function ProjectList({ projects }: Props) {
   const requestConfirm = useUIStore((state) => state.requestConfirm);
   const showToast = useUIStore((state) => state.showToast);
 
-  const handleDelete = (project: Project) => {
+  const handleDelete = (project: ProjectSummary) => {
     requestConfirm({
       title: `「${project.title}」を削除しますか?`,
       description:
         "このプロジェクトのシーン・ダンサー・配置がすべて消えます。削除は元に戻せません。",
-      // TODO(Phase 6): 一覧がシーン数・人数を持つようになったら、
-      // ここに実数のチップを出す
+      meta: [
+        `${project.sceneCount} シーン`,
+        `${project.dancerCount} 人`,
+        `${project.sceneCount * project.dancerCount} 配置`,
+      ],
       onConfirm: async () => {
         setDeletingId(project.id);
         try {
@@ -56,34 +63,149 @@ export function ProjectList({ projects }: Props) {
   };
 
   if (projects.length === 0) {
-    return (
-      <p className="text-sm text-zinc-400">
-        まだプロジェクトがありません。
+    return <EmptyProjectList />;
+  }
+
+  return (
+    <div className="space-y-2.5">
+      <p className="mx-0.5 text-[10px] font-semibold tracking-[0.14em] text-zinc-600">
+        プロジェクト {projects.length}件
       </p>
+      <ul className="space-y-2.5">
+        {projects.map((project) => (
+          <li
+            key={project.id}
+            className="flex items-center gap-2.5 rounded-[14px] border border-zinc-800 bg-zinc-900 p-3"
+          >
+            <Link
+              href={`/projects/${project.id}`}
+              className="flex min-w-0 flex-1 items-center gap-2.5"
+            >
+              <ProjectThumbnail project={project} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[15px] font-semibold text-zinc-50">
+                  {project.title}
+                </span>
+                <span className="mt-1.5 block font-mono text-[11px] font-medium text-zinc-400">
+                  {project.sceneCount} シーン · {project.dancerCount} 人
+                  {project.sceneCount > 1 && (
+                    <>
+                      {" · "}
+                      <span className="text-pink-400">
+                        {project.totalSeconds}s
+                      </span>
+                    </>
+                  )}
+                </span>
+                {project.dancerColors.length > 0 ? (
+                  <span className="mt-2 flex gap-1">
+                    {project.dancerColors.map((color, index) => (
+                      <span
+                        key={`${color}-${index}`}
+                        aria-hidden
+                        className="block h-2 w-2 rounded-full"
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </span>
+                ) : (
+                  <span className="mt-2 block text-[11px] text-zinc-500">
+                    タップして最初のシーンを作る
+                  </span>
+                )}
+              </span>
+            </Link>
+            <button
+              type="button"
+              onClick={() => handleDelete(project)}
+              disabled={deletingId === project.id}
+              aria-label={`${project.title}を削除`}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[11px] text-zinc-600 hover:bg-red-950 hover:text-red-400 disabled:opacity-40"
+            >
+              <Trash2 size={17} />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** 先頭シーンの隊形のミニチュア。まだシーンが無ければ破線で「シーン 0」 */
+function ProjectThumbnail({ project }: { project: ProjectSummary }) {
+  const aspectRatio = `${project.stageWidth} / ${project.stageHeight}`;
+
+  if (project.sceneCount === 0) {
+    return (
+      <span
+        aria-hidden
+        className="flex w-[84px] shrink-0 items-center justify-center rounded-lg border border-dashed border-zinc-700 bg-[#0f0f11] font-mono text-[9px] text-zinc-600"
+        style={{ aspectRatio }}
+      >
+        シーン 0
+      </span>
     );
   }
 
   return (
-    <ul className="space-y-2">
-      {projects.map((project) => (
-        <li key={project.id} className="flex items-center gap-2">
-          <Link
-            href={`/projects/${project.id}`}
-            className="block flex-1 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-zinc-50 shadow-sm transition-colors hover:border-pink-800 hover:bg-zinc-800"
-          >
-            {project.title}
-          </Link>
-          <button
-            type="button"
-            onClick={() => handleDelete(project)}
-            disabled={deletingId === project.id}
-            aria-label={`${project.title}を削除`}
-            className="shrink-0 rounded p-2 text-zinc-500 hover:bg-red-950 hover:text-red-400 disabled:opacity-40"
-          >
-            <Trash2 size={16} />
-          </button>
-        </li>
+    <span
+      aria-hidden
+      className="relative block w-[84px] shrink-0 overflow-hidden rounded-lg border border-zinc-800 bg-[#0f0f11]"
+      style={{ aspectRatio }}
+    >
+      <span
+        className="absolute inset-0 block bg-[linear-gradient(to_right,#232329_1px,transparent_1px),linear-gradient(to_bottom,#232329_1px,transparent_1px)]"
+        style={{
+          backgroundSize: `${100 / project.stageWidth}% ${100 / project.stageHeight}%`,
+        }}
+      />
+      {project.firstScenePositions.map((position, index) => (
+        <span
+          key={index}
+          className="absolute block h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            left: `${(position.xCoordinate / project.stageWidth) * 100}%`,
+            top: `${(position.yCoordinate / project.stageHeight) * 100}%`,
+            backgroundColor: position.color,
+          }}
+        />
       ))}
-    </ul>
+    </span>
+  );
+}
+
+/**
+ * 0件のとき。「ありません」だけで終わらせず、何をすれば始まるのかを書く。
+ * 上の隊形イラストは、このアプリが何を作るものなのかの手がかりでもある。
+ */
+function EmptyProjectList() {
+  return (
+    <div className="rounded-2xl border border-dashed border-zinc-700 px-5 py-6 text-center">
+      <span
+        aria-hidden
+        className="relative mx-auto mb-3.5 block h-10 w-[110px] opacity-50"
+      >
+        {[
+          { left: 6, top: 26, color: "#3f3f46" },
+          { left: 30, top: 14, color: "#3f3f46" },
+          { left: 54, top: 4, color: "#71717a" },
+          { left: 78, top: 14, color: "#3f3f46" },
+        ].map((dot) => (
+          <span
+            key={dot.left}
+            className="absolute block h-[9px] w-[9px] rounded-full"
+            style={{ left: dot.left, top: dot.top, backgroundColor: dot.color }}
+          />
+        ))}
+      </span>
+      <p className="text-sm leading-relaxed font-medium text-zinc-300">
+        まだプロジェクトがありません。
+      </p>
+      <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
+        上の入力から曲名を入れると、
+        <br />
+        ステージが1つ立ち上がります。
+      </p>
+    </div>
   );
 }

@@ -3,10 +3,13 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Mail } from "lucide-react";
 import { signUpWithPassword } from "@/features/auth/api/auth";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { TextField } from "@/components/ui/TextField";
+import {
+  AuthField,
+  AuthScreen,
+  AuthSubmitButton,
+} from "@/features/auth/components/AuthScreen";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -47,66 +50,74 @@ export default function SignupPage() {
     setIsSubmitting(false);
   };
 
+  // 送信後はフォームごと差し替える。入力欄が残っていると、もう一度
+  // 送るべきなのかメールを待つべきなのかが分からなくなるため
   if (isEmailSent) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center px-4">
-        <Card className="w-full max-w-sm space-y-4 text-center">
-          <p className="text-zinc-50">
-            確認メールを送信しました。メール内のリンクから登録を完了してください。
+      <AuthScreen>
+        <div className="flex flex-col items-center gap-3 py-2 text-center">
+          <span
+            aria-hidden
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-600/16 text-emerald-400"
+          >
+            <Mail size={20} />
+          </span>
+          <p className="text-sm font-medium text-zinc-50">
+            確認メールを送信しました。
           </p>
-          <Link href="/login" className="text-sm underline">
+          <p className="text-xs leading-relaxed text-zinc-500">
+            メール内のリンクを開くと登録が完了します。
+          </p>
+          <Link
+            href="/login"
+            className="mt-1 text-xs text-pink-400 underline"
+          >
             ログイン画面に戻る
           </Link>
-        </Card>
-      </div>
+        </div>
+      </AuthScreen>
     );
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center px-4">
-      <Card className="w-full max-w-sm">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <h1 className="text-xl font-semibold text-zinc-50">
-            新規登録
-          </h1>
+    <AuthScreen>
+      <form onSubmit={handleSubmit} className="space-y-3.5">
+        <AuthField
+          label="メールアドレス"
+          id="email"
+          type="email"
+          required
+          autoComplete="email"
+          hasError={error !== null}
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+        />
 
-          <TextField
-            label="メールアドレス"
-            id="email"
-            type="email"
-            required
-            autoComplete="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
+        <AuthField
+          label="パスワード(6文字以上)"
+          id="password"
+          type="password"
+          required
+          minLength={6}
+          autoComplete="new-password"
+          hasError={error !== null}
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+        />
 
-          <TextField
-            label="パスワード(6文字以上)"
-            id="password"
-            type="password"
-            required
-            minLength={6}
-            autoComplete="new-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
+        {error && <p className="text-xs text-red-400">{error}</p>}
 
-          {error && (
-            <p className="text-sm text-red-400">{error}</p>
-          )}
+        <AuthSubmitButton isSubmitting={isSubmitting} pendingLabel="登録中...">
+          登録する
+        </AuthSubmitButton>
 
-          <Button type="submit" disabled={isSubmitting} className="w-full">
-            {isSubmitting ? "登録中..." : "登録する"}
-          </Button>
-
-          <p className="text-center text-sm text-zinc-400">
-            既にアカウントをお持ちの方は{" "}
-            <Link href="/login" className="underline">
-              ログイン
-            </Link>
-          </p>
-        </form>
-      </Card>
-    </div>
+        <p className="text-center text-xs text-zinc-500">
+          既にアカウントをお持ちの方は{" "}
+          <Link href="/login" className="text-pink-400 underline">
+            ログイン
+          </Link>
+        </p>
+      </form>
+    </AuthScreen>
   );
 }

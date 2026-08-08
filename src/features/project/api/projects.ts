@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
-import type { Project } from "@/features/project/types";
+import type { Project, ProjectSummary } from "@/features/project/types";
+import { listPositionsByScenes } from "@/features/scene/api/positions";
 
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
 
@@ -26,6 +27,94 @@ export async function listProjects(
 
   if (error) throw error;
   return data.map(toProject);
+}
+
+/**
+ * 一覧のカードに出す要約つきでプロジェクトを取得する。
+ *
+ * クエリは2本で済ませている。1本目でプロジェクトと、その配下のシーン・
+ * ダンサーを入れ子で取り、2本目で「各プロジェクトの先頭シーン」の配置だけを
+ * まとめて取る。プロジェクトごとに問い合わせるとN+1になるため、
+ * 先頭シーンのIDを集めてから1回で引いている。
+ *
+ * 合計秒数は先頭シーンのぶんを含めない(先頭には入ってくる元が無いため)。
+ */
+export async function listProjectSummaries(
+  supabase: SupabaseClient<Database>,
+): Promise<ProjectSummary[]> {
+  const { data, error } = await supabase
+    .from("projects")
+    .select(
+      "*, scenes(id, order_index, transition_duration_seconds), dancers(id, color, created_at)",
+    )
+    .order("updated_at", { ascending: false });
+
+  if (error) throw error;
+
+  type Row = ProjectRow & {
+    scenes: {
+      id: string;
+      order_index: number;
+      transition_duration_seconds: number;
+    }[];
+    dancers: { id: string; color: string; created_at: string }[];
+  };
+  const rows = (data ?? []) as Row[];
+
+  const scenesByProject = rows.map((row) => ({
+    projectId: row.id,
+    scenes: [...(row.scenes ?? [])].sort(
+      (a, b) => a.order_index - b.order_index,
+    ),
+  }));
+  const firstSceneIds = scenesByProject
+    .map((entry) => entry.scenes[0]?.id)
+    .filter((id): id is string => id !== undefined);
+
+  const positions =
+    firstSceneIds.length > 0
+      ? await listPositionsByScenes(supabase, firstSceneIds)
+      : [];
+  const positionsBySceneId = new Map<string, typeof positions>();
+  for (const position of positions) {
+    const list = positionsBySceneId.get(position.sceneId) ?? [];
+    list.push(position);
+    positionsBySceneId.set(position.sceneId, list);
+  }
+
+  return rows.map((row, index) => {
+    const scenes = scenesByProject[index].scenes;
+    const dancers = [...(row.dancers ?? [])].sort((a, b) =>
+      a.created_at.localeCompare(b.created_at),
+    );
+    const colorByDancerId = new Map(dancers.map((d) => [d.id, d.color]));
+    const firstScenePositions = (
+      positionsBySceneId.get(scenes[0]?.id ?? "") ?? []
+    ).flatMap((position) => {
+      const color = colorByDancerId.get(position.dancerId);
+      if (!color) return [];
+      return [
+        {
+          xCoordinate: position.xCoordinate,
+          yCoordinate: position.yCoordinate,
+          color,
+        },
+      ];
+    });
+
+    const total = scenes
+      .slice(1)
+      .reduce((sum, scene) => sum + scene.transition_duration_seconds, 0);
+
+    return {
+      ...toProject(row),
+      sceneCount: scenes.length,
+      dancerCount: dancers.length,
+      totalSeconds: Math.round(total * 10) / 10,
+      dancerColors: dancers.map((dancer) => dancer.color),
+      firstScenePositions,
+    };
+  });
 }
 
 export async function getProject(

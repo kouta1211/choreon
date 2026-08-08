@@ -2,10 +2,11 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { toUserMessage } from "@/lib/supabase/errors";
 import { createProject } from "@/features/project/api/projects";
-import { Button } from "@/components/ui/Button";
-import { TextField } from "@/components/ui/TextField";
+import { useUIStore } from "@/features/canvas/store/useUIStore";
 
 type Props = {
   userId: string;
@@ -14,12 +15,11 @@ type Props = {
 export function CreateProjectForm({ userId }: Props) {
   const router = useRouter();
   const [title, setTitle] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const showToast = useUIStore((state) => state.showToast);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(null);
     setIsSubmitting(true);
 
     try {
@@ -27,31 +27,36 @@ export function CreateProjectForm({ userId }: Props) {
       const project = await createProject(supabase, userId, title);
       router.push(`/projects/${project.id}`);
       router.refresh();
-    } catch {
-      setError("プロジェクトの作成に失敗しました。");
+    } catch (error) {
+      showToast({
+        message: toUserMessage(error, "プロジェクトの作成に失敗しました"),
+        type: "error",
+      });
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="space-y-2">
-      <form onSubmit={handleSubmit} className="flex gap-2">
-        <TextField
-          label="新しいプロジェクト名"
-          hideLabel
+    <form onSubmit={handleSubmit} className="flex gap-2">
+      <label className="flex-1">
+        <span className="sr-only">新しいプロジェクト名</span>
+        <input
           type="text"
           required
           placeholder="新しいプロジェクト名"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
+          className="h-[46px] w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3.5 text-sm text-zinc-50 placeholder:text-zinc-600 focus:border-pink-500 focus:ring-[3px] focus:ring-pink-500/16 focus:outline-none"
         />
-        <Button type="submit" disabled={isSubmitting}>
-          作成
-        </Button>
-      </form>
-      {error && (
-        <p className="text-sm text-red-400">{error}</p>
-      )}
-    </div>
+      </label>
+      <button
+        type="submit"
+        disabled={isSubmitting || !title.trim()}
+        aria-label="プロジェクトを作成"
+        className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-xl bg-pink-500 text-white disabled:opacity-50"
+      >
+        <Plus size={20} />
+      </button>
+    </form>
   );
 }

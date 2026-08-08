@@ -5,7 +5,7 @@ import { ProjectList } from "./ProjectList";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import * as projectsApi from "@/features/project/api/projects";
-import type { Project } from "@/features/project/types";
+import type { ProjectSummary } from "@/features/project/types";
 
 const refresh = vi.fn();
 
@@ -17,7 +17,9 @@ vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({}),
 }));
 
-function makeProject(overrides: Partial<Project> = {}): Project {
+function makeProject(
+  overrides: Partial<ProjectSummary> = {},
+): ProjectSummary {
   return {
     id: "1",
     userId: "user-1",
@@ -26,13 +28,21 @@ function makeProject(overrides: Partial<Project> = {}): Project {
     stageHeight: 8,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
+    sceneCount: 3,
+    dancerCount: 2,
+    totalSeconds: 2.5,
+    dancerColors: ["#3b82f6", "#ef4444"],
+    firstScenePositions: [
+      { xCoordinate: 2, yCoordinate: 2, color: "#3b82f6" },
+      { xCoordinate: 6, yCoordinate: 4, color: "#ef4444" },
+    ],
     ...overrides,
   };
 }
 
 /** 削除は確認ダイアログ越しになったため、一覧単体ではなくダイアログと
  * 一緒に描画する(本番ではレイアウトが1つだけ描いている) */
-function renderList(projects: Project[]) {
+function renderList(projects: ProjectSummary[]) {
   return render(
     <>
       <ProjectList projects={projects} />
