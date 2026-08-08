@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { PathOverlay } from "./PathOverlay";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position } from "@/features/scene/types";
@@ -73,5 +73,70 @@ describe("PathOverlay", () => {
     );
 
     expect(document.querySelector("line")).not.toBeInTheDocument();
+  });
+
+  it("次のシーンのpositionに曲線制御点があれば、直線ではなく曲線(path)で描画する", () => {
+    render(
+      <PathOverlay
+        currentPositions={{ "dancer-1": makePosition() }}
+        nextPositions={{
+          "dancer-1": makePosition({
+            xCoordinate: 6,
+            yCoordinate: 6,
+            curveControlX: 5,
+            curveControlY: 1,
+          }),
+        }}
+        dancers={{ "dancer-1": makeDancer() }}
+        stageWidthUnits={8}
+        stageHeightUnits={8}
+      />,
+    );
+
+    expect(document.querySelector("line")).not.toBeInTheDocument();
+    expect(document.querySelector("path[stroke]")).toBeInTheDocument();
+  });
+
+  it("editableDancerIdに一致するダンサーだけ制御点のハンドルを表示する", () => {
+    render(
+      <PathOverlay
+        currentPositions={{ "dancer-1": makePosition() }}
+        nextPositions={{
+          "dancer-1": makePosition({ xCoordinate: 6, yCoordinate: 6 }),
+        }}
+        dancers={{ "dancer-1": makeDancer() }}
+        stageWidthUnits={8}
+        stageHeightUnits={8}
+        editableDancerId={null}
+      />,
+    );
+    expect(
+      screen.queryByTestId("path-overlay-curve-handle"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("ハンドルをダブルクリックすると、制御点をnullにしてonCurveControlPointChangeを呼ぶ", () => {
+    const handleChange = vi.fn();
+    render(
+      <PathOverlay
+        currentPositions={{ "dancer-1": makePosition() }}
+        nextPositions={{
+          "dancer-1": makePosition({
+            xCoordinate: 6,
+            yCoordinate: 6,
+            curveControlX: 5,
+            curveControlY: 1,
+          }),
+        }}
+        dancers={{ "dancer-1": makeDancer() }}
+        stageWidthUnits={8}
+        stageHeightUnits={8}
+        editableDancerId="dancer-1"
+        onCurveControlPointChange={handleChange}
+      />,
+    );
+
+    fireEvent.doubleClick(screen.getByTestId("path-overlay-curve-handle"));
+    expect(handleChange).toHaveBeenCalledWith("dancer-1", null);
   });
 });
