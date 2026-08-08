@@ -3,6 +3,21 @@
 import type { ReactNode, Ref } from "react";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 
+/**
+ * 「空いている領域に、縦横比を保ったまま目一杯収まる幅」を返す。
+ *
+ * aspect-ratioと max-width/max-height の組み合わせでは表現できない。
+ * 片方の軸が確定していると、もう片方が上限で詰められても再計算されず、
+ * 比率が崩れるため(実測で 8x8 のステージが 420x441 になった)。
+ * 比率が崩れると、％で置いているダンサーの位置がまとめてずれる。
+ *
+ * そこで「入る方の小さい側」をmin()で直接指定する。親に
+ * container-type:size を付けてあるので、cqw/cqhで空き領域の縦横を参照できる。
+ */
+function stageWidthRule(widthUnits: number, heightUnits: number): string {
+  return `min(100cqw, calc(100cqh * ${widthUnits} / ${heightUnits}))`;
+}
+
 type Props = {
   /** ステージの横幅(projects.stage_widthのユニット数。1マス=1ユニット) */
   widthUnits: number;
@@ -48,13 +63,16 @@ export function Stage({
       <p className="text-center text-[10px] font-semibold tracking-[0.16em] text-zinc-600">
         バックステージ
       </p>
-      <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+      <div className="flex min-h-0 w-full flex-1 items-center justify-center [container-type:size]">
         <div
           ref={ref}
-          className={`relative h-full max-w-full touch-none rounded-xl border-2 border-pink-500 bg-[#141417] transition-colors ${
+          className={`relative touch-none rounded-xl border-2 border-pink-500 bg-[#141417] transition-colors ${
             focusedDancerId ? "bg-[#0f0f11]" : ""
           }`}
-          style={{ aspectRatio: `${widthUnits} / ${heightUnits}` }}
+          style={{
+            aspectRatio: `${widthUnits} / ${heightUnits}`,
+            width: stageWidthRule(widthUnits, heightUnits),
+          }}
           data-testid="stage"
         >
           {isGridVisible && (
@@ -131,11 +149,14 @@ export function EmptyStage({
   isCreating,
 }: EmptyStageProps) {
   return (
-    <div className="flex min-h-0 flex-1 items-center justify-center">
+    <div className="flex min-h-0 flex-1 items-center justify-center [container-type:size]">
       <div
         data-testid="empty-stage"
-        className="relative flex h-full max-w-full flex-col items-center justify-center gap-2.5 rounded-xl border-2 border-dashed border-zinc-700 bg-[#141417]"
-        style={{ aspectRatio: `${widthUnits} / ${heightUnits}` }}
+        className="relative flex flex-col items-center justify-center gap-2.5 rounded-xl border-2 border-dashed border-zinc-700 bg-[#141417]"
+        style={{
+          aspectRatio: `${widthUnits} / ${heightUnits}`,
+          width: stageWidthRule(widthUnits, heightUnits),
+        }}
       >
         <div
           aria-hidden
