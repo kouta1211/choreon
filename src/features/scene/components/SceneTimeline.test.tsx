@@ -174,23 +174,28 @@ describe("SceneTimeline", () => {
     });
   });
 
-  it("隣のシーンと入れ替えられる", async () => {
-    useProjectStore.setState({
-      scenes: [makeScene(), makeScene({ id: "scene-2", name: "シーン2", orderIndex: 1 })],
-    });
-    useUIStore.setState({ selectedSceneId: "scene-2" });
-    vi.spyOn(scenesApi, "updateSceneOrder").mockResolvedValue(undefined);
+  it("選択中シーンの遷移時間を変更できる", async () => {
+    useProjectStore.setState({ scenes: [makeScene()] });
+    useUIStore.setState({ selectedSceneId: "scene-1" });
+    vi.spyOn(scenesApi, "updateSceneDuration").mockResolvedValue(undefined);
     const user = userEvent.setup();
 
     render(<SceneTimeline project={makeProject()} />);
-    await user.click(screen.getByLabelText("左のシーンと入れ替える"));
+    const input = screen.getByLabelText(/遷移時間/);
+    await user.clear(input);
+    await user.type(input, "2.5");
+    await user.keyboard("{Enter}");
 
     await waitFor(() => {
-      expect(useProjectStore.getState().scenes.map((s) => s.id)).toEqual([
-        "scene-2",
-        "scene-1",
-      ]);
+      expect(
+        useProjectStore.getState().scenes[0].transitionDurationSeconds,
+      ).toBe(2.5);
     });
+    expect(scenesApi.updateSceneDuration).toHaveBeenCalledWith(
+      expect.anything(),
+      "scene-1",
+      2.5,
+    );
   });
 
   it("削除を確認するとSupabase削除後にローカルからも消え、別のシーンが選択される", async () => {

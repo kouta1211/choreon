@@ -23,3 +23,15 @@ body {
      Pull-to-refreshや意図しないスクロールとして扱われるのを防ぐ */
   overscroll-behavior-y: contain;
 }
+
+/* スクロール自体は効かせつつ、OS標準のスクロールバー(帯)だけ非表示にする。
+   シーンのサムネイル一覧(SceneTabs)のような横スクロール領域は、ドラッグや
+   スライダーでも操作できるため、常時表示のスクロールバーは視覚的なノイズに
+   なりやすい */
+.scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* 旧Edge */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}

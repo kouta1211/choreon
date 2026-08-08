@@ -5,6 +5,13 @@ type Toast = {
   type: "success" | "error";
 };
 
+/** ドラッグ中、格子スナップが効いている格子線の位置(ステージ座標系の整数)。
+ * 効いていない軸はnull。両方non-nullなら交差点にスナップしていることを表す */
+type DragSnapLine = {
+  x: number | null;
+  y: number | null;
+};
+
 type UIState = {
   selectedSceneId: string | null;
   selectedDancerId: string | null;
@@ -23,6 +30,12 @@ type UIState = {
   isPathVisible: boolean;
   /** オンの間、奥のダンサーが手前のダンサーに隠れていないか(顔被り)を判定して警告表示する */
   isBlindSpotCheckVisible: boolean;
+  /** ドラッグ中の格子スナップ状態(CanvasBoardのonDragMoveが更新し、Stageが
+   * 該当する格子線をハイライト表示するために読む) */
+  dragSnapLine: DragSnapLine;
+  /** シーンのタイムライン再生中かどうか(SceneTimelineの再生シーケンサーが
+   * 読み書きする)。手動でシーンを選ぶと止まる */
+  isPlaying: boolean;
 
   selectScene: (sceneId: string | null) => void;
   selectDancer: (dancerId: string | null) => void;
@@ -34,6 +47,8 @@ type UIState = {
   setFocusedDancer: (dancerId: string | null) => void;
   togglePathVisible: () => void;
   toggleBlindSpotCheckVisible: () => void;
+  setDragSnapLine: (line: DragSnapLine) => void;
+  setIsPlaying: (isPlaying: boolean) => void;
 };
 
 export const useUIStore = create<UIState>((set) => ({
@@ -46,6 +61,8 @@ export const useUIStore = create<UIState>((set) => ({
   focusedDancerId: null,
   isPathVisible: false,
   isBlindSpotCheckVisible: false,
+  dragSnapLine: { x: null, y: null },
+  isPlaying: false,
 
   selectScene: (sceneId) => set({ selectedSceneId: sceneId }),
   selectDancer: (dancerId) => set({ selectedDancerId: dancerId }),
@@ -62,4 +79,16 @@ export const useUIStore = create<UIState>((set) => ({
     set((state) => ({
       isBlindSpotCheckVisible: !state.isBlindSpotCheckVisible,
     })),
+  // 中身が前回と同じなら何も書き換えない(空オブジェクトを返す=状態は不変)。
+  // これはドラッグ中に毎pointermoveごとに呼ばれるため、素直に
+  // set({ dragSnapLine: line })にすると、スナップしていない間も毎回
+  // 新しい{x: null, y: null}オブジェクトが入り、参照が変わるせいで
+  // これを購読しているStageが指を動かすたびに再レンダーされてしまう
+  setDragSnapLine: (line) =>
+    set((state) =>
+      state.dragSnapLine.x === line.x && state.dragSnapLine.y === line.y
+        ? {}
+        : { dragSnapLine: line },
+    ),
+  setIsPlaying: (isPlaying) => set({ isPlaying }),
 }));

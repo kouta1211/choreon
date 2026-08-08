@@ -1,38 +1,45 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
+import { DurationSecondsInput } from "@/components/ui/DurationSecondsInput";
 
 type Props = {
-  selectedIndex: number;
-  sceneCount: number;
   isRenaming: boolean;
   renameValue: string;
   onRenameValueChange: (value: string) => void;
   onStartRename: () => void;
   onCommitRename: () => void;
   onCancelRename: () => void;
-  onMove: (direction: -1 | 1) => void;
   onDelete: () => void;
+  /** このシーンへ遷移してくるまでの所要時間(秒) */
+  durationSeconds: number;
+  onDurationCommit: (seconds: number) => void;
 };
 
-/** 選択中シーンの名前変更・並び替え・削除を行う操作行。
+/** 秒の入力欄が許容する範囲。schema.sqlのCHECK制約(0より大きく30以下)と合わせている */
+const MIN_DURATION_SECONDS = 0.1;
+const MAX_DURATION_SECONDS = 30;
+
+/** 選択中シーンの名前変更・遷移時間・削除を行う操作行。並び替えはSceneTabs側で
+ * コマを直接ドラッグして行うため、ここには置いていない。
  * リネーム中は同じ場所にインライン入力を表示する */
 export function SceneActionsBar({
-  selectedIndex,
-  sceneCount,
   isRenaming,
   renameValue,
   onRenameValueChange,
   onStartRename,
   onCommitRename,
   onCancelRename,
-  onMove,
   onDelete,
+  durationSeconds,
+  onDurationCommit,
 }: Props) {
   if (isRenaming) {
     return (
       <input
         autoFocus
+        name="scene-name"
+        aria-label="シーン名"
         value={renameValue}
         onChange={(event) => onRenameValueChange(event.target.value)}
         onBlur={onCommitRename}
@@ -55,24 +62,18 @@ export function SceneActionsBar({
       >
         <Pencil size={14} />
       </button>
-      <button
-        type="button"
-        onClick={() => onMove(-1)}
-        disabled={selectedIndex <= 0}
-        aria-label="左のシーンと入れ替える"
-        className="rounded p-1.5 hover:bg-zinc-700 disabled:opacity-30"
-      >
-        <ChevronLeft size={14} />
-      </button>
-      <button
-        type="button"
-        onClick={() => onMove(1)}
-        disabled={selectedIndex >= sceneCount - 1}
-        aria-label="右のシーンと入れ替える"
-        className="rounded p-1.5 hover:bg-zinc-700 disabled:opacity-30"
-      >
-        <ChevronRight size={14} />
-      </button>
+      <DurationSecondsInput
+        label="遷移時間(秒)"
+        value={durationSeconds}
+        // シーン自体の遷移時間は必須値(空欄にはできない)なので
+        // allowEmpty={false}にしている。呼び出し側の型もnumber(非null)のまま
+        allowEmpty={false}
+        onCommit={(value) => {
+          if (value !== null) onDurationCommit(value);
+        }}
+        min={MIN_DURATION_SECONDS}
+        max={MAX_DURATION_SECONDS}
+      />
       <button
         type="button"
         onClick={onDelete}
