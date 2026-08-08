@@ -46,6 +46,35 @@ export async function listPositionsByScenes(
  * 向きの保存(ドラッグ・回転)が引き続き問題なく動く
  * (存在しない列への書き込みを試みないため)。
  */
+/**
+ * 複数のpositionをまとめて保存する。upsertPositionと同じ考え方で、
+ * undefinedのフィールドはペイロードに現れない(マイグレーション未適用の
+ * プロジェクトでも、その機能を使っていない限り書き込みが通る)
+ */
+export async function upsertPositions(
+  supabase: SupabaseClient<Database>,
+  positions: Position[],
+): Promise<void> {
+  if (positions.length === 0) return;
+
+  const { error } = await supabase.from("positions").upsert(
+    positions.map((position) => ({
+      scene_id: position.sceneId,
+      dancer_id: position.dancerId,
+      x_coordinate: position.xCoordinate,
+      y_coordinate: position.yCoordinate,
+      rotation_angle: position.rotationAngle,
+      dancer_transition_duration_seconds:
+        position.dancerTransitionDurationSeconds,
+      curve_control_x: position.curveControlX,
+      curve_control_y: position.curveControlY,
+    })),
+    { onConflict: "scene_id,dancer_id" },
+  );
+
+  if (error) throw error;
+}
+
 export async function upsertPosition(
   supabase: SupabaseClient<Database>,
   position: Position,

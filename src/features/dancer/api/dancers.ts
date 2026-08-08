@@ -53,6 +53,37 @@ export async function createDancer(
   return toDancer(data);
 }
 
+/**
+ * 複数のダンサーをまとめて作る。1人ずつinsertすると、20人追加したときに
+ * 20往復することになるため、1回のリクエストにまとめる。
+ * idは呼び出し側が採番したものをそのまま使う(createDancerと同じ理由)
+ */
+export async function createDancers(
+  supabase: SupabaseClient<Database>,
+  dancers: Pick<
+    Dancer,
+    "id" | "projectId" | "name" | "color" | "initialDirection"
+  >[],
+): Promise<Dancer[]> {
+  if (dancers.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from("dancers")
+    .insert(
+      dancers.map((dancer) => ({
+        id: dancer.id,
+        project_id: dancer.projectId,
+        name: dancer.name,
+        color: dancer.color,
+        initial_direction: dancer.initialDirection,
+      })),
+    )
+    .select();
+
+  if (error) throw error;
+  return data.map(toDancer);
+}
+
 export async function updateDancerName(
   supabase: SupabaseClient<Database>,
   dancerId: string,

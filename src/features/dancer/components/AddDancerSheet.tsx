@@ -1,35 +1,44 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { Minus, Plus } from "lucide-react";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { createClient } from "@/lib/supabase/client";
 import { toUserMessage } from "@/lib/supabase/errors";
-import { createDancer } from "@/features/dancer/api/dancers";
-import { upsertPosition } from "@/features/scene/api/positions";
+import { createDancers } from "@/features/dancer/api/dancers";
+import { upsertPositions } from "@/features/scene/api/positions";
 import { DANCER_COLOR_PALETTE } from "@/features/dancer/constants";
+import {
+  findFreePositions,
+  nextDancerNames,
+  pickDancerColors,
+} from "@/features/dancer/lib/newDancers";
 import type { Project } from "@/features/project/types";
 
 type Props = {
   project: Project;
 };
 
+/** 一度に追加できる人数の上限。1グループの人数としては十分で、
+ * これ以上はステージの空きマスの方が先に尽きる */
+const MAX_COUNT = 20;
+
 /**
- * ダンサーを追加するシート。
+ * ダンサーを追加するシート。聞くのは【人数だけ】。
  *
- * 以前は「名前 + 追加」の1行フォームがステージの上に常駐していた。
- * 追加は最初に何度かやったらしばらく使わない操作なので、常に画面の
- * 一等地を占めているのは割に合わない。シートへ移して、そのぶんの高さを
- * ステージに回した。
+ * 名前は通し番号を自動で振り、色も自動で決める。どちらも後から
+ * インスペクターで直せるうえ、追加の時点では「何人いるか」しか
+ * 決まっていないことが多いため。1人ずつ名前を打たせると、人数ぶん
+ * シートを開き直すことになる。
  *
- * 場所が広くなったぶん、これまで説明できなかったことを2つ入れている:
- * 割り当てられる色を先に見せること(あとで変えられることも添える)と、
- * 追加された人がどこに立つのか(いま見ているシーンのステージ中央)を
- * ミニチュアで示すこと。以前は追加してから初めて分かる仕様だった。
+ * 立ち位置は空いているマスを探して配る。以前は全員ステージ中央に
+ * 置いていたので、続けて追加すると同じ場所に重なり、上の1人しか
+ * 掴めなかった。
  */
 export function AddDancerSheet({ project }: Props) {
-  const [name, setName] = useState("");
+  const [count, setCount] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isOpen = useUIStore((state) => state.isAddDancerSheetOpen);
   const setAddDancerSheetOpen = useUIStore(
@@ -41,55 +50,77 @@ export function AddDancerSheet({ project }: Props) {
   const updateDancerPosition = useProjectStore(
     (state) => state.updateDancerPosition,
   );
+  const positionsBySceneId = useProjectStore(
+    (state) => state.positionsBySceneId,
+  );
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const showToast = useUIStore((state) => state.showToast);
 
-  const dancerCount = Object.keys(dancers).length;
-  const nextColorIndex = dancerCount % DANCER_COLOR_PALETTE.length;
-  const nextColor = DANCER_COLOR_PALETTE[nextColorIndex];
+  const existing = Object.values(dancers);
+  const names = nextDancerNames(
+    existing.map((dancer) => dancer.name),
+    count,
+  );
+  const colors = pickDancerColors(
+    existing.map((dancer) => dancer.color),
+    count,
+    DANCER_COLOR_PALETTE,
+  );
 
   const close = () => {
-    setName("");
+    setCount(1);
     setAddDancerSheetOpen(false);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const trimmedName = name.trim();
-    if (!trimmedName || !selectedSceneId) return;
+    if (!selectedSceneId) return;
 
     setIsSubmitting(true);
-    const id = crypto.randomUUID();
-    const dancer = {
-      id,
+    const occupied = Object.values(positionsBySceneId[selectedSceneId] ?? {});
+    const spots = findFreePositions(
+      occupied,
+      count,
+      project.stageWidth,
+      project.stageHeight,
+    );
+
+    const created = names.map((name, index) => ({
+      id: crypto.randomUUID(),
       projectId: project.id,
-      name: trimmedName,
-      color: nextColor,
+      name,
+      color: colors[index],
       initialDirection: 0,
       createdAt: new Date().toISOString(),
-    };
-    const position = {
+    }));
+    const positions = created.map((dancer, index) => ({
       sceneId: selectedSceneId,
-      dancerId: id,
-      xCoordinate: project.stageWidth / 2,
-      yCoordinate: project.stageHeight / 2,
+      dancerId: dancer.id,
+      xCoordinate: spots[index].x,
+      yCoordinate: spots[index].y,
       rotationAngle: 0,
-    };
+    }));
 
-    addDancer(dancer);
-    updateDancerPosition(position.sceneId, position.dancerId, position);
+    // 楽観的更新: 先にローカルへ反映し、保存に失敗したらまとめて取り消す
+    for (const dancer of created) addDancer(dancer);
+    for (const position of positions) {
+      updateDancerPosition(position.sceneId, position.dancerId, position);
+    }
     close();
 
     try {
       const supabase = createClient();
-      await createDancer(supabase, dancer);
-      await upsertPosition(supabase, position);
+      await createDancers(supabase, created);
+      await upsertPositions(supabase, positions);
       showToast({
-        message: `${trimmedName} をステージ中央に追加しました`,
+        message:
+          created.length === 1
+            ? `${created[0].name} をステージに追加しました`
+            : `${created.length}人をステージに追加しました`,
         type: "success",
       });
     } catch (error) {
-      removeDancer(id);
+      for (const dancer of created) removeDancer(dancer.id);
       showToast({
         message: toUserMessage(error, "ダンサーの追加に失敗しました"),
         type: "error",
@@ -101,72 +132,74 @@ export function AddDancerSheet({ project }: Props) {
 
   return (
     <BottomSheet isOpen={isOpen} onClose={close} title="ダンサーを追加">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3.5 px-[18px] pt-4 pb-5">
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-zinc-400">名前</span>
-          <input
-            autoFocus
-            type="text"
-            required
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            disabled={!selectedSceneId}
-            className="h-[46px] rounded-[11px] border border-zinc-700 bg-zinc-800 px-3 text-[15px] font-medium text-zinc-50 focus:border-pink-500 focus:ring-[3px] focus:ring-pink-500/16 focus:outline-none disabled:opacity-50"
-          />
-        </label>
-
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-4 px-[18px] pt-4 pb-5"
+      >
         <div className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-zinc-400">
-            色（自動で次の色になります）
+          <span className="text-xs font-medium text-zinc-400">何人追加しますか?</span>
+          <div className="flex items-center gap-3">
+            <StepperButton
+              label="1人減らす"
+              icon={Minus}
+              onClick={() => setCount((value) => Math.max(1, value - 1))}
+              disabled={count <= 1}
+            />
+            <input
+              type="number"
+              inputMode="numeric"
+              aria-label="追加する人数"
+              min={1}
+              max={MAX_COUNT}
+              value={count}
+              onChange={(event) => {
+                const parsed = Number(event.target.value);
+                if (!Number.isFinite(parsed)) return;
+                setCount(Math.min(MAX_COUNT, Math.max(1, Math.round(parsed))));
+              }}
+              className="h-[46px] w-20 rounded-[11px] border border-zinc-700 bg-zinc-800 text-center font-mono text-lg font-semibold text-zinc-50 focus:border-pink-500 focus:ring-[3px] focus:ring-pink-500/16 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            />
+            <StepperButton
+              label="1人増やす"
+              icon={Plus}
+              onClick={() => setCount((value) => Math.min(MAX_COUNT, value + 1))}
+              disabled={count >= MAX_COUNT}
+            />
+            <span className="ml-1 text-sm text-zinc-500">人</span>
+          </div>
+        </div>
+
+        {/* 何が作られるかを、追加する前に見せる */}
+        <div className="flex flex-col gap-2 rounded-xl border border-zinc-800 bg-[#1f1f23] p-3">
+          <span className="text-[11px] font-medium text-zinc-500">
+            名前と色は自動で決まります（あとで変更できます）
           </span>
-          <div className="flex items-center gap-2">
-            {DANCER_COLOR_PALETTE.map((color, index) => (
+          <div className="flex flex-wrap gap-1.5">
+            {names.map((name, index) => (
               <span
-                key={color}
-                aria-hidden
-                className={`block h-[34px] w-[34px] rounded-full ${
-                  index === nextColorIndex
-                    ? "ring-2 ring-pink-500 ring-offset-2 ring-offset-zinc-900"
-                    : "opacity-35"
-                }`}
-                style={{ backgroundColor: color }}
-              />
+                key={name}
+                className="flex items-center gap-1.5 rounded-full border border-zinc-700 bg-zinc-900 py-1 pr-2.5 pl-1.5"
+              >
+                <span
+                  aria-hidden
+                  className="block h-3.5 w-3.5 rounded-full"
+                  style={{ backgroundColor: colors[index] }}
+                />
+                <span className="font-mono text-[11px] font-semibold text-zinc-200">
+                  {name}
+                </span>
+              </span>
             ))}
           </div>
-          <span className="text-[10.5px] leading-relaxed text-zinc-500">
-            {dancerCount + 1}人めの色になります。あとからインスペクターで変更できます
-          </span>
         </div>
 
-        {/* どこに立つのかを、言葉だけでなくミニチュアでも示す */}
-        <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-[#1f1f23] p-3">
-          <div
-            aria-hidden
-            className="relative w-[86px] shrink-0 overflow-hidden rounded-[7px] border border-zinc-700 bg-[#0f0f11]"
-            style={{
-              aspectRatio: `${project.stageWidth} / ${project.stageHeight}`,
-            }}
-          >
-            <div
-              className="absolute inset-0 bg-[linear-gradient(to_right,#232329_1px,transparent_1px),linear-gradient(to_bottom,#232329_1px,transparent_1px)]"
-              style={{
-                backgroundSize: `${100 / project.stageWidth}% ${100 / project.stageHeight}%`,
-              }}
-            />
-            <span
-              className="absolute top-1/2 left-1/2 block h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
-              style={{
-                backgroundColor: nextColor,
-                boxShadow: `0 0 0 4px ${nextColor}40`,
-              }}
-            />
-          </div>
-          <p className="text-xs leading-relaxed text-zinc-400">
-            追加すると、
-            <span className="text-zinc-50">いま見ているシーンのステージ中央</span>
-            に立ちます。そこからドラッグで動かしてください。
-          </p>
-        </div>
+        <p className="text-xs leading-relaxed text-zinc-500">
+          <span className="text-zinc-300">
+            いま見ているシーンの空いているマス
+          </span>
+          に、中央から順に並びます。重ならないので、そのままドラッグで
+          動かせます。
+        </p>
 
         <div className="flex gap-2">
           <button
@@ -178,13 +211,37 @@ export function AddDancerSheet({ project }: Props) {
           </button>
           <button
             type="submit"
-            disabled={!selectedSceneId || isSubmitting || !name.trim()}
+            disabled={!selectedSceneId || isSubmitting}
             className="h-12 flex-[2] rounded-[11px] bg-pink-500 text-[15px] font-semibold text-white disabled:opacity-50"
           >
-            追加する
+            {count}人を追加する
           </button>
         </div>
       </form>
     </BottomSheet>
+  );
+}
+
+function StepperButton({
+  label,
+  icon: Icon,
+  onClick,
+  disabled,
+}: {
+  label: string;
+  icon: typeof Plus;
+  onClick: () => void;
+  disabled: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[11px] border border-zinc-700 text-zinc-300 disabled:opacity-30"
+    >
+      <Icon size={18} />
+    </button>
   );
 }
