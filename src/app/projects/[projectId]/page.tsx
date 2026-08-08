@@ -6,7 +6,6 @@ import { listScenes } from "@/features/scene/api/scenes";
 import { listPositionsByScenes } from "@/features/scene/api/positions";
 import { CanvasBoard } from "@/features/canvas/components/CanvasBoard";
 import { EditorHeader } from "@/features/canvas/components/EditorHeader";
-import { DisplaySegment } from "@/features/canvas/components/DisplaySegment";
 import { AddDancerSheet } from "@/features/dancer/components/AddDancerSheet";
 import { DancerInspector } from "@/features/dancer/components/DancerInspector";
 import { SceneDock } from "@/features/scene/components/SceneDock";
@@ -53,7 +52,6 @@ export default async function ProjectPage(
     <div className="flex h-dvh flex-col overflow-hidden">
       <div className="mx-auto flex w-full max-w-md min-h-0 flex-1 flex-col overflow-hidden">
         <EditorHeader project={project} />
-        <DisplaySegment />
 
         <div className="flex min-h-0 flex-1 flex-col px-3.5 pb-1">
           <CanvasBoard
