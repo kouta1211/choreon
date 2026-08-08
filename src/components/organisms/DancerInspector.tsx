@@ -13,9 +13,9 @@ import {
 } from "@/features/dancer/api/dancers";
 import { upsertPosition } from "@/features/scene/api/positions";
 import { DANCER_COLOR_PALETTE } from "@/features/dancer/constants";
-import { DurationSecondsInput } from "@/components/ui/DurationSecondsInput";
-import { InlineEditableText } from "@/components/ui/InlineEditableText";
-import { Tooltip } from "@/components/ui/Tooltip";
+import { DurationSecondsInput } from "@/components/molecules/DurationSecondsInput";
+import { InlineEditableText } from "@/components/molecules/InlineEditableText";
+import { Tooltip } from "@/components/atoms/Tooltip";
 
 /** ダンサー個別の遷移時間の入力が許容する範囲。schema.sqlのCHECK制約と合わせている */
 const MIN_DURATION_SECONDS = 0.1;

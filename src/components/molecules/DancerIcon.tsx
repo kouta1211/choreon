@@ -2,8 +2,8 @@
 
 import { memo } from "react";
 import { motion } from "motion/react";
-import { DancerNameLabel } from "@/features/dancer/components/DancerNameLabel";
-import { DancerExcessiveMoveBadge } from "@/features/dancer/components/DancerExcessiveMoveBadge";
+import { DancerNameLabel } from "@/components/atoms/DancerNameLabel";
+import { DancerExcessiveMoveBadge } from "@/components/atoms/DancerExcessiveMoveBadge";
 import { MARKER_SIZE } from "@/features/dancer/constants";
 import type { Dancer } from "@/features/dancer/types";
 

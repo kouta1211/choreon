@@ -3,7 +3,7 @@
 import { LayoutGrid } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import { Tooltip } from "@/components/ui/Tooltip";
+import { Tooltip } from "@/components/atoms/Tooltip";
 
 /**
  * フォーメーションのテンプレートを開く入口。ステージ【直下】の行の左端。

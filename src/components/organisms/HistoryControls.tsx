@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { Redo2, Undo2 } from "lucide-react";
 import { useHistoryStore } from "@/features/canvas/store/useHistoryStore";
 import { useHistoryActions } from "@/features/canvas/hooks/useHistoryActions";
-import { Tooltip } from "@/components/ui/Tooltip";
+import { Tooltip } from "@/components/atoms/Tooltip";
 
 /** キーボードショートカットを無視する要素。テキスト入力中のCtrl+Zは
  * ブラウザ標準の「入力の取り消し」であってほしいため */

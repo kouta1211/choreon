@@ -11,8 +11,8 @@ import {
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { animate, motion, useMotionValue, useTransform } from "motion/react";
-import { DancerMarker } from "./DancerIcon";
-import { RotationHandle } from "./RotationHandle";
+import { DancerMarker } from "@/components/molecules/DancerIcon";
+import { RotationHandle } from "@/components/atoms/RotationHandle";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { quadraticBezierAt } from "@/features/canvas/lib/curvePath";
 import {

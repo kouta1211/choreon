@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Toast } from "@/features/canvas/components/Toast";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Toast } from "@/components/organisms/Toast";
+import { ConfirmDialog } from "@/components/organisms/ConfirmDialog";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

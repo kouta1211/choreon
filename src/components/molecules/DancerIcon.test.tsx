@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { DancerIcon, DancerMarker } from "./DancerIcon";
+import { DancerIcon, DancerMarker } from "@/components/molecules/DancerIcon";
 import type { Dancer } from "@/features/dancer/types";
 
 function makeDancer(overrides: Partial<Dancer> = {}): Dancer {

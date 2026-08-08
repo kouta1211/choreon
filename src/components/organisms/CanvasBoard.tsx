@@ -10,10 +10,10 @@ import {
   type DragMoveEvent,
   type Modifier,
 } from "@dnd-kit/core";
-import { EmptyStage, Stage } from "@/features/canvas/components/Stage";
-import { HistoryControls } from "@/features/canvas/components/HistoryControls";
-import { TemplateButton } from "@/features/canvas/components/TemplateButton";
-import { DancerLayer } from "@/features/canvas/components/DancerLayer";
+import { EmptyStage, Stage } from "@/components/organisms/Stage";
+import { HistoryControls } from "@/components/organisms/HistoryControls";
+import { TemplateButton } from "@/components/organisms/TemplateButton";
+import { DancerLayer } from "@/components/organisms/DancerLayer";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useHistoryStore } from "@/features/canvas/store/useHistoryStore";

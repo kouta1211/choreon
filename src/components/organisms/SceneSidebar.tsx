@@ -1,6 +1,6 @@
 "use client";
 
-import { SceneList } from "@/features/scene/components/SceneList";
+import { SceneList } from "@/components/organisms/SceneList";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { totalTransitionSeconds } from "@/features/scene/lib/playback";
 import type { Project } from "@/features/project/types";

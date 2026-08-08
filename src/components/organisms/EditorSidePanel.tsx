@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { SceneList } from "@/features/scene/components/SceneList";
-import { DancerList } from "@/features/dancer/components/DancerList";
+import { SceneList } from "@/components/organisms/SceneList";
+import { DancerList } from "@/components/organisms/DancerList";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { totalTransitionSeconds } from "@/features/scene/lib/playback";
 import type { Project } from "@/features/project/types";

@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PathOverlay } from "@/features/canvas/components/PathOverlay";
-import { PathTrail } from "@/features/canvas/components/PathTrail";
-import { DraggableDancerIcon } from "@/features/dancer/components/DraggableDancerIcon";
+import { PathOverlay } from "@/components/molecules/PathOverlay";
+import { PathTrail } from "@/components/molecules/PathTrail";
+import { DraggableDancerIcon } from "@/components/organisms/DraggableDancerIcon";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { findBlockedDancerIds } from "@/features/canvas/lib/blindSpot";

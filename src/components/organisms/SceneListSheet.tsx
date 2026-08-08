@@ -1,7 +1,7 @@
 "use client";
 
-import { BottomSheet } from "@/components/ui/BottomSheet";
-import { SceneList } from "@/features/scene/components/SceneList";
+import { BottomSheet } from "@/components/molecules/BottomSheet";
+import { SceneList } from "@/components/organisms/SceneList";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { totalTransitionSeconds } from "@/features/scene/lib/playback";

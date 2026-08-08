@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { FlipHorizontal2, FlipVertical2, RotateCw } from "lucide-react";
-import { BottomSheet } from "@/components/ui/BottomSheet";
+import { BottomSheet } from "@/components/molecules/BottomSheet";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useApplyTemplate } from "@/features/canvas/hooks/useApplyTemplate";

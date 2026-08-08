@@ -13,7 +13,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { Copy, Pencil, Plus, Trash2 } from "lucide-react";
-import { SceneThumbnail } from "@/features/scene/components/SceneThumbnail";
+import { SceneThumbnail } from "@/components/molecules/SceneThumbnail";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { reorderSceneIds } from "@/features/scene/lib/sceneReorder";

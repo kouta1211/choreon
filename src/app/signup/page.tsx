@@ -9,7 +9,7 @@ import {
   AuthField,
   AuthScreen,
   AuthSubmitButton,
-} from "@/features/auth/components/AuthScreen";
+} from "@/components/molecules/AuthScreen";
 
 export default function SignupPage() {
   const router = useRouter();

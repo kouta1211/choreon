@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Eclipse, FlipHorizontal2, Grid3x3, SlidersHorizontal, Spline } from "lucide-react";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
-import { Switch } from "@/components/ui/Switch";
+import { Switch } from "@/components/atoms/Switch";
 
 /**
  * ステージの見え方とモードをまとめて切り替えるメニュー。ヘッダー右端の

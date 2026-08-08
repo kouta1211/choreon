@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ProjectList } from "./ProjectList";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { ConfirmDialog } from "@/components/organisms/ConfirmDialog";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import * as projectsApi from "@/features/project/api/projects";
 import type { ProjectSummary } from "@/features/project/types";

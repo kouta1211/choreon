@@ -13,7 +13,7 @@ import {
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { ArrowRight, Plus } from "lucide-react";
-import { SceneThumbnail } from "@/features/scene/components/SceneThumbnail";
+import { SceneThumbnail } from "@/components/molecules/SceneThumbnail";
 import { reorderSceneIds } from "@/features/scene/lib/sceneReorder";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position, Scene } from "@/features/scene/types";

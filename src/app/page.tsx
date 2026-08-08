@@ -1,9 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { listProjectSummaries } from "@/features/project/api/projects";
-import { ProjectList } from "@/features/project/components/ProjectList";
-import { CreateProjectForm } from "@/features/project/components/CreateProjectForm";
-import { SignOutButton } from "@/features/auth/components/SignOutButton";
-import { AppHeader } from "@/components/ui/AppHeader";
+import { ProjectList } from "@/components/organisms/ProjectList";
+import { CreateProjectForm } from "@/components/organisms/CreateProjectForm";
+import { SignOutButton } from "@/components/organisms/SignOutButton";
+import { AppHeader } from "@/components/molecules/AppHeader";
 
 export default async function Home() {
   const supabase = await createClient();

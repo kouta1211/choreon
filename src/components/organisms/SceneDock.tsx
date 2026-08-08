@@ -4,15 +4,15 @@ import { useEffect, useRef } from "react";
 import { Pause, Play, Trash2 } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import { SceneTabs } from "@/features/scene/components/SceneTabs";
-import { SceneDotRail } from "@/features/scene/components/SceneDotRail";
-import { SceneListSheet } from "@/features/scene/components/SceneListSheet";
+import { SceneTabs } from "@/components/molecules/SceneTabs";
+import { SceneDotRail } from "@/components/molecules/SceneDotRail";
+import { SceneListSheet } from "@/components/organisms/SceneListSheet";
 import { getNextSceneId } from "@/features/scene/lib/playback";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
 import { useSceneActions } from "@/features/scene/hooks/useSceneActions";
-import { InlineEditableText } from "@/components/ui/InlineEditableText";
-import { Tooltip } from "@/components/ui/Tooltip";
-import { DurationSecondsInput } from "@/components/ui/DurationSecondsInput";
+import { InlineEditableText } from "@/components/molecules/InlineEditableText";
+import { Tooltip } from "@/components/atoms/Tooltip";
+import { DurationSecondsInput } from "@/components/molecules/DurationSecondsInput";
 import type { Project } from "@/features/project/types";
 
 type Props = {

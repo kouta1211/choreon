@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { ChevronLeft, UserPlus } from "lucide-react";
-import { ProjectTitle } from "@/features/project/components/ProjectTitle";
-import { DisplayModeMenu } from "@/features/canvas/components/DisplayModeMenu";
+import { ProjectTitle } from "@/components/organisms/ProjectTitle";
+import { DisplayModeMenu } from "@/components/organisms/DisplayModeMenu";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import { Tooltip } from "@/components/ui/Tooltip";
+import { Tooltip } from "@/components/atoms/Tooltip";
 import type { Project } from "@/features/project/types";
 
 type Props = {

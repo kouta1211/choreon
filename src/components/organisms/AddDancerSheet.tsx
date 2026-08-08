@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { Minus, Plus } from "lucide-react";
-import { BottomSheet } from "@/components/ui/BottomSheet";
+import { BottomSheet } from "@/components/molecules/BottomSheet";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { createClient } from "@/lib/supabase/client";

@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { updateProjectTitle } from "@/features/project/api/projects";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import { InlineEditableText } from "@/components/ui/InlineEditableText";
+import { InlineEditableText } from "@/components/molecules/InlineEditableText";
 import type { Project } from "@/features/project/types";
 
 type Props = {

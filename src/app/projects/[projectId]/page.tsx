@@ -4,16 +4,16 @@ import { getProject } from "@/features/project/api/projects";
 import { listDancers } from "@/features/dancer/api/dancers";
 import { listScenes } from "@/features/scene/api/scenes";
 import { listPositionsByScenes } from "@/features/scene/api/positions";
-import { CanvasBoard } from "@/features/canvas/components/CanvasBoard";
-import { EditorHeader } from "@/features/canvas/components/EditorHeader";
-import { AddDancerSheet } from "@/features/dancer/components/AddDancerSheet";
-import { TemplateSheet } from "@/features/canvas/components/TemplateSheet";
-import { TemplateHint } from "@/features/canvas/components/TemplateHint";
-import { DancerInspector } from "@/features/dancer/components/DancerInspector";
-import { SceneDock } from "@/features/scene/components/SceneDock";
-import { SceneSidebar } from "@/features/scene/components/SceneSidebar";
-import { EditorSidePanel } from "@/features/canvas/components/EditorSidePanel";
-import { EditorShortcuts } from "@/features/canvas/components/EditorShortcuts";
+import { CanvasBoard } from "@/components/organisms/CanvasBoard";
+import { EditorHeader } from "@/components/organisms/EditorHeader";
+import { AddDancerSheet } from "@/components/organisms/AddDancerSheet";
+import { TemplateSheet } from "@/components/organisms/TemplateSheet";
+import { TemplateHint } from "@/components/organisms/TemplateHint";
+import { DancerInspector } from "@/components/organisms/DancerInspector";
+import { SceneDock } from "@/components/organisms/SceneDock";
+import { SceneSidebar } from "@/components/organisms/SceneSidebar";
+import { EditorSidePanel } from "@/components/organisms/EditorSidePanel";
+import { EditorShortcuts } from "@/components/organisms/EditorShortcuts";
 
 /**
  * エディタ画面。ページ自体はスクロールさせず、画面の高さ(h-dvh)に

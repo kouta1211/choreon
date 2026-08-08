@@ -2,7 +2,7 @@
 
 import { useEffect, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { useIsWideScreen } from "@/components/ui/useIsWideScreen";
+import { useIsWideScreen } from "@/components/hooks/useIsWideScreen";
 
 type Props = {
   isOpen: boolean;
