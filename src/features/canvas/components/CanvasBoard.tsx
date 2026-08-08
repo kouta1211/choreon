@@ -15,6 +15,7 @@ import { CanvasToolbar } from "@/features/canvas/components/CanvasToolbar";
 import { DancerLayer } from "@/features/canvas/components/DancerLayer";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
+import { useHistoryStore } from "@/features/canvas/store/useHistoryStore";
 import {
   clamp,
   findSymmetryPairId,
@@ -29,6 +30,7 @@ import {
   GRID_SNAP_TOLERANCE,
 } from "@/features/canvas/lib/gridSnapModifier";
 import { createClient } from "@/lib/supabase/client";
+import { toUserMessage } from "@/lib/supabase/errors";
 import { upsertPosition } from "@/features/scene/api/positions";
 import type { Project } from "@/features/project/types";
 import type { Dancer } from "@/features/dancer/types";
@@ -148,6 +150,9 @@ export function CanvasBoard({
     if (initialScenes.length > 0) {
       selectScene(initialScenes[0].id);
     }
+    // 別プロジェクトの編集履歴を持ち越すと、存在しないシーン・ダンサーへ
+    // 書き戻そうとすることになるため捨てる
+    useHistoryStore.getState().clear();
     // 別プロジェクトに切り替わったときだけ入れ直せば十分なため、project.idのみを依存にする
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.id]);
@@ -274,12 +279,34 @@ export function CanvasBoard({
         if (pairAfter) {
           await upsertPosition(supabase, pairAfter);
         }
-      } catch {
+        // 保存が確定してから履歴に積む(失敗した操作は「元に戻す」対象に
+        // ならない=見た目もロールバック済みなので、積むと辻褄が合わなくなる)。
+        // シンメトリーのペアも同じ1ステップに含め、まとめて元に戻せるようにする
+        useHistoryStore.getState().push({
+          kind: "move",
+          changes: [
+            { sceneId: selectedSceneId, dancerId, before, after },
+            ...(pairId && pairBefore && pairAfter
+              ? [
+                  {
+                    sceneId: selectedSceneId,
+                    dancerId: pairId,
+                    before: pairBefore,
+                    after: pairAfter,
+                  },
+                ]
+              : []),
+          ],
+        });
+      } catch (error) {
         updateDancerPosition(selectedSceneId, dancerId, before);
         if (pairId && pairBefore) {
           updateDancerPosition(selectedSceneId, pairId, pairBefore);
         }
-        showToast({ message: "位置の保存に失敗しました", type: "error" });
+        showToast({
+          message: toUserMessage(error, "位置の保存に失敗しました"),
+          type: "error",
+        });
       }
     },
     [
@@ -312,9 +339,16 @@ export function CanvasBoard({
       try {
         const supabase = createClient();
         await upsertPosition(supabase, after);
-      } catch {
+        useHistoryStore.getState().push({
+          kind: "rotate",
+          changes: [{ sceneId: selectedSceneId, dancerId, before, after }],
+        });
+      } catch (error) {
         updateDancerPosition(selectedSceneId, dancerId, before);
-        showToast({ message: "向きの保存に失敗しました", type: "error" });
+        showToast({
+          message: toUserMessage(error, "向きの保存に失敗しました"),
+          type: "error",
+        });
       }
     },
     [selectedSceneId, updateDancerPosition, showToast],
@@ -351,9 +385,18 @@ export function CanvasBoard({
       try {
         const supabase = createClient();
         await upsertPosition(supabase, after);
-      } catch {
+        // 矢印キーの微調整は連打されるため、useHistoryStore側で同じダンサーへの
+        // 連続操作を1ステップに畳んでいる(kind: "nudge"がその目印)
+        useHistoryStore.getState().push({
+          kind: "nudge",
+          changes: [{ sceneId: selectedSceneId, dancerId, before, after }],
+        });
+      } catch (error) {
         updateDancerPosition(selectedSceneId, dancerId, before);
-        showToast({ message: "位置の保存に失敗しました", type: "error" });
+        showToast({
+          message: toUserMessage(error, "位置の保存に失敗しました"),
+          type: "error",
+        });
       }
     },
     [
@@ -393,12 +436,19 @@ export function CanvasBoard({
       try {
         const supabase = createClient();
         await upsertPosition(supabase, after);
-      } catch {
+        useHistoryStore.getState().push({
+          kind: "curve",
+          changes: [{ sceneId, dancerId, before, after }],
+        });
+      } catch (error) {
         updateDancerPosition(sceneId, dancerId, {
           curveControlX: before.curveControlX,
           curveControlY: before.curveControlY,
         });
-        showToast({ message: "曲線の変更に失敗しました", type: "error" });
+        showToast({
+          message: toUserMessage(error, "曲線の変更に失敗しました"),
+          type: "error",
+        });
       }
     },
     [updateDancerPosition, showToast],

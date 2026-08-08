@@ -1,0 +1,225 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { HistoryControls } from "./HistoryControls";
+import { useHistoryStore } from "@/features/canvas/store/useHistoryStore";
+import { useProjectStore } from "@/features/project/store/useProjectStore";
+import { useUIStore } from "@/features/canvas/store/useUIStore";
+import * as positionsApi from "@/features/scene/api/positions";
+import type { Position } from "@/features/scene/types";
+
+vi.mock("@/lib/supabase/client", () => ({
+  createClient: () => ({}),
+}));
+
+function makePosition(overrides: Partial<Position> = {}): Position {
+  return {
+    sceneId: "scene-1",
+    dancerId: "dancer-1",
+    xCoordinate: 1,
+    yCoordinate: 1,
+    rotationAngle: 0,
+    ...overrides,
+  };
+}
+
+/** 「dancer-1をx=1からx=5へ動かした」という履歴が1件ある状態を作る */
+function seedMovedDancer() {
+  const before = makePosition({ xCoordinate: 1 });
+  const after = makePosition({ xCoordinate: 5 });
+
+  useProjectStore.setState({
+    dancers: {
+      "dancer-1": {
+        id: "dancer-1",
+        projectId: "project-1",
+        name: "あいり",
+        color: "#3b82f6",
+        initialDirection: 0,
+        createdAt: "2026-01-01T00:00:00.000Z",
+      },
+    },
+    scenes: [
+      {
+        id: "scene-1",
+        projectId: "project-1",
+        name: "シーン1",
+        orderIndex: 0,
+        transitionDurationSeconds: 1,
+      },
+    ],
+    positionsBySceneId: { "scene-1": { "dancer-1": after } },
+  });
+  useUIStore.setState({ selectedSceneId: "scene-1" });
+  useHistoryStore.getState().push({
+    kind: "move",
+    changes: [{ sceneId: "scene-1", dancerId: "dancer-1", before, after }],
+  });
+
+  return { before, after };
+}
+
+function currentX() {
+  return useProjectStore.getState().positionsBySceneId["scene-1"]?.["dancer-1"]
+    ?.xCoordinate;
+}
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  useHistoryStore.getState().clear();
+  useProjectStore.setState({
+    project: null,
+    dancers: {},
+    scenes: [],
+    positionsBySceneId: {},
+  });
+  useUIStore.setState({
+    selectedSceneId: null,
+    selectedDancerId: null,
+    toast: null,
+    isPlaying: false,
+  });
+});
+
+describe("HistoryControls", () => {
+  it("履歴が無いときは両方のボタンが無効", () => {
+    render(<HistoryControls />);
+
+    expect(screen.getByLabelText("元に戻す")).toBeDisabled();
+    expect(screen.getByLabelText("やり直す")).toBeDisabled();
+  });
+
+  it("元に戻すと、操作前の位置がstoreへ戻りSupabaseにも保存される", async () => {
+    const { before } = seedMovedDancer();
+    const upsertSpy = vi
+      .spyOn(positionsApi, "upsertPosition")
+      .mockResolvedValue(before);
+    const user = userEvent.setup();
+    render(<HistoryControls />);
+
+    await user.click(screen.getByLabelText("元に戻す"));
+
+    expect(currentX()).toBe(1);
+    await waitFor(() => {
+      expect(upsertSpy).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ xCoordinate: 1 }),
+      );
+    });
+  });
+
+  it("元に戻した後はやり直せる(操作後の位置に戻る)", async () => {
+    const { after } = seedMovedDancer();
+    vi.spyOn(positionsApi, "upsertPosition").mockResolvedValue(after);
+    const user = userEvent.setup();
+    render(<HistoryControls />);
+
+    await user.click(screen.getByLabelText("元に戻す"));
+    await waitFor(() => expect(currentX()).toBe(1));
+
+    await user.click(screen.getByLabelText("やり直す"));
+
+    expect(currentX()).toBe(5);
+  });
+
+  it("保存に失敗したら見た目も履歴スタックも元の状態へ戻す", async () => {
+    seedMovedDancer();
+    vi.spyOn(positionsApi, "upsertPosition").mockRejectedValue(
+      new Error("network"),
+    );
+    const user = userEvent.setup();
+    render(<HistoryControls />);
+
+    await user.click(screen.getByLabelText("元に戻す"));
+
+    await waitFor(() => {
+      expect(useUIStore.getState().toast?.type).toBe("error");
+    });
+    // 位置は操作後(x=5)のまま、履歴も消費されていない
+    expect(currentX()).toBe(5);
+    expect(useHistoryStore.getState().past).toHaveLength(1);
+    expect(useHistoryStore.getState().future).toHaveLength(0);
+  });
+
+  it("対象のダンサーが削除済みなら、書き戻さずに知らせる", async () => {
+    seedMovedDancer();
+    useProjectStore.setState({ dancers: {} });
+    const upsertSpy = vi.spyOn(positionsApi, "upsertPosition");
+    const user = userEvent.setup();
+    render(<HistoryControls />);
+
+    await user.click(screen.getByLabelText("元に戻す"));
+
+    await waitFor(() => {
+      expect(useUIStore.getState().toast?.message).toContain("削除されている");
+    });
+    expect(upsertSpy).not.toHaveBeenCalled();
+  });
+
+  it("元に戻す対象が別のシーンにある場合、そのシーンへ切り替える", async () => {
+    const { before } = seedMovedDancer();
+    useUIStore.setState({ selectedSceneId: "scene-other" });
+    vi.spyOn(positionsApi, "upsertPosition").mockResolvedValue(before);
+    const user = userEvent.setup();
+    render(<HistoryControls />);
+
+    await user.click(screen.getByLabelText("元に戻す"));
+
+    expect(useUIStore.getState().selectedSceneId).toBe("scene-1");
+  });
+
+  it("再生中に元に戻すと再生が止まる", async () => {
+    const { before } = seedMovedDancer();
+    useUIStore.setState({ isPlaying: true });
+    vi.spyOn(positionsApi, "upsertPosition").mockResolvedValue(before);
+    const user = userEvent.setup();
+    render(<HistoryControls />);
+
+    await user.click(screen.getByLabelText("元に戻す"));
+
+    expect(useUIStore.getState().isPlaying).toBe(false);
+  });
+
+  it("Ctrl+Zで元に戻せる", async () => {
+    const { before } = seedMovedDancer();
+    vi.spyOn(positionsApi, "upsertPosition").mockResolvedValue(before);
+    const user = userEvent.setup();
+    render(<HistoryControls />);
+
+    await user.keyboard("{Control>}z{/Control}");
+
+    await waitFor(() => expect(currentX()).toBe(1));
+  });
+
+  it("Ctrl+Shift+Zでやり直せる", async () => {
+    const { after } = seedMovedDancer();
+    vi.spyOn(positionsApi, "upsertPosition").mockResolvedValue(after);
+    const user = userEvent.setup();
+    render(<HistoryControls />);
+
+    await user.keyboard("{Control>}z{/Control}");
+    await waitFor(() => expect(currentX()).toBe(1));
+
+    await user.keyboard("{Control>}{Shift>}z{/Shift}{/Control}");
+
+    await waitFor(() => expect(currentX()).toBe(5));
+  });
+
+  it("テキスト入力中のCtrl+Zは横取りしない(ブラウザ標準の取り消しに任せる)", async () => {
+    seedMovedDancer();
+    const upsertSpy = vi.spyOn(positionsApi, "upsertPosition");
+    const user = userEvent.setup();
+    render(
+      <>
+        <input aria-label="シーン名" />
+        <HistoryControls />
+      </>,
+    );
+
+    await user.click(screen.getByLabelText("シーン名"));
+    await user.keyboard("{Control>}z{/Control}");
+
+    expect(upsertSpy).not.toHaveBeenCalled();
+    expect(currentX()).toBe(5);
+  });
+});
