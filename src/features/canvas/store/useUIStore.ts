@@ -14,6 +14,12 @@ type DragSnapLine = {
 
 type UIState = {
   selectedSceneId: string | null;
+  /** 直前に選択していたシーン。「どこから来たか」が分かると、隣のシーンへの
+   * 移動が「進んだ」のか「戻った」のかを判定できる。曲線の制御点と遷移時間は
+   * 区間(前のシーン↔次のシーン)ごとに1つで、後ろ側のシーンのpositionに
+   * 保存されているため、戻るときはそちらを見に行く必要がある
+   * (DancerLayerが読み取る) */
+  previousSceneId: string | null;
   selectedDancerId: string | null;
   isGridVisible: boolean;
   /** ドラッグ中のダンサーID。ドラッグ中はdnd-kitのCSS transformのみで
@@ -53,6 +59,7 @@ type UIState = {
 
 export const useUIStore = create<UIState>((set) => ({
   selectedSceneId: null,
+  previousSceneId: null,
   selectedDancerId: null,
   isGridVisible: true,
   draggingDancerId: null,
@@ -64,7 +71,14 @@ export const useUIStore = create<UIState>((set) => ({
   dragSnapLine: { x: null, y: null },
   isPlaying: false,
 
-  selectScene: (sceneId) => set({ selectedSceneId: sceneId }),
+  // 同じシーンを選び直したときにpreviousSceneIdを上書きしない。上書きすると
+  // 「前のシーン＝今のシーン」になって移動方向が判定できなくなるため
+  selectScene: (sceneId) =>
+    set((state) =>
+      state.selectedSceneId === sceneId
+        ? {}
+        : { selectedSceneId: sceneId, previousSceneId: state.selectedSceneId },
+    ),
   selectDancer: (dancerId) => set({ selectedDancerId: dancerId }),
   toggleGrid: () => set((state) => ({ isGridVisible: !state.isGridVisible })),
   setDraggingDancerId: (dancerId) => set({ draggingDancerId: dancerId }),

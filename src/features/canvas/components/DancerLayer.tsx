@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { PathOverlay } from "@/features/canvas/components/PathOverlay";
+import { PathTrail } from "@/features/canvas/components/PathTrail";
 import { DraggableDancerIcon } from "@/features/dancer/components/DraggableDancerIcon";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { findBlockedDancerIds } from "@/features/canvas/lib/blindSpot";
 import { findExcessiveMoveDancerIds } from "@/features/canvas/lib/physicalLimits";
+import { getSceneStep } from "@/features/canvas/lib/sceneStep";
 import { EMPTY_POSITIONS } from "@/features/canvas/constants";
 
 type Props = {
@@ -36,6 +38,23 @@ type Props = {
  * これらを購読しないことで、ダンサーがドラッグで動くたびにCanvasBoard
  * 自体が再レンダーされる(→handleDragEnd等が新しい関数参照になり、
  * DraggableDancerIconのmemoが効かなくなる)のを避けている。
+ *
+ * ■ 移動の「区間」という考え方
+ * 曲線の制御点と遷移時間は、シーンそのものではなく「隣り合う2つのシーンの
+ * 間(区間)」に属する情報で、区間の後ろ側のシーンのpositionに保存されている
+ * (シーン1→シーン2の制御点はシーン2の行にある)。
+ *
+ * そのため「今どのシーンにいるか」だけを見ると、進むときと戻るときで
+ * 別の行を参照してしまい、同じ区間なのに戻り道だけ直線になっていた。
+ * ここではpreviousSceneIdと突き合わせて移動方向を判定し、常に
+ * 「今まさに通っている区間」の行から制御点と遷移時間を読む。
+ * 二次ベジェは対称なので、同じ制御点のまま始点と終点が入れ替われば
+ * そのまま逆走になる(反転の計算は要らない)。
+ *
+ * 隣り合っていないシーンへ飛んだ場合(スライダーで一気に移動した、
+ * 最初のシーンへ戻った等)は直線移動にする。その区間の導線は画面に
+ * 描かれていないため、見えていない曲線に沿って動くのを避ける
+ * (「線を引き直す」ことと「動きを変える」ことを一致させる方針)。
  */
 export function DancerLayer({
   stageWidthUnits,
@@ -47,6 +66,7 @@ export function DancerLayer({
   const dancers = useProjectStore((state) => state.dancers);
   const scenes = useProjectStore((state) => state.scenes);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
+  const previousSceneId = useUIStore((state) => state.previousSceneId);
   const selectedDancerId = useUIStore((state) => state.selectedDancerId);
   const isPathVisible = useUIStore((state) => state.isPathVisible);
   const isBlindSpotCheckVisible = useUIStore(
@@ -63,14 +83,48 @@ export function DancerLayer({
   const nextPositions = useProjectStore(
     (state) => state.positionsBySceneId[nextSceneId ?? ""] ?? EMPTY_POSITIONS,
   );
-  // 選択中シーン自身の遷移時間(「このシーンへ遷移してくるまでの所要時間」)。
-  // クリック・スライダー・再生のどの経由で選択されても、ここへ動いてくる
-  // アニメーションはこの秒数を使う。ダンサーごとにpositionへ個別の上書き値
-  // (dancerTransitionDurationSeconds)が設定されていれば、そちらを優先する
-  // (DancerInspectorから設定できる。「このダンサーだけ先に/遅れて到着」
-  // という演出のため)
-  const sceneTransitionDurationSeconds =
-    scenes[selectedSceneIndex]?.transitionDurationSeconds;
+
+  // 直前に見ていたシーンとの位置関係から、今の移動が「1つ進んだ」のか
+  // 「1つ戻った」のか、それとも飛んだのかを判定する
+  const step = getSceneStep(
+    scenes.map((scene) => scene.id),
+    previousSceneId,
+    selectedSceneId,
+  );
+  const isBackwardStep = step === "backward";
+  // 隣り合うシーン間の移動でなければ、描かれていない曲線に沿って
+  // 動かないよう直線扱いにする
+  const isAdjacentStep = step !== "jump";
+
+  const previousPositions = useProjectStore(
+    (state) => state.positionsBySceneId[previousSceneId ?? ""] ?? EMPTY_POSITIONS,
+  );
+
+  // 今通っている区間の情報がどちらのシーン側にあるか。戻るときだけ
+  // 「さっきまでいたシーン」側に入っている
+  const segmentPositions = isBackwardStep ? previousPositions : positions;
+  const segmentScene = isBackwardStep
+    ? scenes.find((scene) => scene.id === previousSceneId)
+    : scenes[selectedSceneIndex];
+
+  // 移動アニメーションが進行中かどうか。戻る移動のあいだは、PathTrailが
+  // これから描き出そうとしている線をPathOverlayが先に全部出してしまうため、
+  // 描き終わるまでPathOverlayを出さずに待つ。
+  //
+  // useEffectではなくレンダー中にstateを更新しているのは、useEffectだと
+  // 「新しいシーンで1度描画されてから」フラグが立つため、1フレームだけ
+  // 導線が全部見えてしまうため(Reactが公式に案内している、propsの変化に
+  // 合わせてstateを調整するパターン)
+  const [animatingSceneId, setAnimatingSceneId] = useState<string | null>(null);
+  const [renderedSceneId, setRenderedSceneId] = useState(selectedSceneId);
+  if (renderedSceneId !== selectedSceneId) {
+    setRenderedSceneId(selectedSceneId);
+    setAnimatingSceneId(
+      isAdjacentStep && isPathVisible ? selectedSceneId : null,
+    );
+  }
+  const isTrailAnimating =
+    animatingSceneId !== null && animatingSceneId === selectedSceneId;
 
   const blockedDancerIds = useMemo(
     () =>
@@ -87,7 +141,10 @@ export function DancerLayer({
 
   return (
     <>
-      {isPathVisible && (
+      {/* 戻る移動の最中は、PathTrailが同じ区間を描き出している途中なので
+          出さない(出すと最初から全部見えてしまう)。描き終わった合図
+          (onComplete)を受けてから通常の導線表示へ引き継ぐ */}
+      {isPathVisible && !(isBackwardStep && isTrailAnimating) && (
         <PathOverlay
           currentPositions={positions}
           nextPositions={nextPositions}
@@ -103,9 +160,31 @@ export function DancerLayer({
           }
         />
       )}
+      {/* 通過中の区間の導線を、進んだぶんだけ消していく。
+          key に選択中シーンを指定して、シーンを移るたびに作り直す
+          (1つのインスタンス=1回の移動、という単位にするため) */}
+      {isPathVisible && isTrailAnimating && (
+        <PathTrail
+          key={selectedSceneId}
+          mode={isBackwardStep ? "draw" : "erase"}
+          fromPositions={previousPositions}
+          toPositions={positions}
+          segmentPositions={segmentPositions}
+          sceneDurationSeconds={segmentScene?.transitionDurationSeconds}
+          dancers={dancers}
+          stageWidthUnits={stageWidthUnits}
+          stageHeightUnits={stageHeightUnits}
+          onComplete={() => setAnimatingSceneId(null)}
+        />
+      )}
       {Object.values(positions).map((position) => {
         const dancer = dancers[position.dancerId];
         if (!dancer) return null;
+
+        // この区間ぶんの設定(曲線の制御点・ダンサー個別の遷移時間)が入った行。
+        // 進むときは選択中シーンの行、戻るときは直前のシーンの行になる
+        const segmentPosition = segmentPositions[position.dancerId];
+
         return (
           <DraggableDancerIcon
             key={dancer.id}
@@ -118,14 +197,15 @@ export function DancerLayer({
             onRotateEnd={onRotateEnd}
             onNudge={onNudge}
             transitionDurationSeconds={
-              position.dancerTransitionDurationSeconds ??
-              sceneTransitionDurationSeconds
+              segmentPosition?.dancerTransitionDurationSeconds ??
+              segmentScene?.transitionDurationSeconds
             }
-            // 制御点は「そこへ遷移してくるシーン」のpositionに入っている。
-            // ここでmapしているのは選択中シーンのpositionsなので、
-            // そのままこのシーンへ移動してくる時の制御点になる
-            curveControlX={position.curveControlX}
-            curveControlY={position.curveControlY}
+            curveControlX={
+              isAdjacentStep ? segmentPosition?.curveControlX : null
+            }
+            curveControlY={
+              isAdjacentStep ? segmentPosition?.curveControlY : null
+            }
             isBlocked={blockedDancerIds.has(dancer.id)}
             hasExcessiveMove={excessiveMoveDancerIds.has(dancer.id)}
           />
