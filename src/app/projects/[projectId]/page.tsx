@@ -6,6 +6,7 @@ import { listDancers } from "@/features/dancer/api/dancers";
 import { listScenes } from "@/features/scene/api/scenes";
 import { listPositionsByScenes } from "@/features/scene/api/positions";
 import { CanvasBoard } from "@/features/canvas/components/CanvasBoard";
+import { ProjectTitle } from "@/features/project/components/ProjectTitle";
 import { AddDancerForm } from "@/features/dancer/components/AddDancerForm";
 import { DancerInspector } from "@/features/dancer/components/DancerInspector";
 import { SceneTimeline } from "@/features/scene/components/SceneTimeline";
@@ -42,9 +43,7 @@ export default async function ProjectPage(
             プロジェクト一覧に戻る
           </Link>
         </AppHeader>
-        <h2 className="text-lg font-semibold text-zinc-50">
-          {project.title}
-        </h2>
+        <ProjectTitle project={project} />
         <Card className="space-y-4">
           <SceneTimeline project={project} />
           <AddDancerForm project={project} />

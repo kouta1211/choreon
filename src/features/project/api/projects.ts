@@ -42,6 +42,36 @@ export async function getProject(
   return data ? toProject(data) : null;
 }
 
+export async function updateProjectTitle(
+  supabase: SupabaseClient<Database>,
+  projectId: string,
+  title: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("projects")
+    .update({ title })
+    .eq("id", projectId);
+
+  if (error) throw error;
+}
+
+/**
+ * dancers / scenes / positions は projects への外部キーが
+ * `on delete cascade` なので、この1回の削除で関連データもまとめて消える
+ * (アプリ側で順番に消して回る必要はない)
+ */
+export async function deleteProject(
+  supabase: SupabaseClient<Database>,
+  projectId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from("projects")
+    .delete()
+    .eq("id", projectId);
+
+  if (error) throw error;
+}
+
 export async function createProject(
   supabase: SupabaseClient<Database>,
   userId: string,
