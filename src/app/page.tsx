@@ -19,7 +19,7 @@ export default async function Home() {
 
   return (
     <div className="flex flex-1 flex-col px-4 py-8">
-      <div className="mx-auto w-full max-w-md space-y-4">
+      <div className="mx-auto w-full max-w-md space-y-4 md:max-w-3xl">
         <AppHeader>
           <SignOutButton />
         </AppHeader>

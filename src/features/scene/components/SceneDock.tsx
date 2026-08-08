@@ -4,24 +4,16 @@ import { useEffect, useRef } from "react";
 import { Pause, Play, Trash2 } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import { createClient } from "@/lib/supabase/client";
-import { toUserMessage } from "@/lib/supabase/errors";
-import {
-  deleteScene,
-  renameScene as renameSceneApi,
-  updateSceneDuration as updateSceneDurationApi,
-  updateSceneOrder,
-} from "@/features/scene/api/scenes";
 import { SceneTabs } from "@/features/scene/components/SceneTabs";
 import { SceneDotRail } from "@/features/scene/components/SceneDotRail";
 import { SceneListSheet } from "@/features/scene/components/SceneListSheet";
 import { getNextSceneId } from "@/features/scene/lib/playback";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
+import { useSceneActions } from "@/features/scene/hooks/useSceneActions";
 import { InlineEditableText } from "@/components/ui/InlineEditableText";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { DurationSecondsInput } from "@/components/ui/DurationSecondsInput";
 import type { Project } from "@/features/project/types";
-import type { Scene } from "@/features/scene/types";
 
 type Props = {
   project: Project;
@@ -39,10 +31,10 @@ const MAX_DURATION_SECONDS = 30;
  *   3. ストリップ    … コマを横に並べたもの。切り替えと並び替え
  *   4. ドットレール  … 曲全体のどこにいるか
  *
- * 以前(SceneTimeline)はカードの中に置かれ、ズームボタン・スライダー・
- * 操作バーが縦に積み重なっていた。ドックとして下端に固定し、コマの拡大
- * 縮小のような"読むための操作"はシーン一覧シートへ移したことで、
- * ステージに回せる高さが増えている。
+ * 画面が広いとき(lg以上)は 1 と 3 を出さない。シーン一覧が横の
+ * サイドバーに常時出ており、開くためのハンドルも、横に流れるコマ送りも
+ * 役割が重複するため。残る再生・シーン名・レールは、幅があっても
+ * 下端にある方が押しやすい。
  *
  * 再生(isPlaying)は、選択中シーンから最後のシーンまで自動的に進む
  * シーケンサー。selectSceneを呼ぶと、その瞬間にDraggableDancerIcon側が
@@ -62,75 +54,16 @@ export function SceneDock({ project }: Props) {
   const positionsBySceneId = useProjectStore(
     (state) => state.positionsBySceneId,
   );
-  const removeScene = useProjectStore((state) => state.removeScene);
-  const renameScene = useProjectStore((state) => state.renameScene);
-  const reorderScenes = useProjectStore((state) => state.reorderScenes);
-  const updateSceneDuration = useProjectStore(
-    (state) => state.updateSceneDuration,
-  );
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const selectScene = useUIStore((state) => state.selectScene);
   const isPlaying = useUIStore((state) => state.isPlaying);
   const setIsPlaying = useUIStore((state) => state.setIsPlaying);
-  const showToast = useUIStore((state) => state.showToast);
-  const requestConfirm = useUIStore((state) => state.requestConfirm);
   const setSceneSheetOpen = useUIStore((state) => state.setSceneSheetOpen);
+  const { renameSceneTo, reorderTo, changeDuration, confirmDelete, selectSceneManually } =
+    useSceneActions();
 
   const selectedIndex = scenes.findIndex((s) => s.id === selectedSceneId);
   const selectedScene = selectedIndex >= 0 ? scenes[selectedIndex] : null;
-
-  const commitRename = async (scene: Scene, name: string) => {
-    const previousName = scene.name;
-    renameScene(scene.id, name);
-
-    try {
-      const supabase = createClient();
-      await renameSceneApi(supabase, scene.id, name);
-    } catch (error) {
-      renameScene(scene.id, previousName);
-      showToast({
-        message: toUserMessage(error, "シーン名の変更に失敗しました"),
-        type: "error",
-      });
-    }
-  };
-
-  // SceneTabs側でドラッグして並び替えた結果(新しい順番のID配列)を受け取り、
-  // 各シーンのorderIndexを配列内の位置に合わせて一括で更新する
-  const handleReorderScenes = async (orderedSceneIds: string[]) => {
-    const previousOrder = scenes.map((s) => s.id);
-    reorderScenes(orderedSceneIds);
-
-    try {
-      const supabase = createClient();
-      await Promise.all(
-        orderedSceneIds.map((id, index) => updateSceneOrder(supabase, id, index)),
-      );
-    } catch (error) {
-      reorderScenes(previousOrder);
-      showToast({
-        message: toUserMessage(error, "シーンの並び替えに失敗しました"),
-        type: "error",
-      });
-    }
-  };
-
-  const handleDurationChange = async (seconds: number) => {
-    if (!selectedScene) return;
-    const previousDuration = selectedScene.transitionDurationSeconds;
-    updateSceneDuration(selectedScene.id, seconds);
-
-    try {
-      const supabase = createClient();
-      await updateSceneDurationApi(supabase, selectedScene.id, seconds);
-    } catch (error) {
-      updateSceneDuration(selectedScene.id, previousDuration);
-      showToast({
-        message: toUserMessage(error, "遷移時間の変更に失敗しました"),
-        type: "error",
-      });
-    }
-  };
 
   // 再生ボタンを押した直後の1歩目だけは待たずに動き始めるための目印。
   // 押した瞬間(false→trueに切り替える側)でtrueにし、シーケンサー側で
@@ -166,46 +99,15 @@ export function SceneDock({ project }: Props) {
     setIsPlaying(!isPlaying);
   };
 
-  const handleDelete = (scene: Scene) => {
-    // このシーンに何人ぶんの配置が入っているかを数えて見せる
-    const dancerCount = Object.keys(positionsBySceneId[scene.id] ?? {}).length;
 
-    requestConfirm({
-      title: `「${scene.name}」を削除しますか?`,
-      description:
-        "このシーンの配置と、ここへ入る導線も一緒に消えます。削除は元に戻せません(移動や向きの変更は戻せます)。",
-      meta: [`${dancerCount} 人の配置`],
-      onConfirm: async () => {
-        try {
-          const supabase = createClient();
-          await deleteScene(supabase, scene.id);
-          removeScene(scene.id);
-          const remaining = scenes.filter((s) => s.id !== scene.id);
-          selectScene(remaining[0]?.id ?? null);
-        } catch (error) {
-          showToast({
-            message: toUserMessage(error, "シーンの削除に失敗しました"),
-            type: "error",
-          });
-        }
-      },
-    });
-  };
-
-  const handleSelectScene = (sceneId: string) => {
-    // 再生中に手動でシーンを選んだら再生を止める(取りこぼしのない
-    // 一貫した挙動にするため。クリック・レール・並び替えのどれ経由でも同じ)
-    setIsPlaying(false);
-    selectScene(sceneId);
-  };
 
   return (
-    <div className="rounded-t-[18px] border-t border-zinc-800 bg-zinc-900 pt-2 pb-3">
+    <div className="rounded-t-[18px] border-t border-zinc-800 bg-zinc-900 pt-2 pb-3 lg:rounded-none">
       <button
         type="button"
         onClick={() => setSceneSheetOpen(true)}
         aria-label="シーン一覧を開く"
-        className="mx-auto mb-2.5 block px-6 py-1"
+        className="mx-auto mb-2.5 block px-6 py-1 lg:hidden"
       >
         <span
           aria-hidden
@@ -214,6 +116,9 @@ export function SceneDock({ project }: Props) {
       </button>
 
       {selectedScene && (
+        // 名前の欄は狭い画面では余白を埋めるが、広い画面では中身の幅に
+        // とどめる。伸ばすとシーン名とゴミ箱が1000px以上離れ、互いに
+        // 無関係な要素に見えるため
         <div className="flex items-center gap-2.5 px-3.5 pb-2.5">
           <button
             type="button"
@@ -228,11 +133,11 @@ export function SceneDock({ project }: Props) {
             )}
           </button>
 
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 lg:flex-none">
             <InlineEditableText
               key={selectedScene.id}
               value={selectedScene.name}
-              onCommit={(name) => commitRename(selectedScene, name)}
+              onCommit={(name) => renameSceneTo(selectedScene, name)}
               label="シーン名"
               textClassName="text-sm font-semibold"
               prefix={
@@ -250,7 +155,7 @@ export function SceneDock({ project }: Props) {
                 // allowEmpty={false}にしている
                 allowEmpty={false}
                 onCommit={(value) => {
-                  if (value !== null) handleDurationChange(value);
+                  if (value !== null) changeDuration(selectedScene, value);
                 }}
                 min={MIN_DURATION_SECONDS}
                 max={MAX_DURATION_SECONDS}
@@ -262,7 +167,7 @@ export function SceneDock({ project }: Props) {
           <Tooltip label="シーンを削除" placement="top" align="right">
           <button
             type="button"
-            onClick={() => handleDelete(selectedScene)}
+            onClick={() => confirmDelete(selectedScene)}
             aria-label="シーンを削除"
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-600 hover:bg-red-950 hover:text-red-400"
           >
@@ -272,18 +177,20 @@ export function SceneDock({ project }: Props) {
         </div>
       )}
 
+      <div className="lg:hidden">
       <SceneTabs
         scenes={scenes}
         selectedSceneId={selectedSceneId}
-        onSelectScene={handleSelectScene}
+        onSelectScene={selectSceneManually}
         onAddScene={handleAddScene}
-        onReorderScenes={handleReorderScenes}
+        onReorderScenes={reorderTo}
         isCreating={isCreating}
         dancers={dancers}
         positionsBySceneId={positionsBySceneId}
         stageWidthUnits={project.stageWidth}
         stageHeightUnits={project.stageHeight}
       />
+      </div>
 
       <SceneDotRail
         scenes={scenes}
@@ -291,18 +198,14 @@ export function SceneDock({ project }: Props) {
         isPlaying={isPlaying}
         onSelectIndex={(index) => {
           const scene = scenes[index];
-          if (scene) handleSelectScene(scene.id);
+          if (scene) selectSceneManually(scene.id);
         }}
       />
 
-      {/* 画面全体に重なるシート。DOM上の位置は見た目に影響しないので、
-          改名・削除・並び替えの処理を持っているここから描く */}
-      <SceneListSheet
-        project={project}
-        onRenameScene={commitRename}
-        onDeleteScene={handleDelete}
-        onReorderScenes={handleReorderScenes}
-      />
+      {/* 画面全体に重なるシート(狭い画面用)。DOM上の位置は見た目に
+          影響しないのでここから描く。広い画面ではハンドルを出さないため
+          開かれることがなく、代わりにステージ横のサイドバーが担う */}
+      <SceneListSheet project={project} />
     </div>
   );
 }

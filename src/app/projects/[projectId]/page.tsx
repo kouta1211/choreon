@@ -9,6 +9,7 @@ import { EditorHeader } from "@/features/canvas/components/EditorHeader";
 import { AddDancerSheet } from "@/features/dancer/components/AddDancerSheet";
 import { DancerInspector } from "@/features/dancer/components/DancerInspector";
 import { SceneDock } from "@/features/scene/components/SceneDock";
+import { SceneSidebar } from "@/features/scene/components/SceneSidebar";
 
 /**
  * エディタ画面。ページ自体はスクロールさせず、画面の高さ(h-dvh)に
@@ -50,16 +51,23 @@ export default async function ProjectPage(
 
   return (
     <div className="flex h-dvh flex-col overflow-clip">
-      <div className="mx-auto flex w-full max-w-md min-h-0 flex-1 flex-col overflow-clip">
+      <div className="mx-auto flex w-full max-w-md min-h-0 flex-1 flex-col overflow-clip md:max-w-3xl lg:max-w-6xl">
         <EditorHeader project={project} />
 
-        <div className="flex min-h-0 flex-1 flex-col px-3.5 pb-1">
-          <CanvasBoard
-            project={project}
-            initialDancers={dancers}
-            initialScenes={scenes}
-            initialPositions={positions}
-          />
+        {/* 広い画面ではステージとシーン一覧を横に並べる。狭い画面では
+            ステージだけが縦に伸び、一覧はドックのハンドルからシートで開く */}
+        <div className="flex min-h-0 flex-1 gap-3 px-3.5 pb-1 lg:gap-4 lg:px-4">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <CanvasBoard
+              project={project}
+              initialDancers={dancers}
+              initialScenes={scenes}
+              initialPositions={positions}
+            />
+          </div>
+          <div className="hidden lg:flex lg:min-h-0">
+            <SceneSidebar project={project} />
+          </div>
         </div>
 
         {/* インスペクターはドックの直上に浮かせる(absolute)ため、
@@ -68,6 +76,7 @@ export default async function ProjectPage(
           <DancerInspector />
           <SceneDock project={project} />
         </div>
+
         <AddDancerSheet project={project} />
       </div>
     </div>

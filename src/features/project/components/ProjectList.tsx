@@ -71,7 +71,7 @@ export function ProjectList({ projects }: Props) {
       <p className="mx-0.5 text-[10px] font-semibold tracking-[0.14em] text-zinc-600">
         プロジェクト {projects.length}件
       </p>
-      <ul className="space-y-2.5">
+      <ul className="grid gap-2.5 md:grid-cols-2">
         {projects.map((project) => (
           <li
             key={project.id}
