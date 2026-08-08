@@ -14,6 +14,7 @@ import {
 import { upsertPosition } from "@/features/scene/api/positions";
 import { DANCER_COLOR_PALETTE } from "@/features/dancer/constants";
 import { DurationSecondsInput } from "@/components/ui/DurationSecondsInput";
+import { InlineEditableText } from "@/components/ui/InlineEditableText";
 
 /** ダンサー個別の遷移時間の入力が許容する範囲。schema.sqlのCHECK制約と合わせている */
 const MIN_DURATION_SECONDS = 0.1;
@@ -39,17 +40,10 @@ const MAX_DURATION_SECONDS = 30;
  */
 export function DancerInspector() {
   const [isDeleting, setIsDeleting] = useState(false);
-  // 名前変更中かどうかを「対象のダンサーID + 入力中の文字列」で持つ。
-  // isRenamingという真偽値だけで持つと、変更中に別のダンサーを選び直した
-  // ときに入力欄と中身が前のダンサーのまま残ってしまう。IDごと持っておけば
-  // 選択が変わった時点で自然に閉じる(useEffectで追いかける必要がない)
-  const [renaming, setRenaming] = useState<{
-    dancerId: string;
-    value: string;
-  } | null>(null);
   const selectedDancerId = useUIStore((state) => state.selectedDancerId);
   const selectDancer = useUIStore((state) => state.selectDancer);
   const showToast = useUIStore((state) => state.showToast);
+  const requestConfirm = useUIStore((state) => state.requestConfirm);
   const focusedDancerId = useUIStore((state) => state.focusedDancerId);
   const setFocusedDancer = useUIStore((state) => state.setFocusedDancer);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
@@ -99,21 +93,15 @@ export function DancerInspector() {
     }
   };
 
-  const commitRename = async () => {
-    if (!renaming) return;
-    const { dancerId, value } = renaming;
-    setRenaming(null);
-
-    const trimmed = value.trim();
-    const previous = useProjectStore.getState().dancers[dancerId];
-    if (!previous || !trimmed || trimmed === previous.name) return;
+  const commitRename = async (name: string) => {
+    const previous = dancer;
 
     // 楽観的更新: 色変更と同じく、取り消しが「前の名前に戻すだけ」で済むため
-    addDancer({ ...previous, name: trimmed });
+    addDancer({ ...previous, name });
 
     try {
       const supabase = createClient();
-      await updateDancerName(supabase, dancerId, trimmed);
+      await updateDancerName(supabase, previous.id, name);
     } catch (error) {
       addDancer(previous);
       showToast({
@@ -137,53 +125,50 @@ export function DancerInspector() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm(`「${dancer.name}」を削除しますか?`)) return;
+  const handleDelete = () => {
+    // このダンサーが何シーンぶんの配置を持っているかを数えて見せる。
+    // storeの中身を数えるだけなので、確認のための問い合わせは要らない
+    const sceneCount = Object.values(
+      useProjectStore.getState().positionsBySceneId,
+    ).filter((positions) => positions[dancer.id] !== undefined).length;
 
-    setIsDeleting(true);
-    try {
-      const supabase = createClient();
-      await deleteDancer(supabase, dancer.id);
-      removeDancer(dancer.id);
-      selectDancer(null);
-      if (focusedDancerId === dancer.id) setFocusedDancer(null);
-    } catch {
-      showToast({ message: "ダンサーの削除に失敗しました", type: "error" });
-    } finally {
-      setIsDeleting(false);
-    }
+    requestConfirm({
+      title: `「${dancer.name}」を削除しますか?`,
+      description:
+        "このダンサーの配置と導線が、すべてのシーンから消えます。削除は元に戻せません(移動や向きの変更は戻せます)。",
+      meta: [`${sceneCount} シーンぶんの配置`],
+      onConfirm: async () => {
+        setIsDeleting(true);
+        try {
+          const supabase = createClient();
+          await deleteDancer(supabase, dancer.id);
+          removeDancer(dancer.id);
+          selectDancer(null);
+          if (focusedDancerId === dancer.id) setFocusedDancer(null);
+        } catch (error) {
+          showToast({
+            message: toUserMessage(error, "ダンサーの削除に失敗しました"),
+            type: "error",
+          });
+        } finally {
+          setIsDeleting(false);
+        }
+      },
+    });
   };
 
   return (
     <div className="flex items-center gap-3 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2">
-      {renaming?.dancerId === dancer.id ? (
-        <input
-          autoFocus
-          name="dancer-name"
-          aria-label="ダンサー名"
-          value={renaming.value}
-          onChange={(event) =>
-            setRenaming({ dancerId: dancer.id, value: event.target.value })
-          }
-          onBlur={commitRename}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") event.currentTarget.blur();
-            if (event.key === "Escape") setRenaming(null);
-          }}
-          className="w-24 shrink-0 rounded-md border border-pink-500 bg-zinc-800 px-2 py-1 text-sm focus:outline-none"
-        />
-      ) : (
-        <button
-          type="button"
-          onClick={() =>
-            setRenaming({ dancerId: dancer.id, value: dancer.name })
-          }
-          aria-label="ダンサー名を変更"
-          className="shrink-0 text-sm font-medium text-zinc-50 underline decoration-zinc-600 decoration-dotted underline-offset-4 hover:decoration-pink-400"
-        >
-          {dancer.name}
-        </button>
-      )}
+      {/* keyにダンサーIDを渡して、別のダンサーを選び直したときに
+          編集中の入力欄が持ち越されないようにする(以前は編集中かどうかを
+          対象IDと一緒に持って対処していた処理を、共通部品側に寄せた) */}
+      <InlineEditableText
+        key={dancer.id}
+        value={dancer.name}
+        onCommit={commitRename}
+        label="ダンサー名"
+        textClassName="text-[13px] font-semibold"
+      />
 
       <div className="flex items-center gap-1.5">
         {DANCER_COLOR_PALETTE.map((color) => (

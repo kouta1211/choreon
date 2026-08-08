@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SceneTimeline } from "./SceneTimeline";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import * as scenesApi from "@/features/scene/api/scenes";
@@ -204,11 +205,17 @@ describe("SceneTimeline", () => {
     });
     useUIStore.setState({ selectedSceneId: "scene-1" });
     vi.spyOn(scenesApi, "deleteScene").mockResolvedValue(undefined);
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     const user = userEvent.setup();
 
-    render(<SceneTimeline project={makeProject()} />);
+    render(
+      <>
+        <SceneTimeline project={makeProject()} />
+        <ConfirmDialog />
+      </>,
+    );
     await user.click(screen.getByLabelText("シーンを削除"));
+    expect(screen.getByText("「シーン1」を削除しますか?")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "削除する" }));
 
     await waitFor(() => {
       expect(useProjectStore.getState().scenes).toHaveLength(1);

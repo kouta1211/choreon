@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Claude Designから書き出したハンドオフ一式。参照用のプロトタイプで
+    // ここでビルドするコードではないため、lintの対象から外す
+    // (.gitignoreにも入れているが、ESLintはそちらを見ないので別途必要)
+    "design_handoff_*/**",
   ]),
 ]);
 

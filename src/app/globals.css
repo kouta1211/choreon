@@ -18,7 +18,12 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* layout.tsxで読み込んでいるGeistを実際に効かせる。ここが
+     `Arial, Helvetica, sans-serif` の直書きになっていたため、CSS変数まで
+     用意しておきながら画面はずっとArialで描かれていた。
+     数値・秒数・シーン番号にはTailwindのfont-mono(=Geist Mono)を使い、
+     「機能的な差」を数値だけに与える */
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
   /* ステージ上でダンサーをドラッグ/回転操作中に、指の動きがブラウザの
      Pull-to-refreshや意図しないスクロールとして扱われるのを防ぐ */
   overscroll-behavior-y: contain;

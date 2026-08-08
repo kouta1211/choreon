@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { updateProjectTitle } from "@/features/project/api/projects";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
+import { InlineEditableText } from "@/components/ui/InlineEditableText";
 import type { Project } from "@/features/project/types";
 
 type Props = {
@@ -21,21 +22,15 @@ type Props = {
  */
 export function ProjectTitle({ project }: Props) {
   const [title, setTitle] = useState(project.title);
-  const [draft, setDraft] = useState<string | null>(null);
   const showToast = useUIStore((state) => state.showToast);
 
-  const commit = async () => {
-    if (draft === null) return;
-    const trimmed = draft.trim();
-    setDraft(null);
-    if (!trimmed || trimmed === title) return;
-
+  const commit = async (next: string) => {
     const previous = title;
-    setTitle(trimmed);
+    setTitle(next);
 
     try {
       const supabase = createClient();
-      await updateProjectTitle(supabase, project.id, trimmed);
+      await updateProjectTitle(supabase, project.id, next);
     } catch (error) {
       setTitle(previous);
       showToast({
@@ -45,32 +40,13 @@ export function ProjectTitle({ project }: Props) {
     }
   };
 
-  if (draft !== null) {
-    return (
-      <input
-        autoFocus
-        name="project-title"
-        aria-label="プロジェクト名"
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-        onBlur={commit}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") event.currentTarget.blur();
-          if (event.key === "Escape") setDraft(null);
-        }}
-        className="w-full rounded-md border border-pink-500 bg-zinc-800 px-2 py-1 text-lg font-semibold text-zinc-50 focus:outline-none"
-      />
-    );
-  }
-
   return (
-    <button
-      type="button"
-      onClick={() => setDraft(title)}
-      aria-label="プロジェクト名を変更"
-      className="block w-full truncate text-left text-lg font-semibold text-zinc-50 underline decoration-zinc-700 decoration-dotted underline-offset-4 hover:decoration-pink-400"
-    >
-      {title}
-    </button>
+    <InlineEditableText
+      value={title}
+      onCommit={commit}
+      label="プロジェクト名"
+      textClassName="text-[15px] font-semibold"
+      fullWidth
+    />
   );
 }

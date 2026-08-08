@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { createClient } from "@/lib/supabase/client";
+import { toUserMessage } from "@/lib/supabase/errors";
 import {
   createScene,
   deleteScene,
@@ -36,8 +37,6 @@ type Props = {
  * 空いてしまう) */
 export function SceneTimeline({ project }: Props) {
   const [isCreating, setIsCreating] = useState(false);
-  const [isRenaming, setIsRenaming] = useState(false);
-  const [renameValue, setRenameValue] = useState("");
   const scenes = useProjectStore((state) => state.scenes);
   const dancers = useProjectStore((state) => state.dancers);
   const positionsBySceneId = useProjectStore((state) => state.positionsBySceneId);
@@ -56,6 +55,7 @@ export function SceneTimeline({ project }: Props) {
   const isPlaying = useUIStore((state) => state.isPlaying);
   const setIsPlaying = useUIStore((state) => state.setIsPlaying);
   const showToast = useUIStore((state) => state.showToast);
+  const requestConfirm = useUIStore((state) => state.requestConfirm);
 
   const selectedIndex = scenes.findIndex((s) => s.id === selectedSceneId);
   const selectedScene = selectedIndex >= 0 ? scenes[selectedIndex] : null;
@@ -101,27 +101,21 @@ export function SceneTimeline({ project }: Props) {
     }
   };
 
-  const startRename = () => {
+  const commitRename = async (name: string) => {
     if (!selectedScene) return;
-    setRenameValue(selectedScene.name);
-    setIsRenaming(true);
-  };
-
-  const commitRename = async () => {
-    setIsRenaming(false);
-    if (!selectedScene) return;
-    const trimmed = renameValue.trim();
-    if (!trimmed || trimmed === selectedScene.name) return;
 
     const previousName = selectedScene.name;
-    renameScene(selectedScene.id, trimmed);
+    renameScene(selectedScene.id, name);
 
     try {
       const supabase = createClient();
-      await renameSceneApi(supabase, selectedScene.id, trimmed);
-    } catch {
+      await renameSceneApi(supabase, selectedScene.id, name);
+    } catch (error) {
       renameScene(selectedScene.id, previousName);
-      showToast({ message: "シーン名の変更に失敗しました", type: "error" });
+      showToast({
+        message: toUserMessage(error, "シーン名の変更に失敗しました"),
+        type: "error",
+      });
     }
   };
 
@@ -203,19 +197,33 @@ export function SceneTimeline({ project }: Props) {
     setIsPlaying(!isPlaying);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!selectedScene) return;
-    if (!window.confirm(`「${selectedScene.name}」を削除しますか?`)) return;
+    // このシーンに何人ぶんの配置が入っているかを数えて見せる
+    const dancerCount = Object.keys(
+      positionsBySceneId[selectedScene.id] ?? {},
+    ).length;
 
-    try {
-      const supabase = createClient();
-      await deleteScene(supabase, selectedScene.id);
-      removeScene(selectedScene.id);
-      const remaining = scenes.filter((s) => s.id !== selectedScene.id);
-      selectScene(remaining[0]?.id ?? null);
-    } catch {
-      showToast({ message: "シーンの削除に失敗しました", type: "error" });
-    }
+    requestConfirm({
+      title: `「${selectedScene.name}」を削除しますか?`,
+      description:
+        "このシーンの配置と、ここへ入る導線も一緒に消えます。削除は元に戻せません(移動や向きの変更は戻せます)。",
+      meta: [`${dancerCount} 人の配置`],
+      onConfirm: async () => {
+        try {
+          const supabase = createClient();
+          await deleteScene(supabase, selectedScene.id);
+          removeScene(selectedScene.id);
+          const remaining = scenes.filter((s) => s.id !== selectedScene.id);
+          selectScene(remaining[0]?.id ?? null);
+        } catch (error) {
+          showToast({
+            message: toUserMessage(error, "シーンの削除に失敗しました"),
+            type: "error",
+          });
+        }
+      },
+    });
   };
 
   return (
@@ -228,7 +236,6 @@ export function SceneTimeline({ project }: Props) {
           // 一貫した挙動にするため。クリック・スライダー・並び替えのどれ
           // 経由でも同じ)
           setIsPlaying(false);
-          setIsRenaming(false);
           selectScene(sceneId);
         }}
         onAddScene={handleAddScene}
@@ -244,12 +251,8 @@ export function SceneTimeline({ project }: Props) {
 
       {selectedScene && (
         <SceneActionsBar
-          isRenaming={isRenaming}
-          renameValue={renameValue}
-          onRenameValueChange={setRenameValue}
-          onStartRename={startRename}
-          onCommitRename={commitRename}
-          onCancelRename={() => setIsRenaming(false)}
+          name={selectedScene.name}
+          onRename={commitRename}
           onDelete={handleDelete}
           durationSeconds={selectedScene.transitionDurationSeconds}
           onDurationCommit={handleDurationChange}

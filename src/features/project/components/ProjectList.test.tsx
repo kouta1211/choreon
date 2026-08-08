@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ProjectList } from "./ProjectList";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useUIStore } from "@/features/canvas/store/useUIStore";
 import * as projectsApi from "@/features/project/api/projects";
 import type { Project } from "@/features/project/types";
 
@@ -28,9 +30,21 @@ function makeProject(overrides: Partial<Project> = {}): Project {
   };
 }
 
+/** 削除は確認ダイアログ越しになったため、一覧単体ではなくダイアログと
+ * 一緒に描画する(本番ではレイアウトが1つだけ描いている) */
+function renderList(projects: Project[]) {
+  return render(
+    <>
+      <ProjectList projects={projects} />
+      <ConfirmDialog />
+    </>,
+  );
+}
+
 afterEach(() => {
   vi.restoreAllMocks();
   refresh.mockClear();
+  useUIStore.setState({ confirm: null, toast: null });
 });
 
 describe("ProjectList", () => {
@@ -53,11 +67,14 @@ describe("ProjectList", () => {
     const deleteSpy = vi
       .spyOn(projectsApi, "deleteProject")
       .mockResolvedValue(undefined);
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     const user = userEvent.setup();
-    render(<ProjectList projects={[makeProject({ id: "1", title: "発表会A" })]} />);
+    renderList([makeProject({ id: "1", title: "発表会A" })]);
 
     await user.click(screen.getByLabelText("発表会Aを削除"));
+    expect(
+      screen.getByText("「発表会A」を削除しますか?"),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "削除する" }));
 
     await waitFor(() => {
       expect(deleteSpy).toHaveBeenCalledWith(expect.anything(), "1");
@@ -67,27 +84,30 @@ describe("ProjectList", () => {
 
   it("確認をキャンセルすると削除されない", async () => {
     const deleteSpy = vi.spyOn(projectsApi, "deleteProject");
-    vi.spyOn(window, "confirm").mockReturnValue(false);
     const user = userEvent.setup();
-    render(<ProjectList projects={[makeProject({ id: "1", title: "発表会A" })]} />);
+    renderList([makeProject({ id: "1", title: "発表会A" })]);
 
     await user.click(screen.getByLabelText("発表会Aを削除"));
+    await user.click(screen.getByRole("button", { name: "キャンセル" }));
 
     expect(deleteSpy).not.toHaveBeenCalled();
+    expect(useUIStore.getState().confirm).toBeNull();
   });
 
-  it("削除に失敗したらエラーを表示する", async () => {
+  it("削除に失敗したらトーストで知らせる", async () => {
     vi.spyOn(projectsApi, "deleteProject").mockRejectedValue(
       new Error("network"),
     );
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     const user = userEvent.setup();
-    render(<ProjectList projects={[makeProject({ id: "1", title: "発表会A" })]} />);
+    renderList([makeProject({ id: "1", title: "発表会A" })]);
 
     await user.click(screen.getByLabelText("発表会Aを削除"));
+    await user.click(screen.getByRole("button", { name: "削除する" }));
 
-    expect(
-      await screen.findByText("プロジェクトの削除に失敗しました"),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(useUIStore.getState().toast?.message).toBe(
+        "プロジェクトの削除に失敗しました",
+      );
+    });
   });
 });

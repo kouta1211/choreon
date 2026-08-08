@@ -12,6 +12,19 @@ type DragSnapLine = {
   y: number | null;
 };
 
+/** 取り消せない操作の前に出す確認ダイアログの中身。
+ * window.confirm()の置き換えで、ブラウザ標準では書けなかった
+ * 「一緒に何が消えるのか」を具体的に示せるようにしている */
+export type ConfirmRequest = {
+  title: string;
+  description?: string;
+  /** 巻き添えで消えるものを数で示すチップ(「12 シーン」「48 配置」など) */
+  meta?: string[];
+  /** 実行ボタンの文言。省略時は「削除する」 */
+  confirmLabel?: string;
+  onConfirm: () => void | Promise<void>;
+};
+
 type UIState = {
   selectedSceneId: string | null;
   /** 直前に選択していたシーン。「どこから来たか」が分かると、隣のシーンへの
@@ -42,6 +55,12 @@ type UIState = {
   /** シーンのタイムライン再生中かどうか(SceneTimelineの再生シーケンサーが
    * 読み書きする)。手動でシーンを選ぶと止まる */
   isPlaying: boolean;
+  /** シーン一覧シート(並び替え・複製・削除)を開いているか */
+  isSceneSheetOpen: boolean;
+  /** ダンサー追加シートを開いているか */
+  isAddDancerSheetOpen: boolean;
+  /** 表示中の確認ダイアログ。nullなら出ていない */
+  confirm: ConfirmRequest | null;
 
   selectScene: (sceneId: string | null) => void;
   selectDancer: (dancerId: string | null) => void;
@@ -55,6 +74,11 @@ type UIState = {
   toggleBlindSpotCheckVisible: () => void;
   setDragSnapLine: (line: DragSnapLine) => void;
   setIsPlaying: (isPlaying: boolean) => void;
+  setSceneSheetOpen: (isOpen: boolean) => void;
+  setAddDancerSheetOpen: (isOpen: boolean) => void;
+  /** 確認ダイアログを出す。実行された場合の処理はrequest.onConfirmに持たせる */
+  requestConfirm: (request: ConfirmRequest) => void;
+  closeConfirm: () => void;
 };
 
 export const useUIStore = create<UIState>((set) => ({
@@ -70,6 +94,9 @@ export const useUIStore = create<UIState>((set) => ({
   isBlindSpotCheckVisible: false,
   dragSnapLine: { x: null, y: null },
   isPlaying: false,
+  isSceneSheetOpen: false,
+  isAddDancerSheetOpen: false,
+  confirm: null,
 
   // 同じシーンを選び直したときにpreviousSceneIdを上書きしない。上書きすると
   // 「前のシーン＝今のシーン」になって移動方向が判定できなくなるため
@@ -105,4 +132,8 @@ export const useUIStore = create<UIState>((set) => ({
         : { dragSnapLine: line },
     ),
   setIsPlaying: (isPlaying) => set({ isPlaying }),
+  setSceneSheetOpen: (isOpen) => set({ isSceneSheetOpen: isOpen }),
+  setAddDancerSheetOpen: (isOpen) => set({ isAddDancerSheetOpen: isOpen }),
+  requestConfirm: (request) => set({ confirm: request }),
+  closeConfirm: () => set({ confirm: null }),
 }));

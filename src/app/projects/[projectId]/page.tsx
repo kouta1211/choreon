@@ -10,7 +10,6 @@ import { ProjectTitle } from "@/features/project/components/ProjectTitle";
 import { AddDancerForm } from "@/features/dancer/components/AddDancerForm";
 import { DancerInspector } from "@/features/dancer/components/DancerInspector";
 import { SceneTimeline } from "@/features/scene/components/SceneTimeline";
-import { Toast } from "@/features/canvas/components/Toast";
 import { Card } from "@/components/ui/Card";
 import { AppHeader } from "@/components/ui/AppHeader";
 
@@ -56,7 +55,6 @@ export default async function ProjectPage(
         />
         <DancerInspector />
       </div>
-      <Toast />
     </div>
   );
 }

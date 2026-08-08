@@ -45,3 +45,6 @@ next-env.d.ts
 /*.jpg
 /*.jpeg
 /*.png
+
+# design handoff bundles exported from Claude Design (reference only, not built here)
+/design_handoff_*/

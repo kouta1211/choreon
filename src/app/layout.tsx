@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Toast } from "@/features/canvas/components/Toast";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,7 +26,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="ja"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        {/* 画面をまたいで使う重ね物はここで1回だけ描く。
+            以前はエディタ画面だけがToastを持っていたため、プロジェクト一覧の
+            失敗はページ内のテキストで知らせる、という別扱いになっていた */}
+        <Toast />
+        <ConfirmDialog />
+      </body>
     </html>
   );
 }

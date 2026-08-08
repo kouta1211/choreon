@@ -2,10 +2,22 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { DancerInspector } from "./DancerInspector";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import * as dancersApi from "@/features/dancer/api/dancers";
 import type { Dancer } from "@/features/dancer/types";
+
+/** 削除は確認ダイアログ越しになったため、インスペクター単体ではなく
+ * ダイアログと一緒に描画する(本番ではレイアウトが1つだけ描いている) */
+function renderInspector() {
+  return render(
+    <>
+      <DancerInspector />
+      <ConfirmDialog />
+    </>,
+  );
+}
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({}),
@@ -41,6 +53,7 @@ afterEach(() => {
     focusedDancerId: null,
     isPathVisible: false,
     isBlindSpotCheckVisible: false,
+    confirm: null,
   });
 });
 
@@ -159,15 +172,30 @@ describe("DancerInspector", () => {
   });
 
   it("削除ボタンを押して確認するとSupabase削除後にローカルからも消える", async () => {
-    useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
+    useProjectStore.setState({
+      dancers: { "dancer-1": makeDancer() },
+      positionsBySceneId: {
+        "scene-1": {
+          "dancer-1": {
+            sceneId: "scene-1",
+            dancerId: "dancer-1",
+            xCoordinate: 1,
+            yCoordinate: 1,
+            rotationAngle: 0,
+          },
+        },
+      },
+    });
     useUIStore.setState({ selectedDancerId: "dancer-1" });
     vi.spyOn(dancersApi, "deleteDancer").mockResolvedValue(undefined);
-    vi.spyOn(window, "confirm").mockReturnValue(true);
 
     const user = userEvent.setup();
-    render(<DancerInspector />);
+    renderInspector();
 
     await user.click(screen.getByLabelText("ダンサーを削除"));
+    // 何シーンぶんの配置が消えるかを添えている
+    expect(screen.getByText("1 シーンぶんの配置")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "削除する" }));
 
     await waitFor(() => {
       expect(useProjectStore.getState().dancers["dancer-1"]).toBeUndefined();
@@ -192,11 +220,11 @@ describe("DancerInspector", () => {
     useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
     useUIStore.setState({ selectedDancerId: "dancer-1", focusedDancerId: "dancer-1" });
     vi.spyOn(dancersApi, "deleteDancer").mockResolvedValue(undefined);
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     const user = userEvent.setup();
-    render(<DancerInspector />);
+    renderInspector();
 
     await user.click(screen.getByLabelText("ダンサーを削除"));
+    await user.click(screen.getByRole("button", { name: "削除する" }));
 
     await waitFor(() => {
       expect(useUIStore.getState().focusedDancerId).toBeNull();
@@ -207,14 +235,15 @@ describe("DancerInspector", () => {
     useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
     useUIStore.setState({ selectedDancerId: "dancer-1" });
     const deleteSpy = vi.spyOn(dancersApi, "deleteDancer");
-    vi.spyOn(window, "confirm").mockReturnValue(false);
 
     const user = userEvent.setup();
-    render(<DancerInspector />);
+    renderInspector();
 
     await user.click(screen.getByLabelText("ダンサーを削除"));
+    await user.click(screen.getByRole("button", { name: "キャンセル" }));
 
     expect(deleteSpy).not.toHaveBeenCalled();
     expect(useProjectStore.getState().dancers["dancer-1"]).toBeDefined();
+    expect(useUIStore.getState().confirm).toBeNull();
   });
 });
