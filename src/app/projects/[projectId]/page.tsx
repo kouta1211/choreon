@@ -7,7 +7,7 @@ import { listPositionsByScenes } from "@/features/scene/api/positions";
 import { CanvasBoard } from "@/features/canvas/components/CanvasBoard";
 import { EditorHeader } from "@/features/canvas/components/EditorHeader";
 import { DisplaySegment } from "@/features/canvas/components/DisplaySegment";
-import { AddDancerForm } from "@/features/dancer/components/AddDancerForm";
+import { AddDancerSheet } from "@/features/dancer/components/AddDancerSheet";
 import { DancerInspector } from "@/features/dancer/components/DancerInspector";
 import { SceneDock } from "@/features/scene/components/SceneDock";
 
@@ -66,7 +66,7 @@ export default async function ProjectPage(
 
         <DancerInspector />
         <SceneDock project={project} />
-        <AddDancerForm project={project} />
+        <AddDancerSheet project={project} />
       </div>
     </div>
   );

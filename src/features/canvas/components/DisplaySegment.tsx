@@ -1,6 +1,6 @@
 "use client";
 
-import { Eclipse, Eye, Grid3x3, Spline } from "lucide-react";
+import { Eclipse, Eye, Grid3x3, Spline, UserPlus } from "lucide-react";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 
@@ -32,6 +32,9 @@ export function DisplaySegment() {
     (state) => Object.keys(state.dancers).length,
   );
   const sceneCount = useProjectStore((state) => state.scenes.length);
+  const setAddDancerSheetOpen = useUIStore(
+    (state) => state.setAddDancerSheetOpen,
+  );
 
   const items = [
     {
@@ -76,7 +79,17 @@ export function DisplaySegment() {
           </button>
         ))}
       </div>
-      <span className="ml-auto shrink-0 font-mono text-[10px] text-zinc-500">
+      {/* ダンサーの追加はプロジェクト単位の操作なので、シーンを扱うドック
+          ではなく、人数を表示しているこの行に置く */}
+      <button
+        type="button"
+        onClick={() => setAddDancerSheetOpen(true)}
+        aria-label="ダンサーを追加"
+        className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-400"
+      >
+        <UserPlus size={16} />
+      </button>
+      <span className="shrink-0 font-mono text-[10px] text-zinc-500">
         {dancerCount}人 · {sceneCount}シーン
       </span>
     </div>

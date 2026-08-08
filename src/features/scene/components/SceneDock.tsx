@@ -14,11 +14,13 @@ import {
 } from "@/features/scene/api/scenes";
 import { SceneTabs } from "@/features/scene/components/SceneTabs";
 import { SceneDotRail } from "@/features/scene/components/SceneDotRail";
+import { SceneListSheet } from "@/features/scene/components/SceneListSheet";
 import { getNextSceneId } from "@/features/scene/lib/playback";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
 import { InlineEditableText } from "@/components/ui/InlineEditableText";
 import { DurationSecondsInput } from "@/components/ui/DurationSecondsInput";
 import type { Project } from "@/features/project/types";
+import type { Scene } from "@/features/scene/types";
 
 type Props = {
   project: Project;
@@ -76,17 +78,15 @@ export function SceneDock({ project }: Props) {
   const selectedIndex = scenes.findIndex((s) => s.id === selectedSceneId);
   const selectedScene = selectedIndex >= 0 ? scenes[selectedIndex] : null;
 
-  const commitRename = async (name: string) => {
-    if (!selectedScene) return;
-
-    const previousName = selectedScene.name;
-    renameScene(selectedScene.id, name);
+  const commitRename = async (scene: Scene, name: string) => {
+    const previousName = scene.name;
+    renameScene(scene.id, name);
 
     try {
       const supabase = createClient();
-      await renameSceneApi(supabase, selectedScene.id, name);
+      await renameSceneApi(supabase, scene.id, name);
     } catch (error) {
-      renameScene(selectedScene.id, previousName);
+      renameScene(scene.id, previousName);
       showToast({
         message: toUserMessage(error, "シーン名の変更に失敗しました"),
         type: "error",
@@ -165,24 +165,21 @@ export function SceneDock({ project }: Props) {
     setIsPlaying(!isPlaying);
   };
 
-  const handleDelete = () => {
-    if (!selectedScene) return;
+  const handleDelete = (scene: Scene) => {
     // このシーンに何人ぶんの配置が入っているかを数えて見せる
-    const dancerCount = Object.keys(
-      positionsBySceneId[selectedScene.id] ?? {},
-    ).length;
+    const dancerCount = Object.keys(positionsBySceneId[scene.id] ?? {}).length;
 
     requestConfirm({
-      title: `「${selectedScene.name}」を削除しますか?`,
+      title: `「${scene.name}」を削除しますか?`,
       description:
         "このシーンの配置と、ここへ入る導線も一緒に消えます。削除は元に戻せません(移動や向きの変更は戻せます)。",
       meta: [`${dancerCount} 人の配置`],
       onConfirm: async () => {
         try {
           const supabase = createClient();
-          await deleteScene(supabase, selectedScene.id);
-          removeScene(selectedScene.id);
-          const remaining = scenes.filter((s) => s.id !== selectedScene.id);
+          await deleteScene(supabase, scene.id);
+          removeScene(scene.id);
+          const remaining = scenes.filter((s) => s.id !== scene.id);
           selectScene(remaining[0]?.id ?? null);
         } catch (error) {
           showToast({
@@ -234,7 +231,7 @@ export function SceneDock({ project }: Props) {
             <InlineEditableText
               key={selectedScene.id}
               value={selectedScene.name}
-              onCommit={commitRename}
+              onCommit={(name) => commitRename(selectedScene, name)}
               label="シーン名"
               textClassName="text-sm font-semibold"
               prefix={
@@ -263,7 +260,7 @@ export function SceneDock({ project }: Props) {
 
           <button
             type="button"
-            onClick={handleDelete}
+            onClick={() => handleDelete(selectedScene)}
             aria-label="シーンを削除"
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-600 hover:bg-red-950 hover:text-red-400"
           >
@@ -292,6 +289,15 @@ export function SceneDock({ project }: Props) {
           const scene = scenes[index];
           if (scene) handleSelectScene(scene.id);
         }}
+      />
+
+      {/* 画面全体に重なるシート。DOM上の位置は見た目に影響しないので、
+          改名・削除・並び替えの処理を持っているここから描く */}
+      <SceneListSheet
+        project={project}
+        onRenameScene={commitRename}
+        onDeleteScene={handleDelete}
+        onReorderScenes={handleReorderScenes}
       />
     </div>
   );
