@@ -10,10 +10,11 @@ import {
 } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { animate, motion, useMotionValue } from "motion/react";
+import { animate, motion, useMotionValue, useTransform } from "motion/react";
 import { DancerMarker } from "./DancerIcon";
 import { RotationHandle } from "./RotationHandle";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
+import { quadraticBezierAt } from "@/features/canvas/lib/curvePath";
 import type { Dancer } from "@/features/dancer/types";
 
 /** 選択中のダンサーを矢印キーで動かす際の1回あたりの移動量(ステージ座標系のユニット)。
@@ -35,6 +36,11 @@ type Props = {
   /** シーン切り替え時、位置・向きの補間アニメーションにかける秒数
    * (選択中シーンのtransitionDurationSeconds)。省略時は0.3秒 */
   transitionDurationSeconds?: number;
+  /** このシーンへ移動してくる際の曲線制御点(ステージ座標系)。
+   * PathOverlayが描いている曲線と同じ制御点で、両方揃っている時だけ
+   * 曲線に沿って移動する(片方でもnull/undefinedなら直線移動) */
+  curveControlX?: number | null;
+  curveControlY?: number | null;
   /** 「顔被りチェック」表示中、手前のダンサーに隠れていると判定されたか */
   isBlocked?: boolean;
   /** 次のシーンへの移動距離が現実的な範囲を超えているか(常時判定) */
@@ -49,7 +55,10 @@ type Props = {
  * left/topはuseMotionValueで保持し、通常はanimate()でtransitionDurationSeconds
  * (省略時0.3秒)かけて補間する(シーン切り替えや保存失敗時のロールバックで
  * 滑らかに移動させるため。シーンごとに設定した遷移時間がここに反映されるので、
- * タイムライン再生中もこの同じ仕組みでダンサーが動く)。
+ * タイムライン再生中もこの同じ仕組みでダンサーが動く)。移動先のシーンに
+ * 曲線制御点(curveControlX/Y)が設定されている場合は、left/topを別々に
+ * 補間するのではなく進捗を1本だけ動かして二次ベジェ上の座標を求めることで、
+ * PathOverlayが描いている曲線の通りに動かす。
  * ただし「自分をドラッグしていた→ドラッグが終わった」瞬間だけは例外で、
  * left/topをアニメーションさせずMotionValue.set()で即座に確定値へ合わせる。
  * ドラッグ中はdnd-kitのtransform(px)だけで見た目を動かしており、left/top自体は
@@ -96,6 +105,8 @@ function DraggableDancerIconImpl({
   onRotateEnd,
   onNudge,
   transitionDurationSeconds = 0.3,
+  curveControlX,
+  curveControlY,
   isBlocked = false,
   hasExcessiveMove = false,
 }: Props) {
@@ -189,13 +200,26 @@ function DraggableDancerIconImpl({
   const topPercent = (y / stageHeightUnits) * 100;
   const displayRotation = liveRotation ?? rotationAngle;
 
-  // CSSのleft/topは単位付き文字列でないと無効になるため、MotionValueも
-  // "54.9%"のような文字列として保持する(数値のままだとunitless扱いになり
-  // left/topには反映されない。transform用のx/yモーション値とは違い、
-  // 汎用styleプロパティは単位をこちらで明示する必要がある)
-  const left = useMotionValue(`${leftPercent}%`);
-  const top = useMotionValue(`${topPercent}%`);
+  // 位置は「%の数値」としてMotionValueに保持し、CSSへ渡す直前にuseTransformで
+  // 単位付きの文字列("54.9%")へ変換する。CSSのleft/topは単位付きでないと
+  // 無効になる(数値のままだとunitless扱いで反映されない)一方、曲線移動では
+  // 「今どこにいるか」を数値として読み取ってベジェ計算の始点にする必要が
+  // あるため、保持は数値・出力は文字列と役割を分けている
+  const leftPct = useMotionValue(leftPercent);
+  const topPct = useMotionValue(topPercent);
+  const left = useTransform(leftPct, (value) => `${value}%`);
+  const top = useTransform(topPct, (value) => `${value}%`);
   const wasDraggingRef = useRef(isDragging);
+
+  // 制御点もステージ座標系から%へ直しておく(x/yと同じ土俵に乗せる)。
+  // 片方だけ設定されている状態は曲線として意味を成さないので直線扱いにする
+  const hasCurve = curveControlX != null && curveControlY != null;
+  const controlLeftPercent = hasCurve
+    ? (curveControlX / stageWidthUnits) * 100
+    : null;
+  const controlTopPercent = hasCurve
+    ? (curveControlY / stageHeightUnits) * 100
+    : null;
 
   useEffect(() => {
     const justFinishedDragging = wasDraggingRef.current && !isDragging;
@@ -203,15 +227,45 @@ function DraggableDancerIconImpl({
     // ドラッグ中はleft/topを動かさない(dnd-kitのtransformだけで見た目を動かす)
     if (isDragging) return;
     if (justFinishedDragging) {
-      left.set(`${leftPercent}%`);
-      top.set(`${topPercent}%`);
+      leftPct.set(leftPercent);
+      topPct.set(topPercent);
       return;
     }
-    const leftAnimation = animate(left, `${leftPercent}%`, {
+
+    // 曲線制御点があるシーンへ移動する時は、left/topをそれぞれ独立に補間する
+    // (=結果として直線になる)のではなく、進捗t(0→1)を1本だけ動かし、そこから
+    // 毎フレーム二次ベジェ上の座標を求める。PathOverlayがSVGで描いている曲線と
+    // 同じ式・同じ制御点を使うため、表示されている線の通りに動く。
+    // 始点は「今この瞬間、画面上でどこにいるか」(=直前のシーンの位置)を
+    // MotionValueから読む。propsのx/yは既に移動先の値になっているため使えない
+    if (controlLeftPercent !== null && controlTopPercent !== null) {
+      const fromLeft = leftPct.get();
+      const fromTop = topPct.get();
+      // 位置が変わらないダンサーにまで曲線補間を走らせると、制御点の方向へ
+      // 膨らんでから元の位置へ戻るという不自然な動きになるため、何もしない
+      // (PathOverlayも位置が変わらないダンサーには線を引かないので、
+      // 見えていない曲線に沿って動くこともなくなる)
+      if (fromLeft === leftPercent && fromTop === topPercent) return;
+      const curveAnimation = animate(0, 1, {
+        duration: transitionDurationSeconds,
+        ease: "easeOut",
+        onUpdate: (progress) => {
+          leftPct.set(
+            quadraticBezierAt(fromLeft, controlLeftPercent, leftPercent, progress),
+          );
+          topPct.set(
+            quadraticBezierAt(fromTop, controlTopPercent, topPercent, progress),
+          );
+        },
+      });
+      return () => curveAnimation.stop();
+    }
+
+    const leftAnimation = animate(leftPct, leftPercent, {
       duration: transitionDurationSeconds,
       ease: "easeOut",
     });
-    const topAnimation = animate(top, `${topPercent}%`, {
+    const topAnimation = animate(topPct, topPercent, {
       duration: transitionDurationSeconds,
       ease: "easeOut",
     });
@@ -219,7 +273,16 @@ function DraggableDancerIconImpl({
       leftAnimation.stop();
       topAnimation.stop();
     };
-  }, [isDragging, leftPercent, topPercent, left, top, transitionDurationSeconds]);
+  }, [
+    isDragging,
+    leftPercent,
+    topPercent,
+    leftPct,
+    topPct,
+    transitionDurationSeconds,
+    controlLeftPercent,
+    controlTopPercent,
+  ]);
 
   return (
     <motion.div

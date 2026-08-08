@@ -121,6 +121,11 @@ export function DancerLayer({
               position.dancerTransitionDurationSeconds ??
               sceneTransitionDurationSeconds
             }
+            // 制御点は「そこへ遷移してくるシーン」のpositionに入っている。
+            // ここでmapしているのは選択中シーンのpositionsなので、
+            // そのままこのシーンへ移動してくる時の制御点になる
+            curveControlX={position.curveControlX}
+            curveControlY={position.curveControlY}
             isBlocked={blockedDancerIds.has(dancer.id)}
             hasExcessiveMove={excessiveMoveDancerIds.has(dancer.id)}
           />
