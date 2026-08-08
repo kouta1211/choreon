@@ -10,6 +10,7 @@ function toScene(row: SceneRow): Scene {
     projectId: row.project_id,
     name: row.name,
     orderIndex: row.order_index,
+    transitionDurationSeconds: row.transition_duration_seconds,
   };
 }
 
@@ -39,6 +40,7 @@ export async function createScene(
       project_id: scene.projectId,
       name: scene.name,
       order_index: scene.orderIndex,
+      transition_duration_seconds: scene.transitionDurationSeconds,
     })
     .select()
     .single();
@@ -68,6 +70,19 @@ export async function updateSceneOrder(
   const { error } = await supabase
     .from("scenes")
     .update({ order_index: orderIndex })
+    .eq("id", sceneId);
+
+  if (error) throw error;
+}
+
+export async function updateSceneDuration(
+  supabase: SupabaseClient<Database>,
+  sceneId: string,
+  transitionDurationSeconds: number,
+): Promise<void> {
+  const { error } = await supabase
+    .from("scenes")
+    .update({ transition_duration_seconds: transitionDurationSeconds })
     .eq("id", sceneId);
 
   if (error) throw error;

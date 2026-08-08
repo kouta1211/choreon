@@ -76,6 +76,7 @@ export type Database = {
           project_id: string;
           name: string;
           order_index: number;
+          transition_duration_seconds: number;
           created_at: string;
         };
         Insert: {
@@ -83,6 +84,7 @@ export type Database = {
           project_id: string;
           name: string;
           order_index: number;
+          transition_duration_seconds?: number;
           created_at?: string;
         };
         Update: {
@@ -90,6 +92,7 @@ export type Database = {
           project_id?: string;
           name?: string;
           order_index?: number;
+          transition_duration_seconds?: number;
           created_at?: string;
         };
         Relationships: [
@@ -108,6 +111,9 @@ export type Database = {
           x_coordinate: number;
           y_coordinate: number;
           rotation_angle: number;
+          dancer_transition_duration_seconds: number | null;
+          curve_control_x: number | null;
+          curve_control_y: number | null;
         };
         Insert: {
           scene_id: string;
@@ -115,6 +121,9 @@ export type Database = {
           x_coordinate?: number;
           y_coordinate?: number;
           rotation_angle?: number;
+          dancer_transition_duration_seconds?: number | null;
+          curve_control_x?: number | null;
+          curve_control_y?: number | null;
         };
         Update: {
           scene_id?: string;
@@ -122,6 +131,9 @@ export type Database = {
           x_coordinate?: number;
           y_coordinate?: number;
           rotation_angle?: number;
+          dancer_transition_duration_seconds?: number | null;
+          curve_control_x?: number | null;
+          curve_control_y?: number | null;
         };
         Relationships: [
           {

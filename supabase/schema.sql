@@ -62,11 +62,19 @@ create index dancers_project_id_idx on public.dancers (project_id);
 -- =========================================
 -- 3. scenes
 -- =========================================
+-- transition_duration_secondsは「このシーンへ遷移してくるまでの所要時間」
+-- (先頭のシーンの値は使われない)。秒単位で持つのは、再生アニメーションに
+-- 使うframer motionのdurationが秒指定のため、変換をあちこちに持たずに済むから
 create table public.scenes (
   id uuid primary key default gen_random_uuid(),
   project_id uuid not null references public.projects (id) on delete cascade,
   name text not null,
   order_index integer not null,
+  transition_duration_seconds numeric not null default 1
+    check (
+      transition_duration_seconds::float8 > 0
+      and transition_duration_seconds::float8 <= 30
+    ),
   created_at timestamptz not null default now()
 );
 
@@ -79,6 +87,11 @@ create index scenes_project_id_idx on public.scenes (project_id);
 -- ステージサイズはproject単位で可変なため上限はDB側では表現できない
 -- (単純なcheckでは他テーブルの値を参照できないため)。下限(0以上)と
 -- NaN混入の防止だけをDB側の最終防衛ラインとして持たせる
+-- dancer_transition_duration_secondsは、このダンサーだけシーンの
+-- transition_duration_secondsを上書きしたい場合に使う(null=シーンの既定値)。
+-- curve_control_x/yは自由曲線パス(二次ベジェ)の制御点(null=前シーンの
+-- 位置からの直線)。どちらもnullを許容する追加的な列で、既存のnot null列とは
+-- 独立している
 create table public.positions (
   scene_id uuid not null references public.scenes (id) on delete cascade,
   dancer_id uuid not null references public.dancers (id) on delete cascade,
@@ -88,6 +101,18 @@ create table public.positions (
     check (y_coordinate::float8 >= 0),
   rotation_angle numeric not null default 0
     check (rotation_angle::float8 >= 0 and rotation_angle::float8 < 360),
+  dancer_transition_duration_seconds numeric
+    check (
+      dancer_transition_duration_seconds is null
+      or (
+        dancer_transition_duration_seconds::float8 > 0
+        and dancer_transition_duration_seconds::float8 <= 30
+      )
+    ),
+  curve_control_x numeric
+    check (curve_control_x is null or curve_control_x::float8 = curve_control_x::float8),
+  curve_control_y numeric
+    check (curve_control_y is null or curve_control_y::float8 = curve_control_y::float8),
   primary key (scene_id, dancer_id)
 );
 
@@ -220,3 +245,53 @@ alter table public.positions
 alter table public.positions
   add constraint positions_rotation_angle_check
   check (rotation_angle::float8 >= 0 and rotation_angle::float8 < 360);
+
+-- =========================================
+-- マイグレーション: シーンに遷移時間(transition_duration_seconds)を追加
+-- (既存のSupabaseプロジェクトでは下記をSQL Editorで実行すること。
+-- 既存のscenes行にはデフォルト値1が入る。scenesテーブルへの列追加のみで
+-- 新規テーブルではないため、GRANT・RLSポリシーの再設定は不要
+-- ―列単位ではなく行・テーブル単位で効くため。念のため上記の確認クエリで
+-- scenesのGRANT/RLSが変わっていないことだけ確認しておくとよい)
+-- =========================================
+alter table public.scenes
+  add column transition_duration_seconds numeric not null default 1;
+alter table public.scenes
+  add constraint scenes_transition_duration_seconds_check
+  check (
+    transition_duration_seconds::float8 > 0
+    and transition_duration_seconds::float8 <= 30
+  );
+
+-- =========================================
+-- マイグレーション: positionsにダンサー個別の遷移時間・自由曲線パスの
+-- 制御点を追加(既存のSupabaseプロジェクトでは下記をSQL Editorで実行すること)
+--
+-- 3列ともnullを許容する追加的な列(既存行はすべてnullになる=これまで通り
+-- シーン一律の速さ・直線移動のまま)。positionsテーブルへの列追加のみで
+-- 新規テーブルではないため、GRANT・RLSポリシーの再設定は不要
+-- ―列単位ではなく行・テーブル単位で効くため
+-- =========================================
+alter table public.positions
+  add column dancer_transition_duration_seconds numeric;
+alter table public.positions
+  add constraint positions_dancer_transition_duration_seconds_check
+  check (
+    dancer_transition_duration_seconds is null
+    or (
+      dancer_transition_duration_seconds::float8 > 0
+      and dancer_transition_duration_seconds::float8 <= 30
+    )
+  );
+
+alter table public.positions
+  add column curve_control_x numeric;
+alter table public.positions
+  add constraint positions_curve_control_x_check
+  check (curve_control_x is null or curve_control_x::float8 = curve_control_x::float8);
+
+alter table public.positions
+  add column curve_control_y numeric;
+alter table public.positions
+  add constraint positions_curve_control_y_check
+  check (curve_control_y is null or curve_control_y::float8 = curve_control_y::float8);

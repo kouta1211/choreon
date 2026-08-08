@@ -34,13 +34,26 @@ type ProjectState = {
   removeScene: (sceneId: string) => void;
   renameScene: (sceneId: string, name: string) => void;
   reorderScenes: (orderedSceneIds: string[]) => void;
+  updateSceneDuration: (sceneId: string, transitionDurationSeconds: number) => void;
 
   // --- Position ---
-  // ドラッグ操作の確定時(dnd-kitのonDragEnd)に1回だけ呼ばれる想定
+  // ドラッグ操作の確定時(dnd-kitのonDragEnd)に1回だけ呼ばれる想定。
+  // 渡さなかったフィールド(ダンサー個別の遷移時間・曲線制御点など)は
+  // 既存の値を保持する(下のupdateDancerPosition実装のマージ挙動を参照)
   updateDancerPosition: (
     sceneId: string,
     dancerId: string,
-    next: Pick<Position, "xCoordinate" | "yCoordinate" | "rotationAngle">,
+    next: Partial<
+      Pick<
+        Position,
+        | "xCoordinate"
+        | "yCoordinate"
+        | "rotationAngle"
+        | "dancerTransitionDurationSeconds"
+        | "curveControlX"
+        | "curveControlY"
+      >
+    >,
   ) => void;
 };
 
@@ -117,6 +130,15 @@ export const useProjectStore = create<ProjectState>((set) => ({
       ),
     })),
 
+  updateSceneDuration: (sceneId, transitionDurationSeconds) =>
+    set((state) => ({
+      scenes: state.scenes.map((scene) =>
+        scene.id === sceneId
+          ? { ...scene, transitionDurationSeconds }
+          : scene,
+      ),
+    })),
+
   reorderScenes: (orderedSceneIds) =>
     set((state) => {
       const sceneById = new Map(state.scenes.map((s) => [s.id, s]));
@@ -129,14 +151,40 @@ export const useProjectStore = create<ProjectState>((set) => ({
       return { scenes: reordered };
     }),
 
+  // 既存レコードとマージする(丸ごと置き換えない)。渡さなかったフィールドは
+  // 既存の値を保持する。例えばドラッグでxCoordinate/yCoordinateだけを渡した
+  // 場合、そのダンサーに設定済みの個別遷移時間・曲線制御点が消えてしまう
+  // ことを防ぐため
   updateDancerPosition: (sceneId, dancerId, next) =>
-    set((state) => ({
-      positionsBySceneId: {
-        ...state.positionsBySceneId,
-        [sceneId]: {
-          ...state.positionsBySceneId[sceneId],
-          [dancerId]: { sceneId, dancerId, ...next },
+    set((state) => {
+      const existing = state.positionsBySceneId[sceneId]?.[dancerId];
+      const merged: Position = {
+        sceneId,
+        dancerId,
+        xCoordinate: next.xCoordinate ?? existing?.xCoordinate ?? 0,
+        yCoordinate: next.yCoordinate ?? existing?.yCoordinate ?? 0,
+        rotationAngle: next.rotationAngle ?? existing?.rotationAngle ?? 0,
+        dancerTransitionDurationSeconds:
+          "dancerTransitionDurationSeconds" in next
+            ? next.dancerTransitionDurationSeconds
+            : existing?.dancerTransitionDurationSeconds,
+        curveControlX:
+          "curveControlX" in next
+            ? next.curveControlX
+            : existing?.curveControlX,
+        curveControlY:
+          "curveControlY" in next
+            ? next.curveControlY
+            : existing?.curveControlY,
+      };
+      return {
+        positionsBySceneId: {
+          ...state.positionsBySceneId,
+          [sceneId]: {
+            ...state.positionsBySceneId[sceneId],
+            [dancerId]: merged,
+          },
         },
-      },
-    })),
+      };
+    }),
 }));

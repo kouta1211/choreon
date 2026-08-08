@@ -48,6 +48,8 @@ export function SceneTimeline({ project }: Props) {
       projectId: project.id,
       name: `シーン${scenes.length + 1}`,
       orderIndex: scenes.length,
+      // DBのdefault(1秒)と合わせている
+      transitionDurationSeconds: 1,
     };
     // 新しいシーンは空(ダンサーが誰もいない)状態からではなく、直前に見ていた
     // シーンの配置をそのままコピーして始める。フォーメーションは通常シーンごとに
