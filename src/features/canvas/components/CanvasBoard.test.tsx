@@ -64,7 +64,7 @@ afterEach(() => {
 });
 
 describe("CanvasBoard", () => {
-  it("シーンが無い場合は案内文を表示する", () => {
+  it("シーンが無い場合は、空のステージからその場で作れるようにする", () => {
     render(
       <CanvasBoard
         project={makeProject()}
@@ -73,8 +73,12 @@ describe("CanvasBoard", () => {
         initialPositions={[]}
       />,
     );
+
+    expect(screen.getByTestId("empty-stage")).toBeInTheDocument();
+    expect(screen.getByText("まだシーンがありません")).toBeInTheDocument();
+    // 作る操作を別の場所へ探しに行かせない
     expect(
-      screen.getByText("シーンがありません。上のタイムラインから作成してください。"),
+      screen.getByRole("button", { name: "最初のシーンを作る" }),
     ).toBeInTheDocument();
   });
 

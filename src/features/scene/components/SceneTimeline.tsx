@@ -1,21 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { createClient } from "@/lib/supabase/client";
 import { toUserMessage } from "@/lib/supabase/errors";
 import {
-  createScene,
   deleteScene,
   renameScene as renameSceneApi,
   updateSceneDuration as updateSceneDurationApi,
   updateSceneOrder,
 } from "@/features/scene/api/scenes";
-import { upsertPosition } from "@/features/scene/api/positions";
 import { SceneTabs } from "@/features/scene/components/SceneTabs";
 import { SceneActionsBar } from "@/features/scene/components/SceneActionsBar";
 import { getNextSceneId } from "@/features/scene/lib/playback";
+import { useAddScene } from "@/features/scene/hooks/useAddScene";
 import type { Project } from "@/features/project/types";
 
 type Props = {
@@ -36,19 +35,15 @@ type Props = {
  * 待つ」をしてしまうと、そもそもまだ動き始めてすらいないのに無意味な間が
  * 空いてしまう) */
 export function SceneTimeline({ project }: Props) {
-  const [isCreating, setIsCreating] = useState(false);
+  const { addScene: handleAddScene, isCreating } = useAddScene(project);
   const scenes = useProjectStore((state) => state.scenes);
   const dancers = useProjectStore((state) => state.dancers);
   const positionsBySceneId = useProjectStore((state) => state.positionsBySceneId);
-  const addScene = useProjectStore((state) => state.addScene);
   const removeScene = useProjectStore((state) => state.removeScene);
   const renameScene = useProjectStore((state) => state.renameScene);
   const reorderScenes = useProjectStore((state) => state.reorderScenes);
   const updateSceneDuration = useProjectStore(
     (state) => state.updateSceneDuration,
-  );
-  const updateDancerPosition = useProjectStore(
-    (state) => state.updateDancerPosition,
   );
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const selectScene = useUIStore((state) => state.selectScene);
@@ -59,47 +54,6 @@ export function SceneTimeline({ project }: Props) {
 
   const selectedIndex = scenes.findIndex((s) => s.id === selectedSceneId);
   const selectedScene = selectedIndex >= 0 ? scenes[selectedIndex] : null;
-
-  const handleAddScene = async () => {
-    setIsCreating(true);
-    const previousSelectedSceneId = selectedSceneId;
-    const scene = {
-      id: crypto.randomUUID(),
-      projectId: project.id,
-      name: `シーン${scenes.length + 1}`,
-      orderIndex: scenes.length,
-      // DBのdefault(1秒)と合わせている
-      transitionDurationSeconds: 1,
-    };
-    // 新しいシーンは空(ダンサーが誰もいない)状態からではなく、直前に見ていた
-    // シーンの配置をそのままコピーして始める。フォーメーションは通常シーンごとに
-    // 少しずつ変化していくものなので、毎回ゼロから配置し直すのは不自然なため
-    // (これによりシーン切り替え時のなめらかな移動アニメーションも活きる)
-    const copiedPositions = Object.values(
-      positionsBySceneId[previousSelectedSceneId ?? ""] ?? {},
-    ).map((position) => ({ ...position, sceneId: scene.id }));
-
-    // 楽観的更新: 先にローカルへ反映し、保存に失敗したら取り消す
-    addScene(scene);
-    for (const position of copiedPositions) {
-      updateDancerPosition(scene.id, position.dancerId, position);
-    }
-    selectScene(scene.id);
-
-    try {
-      const supabase = createClient();
-      await createScene(supabase, scene);
-      for (const position of copiedPositions) {
-        await upsertPosition(supabase, position);
-      }
-    } catch {
-      removeScene(scene.id);
-      selectScene(previousSelectedSceneId);
-      showToast({ message: "シーンの作成に失敗しました", type: "error" });
-    } finally {
-      setIsCreating(false);
-    }
-  };
 
   const commitRename = async (name: string) => {
     if (!selectedScene) return;

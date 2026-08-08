@@ -152,17 +152,20 @@ export function HistoryControls() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleUndo, handleRedo]);
 
+  // ステージの内側の右下に浮かせる。ステージの外に1行取ると、そのぶん
+  // ステージ自体が小さくなってしまうため。押せないときも形は残して
+  // 薄くするだけにしているのは、消えると押し場所を覚え直すことになるから
   return (
-    <div className="flex items-center gap-1">
+    <div className="absolute right-2 bottom-2 flex gap-1.5">
       <button
         type="button"
         onClick={handleUndo}
         disabled={!canUndo}
         aria-label="元に戻す"
         title="元に戻す (Ctrl+Z)"
-        className="rounded p-1.5 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-50 disabled:pointer-events-none disabled:opacity-30"
+        className="flex h-[38px] w-[38px] items-center justify-center rounded-[11px] border border-zinc-700 bg-zinc-900/90 text-zinc-300 disabled:pointer-events-none disabled:opacity-30"
       >
-        <Undo2 size={16} />
+        <Undo2 size={17} />
       </button>
       <button
         type="button"
@@ -170,9 +173,9 @@ export function HistoryControls() {
         disabled={!canRedo}
         aria-label="やり直す"
         title="やり直す (Ctrl+Shift+Z)"
-        className="rounded p-1.5 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-50 disabled:pointer-events-none disabled:opacity-30"
+        className="flex h-[38px] w-[38px] items-center justify-center rounded-[11px] border border-zinc-700 bg-zinc-900/90 text-zinc-300 disabled:pointer-events-none disabled:opacity-30"
       >
-        <Redo2 size={16} />
+        <Redo2 size={17} />
       </button>
     </div>
   );

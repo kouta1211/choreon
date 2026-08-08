@@ -10,8 +10,8 @@ import {
   type DragMoveEvent,
   type Modifier,
 } from "@dnd-kit/core";
-import { Stage } from "@/features/canvas/components/Stage";
-import { CanvasToolbar } from "@/features/canvas/components/CanvasToolbar";
+import { EmptyStage, Stage } from "@/features/canvas/components/Stage";
+import { HistoryControls } from "@/features/canvas/components/HistoryControls";
 import { DancerLayer } from "@/features/canvas/components/DancerLayer";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
@@ -32,6 +32,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { upsertPosition } from "@/features/scene/api/positions";
+import { useAddScene } from "@/features/scene/hooks/useAddScene";
 import type { Project } from "@/features/project/types";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position, Scene } from "@/features/scene/types";
@@ -98,6 +99,7 @@ export function CanvasBoard({
   initialScenes,
   initialPositions,
 }: Props) {
+  const { addScene, isCreating: isCreatingScene } = useAddScene(project);
   const stageRef = useRef<HTMLDivElement>(null);
   // 指が数px動いただけでドラッグ扱いになると、ダンサーをタップして
   // 選択する操作(DancerInspectorを開く)がしづらくなるため、
@@ -456,39 +458,40 @@ export function CanvasBoard({
 
   if (!selectedSceneId) {
     return (
-      <p className="text-center text-sm text-zinc-400">
-        シーンがありません。上のタイムラインから作成してください。
-      </p>
+      <EmptyStage
+        widthUnits={project.stageWidth}
+        heightUnits={project.stageHeight}
+        onCreateScene={addScene}
+        isCreating={isCreatingScene}
+      />
     );
   }
 
   return (
-    <div className="space-y-2">
-      <CanvasToolbar />
-      <DndContext
-        sensors={sensors}
-        modifiers={gridSnapModifier ? [gridSnapModifier] : undefined}
-        accessibility={DND_ACCESSIBILITY}
-        onDragStart={(event) => setDraggingDancerId(String(event.active.id))}
-        onDragMove={handleDragMove}
-        onDragEnd={handleDragEnd}
-        onDragCancel={handleDragCancel}
+    <DndContext
+      sensors={sensors}
+      modifiers={gridSnapModifier ? [gridSnapModifier] : undefined}
+      accessibility={DND_ACCESSIBILITY}
+      onDragStart={(event) => setDraggingDancerId(String(event.active.id))}
+      onDragMove={handleDragMove}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
+      <Stage
+        ref={stageRef}
+        widthUnits={project.stageWidth}
+        heightUnits={project.stageHeight}
+        showCenterline={isSymmetryMode}
+        overlay={<HistoryControls />}
       >
-        <Stage
-          ref={stageRef}
-          widthUnits={project.stageWidth}
-          heightUnits={project.stageHeight}
-          showCenterline={isSymmetryMode}
-        >
-          <DancerLayer
-            stageWidthUnits={project.stageWidth}
-            stageHeightUnits={project.stageHeight}
-            onRotateEnd={handleRotateEnd}
-            onNudge={handleNudge}
-            onCurveControlPointChange={handleCurveControlPointChange}
-          />
-        </Stage>
-      </DndContext>
-    </div>
+        <DancerLayer
+          stageWidthUnits={project.stageWidth}
+          stageHeightUnits={project.stageHeight}
+          onRotateEnd={handleRotateEnd}
+          onNudge={handleNudge}
+          onCurveControlPointChange={handleCurveControlPointChange}
+        />
+      </Stage>
+    </DndContext>
   );
 }
