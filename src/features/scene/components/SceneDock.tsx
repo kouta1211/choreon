@@ -102,12 +102,12 @@ export function SceneDock({ project }: Props) {
 
 
   return (
-    <div className="rounded-t-[18px] border-t border-zinc-800 bg-zinc-900 pt-2 pb-3 lg:rounded-none">
+    <div className="rounded-t-[18px] border-t border-zinc-800 bg-zinc-900 pt-2 pb-3 md:rounded-none">
       <button
         type="button"
         onClick={() => setSceneSheetOpen(true)}
         aria-label="シーン一覧を開く"
-        className="mx-auto mb-2.5 block px-6 py-1 lg:hidden"
+        className="mx-auto mb-2.5 block px-6 py-1 md:hidden"
       >
         <span
           aria-hidden
@@ -133,7 +133,7 @@ export function SceneDock({ project }: Props) {
             )}
           </button>
 
-          <div className="min-w-0 flex-1 lg:flex-none">
+          <div className="min-w-0 flex-1 md:flex-none">
             <InlineEditableText
               key={selectedScene.id}
               value={selectedScene.name}
@@ -177,7 +177,7 @@ export function SceneDock({ project }: Props) {
         </div>
       )}
 
-      <div className="lg:hidden">
+      <div className="md:hidden">
       <SceneTabs
         scenes={scenes}
         selectedSceneId={selectedSceneId}
