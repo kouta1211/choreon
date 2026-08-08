@@ -2,7 +2,10 @@
 
 import { useEffect } from "react";
 import { animate, motion, useMotionValue, useTransform } from "motion/react";
-import { SCENE_TRANSITION_EASE } from "@/features/canvas/constants";
+import {
+  resolveTransitionDuration,
+  SCENE_TRANSITION_EASE,
+} from "@/features/canvas/constants";
 import type { Scene } from "@/features/scene/types";
 
 type Props = {
@@ -59,7 +62,7 @@ export function SceneDotRail({
 
     position.set(Math.max(0, selectedIndex - 1));
     const animation = animate(position, selectedIndex, {
-      duration: currentDurationSeconds,
+      duration: resolveTransitionDuration(currentDurationSeconds),
       ease: SCENE_TRANSITION_EASE,
     });
     return () => animation.stop();

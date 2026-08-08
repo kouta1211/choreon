@@ -32,7 +32,7 @@ import {
 } from "@/features/canvas/lib/gridSnapModifier";
 import { createClient } from "@/lib/supabase/client";
 import { toUserMessage } from "@/lib/supabase/errors";
-import { upsertPosition } from "@/features/scene/api/positions";
+import { upsertPosition, upsertPositions } from "@/features/scene/api/positions";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
 import type { Project } from "@/features/project/types";
 import type { Dancer } from "@/features/dancer/types";
@@ -276,41 +276,60 @@ export function CanvasBoard({
         updateDancerPosition(pairAfter.sceneId, pairAfter.dancerId, pairAfter);
       }
 
-      try {
-        const supabase = createClient();
-        await upsertPosition(supabase, after);
-        if (pairAfter) {
-          await upsertPosition(supabase, pairAfter);
+      const changes = [
+        { sceneId: selectedSceneId, dancerId, before, after },
+        ...(pairId && pairBefore && pairAfter
+          ? [
+              {
+                sceneId: selectedSceneId,
+                dancerId: pairId,
+                before: pairBefore,
+                after: pairAfter,
+              },
+            ]
+          : []),
+      ];
+
+      // 保存だけを切り出しているのは、失敗したときにトーストの「再試行」から
+      // もう一度呼べるようにするため。通信が一瞬切れただけのことが多く、
+      // 同じ場所へ置き直す操作をやり直させるのは無駄が大きい
+      const save = async () => {
+        try {
+          const supabase = createClient();
+          await upsertPositions(
+            supabase,
+            changes.map((change) => change.after),
+          );
+          // 保存が確定してから履歴に積む(失敗した操作は「元に戻す」対象に
+          // ならない=見た目もロールバック済みなので、積むと辻褄が合わなくなる)。
+          // シンメトリーのペアも同じ1ステップに含め、まとめて元に戻せるようにする
+          useHistoryStore.getState().push({ kind: "move", changes });
+        } catch (error) {
+          for (const change of changes) {
+            updateDancerPosition(change.sceneId, change.dancerId, change.before);
+          }
+          showToast({
+            message: toUserMessage(error, "位置の保存に失敗しました"),
+            type: "error",
+            action: {
+              label: "再試行",
+              onAction: () => {
+                // 見た目を動かし直してから、もう一度保存する
+                for (const change of changes) {
+                  updateDancerPosition(
+                    change.sceneId,
+                    change.dancerId,
+                    change.after,
+                  );
+                }
+                void save();
+              },
+            },
+          });
         }
-        // 保存が確定してから履歴に積む(失敗した操作は「元に戻す」対象に
-        // ならない=見た目もロールバック済みなので、積むと辻褄が合わなくなる)。
-        // シンメトリーのペアも同じ1ステップに含め、まとめて元に戻せるようにする
-        useHistoryStore.getState().push({
-          kind: "move",
-          changes: [
-            { sceneId: selectedSceneId, dancerId, before, after },
-            ...(pairId && pairBefore && pairAfter
-              ? [
-                  {
-                    sceneId: selectedSceneId,
-                    dancerId: pairId,
-                    before: pairBefore,
-                    after: pairAfter,
-                  },
-                ]
-              : []),
-          ],
-        });
-      } catch (error) {
-        updateDancerPosition(selectedSceneId, dancerId, before);
-        if (pairId && pairBefore) {
-          updateDancerPosition(selectedSceneId, pairId, pairBefore);
-        }
-        showToast({
-          message: toUserMessage(error, "位置の保存に失敗しました"),
-          type: "error",
-        });
-      }
+      };
+
+      await save();
     },
     [
       selectedSceneId,

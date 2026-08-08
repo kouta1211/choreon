@@ -40,3 +40,28 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none; /* Chrome/Safari */
 }
+
+/* キーボードで辿っているときだけ、いまどこにいるかを必ず示す。
+   要素ごとに書くと必ず付け忘れが出るため、操作できるものすべてに
+   まとめて当てている(:focus ではなく :focus-visible なので、
+   マウスで押しただけでは出ない)。
+   ダンサーのマーカーは既にSVGの破線リングで示しているので除く */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-pink-500);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+
+/* 動きを減らす設定の人には、シーン切り替えの補間を最小限にする。
+   このアプリの動き自体は情報(誰がどこへ動くか)なので消してしまわず、
+   短くして目が追う負担だけを下げる */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

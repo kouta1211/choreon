@@ -5,6 +5,7 @@ import { animate } from "motion/react";
 import { splitQuadraticAfter } from "@/features/canvas/lib/curvePath";
 import {
   DEFAULT_TRANSITION_DURATION_SECONDS,
+  resolveTransitionDuration,
   SCENE_TRANSITION_EASE,
 } from "@/features/canvas/constants";
 import type { Dancer } from "@/features/dancer/types";
@@ -240,7 +241,7 @@ function PathTrailSegment({
     if (!element) return;
 
     const animation = animate(0, 1, {
-      duration: segment.durationSeconds,
+      duration: resolveTransitionDuration(segment.durationSeconds),
       ease: SCENE_TRANSITION_EASE,
       onUpdate: (progress) => {
         element.setAttribute("d", toTrailPathD(segment, mode, progress));

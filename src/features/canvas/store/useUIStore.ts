@@ -3,6 +3,9 @@ import { create } from "zustand";
 type Toast = {
   message: string;
   type: "success" | "error";
+  /** 右端に出す1つだけの操作。失敗なら「再試行」、取り消せる操作なら
+   * 「元に戻す」。知らせて終わりにせず、その場で次の一手を出す */
+  action?: { label: string; onAction: () => void };
 };
 
 /** ドラッグ中、格子スナップが効いている格子線の位置(ステージ座標系の整数)。

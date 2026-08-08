@@ -17,6 +17,7 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { quadraticBezierAt } from "@/features/canvas/lib/curvePath";
 import {
   DEFAULT_TRANSITION_DURATION_SECONDS,
+  resolveTransitionDuration,
   SCENE_TRANSITION_EASE,
 } from "@/features/canvas/constants";
 import type { Dancer } from "@/features/dancer/types";
@@ -251,7 +252,7 @@ function DraggableDancerIconImpl({
       // 見えていない曲線に沿って動くこともなくなる)
       if (fromLeft === leftPercent && fromTop === topPercent) return;
       const curveAnimation = animate(0, 1, {
-        duration: transitionDurationSeconds,
+        duration: resolveTransitionDuration(transitionDurationSeconds),
         ease: SCENE_TRANSITION_EASE,
         onUpdate: (progress) => {
           leftPct.set(
@@ -265,12 +266,13 @@ function DraggableDancerIconImpl({
       return () => curveAnimation.stop();
     }
 
+    const duration = resolveTransitionDuration(transitionDurationSeconds);
     const leftAnimation = animate(leftPct, leftPercent, {
-      duration: transitionDurationSeconds,
+      duration,
       ease: SCENE_TRANSITION_EASE,
     });
     const topAnimation = animate(topPct, topPercent, {
-      duration: transitionDurationSeconds,
+      duration,
       ease: SCENE_TRANSITION_EASE,
     });
     return () => {

@@ -8,6 +8,7 @@ import { CanvasBoard } from "@/features/canvas/components/CanvasBoard";
 import { EditorHeader } from "@/features/canvas/components/EditorHeader";
 import { AddDancerSheet } from "@/features/dancer/components/AddDancerSheet";
 import { TemplateSheet } from "@/features/canvas/components/TemplateSheet";
+import { TemplateHint } from "@/features/canvas/components/TemplateHint";
 import { DancerInspector } from "@/features/dancer/components/DancerInspector";
 import { SceneDock } from "@/features/scene/components/SceneDock";
 import { SceneSidebar } from "@/features/scene/components/SceneSidebar";
@@ -95,7 +96,11 @@ export default async function ProjectPage(
 
         {/* インスペクターはドックの直上に浮かせる(absolute)ため、
             位置の基準としてこのラッパーが要る */}
+        {/* インスペクターとヒントはドックの直上に浮かせる(absolute)ため、
+            位置の基準としてこのラッパーが要る。ダンサーを選んでいる間は
+            インスペクターが同じ場所を使うので、ヒントは出さない */}
         <div className="relative shrink-0">
+          <TemplateHint />
           <DancerInspector />
           <SceneDock project={project} />
         </div>

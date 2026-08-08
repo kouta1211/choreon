@@ -90,10 +90,10 @@ describe("HistoryControls", () => {
   });
 
   it("元に戻すと、操作前の位置がstoreへ戻りSupabaseにも保存される", async () => {
-    const { before } = seedMovedDancer();
+    seedMovedDancer();
     const upsertSpy = vi
-      .spyOn(positionsApi, "upsertPosition")
-      .mockResolvedValue(before);
+      .spyOn(positionsApi, "upsertPositions")
+      .mockResolvedValue(undefined);
     const user = userEvent.setup();
     render(<HistoryControls />);
 
@@ -101,16 +101,15 @@ describe("HistoryControls", () => {
 
     expect(currentX()).toBe(1);
     await waitFor(() => {
-      expect(upsertSpy).toHaveBeenCalledWith(
-        expect.anything(),
+      expect(upsertSpy).toHaveBeenCalledWith(expect.anything(), [
         expect.objectContaining({ xCoordinate: 1 }),
-      );
+      ]);
     });
   });
 
   it("元に戻した後はやり直せる(操作後の位置に戻る)", async () => {
-    const { after } = seedMovedDancer();
-    vi.spyOn(positionsApi, "upsertPosition").mockResolvedValue(after);
+    seedMovedDancer();
+    vi.spyOn(positionsApi, "upsertPositions").mockResolvedValue(undefined);
     const user = userEvent.setup();
     render(<HistoryControls />);
 
@@ -124,7 +123,7 @@ describe("HistoryControls", () => {
 
   it("保存に失敗したら見た目も履歴スタックも元の状態へ戻す", async () => {
     seedMovedDancer();
-    vi.spyOn(positionsApi, "upsertPosition").mockRejectedValue(
+    vi.spyOn(positionsApi, "upsertPositions").mockRejectedValue(
       new Error("network"),
     );
     const user = userEvent.setup();
@@ -144,7 +143,7 @@ describe("HistoryControls", () => {
   it("対象のダンサーが削除済みなら、書き戻さずに知らせる", async () => {
     seedMovedDancer();
     useProjectStore.setState({ dancers: {} });
-    const upsertSpy = vi.spyOn(positionsApi, "upsertPosition");
+    const upsertSpy = vi.spyOn(positionsApi, "upsertPositions");
     const user = userEvent.setup();
     render(<HistoryControls />);
 
@@ -157,9 +156,9 @@ describe("HistoryControls", () => {
   });
 
   it("元に戻す対象が別のシーンにある場合、そのシーンへ切り替える", async () => {
-    const { before } = seedMovedDancer();
+    seedMovedDancer();
     useUIStore.setState({ selectedSceneId: "scene-other" });
-    vi.spyOn(positionsApi, "upsertPosition").mockResolvedValue(before);
+    vi.spyOn(positionsApi, "upsertPositions").mockResolvedValue(undefined);
     const user = userEvent.setup();
     render(<HistoryControls />);
 
@@ -169,9 +168,9 @@ describe("HistoryControls", () => {
   });
 
   it("再生中に元に戻すと再生が止まる", async () => {
-    const { before } = seedMovedDancer();
+    seedMovedDancer();
     useUIStore.setState({ isPlaying: true });
-    vi.spyOn(positionsApi, "upsertPosition").mockResolvedValue(before);
+    vi.spyOn(positionsApi, "upsertPositions").mockResolvedValue(undefined);
     const user = userEvent.setup();
     render(<HistoryControls />);
 
@@ -181,8 +180,8 @@ describe("HistoryControls", () => {
   });
 
   it("Ctrl+Zで元に戻せる", async () => {
-    const { before } = seedMovedDancer();
-    vi.spyOn(positionsApi, "upsertPosition").mockResolvedValue(before);
+    seedMovedDancer();
+    vi.spyOn(positionsApi, "upsertPositions").mockResolvedValue(undefined);
     const user = userEvent.setup();
     render(<HistoryControls />);
 
@@ -192,8 +191,8 @@ describe("HistoryControls", () => {
   });
 
   it("Ctrl+Shift+Zでやり直せる", async () => {
-    const { after } = seedMovedDancer();
-    vi.spyOn(positionsApi, "upsertPosition").mockResolvedValue(after);
+    seedMovedDancer();
+    vi.spyOn(positionsApi, "upsertPositions").mockResolvedValue(undefined);
     const user = userEvent.setup();
     render(<HistoryControls />);
 
@@ -207,7 +206,7 @@ describe("HistoryControls", () => {
 
   it("テキスト入力中のCtrl+Zは横取りしない(ブラウザ標準の取り消しに任せる)", async () => {
     seedMovedDancer();
-    const upsertSpy = vi.spyOn(positionsApi, "upsertPosition");
+    const upsertSpy = vi.spyOn(positionsApi, "upsertPositions");
     const user = userEvent.setup();
     render(
       <>

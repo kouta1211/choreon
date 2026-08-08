@@ -45,7 +45,24 @@ export function Toast() {
       >
         {isError ? <X size={11} strokeWidth={3} /> : <Check size={11} strokeWidth={3} />}
       </span>
-      <span className="min-w-0 text-[13px] font-medium">{toast.message}</span>
+      <span className="min-w-0 flex-1 text-[13px] font-medium">
+        {toast.message}
+      </span>
+      {toast.action && (
+        <button
+          type="button"
+          onClick={() => {
+            // 押した時点で消す。処理の結果は次のトーストが知らせる
+            clearToast();
+            toast.action?.onAction();
+          }}
+          className={`shrink-0 rounded-md px-2 py-1 font-mono text-[11px] font-semibold underline ${
+            isError ? "text-red-300" : "text-emerald-300"
+          }`}
+        >
+          {toast.action.label}
+        </button>
+      )}
     </div>
   );
 }

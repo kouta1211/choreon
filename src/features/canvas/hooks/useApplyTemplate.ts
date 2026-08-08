@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
+import { useHistoryActions } from "@/features/canvas/hooks/useHistoryActions";
 import { useHistoryStore } from "@/features/canvas/store/useHistoryStore";
 import { createClient } from "@/lib/supabase/client";
 import { toUserMessage } from "@/lib/supabase/errors";
@@ -34,6 +35,7 @@ export function useApplyTemplate(project: Project) {
     (state) => state.updateDancerPosition,
   );
   const showToast = useUIStore((state) => state.showToast);
+  const { undo } = useHistoryActions();
 
   const applyTemplate = async (
     formation: FormationTemplate,
@@ -95,6 +97,9 @@ export function useApplyTemplate(project: Project) {
             ? `${formation.name}に置き換えました（${leftOut}人はそのまま）`
             : `${formation.name}に置き換えました`,
         type: "success",
+        // 一度に全員動く操作なので、その場で戻せる導線を出す。
+        // 履歴ボタンを探しに行かせない
+        action: { label: "元に戻す", onAction: () => void undo() },
       });
     } catch (error) {
       for (const change of changes) {
