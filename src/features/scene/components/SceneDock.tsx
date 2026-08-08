@@ -259,7 +259,7 @@ export function SceneDock({ project }: Props) {
             </div>
           </div>
 
-          <Tooltip label="シーンを削除" placement="top">
+          <Tooltip label="シーンを削除" placement="top" align="right">
           <button
             type="button"
             onClick={() => handleDelete(selectedScene)}
@@ -288,6 +288,7 @@ export function SceneDock({ project }: Props) {
       <SceneDotRail
         scenes={scenes}
         selectedIndex={selectedIndex}
+        isPlaying={isPlaying}
         onSelectIndex={(index) => {
           const scene = scenes[index];
           if (scene) handleSelectScene(scene.id);

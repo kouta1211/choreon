@@ -41,7 +41,7 @@ export function EditorHeader({ project }: Props) {
       <div className="min-w-0 flex-1">
         <ProjectTitle project={project} />
       </div>
-      <Tooltip label="ダンサーを追加">
+      <Tooltip label="ダンサーを追加" align="right">
         <button
           type="button"
           onClick={() => setAddDancerSheetOpen(true)}

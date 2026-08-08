@@ -232,7 +232,7 @@ export function DancerInspector() {
             </button>
           </Tooltip>
 
-          <Tooltip label="選択を解除" placement="top">
+          <Tooltip label="選択を解除" placement="top" align="right">
             <button
               type="button"
               onClick={() => selectDancer(null)}

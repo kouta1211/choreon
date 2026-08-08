@@ -169,7 +169,7 @@ export function HistoryControls() {
         <Undo2 size={17} />
       </button>
       </Tooltip>
-      <Tooltip label="やり直す (Ctrl+Shift+Z)" placement="top">
+      <Tooltip label="やり直す (Ctrl+Shift+Z)" placement="top" align="right">
       <button
         type="button"
         onClick={handleRedo}

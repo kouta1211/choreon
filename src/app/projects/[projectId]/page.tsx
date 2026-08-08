@@ -49,8 +49,8 @@ export default async function ProjectPage(
   );
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden">
-      <div className="mx-auto flex w-full max-w-md min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="flex h-dvh flex-col overflow-clip">
+      <div className="mx-auto flex w-full max-w-md min-h-0 flex-1 flex-col overflow-clip">
         <EditorHeader project={project} />
 
         <div className="flex min-h-0 flex-1 flex-col px-3.5 pb-1">
