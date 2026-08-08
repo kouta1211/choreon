@@ -60,3 +60,31 @@ alter table public.positions
 
 
 notify pgrst, 'reload schema';
+
+
+-- =========================================================================
+-- 適用後の確認クエリ(個人ルール: 必ず実行して確認する)
+-- =========================================================================
+
+-- 3-1. 新規プロジェクトの既定サイズが 15 x 10 になったか
+--      (既存プロジェクトの値は変わらない。ここで見ているのは既定値だけ)
+select column_name, column_default
+from information_schema.columns
+where table_schema = 'public'
+  and table_name = 'projects'
+  and column_name in ('stage_width', 'stage_height')
+order by column_name;
+
+-- 3-2. CHECK制約が4つ揃ったか。4行すべてが exists = true になれば成功。
+--      なお、この alter table が成功した時点で「既存の行がすべて範囲内
+--      だった」ことも同時に確認できている(1行でも範囲外があれば
+--      制約の追加自体が失敗するため)
+select name, exists (
+  select 1 from pg_constraint where conname = name and contype = 'c'
+) as exists
+from (values
+  ('dancers_initial_direction_check'),
+  ('positions_x_coordinate_check'),
+  ('positions_y_coordinate_check'),
+  ('positions_rotation_angle_check')
+) as expected(name);
