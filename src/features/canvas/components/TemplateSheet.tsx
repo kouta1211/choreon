@@ -81,6 +81,7 @@ export function TemplateSheet({ project }: Props) {
       }
       titleRight={shownTemplates.length > 0 ? `${shownTemplates.length}種` : undefined}
       isTall
+      wideMaxWidthClassName="lg:max-w-4xl"
     >
       <div className="flex flex-col gap-3.5 px-3.5 py-3">
         {dancerCount < 2 ? (
@@ -114,7 +115,7 @@ export function TemplateSheet({ project }: Props) {
               onChange={setTransform}
             />
 
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {shownTemplates.map((formation) => (
                 <button
                   key={`${formation.count}-${formation.name}`}

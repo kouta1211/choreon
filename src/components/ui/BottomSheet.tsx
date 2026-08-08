@@ -2,6 +2,7 @@
 
 import { useEffect, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { useIsWideScreen } from "@/components/ui/useIsWideScreen";
 
 type Props = {
   isOpen: boolean;
@@ -13,6 +14,9 @@ type Props = {
   /** trueなら画面の大部分を占める高さにする(一覧のように件数が伸びるもの)。
    * falseなら中身の高さぶんだけ下に貼り付く */
   isTall?: boolean;
+  /** 広い画面での最大幅。中身の量に応じて呼び出し側が決める
+   * (テンプレートの一覧のように横に並べたいものは広く取る) */
+  wideMaxWidthClassName?: string;
   children: ReactNode;
 };
 
@@ -20,15 +24,14 @@ type Props = {
 const DISMISS_DISTANCE_PX = 80;
 
 /**
- * 画面下から出るシート。シーン一覧とダンサー追加で共通に使う。
+ * 一時的に開く重ね物。画面幅で出方を変える。
  *
- * ドックの上へ生やすのではなく画面全体に重ねるのは、これらが
- * 「いまの作業を一旦離れて、まとめて片付ける」ための場所だから。
- * ステージを見ながら操作するもの(インスペクター)とは役割が違う。
+ * - 狭い画面: 下から出るシート。親指の届く下端に寄せ、下スワイプで閉じる
+ * - 広い画面: 画面中央のダイアログ。下から細長く出しても左右が余るだけで、
+ *   一覧ものは1列しか並ばず読みづらい
  *
- * 閉じ方を3通り用意している(下へドラッグ・背景をタップ・Escape)。
- * スマートフォンでは下スワイプが自然だが、それだけだと「どこを掴めば
- * いいのか」が分からない人が出るため、背景タップも効くようにしている。
+ * どちらも背景タップとEscapeで閉じられる。下スワイプは狭い画面だけに
+ * 効かせている(中央のダイアログを下へ引っ張る操作は意味が通らないため)。
  */
 export function BottomSheet({
   isOpen,
@@ -36,8 +39,11 @@ export function BottomSheet({
   title,
   titleRight,
   isTall = false,
+  wideMaxWidthClassName = "lg:max-w-lg",
   children,
 }: Props) {
+  const isWide = useIsWideScreen();
+
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -51,7 +57,7 @@ export function BottomSheet({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-40 flex flex-col justify-end"
+          className="fixed inset-0 z-40 flex flex-col justify-end lg:items-center lg:justify-center lg:p-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -68,23 +74,29 @@ export function BottomSheet({
             role="dialog"
             aria-modal
             aria-label={title}
-            drag="y"
+            drag={isWide ? false : "y"}
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0, bottom: 0.4 }}
             onDragEnd={(_, info) => {
               if (info.offset.y > DISMISS_DISTANCE_PX) onClose();
             }}
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", stiffness: 420, damping: 38 }}
-            className={`relative mx-auto flex w-full max-w-md flex-col rounded-t-[22px] border-t border-zinc-700 bg-zinc-900 pt-2.5 shadow-[0_-16px_40px_rgba(0,0,0,0.5)] ${
-              isTall ? "h-[82dvh]" : "max-h-[82dvh]"
-            }`}
+            initial={isWide ? { opacity: 0, scale: 0.97 } : { y: "100%" }}
+            animate={isWide ? { opacity: 1, scale: 1 } : { y: 0 }}
+            exit={isWide ? { opacity: 0, scale: 0.97 } : { y: "100%" }}
+            transition={
+              isWide
+                ? { duration: 0.16 }
+                : { type: "spring", stiffness: 420, damping: 38 }
+            }
+            className={`relative mx-auto flex w-full max-w-md flex-col rounded-t-[22px] border-t border-zinc-700 bg-zinc-900 pt-2.5 shadow-[0_-16px_40px_rgba(0,0,0,0.5)] lg:rounded-2xl lg:border lg:pt-3 lg:shadow-2xl ${
+              isTall ? "h-[82dvh] lg:h-auto lg:max-h-[82dvh]" : "max-h-[82dvh]"
+            } ${wideMaxWidthClassName}`}
           >
+            {/* つまんで下ろすためのハンドル。中央ダイアログでは掴む対象が
+                無いので出さない */}
             <span
               aria-hidden
-              className="mx-auto mb-3 block h-1 w-11 shrink-0 rounded-full bg-zinc-700"
+              className="mx-auto mb-3 block h-1 w-11 shrink-0 rounded-full bg-zinc-700 lg:hidden"
             />
             <div className="flex shrink-0 items-baseline justify-between gap-2 border-b border-zinc-800 px-[18px] pb-3">
               <span className="text-base font-semibold text-zinc-50">

@@ -131,7 +131,12 @@ export function AddDancerSheet({ project }: Props) {
   };
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={close} title="ダンサーを追加">
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={close}
+      title="ダンサーを追加"
+      wideMaxWidthClassName="lg:max-w-md"
+    >
       <form
         onSubmit={handleSubmit}
         className="flex flex-col gap-4 px-[18px] pt-4 pb-5"
