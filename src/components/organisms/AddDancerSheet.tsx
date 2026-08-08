@@ -5,7 +5,7 @@ import { Minus, Plus } from "lucide-react";
 import { BottomSheet } from "@/components/molecules/BottomSheet";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import { createClient } from "@/lib/supabase/client";
+import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { createDancers } from "@/features/dancer/api/dancers";
 import { upsertPositions } from "@/features/scene/api/positions";
@@ -109,9 +109,10 @@ export function AddDancerSheet({ project }: Props) {
     close();
 
     try {
-      const supabase = createClient();
-      await createDancers(supabase, created);
-      await upsertPositions(supabase, positions);
+      await persist(async (supabase) => {
+        await createDancers(supabase, created);
+        await upsertPositions(supabase, positions);
+      });
       showToast({
         message:
           created.length === 1

@@ -30,7 +30,7 @@ import {
   createGridSnapModifier,
   GRID_SNAP_TOLERANCE,
 } from "@/features/canvas/lib/gridSnapModifier";
-import { createClient } from "@/lib/supabase/client";
+import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { upsertPosition, upsertPositions } from "@/features/scene/api/positions";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
@@ -43,6 +43,8 @@ type Props = {
   initialDancers: Dancer[];
   initialScenes: Scene[];
   initialPositions: Position[];
+  /** ゲスト(未ログイン)の下書きとして開くかどうか。storeへそのまま渡す */
+  isGuest?: boolean;
 };
 
 /** 中心線からこの距離(ステージ座標系のユニット)以内ならぴったり吸着させる */
@@ -99,6 +101,7 @@ export function CanvasBoard({
   initialDancers,
   initialScenes,
   initialPositions,
+  isGuest = false,
 }: Props) {
   const { addScene, isCreating: isCreatingScene } = useAddScene(project);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -149,6 +152,7 @@ export function CanvasBoard({
       dancers: initialDancers,
       scenes: initialScenes,
       positions: initialPositions,
+      isGuest,
     });
     if (initialScenes.length > 0) {
       selectScene(initialScenes[0].id);
@@ -295,10 +299,11 @@ export function CanvasBoard({
       // 同じ場所へ置き直す操作をやり直させるのは無駄が大きい
       const save = async () => {
         try {
-          const supabase = createClient();
-          await upsertPositions(
-            supabase,
-            changes.map((change) => change.after),
+          await persist((supabase) =>
+            upsertPositions(
+              supabase,
+              changes.map((change) => change.after),
+            ),
           );
           // 保存が確定してから履歴に積む(失敗した操作は「元に戻す」対象に
           // ならない=見た目もロールバック済みなので、積むと辻褄が合わなくなる)。
@@ -359,8 +364,7 @@ export function CanvasBoard({
       updateDancerPosition(selectedSceneId, dancerId, after);
 
       try {
-        const supabase = createClient();
-        await upsertPosition(supabase, after);
+        await persist((supabase) => upsertPosition(supabase, after));
         useHistoryStore.getState().push({
           kind: "rotate",
           changes: [{ sceneId: selectedSceneId, dancerId, before, after }],
@@ -405,8 +409,7 @@ export function CanvasBoard({
       updateDancerPosition(selectedSceneId, dancerId, after);
 
       try {
-        const supabase = createClient();
-        await upsertPosition(supabase, after);
+        await persist((supabase) => upsertPosition(supabase, after));
         // 矢印キーの微調整は連打されるため、useHistoryStore側で同じダンサーへの
         // 連続操作を1ステップに畳んでいる(kind: "nudge"がその目印)
         useHistoryStore.getState().push({
@@ -456,8 +459,7 @@ export function CanvasBoard({
       });
 
       try {
-        const supabase = createClient();
-        await upsertPosition(supabase, after);
+        await persist((supabase) => upsertPosition(supabase, after));
         useHistoryStore.getState().push({
           kind: "curve",
           changes: [{ sceneId, dancerId, before, after }],

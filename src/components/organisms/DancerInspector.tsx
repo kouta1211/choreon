@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Trash2, X, Focus } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import { createClient } from "@/lib/supabase/client";
+import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
 import {
   updateDancerColor,
@@ -80,8 +80,7 @@ export function DancerInspector() {
     });
 
     try {
-      const supabase = createClient();
-      await upsertPosition(supabase, after);
+      await persist((supabase) => upsertPosition(supabase, after));
     } catch (error) {
       updateDancerPosition(selectedSceneId, dancer.id, {
         dancerTransitionDurationSeconds:
@@ -101,8 +100,7 @@ export function DancerInspector() {
     addDancer({ ...previous, name });
 
     try {
-      const supabase = createClient();
-      await updateDancerName(supabase, previous.id, name);
+      await persist((supabase) => updateDancerName(supabase, previous.id, name));
     } catch (error) {
       addDancer(previous);
       showToast({
@@ -118,8 +116,7 @@ export function DancerInspector() {
     addDancer({ ...dancer, color });
 
     try {
-      const supabase = createClient();
-      await updateDancerColor(supabase, dancer.id, color);
+      await persist((supabase) => updateDancerColor(supabase, dancer.id, color));
     } catch (error) {
       addDancer(previous);
       showToast({
@@ -144,8 +141,7 @@ export function DancerInspector() {
       onConfirm: async () => {
         setIsDeleting(true);
         try {
-          const supabase = createClient();
-          await deleteDancer(supabase, dancer.id);
+          await persist((supabase) => deleteDancer(supabase, dancer.id));
           removeDancer(dancer.id);
           selectDancer(null);
           if (focusedDancerId === dancer.id) setFocusedDancer(null);

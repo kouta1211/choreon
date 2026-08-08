@@ -7,7 +7,7 @@ import {
 } from "@/features/canvas/store/useHistoryStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import { createClient } from "@/lib/supabase/client";
+import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { upsertPositions } from "@/features/scene/api/positions";
 
@@ -63,8 +63,7 @@ export function useHistoryActions() {
       }
 
       try {
-        const supabase = createClient();
-        await upsertPositions(supabase, changes.map(pick));
+        await persist((supabase) => upsertPositions(supabase, changes.map(pick)));
         return true;
       } catch (error) {
         for (const change of changes) {

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import { createClient } from "@/lib/supabase/client";
+import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { createScene } from "@/features/scene/api/scenes";
 import { upsertPositions } from "@/features/scene/api/positions";
@@ -56,9 +56,10 @@ export function useAddScene(project: Project) {
     selectScene(scene.id);
 
     try {
-      const supabase = createClient();
-      await createScene(supabase, scene);
-      await upsertPositions(supabase, copiedPositions);
+      await persist(async (supabase) => {
+        await createScene(supabase, scene);
+        await upsertPositions(supabase, copiedPositions);
+      });
     } catch (error) {
       removeScene(scene.id);
       selectScene(previousSelectedSceneId);

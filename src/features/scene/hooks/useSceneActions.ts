@@ -2,7 +2,7 @@
 
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import { createClient } from "@/lib/supabase/client";
+import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
 import {
   deleteScene,
@@ -42,8 +42,7 @@ export function useSceneActions() {
     renameScene(scene.id, name);
 
     try {
-      const supabase = createClient();
-      await renameSceneApi(supabase, scene.id, name);
+      await persist((supabase) => renameSceneApi(supabase, scene.id, name));
     } catch (error) {
       renameScene(scene.id, previousName);
       showToast({
@@ -60,9 +59,12 @@ export function useSceneActions() {
     reorderScenes(orderedSceneIds);
 
     try {
-      const supabase = createClient();
-      await Promise.all(
-        orderedSceneIds.map((id, index) => updateSceneOrder(supabase, id, index)),
+      await persist((supabase) =>
+        Promise.all(
+          orderedSceneIds.map((id, index) =>
+            updateSceneOrder(supabase, id, index),
+          ),
+        ),
       );
     } catch (error) {
       reorderScenes(previousOrder);
@@ -78,8 +80,9 @@ export function useSceneActions() {
     updateSceneDuration(scene.id, seconds);
 
     try {
-      const supabase = createClient();
-      await updateSceneDurationApi(supabase, scene.id, seconds);
+      await persist((supabase) =>
+        updateSceneDurationApi(supabase, scene.id, seconds),
+      );
     } catch (error) {
       updateSceneDuration(scene.id, previousDuration);
       showToast({
@@ -100,8 +103,7 @@ export function useSceneActions() {
       meta: [`${dancerCount} 人の配置`],
       onConfirm: async () => {
         try {
-          const supabase = createClient();
-          await deleteScene(supabase, scene.id);
+          await persist((supabase) => deleteScene(supabase, scene.id));
           removeScene(scene.id);
           const remaining = scenes.filter((s) => s.id !== scene.id);
           selectScene(remaining[0]?.id ?? null);

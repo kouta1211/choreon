@@ -5,12 +5,13 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useHistoryActions } from "@/features/canvas/hooks/useHistoryActions";
 import { useHistoryStore } from "@/features/canvas/store/useHistoryStore";
-import { createClient } from "@/lib/supabase/client";
+import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { upsertPositions } from "@/features/scene/api/positions";
 import {
   assignDancersToPoints,
   resolveFormationPoints,
+  selectPointsForDancers,
   type FormationTemplate,
   type FormationTransform,
 } from "@/features/canvas/lib/formationTemplates";
@@ -58,7 +59,9 @@ export function useApplyTemplate(project: Project) {
       project.stageWidth,
       project.stageHeight,
     );
-    const assignments = assignDancersToPoints(dancers, points);
+    // 人数より点が多い形を選んだときは、前列から埋めて奥を空ける
+    const usedPoints = selectPointsForDancers(points, dancers.length);
+    const assignments = assignDancersToPoints(dancers, usedPoints);
 
     const changes = assignments.flatMap((assignment) => {
       const before = positions[assignment.dancerId];
@@ -82,10 +85,11 @@ export function useApplyTemplate(project: Project) {
     }
 
     try {
-      const supabase = createClient();
-      await upsertPositions(
-        supabase,
-        changes.map((change) => change.after),
+      await persist((supabase) =>
+        upsertPositions(
+          supabase,
+          changes.map((change) => change.after),
+        ),
       );
       // 全員ぶんを1ステップとして積む
       useHistoryStore.getState().push({ kind: "template", changes });

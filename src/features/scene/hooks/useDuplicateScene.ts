@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import { createClient } from "@/lib/supabase/client";
+import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { createScene, updateSceneOrder } from "@/features/scene/api/scenes";
 import { upsertPositions } from "@/features/scene/api/positions";
@@ -64,13 +64,14 @@ export function useDuplicateScene(project: Project) {
     selectScene(duplicate.id);
 
     try {
-      const supabase = createClient();
-      await createScene(supabase, duplicate);
-      await upsertPositions(supabase, copiedPositions);
-      // 複製したシーンより後ろは、並び順が1つずつ繰り下がっている
-      await Promise.all(
-        nextOrder.map((id, index) => updateSceneOrder(supabase, id, index)),
-      );
+      await persist(async (supabase) => {
+        await createScene(supabase, duplicate);
+        await upsertPositions(supabase, copiedPositions);
+        // 複製したシーンより後ろは、並び順が1つずつ繰り下がっている
+        await Promise.all(
+          nextOrder.map((id, index) => updateSceneOrder(supabase, id, index)),
+        );
+      });
       showToast({ message: "シーンを複製しました", type: "success" });
     } catch (error) {
       removeScene(duplicate.id);
