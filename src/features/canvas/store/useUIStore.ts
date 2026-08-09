@@ -1,4 +1,11 @@
 import { create } from "zustand";
+import {
+  DEFAULT_VIEW_PREFERENCE,
+  parseViewPreference,
+  VIEW_STORAGE_KEY,
+  type GridMode,
+  type ViewPreference,
+} from "@/features/canvas/lib/viewPreference";
 
 type Toast = {
   message: string;
@@ -28,8 +35,9 @@ export type ConfirmRequest = {
   onConfirm: () => void | Promise<void>;
 };
 
-/** ステージの目盛りの出し方。円形の隊形は格子より同心円の方が読みやすい */
-export type GridMode = "square" | "circle" | "none";
+/** ステージの目盛りの出し方。円形の隊形は格子より同心円の方が読みやすい。
+ * 定義は端末に保存する側(viewPreference)に置いてある */
+export type { GridMode };
 
 type UIState = {
   selectedSceneId: string | null;
@@ -98,18 +106,34 @@ type UIState = {
   closeConfirm: () => void;
   openAuthDialog: (mode: "login" | "signup") => void;
   closeAuthDialog: () => void;
+  /** 端末に覚えてある「表示とモード」の選択を読み込む。画面が出てから
+   * 1回だけ呼ぶ(サーバー側にlocalStorageは無いので、描画前には読めない) */
+  loadViewPreference: () => void;
 };
+
+/** 「表示とモード」の選択を端末へ書き戻す */
+function persistViewPreference(preference: ViewPreference) {
+  try {
+    localStorage.setItem(VIEW_STORAGE_KEY, JSON.stringify(preference));
+  } catch {
+    // プライベートモードや容量超過で書けないことがある。次回に残らない
+    // だけなので、今の画面はそのまま動かす(見た目の設定と同じ扱い)
+  }
+}
 
 export const useUIStore = create<UIState>((set) => ({
   selectedSceneId: null,
   previousSceneId: null,
   selectedDancerId: null,
-  gridMode: "square",
+  // 3つの既定値は viewPreference が持つ。サーバーで描くHTMLと最初の
+   // ブラウザ描画を一致させるため、ここでは必ず既定から始め、
+   // 読み込みは loadViewPreference に任せる
+  gridMode: DEFAULT_VIEW_PREFERENCE.gridMode,
   toast: null,
   isSymmetryMode: false,
   focusedDancerId: null,
-  isPathVisible: false,
-  isBlindSpotCheckVisible: false,
+  isPathVisible: DEFAULT_VIEW_PREFERENCE.isPathVisible,
+  isBlindSpotCheckVisible: DEFAULT_VIEW_PREFERENCE.isBlindSpotCheckVisible,
   dragSnapLine: { x: null, y: null },
   isPlaying: false,
   isSceneSheetOpen: false,
@@ -128,18 +152,49 @@ export const useUIStore = create<UIState>((set) => ({
         : { selectedSceneId: sceneId, previousSceneId: state.selectedSceneId },
     ),
   selectDancer: (dancerId) => set({ selectedDancerId: dancerId }),
-  setGridMode: (mode) => set({ gridMode: mode }),
+  setGridMode: (mode) =>
+    set((state) => {
+      persistViewPreference({
+        gridMode: mode,
+        isPathVisible: state.isPathVisible,
+        isBlindSpotCheckVisible: state.isBlindSpotCheckVisible,
+      });
+      return { gridMode: mode };
+    }),
   showToast: (toast) => set({ toast }),
   clearToast: () => set({ toast: null }),
   toggleSymmetryMode: () =>
     set((state) => ({ isSymmetryMode: !state.isSymmetryMode })),
   setFocusedDancer: (dancerId) => set({ focusedDancerId: dancerId }),
   togglePathVisible: () =>
-    set((state) => ({ isPathVisible: !state.isPathVisible })),
+    set((state) => {
+      const isPathVisible = !state.isPathVisible;
+      persistViewPreference({
+        gridMode: state.gridMode,
+        isPathVisible,
+        isBlindSpotCheckVisible: state.isBlindSpotCheckVisible,
+      });
+      return { isPathVisible };
+    }),
   toggleBlindSpotCheckVisible: () =>
-    set((state) => ({
-      isBlindSpotCheckVisible: !state.isBlindSpotCheckVisible,
-    })),
+    set((state) => {
+      const isBlindSpotCheckVisible = !state.isBlindSpotCheckVisible;
+      persistViewPreference({
+        gridMode: state.gridMode,
+        isPathVisible: state.isPathVisible,
+        isBlindSpotCheckVisible,
+      });
+      return { isBlindSpotCheckVisible };
+    }),
+  loadViewPreference: () => {
+    let preference = DEFAULT_VIEW_PREFERENCE;
+    try {
+      preference = parseViewPreference(localStorage.getItem(VIEW_STORAGE_KEY));
+    } catch {
+      // localStorage自体が触れない環境。既定のまま動かす
+    }
+    set(preference);
+  },
   // 中身が前回と同じなら何も書き換えない(空オブジェクトを返す=状態は不変)。
   // これはドラッグ中に毎pointermoveごとに呼ばれるため、素直に
   // set({ dragSnapLine: line })にすると、スナップしていない間も毎回

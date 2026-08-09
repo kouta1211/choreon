@@ -52,6 +52,14 @@ export function DisplayModeMenu() {
   );
   const sceneCount = useProjectStore((state) => state.scenes.length);
 
+  // 前回この端末で選んだ表示を戻す。画面が出てから読むのは、
+  // localStorageがサーバー側に無く、描画前には読めないため
+  // (ThemeButtonが見た目の設定を読み込んでいるのと同じ形)
+  const loadViewPreference = useUIStore((state) => state.loadViewPreference);
+  useEffect(() => {
+    loadViewPreference();
+  }, [loadViewPreference]);
+
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (event: KeyboardEvent) => {
