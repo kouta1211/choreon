@@ -30,8 +30,19 @@
    少し柔らかい濃いグレーにしている。
 
    警告・エラー・成功・顔被り(amber/red/emerald)はテーマで変えない指定なので
-   ここには持たず、Tailwindの既定色をそのまま使う */
-:root {
+   ここには持たず、Tailwindの既定色をそのまま使う
+
+   :root だけでなく [data-theme] にも当てているのは、一覧シートのミニチュアの
+   ためにどうしても要るから。CSS変数は「宣言が無ければ親から継承する」ので、
+   各テーマのブロックが書いていない変数(ネオンなら --dancer-* や --marker-fill)は
+   <html> に当たっている“いま使用中のテーマ”の値が入り込んでしまう。
+   ミッドナイトに至っては専用ブロックが無いため、ミニチュアが丸ごと
+   使用中のテーマの見た目になっていた。
+   ここで [data-theme] を持つ要素すべてに既定値を一度置き直すことで、
+   下に並ぶ各テーマは「既定との差分」だけを書けばよくなる
+   (どちらも詳細度は同じなので、記述順で下のテーマが勝つ) */
+:root,
+[data-theme] {
   /* 地 */
   --bg: #19191c;
   /* 背景に重ねる素材の質感(ステージの外だけ)。既定は素の一色なので none。
@@ -94,6 +105,16 @@
   --label-text: #ffffff;
   --label-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
   --veil: rgba(0, 0, 0, 0.2);
+
+  /* 背景の質感(data-texture)を描くインク。
+     質感は「地より少し明るくする/暗くする」ことで効くので、地の明暗が
+     変わればインクの向きも変わらないといけない。暗い地には白を、
+     明るい紙には黒を重ねる。r g b の3値で持っているのは、質感側で
+     rgb(var(--texture-ink) / <濃さ>) と濃さだけ差し替えるため。
+     --texture-shade は「陰」として必ず黒で描くもの(暗幕の襞)用 */
+  --texture-ink: 255 255 255;
+  --texture-strength: 0.09;
+  --texture-shade: 0.32;
 
   /* ダンサーの6色。役割と順番はテーマが変わっても固定で、
      明るい素材のテーマのときだけ紙用の6色に差し替える */
@@ -431,6 +452,7 @@
  *
  * ・ダンサー名は白文字＋黒影のままだと白地に埋もれるので反転する
  * ・マイ・フォーカスの暗幕は「暗く」ではなく「白く」伏せる
+ * ・背景の質感のインクを黒へ。白い紙に白を重ねても何も起きない
  * ・ダンサー6色は紙の上で沈むよう彩度と明度を落とす(役割と順番は同じ) */
 [data-theme="paper"],
 [data-theme="gridnote"],
@@ -440,6 +462,11 @@
   --label-text: #1a1a1a;
   --label-shadow: 0 1px 2px rgba(255, 255, 255, 0.9);
   --veil: rgba(255, 255, 255, 0.6);
+
+  /* 黒は白より効きが強いので、同じ「はっきり分かる」濃さでも数字は小さい */
+  --texture-ink: 0 0 0;
+  --texture-strength: 0.055;
+  --texture-shade: 0.09;
 
   --dancer-1: #3f6bb5;
   --dancer-2: #c2483f;
@@ -455,47 +482,75 @@
  * data-theme とは独立に data-texture で選ぶ。
  *
  * 抑えている点:
- * ・白は3.5%、色は20%を超えない。地の見え方を変えるためのものであって、
+ * ・色は20%を超えない。地の見え方を変えるためのものであって、
  *   主役はあくまでステージの上のダンサーなので
+ * ・インクの色は書かない。--texture-ink / --texture-strength をテーマから
+ *   受け取るので、暗い地では白、明るい紙では黒として同じ模様が描かれる
  * ・ステージの中には掛からない。ステージは自前の面(--stage)で塗られており、
  *   この装飾は body の後ろに敷いた1枚として、その下を通るだけ
  * ・fixed なので、スクロールしても模様がついてこない
+ *
+ * 濃さについて: 当初はハンドオフ仕様書§11の「装飾は白3.5%」をそのまま
+ * 採っていたが、#19191c の地に白3.5%は実機でほぼ判別できず、
+ * 6種を切り替えても差が出なかった。ユーザーの判断で上限を上げている。
  */
-:root {
+:root,
+[data-theme] {
   --bg-texture: none;
   --bg-texture-size: auto;
 }
 
-/* ホリゾント幕 — 奥の幕に上から当たる明かり */
+/* ホリゾント幕 — 奥の幕に上から当たる明かり。
+   上端をはっきり明るくして、下へ抜けるまでを長く取る */
 [data-texture="horizon"] {
-  --bg-texture: linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 45%);
+  --bg-texture: linear-gradient(
+    180deg,
+    rgb(var(--texture-ink) / var(--texture-strength)),
+    rgb(var(--texture-ink) / calc(var(--texture-strength) * 0.32)) 38%,
+    transparent 72%
+  );
 }
 
-/* スポットの円光 — 上手からの丸い明かり */
+/* スポットの円光 — 上手からの丸い明かり。
+   中心を強く、縁をゆっくり落として「光の輪」の形を出す */
 [data-texture="spot"] {
-  --bg-texture: radial-gradient(50% 38% at 50% 0%, rgba(255, 255, 255, 0.035), transparent 70%);
+  --bg-texture: radial-gradient(
+    58% 44% at 50% -2%,
+    rgb(var(--texture-ink) / calc(var(--texture-strength) * 1.35)),
+    rgb(var(--texture-ink) / calc(var(--texture-strength) * 0.4)) 45%,
+    transparent 78%
+  );
 }
 
-/* 方眼と目盛り — 稽古場の床 */
+/* 方眼と目盛り — 稽古場の床。
+   細い方眼(32px)だけだと単なるノイズに見えるので、4マスごとに濃い
+   「目盛り」の線を重ねている。名前どおり目盛りが読めるようになる */
 [data-texture="grid"] {
   --bg-texture:
-    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  --bg-texture-size: 32px 32px;
+    linear-gradient(to right, rgb(var(--texture-ink) / calc(var(--texture-strength) * 1.6)) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(var(--texture-ink) / calc(var(--texture-strength) * 1.6)) 1px, transparent 1px),
+    linear-gradient(to right, rgb(var(--texture-ink) / calc(var(--texture-strength) * 0.7)) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(var(--texture-ink) / calc(var(--texture-strength) * 0.7)) 1px, transparent 1px);
+  --bg-texture-size: 128px 128px, 128px 128px, 32px 32px, 32px 32px;
 }
 
 /* グレイン — フィルムの粒子。SVGのfeTurbulenceをそのまま敷いている
-   (画像ファイルを増やさずに済み、拡大しても粗くならない) */
+   (画像ファイルを増やさずに済み、拡大しても粗くならない)。
+   feColorMatrix で彩度を落として中間色の粒にしてあるので、
+   暗い地では明るく・明るい紙では暗く転ぶ。1枚で両方向に効くため、
+   ここだけは --texture-ink を使わない */
 [data-texture="grain"] {
-  --bg-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  --bg-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.16'/%3E%3C/svg%3E");
   --bg-texture-size: 140px 140px;
 }
 
-/* 暗幕 — 縦に落ちる襞 */
+/* 暗幕 — 縦に落ちる襞。襞は「陰」なので、明るい紙でも黒のまま。
+   幅を持たせて、折り目の山と谷が分かるようにしている */
 [data-texture="curtain"] {
   --bg-texture: repeating-linear-gradient(
     90deg,
-    rgba(0, 0, 0, 0.18) 0 3px,
-    transparent 3px 11px
+    rgb(0 0 0 / var(--texture-shade)) 0 4px,
+    rgb(0 0 0 / calc(var(--texture-shade) * 0.45)) 4px 7px,
+    transparent 7px 18px
   );
 }
