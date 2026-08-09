@@ -1,94 +1,10 @@
 @import "tailwindcss";
-/* 既定以外の9テーマ。:root の既定値を上書きする側なので、
-   themes.css のセレクタは :root[data-theme=...] にして
-   読み込み順に関係なく必ず勝つようにしてある */
+/* トークンの既定値と、10種のテーマ・6種の背景の質感。
+   既定値と上書きが同じファイルに順番に並んでいるので、テーマ側は
+   `[data-theme=...]`(要素を選ばない形)のままで確実に勝てる。
+   この形にしてあると、一覧シートのミニチュアのように <html> 以外の
+   要素へ data-theme を付けたときにも、そこだけ別のテーマで描ける */
 @import "./themes.css";
-
-/* テーマのトークン。
-   ここに並んでいる変数「だけ」がテーマごとに差し替わる。色を使う側は
-   Tailwindのユーティリティ(bg-surface / text-fg-sub / border-line など)を
-   通してこの変数を読むので、テーマの追加は下の :root を上書きする
-   [data-theme="..."] を1ブロック足すだけで済む。
-
-   参考アプリに合わせ、システム設定(ライト/ダーク)に関わらず既定は常に
-   このダークテーマ(ミッドナイト・ピンク)。純黒(#000)は硬く見えるため、
-   少し柔らかい濃いグレーにしている。
-
-   警告・エラー・成功・顔被り(amber/red/emerald)はテーマで変えない指定なので
-   ここには持たず、Tailwindの既定色をそのまま使う */
-:root {
-  /* 地 */
-  --bg: #19191c;
-  /* 背景に重ねる素材の質感(ステージの外だけ)。既定は素の一色なので none。
-     方眼のように繰り返しの間隔を持つものは --bg-fx-size も一緒に指定する */
-  --bg-fx: none;
-  --bg-fx-size: auto;
-
-  /* 面。奥まっている順: sunken < stage < surface < raised < strong */
-  --surface-sunken: #0f0f11;
-  --stage: #141417;
-  --surface: #18181b;
-  --surface-raised: #1f1f23;
-  --surface-strong: #27272a;
-  /* シート・モーダルの下に敷く幕。不透明度は使う側で /60 /72 と付ける */
-  --scrim: #09090b;
-
-  /* 線 */
-  --line: #27272a;
-  --line-strong: #3f3f46;
-  --stage-grid: #2c2c32;
-  /* サムネイル・空のステージなど、格子を主役にしたくない小さい面で使う
-     一段暗い格子。ステージ本体と同じ明るさだと点描のダンサーが埋もれる */
-  --stage-grid-soft: #232329;
-
-  /* 文字。muted が下限で、10〜11pxの小さい文字はこれより暗くしない
-     (#52525b は 10px で 1.7:1 しか出ずコントラストが足りない) */
-  --text-strong: #fafafa;
-  --text: #ededed;
-  --text-sub: #a1a1aa;
-  --text-muted: #71717a;
-
-  /* アクセント。soft は暗い地の上に置く文字色用(accentそのままだと
-     小さい文字で読みにくい)、row は選択中の行の敷き色 */
-  --accent: #ec4899;
-  /* accentを敷いたボタンの上に載る文字。accentが明るいテーマ(モノクローム等)
-     では白のままだと読めなくなるので、テーマが一緒に持つ */
-  --accent-fg: #ffffff;
-  --accent-soft: #f472b6;
-  /* accentを敷いた面の上に載せる文字。soft でもまだ沈むほど
-     アクセントが濃い場所(選択中の行・注意の帯)で使う */
-  --accent-bright: #f9a8d4;
-  --accent-row: #241019;
-
-  /* 角丸。紙・黒板系は0、ホワイトボードは4、ネオンは8…と
-     テーマごとに変わる */
-  --radius: 12px;
-
-  /* ダンサーのマーカーの描き方。
-     空("none")＝ダンサー色で塗りつぶす(暗い系)。色が入っていれば
-     「輪郭＋その色の中地＋頭文字」で描く(紙・黒板系)。
-     紙の上では塗りつぶしの円が重いうえ、印刷した隊形図の見た目から
-     離れてしまうため */
-  --marker-fill: none;
-  --marker-initial: transparent;
-  /* 0 = 輪郭を描かない。紙・黒板系だけ太さを持たせて輪郭に切り替える */
-  --marker-stroke-width: 0;
-
-  /* ダンサー名のラベルと、マイ・フォーカス時にステージへ掛ける幕。
-     明るい素材のテーマでは白黒が反転する */
-  --label-text: #ffffff;
-  --label-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
-  --veil: rgba(0, 0, 0, 0.2);
-
-  /* ダンサーの6色。役割と順番はテーマが変わっても固定で、
-     明るい素材のテーマのときだけ紙用の6色に差し替える */
-  --dancer-1: #3b82f6;
-  --dancer-2: #ef4444;
-  --dancer-3: #10b981;
-  --dancer-4: #f59e0b;
-  --dancer-5: #8b5cf6;
-  --dancer-6: #ec4899;
-}
 
 
 /* 上の変数をTailwindの色名に結び付ける。`inline` を付けると
@@ -144,6 +60,20 @@ body {
   /* ステージ上でダンサーをドラッグ/回転操作中に、指の動きがブラウザの
      Pull-to-refreshや意図しないスクロールとして扱われるのを防ぐ */
   overscroll-behavior-y: contain;
+}
+
+/* 背景の質感(--bg-texture)を敷く1枚。
+   body の background に重ねず別レイヤーにしているのは、テーマによっては
+   --bg-fx が2枚組(方眼など)で、background-size を共有すると枚数がずれて
+   模様の間隔が狂うため。z-index:-1 で中身の後ろ・地の色の手前に入る */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--bg-texture);
+  background-size: var(--bg-texture-size);
 }
 
 /* スクロール自体は効かせつつ、OS標準のスクロールバー(帯)だけ非表示にする。

@@ -1,9 +1,13 @@
 /* 見た目(テーマ)の定義。
  *
- * 既定の「ミッドナイト・ピンク」だけは globals.css の :root にあり、
- * ここにはそれを上書きする9種を置く。差し替えるのは globals.css で
- * 定義したトークンだけで、レイアウト・余白・文字サイズ・文言・操作方法・
- * 44pxの的はテーマでは変えない。
+ * まず :root にトークンの既定値(＝ミッドナイト・ピンク)を置き、その下に
+ * 残る9種を [data-theme="..."] で重ねる。同じファイルに順に並べているので、
+ * テーマ側は特定の要素に縛られない形のままで確実に上書きできる。
+ * これは一覧シートのミニチュアにも効かせるためで、小さな入れ子の要素に
+ * data-theme を付けるだけで、その中だけ別のテーマとして描かれる。
+ *
+ * 差し替わるのはここに並ぶ変数だけ。レイアウト・余白・文字サイズ・文言・
+ * 操作方法・44pxの的はテーマでは変えない。
  *
  * 値の出どころはデザインの `Choreon リデザイン.dc.html` #19a(一覧シートの
  * ミニチュア)と #18a(素材5案)。ミニチュアに出ていない段(surface-raised や
@@ -15,10 +19,96 @@
  * 単純に同じ方向へずらすと、白地のテーマで文字が飛ぶ。
  */
 
+/* テーマのトークン。
+   ここに並んでいる変数「だけ」がテーマごとに差し替わる。色を使う側は
+   Tailwindのユーティリティ(bg-surface / text-fg-sub / border-line など)を
+   通してこの変数を読むので、テーマの追加は下の :root を上書きする
+   [data-theme="..."] を1ブロック足すだけで済む。
+
+   参考アプリに合わせ、システム設定(ライト/ダーク)に関わらず既定は常に
+   このダークテーマ(ミッドナイト・ピンク)。純黒(#000)は硬く見えるため、
+   少し柔らかい濃いグレーにしている。
+
+   警告・エラー・成功・顔被り(amber/red/emerald)はテーマで変えない指定なので
+   ここには持たず、Tailwindの既定色をそのまま使う */
+:root {
+  /* 地 */
+  --bg: #19191c;
+  /* 背景に重ねる素材の質感(ステージの外だけ)。既定は素の一色なので none。
+     方眼のように繰り返しの間隔を持つものは --bg-fx-size も一緒に指定する */
+  --bg-fx: none;
+  --bg-fx-size: auto;
+
+  /* 面。奥まっている順: sunken < stage < surface < raised < strong */
+  --surface-sunken: #0f0f11;
+  --stage: #141417;
+  --surface: #18181b;
+  --surface-raised: #1f1f23;
+  --surface-strong: #27272a;
+  /* シート・モーダルの下に敷く幕。不透明度は使う側で /60 /72 と付ける */
+  --scrim: #09090b;
+
+  /* 線 */
+  --line: #27272a;
+  --line-strong: #3f3f46;
+  --stage-grid: #2c2c32;
+  /* サムネイル・空のステージなど、格子を主役にしたくない小さい面で使う
+     一段暗い格子。ステージ本体と同じ明るさだと点描のダンサーが埋もれる */
+  --stage-grid-soft: #232329;
+
+  /* 文字。muted が下限で、10〜11pxの小さい文字はこれより暗くしない
+     (#52525b は 10px で 1.7:1 しか出ずコントラストが足りない) */
+  --text-strong: #fafafa;
+  --text: #ededed;
+  --text-sub: #a1a1aa;
+  --text-muted: #71717a;
+
+  /* アクセント。soft は暗い地の上に置く文字色用(accentそのままだと
+     小さい文字で読みにくい)、row は選択中の行の敷き色 */
+  --accent: #ec4899;
+  /* accentを敷いたボタンの上に載る文字。accentが明るいテーマ(モノクローム等)
+     では白のままだと読めなくなるので、テーマが一緒に持つ */
+  --accent-fg: #ffffff;
+  --accent-soft: #f472b6;
+  /* accentを敷いた面の上に載せる文字。soft でもまだ沈むほど
+     アクセントが濃い場所(選択中の行・注意の帯)で使う */
+  --accent-bright: #f9a8d4;
+  --accent-row: #241019;
+
+  /* 角丸。紙・黒板系は0、ホワイトボードは4、ネオンは8…と
+     テーマごとに変わる */
+  --radius: 12px;
+
+  /* ダンサーのマーカーの描き方。
+     空("none")＝ダンサー色で塗りつぶす(暗い系)。色が入っていれば
+     「輪郭＋その色の中地＋頭文字」で描く(紙・黒板系)。
+     紙の上では塗りつぶしの円が重いうえ、印刷した隊形図の見た目から
+     離れてしまうため */
+  --marker-fill: none;
+  --marker-initial: transparent;
+  /* 0 = 輪郭を描かない。紙・黒板系だけ太さを持たせて輪郭に切り替える */
+  --marker-stroke-width: 0;
+
+  /* ダンサー名のラベルと、マイ・フォーカス時にステージへ掛ける幕。
+     明るい素材のテーマでは白黒が反転する */
+  --label-text: #ffffff;
+  --label-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+  --veil: rgba(0, 0, 0, 0.2);
+
+  /* ダンサーの6色。役割と順番はテーマが変わっても固定で、
+     明るい素材のテーマのときだけ紙用の6色に差し替える */
+  --dancer-1: #3b82f6;
+  --dancer-2: #ef4444;
+  --dancer-3: #10b981;
+  --dancer-4: #f59e0b;
+  --dancer-5: #8b5cf6;
+  --dancer-6: #ec4899;
+}
+
 /* ---------------------------------------------------------------- 暗い系 */
 
 /* ネオン・シアン — 発光・ガラス */
-:root[data-theme="neon"] {
+[data-theme="neon"] {
   --bg: #05070a;
   --bg-fx: radial-gradient(70% 50% at 50% 0%, rgba(34, 211, 238, 0.12), transparent 70%);
 
@@ -50,7 +140,7 @@
 }
 
 /* アンバー・ステージ — 舞台照明・板張り */
-:root[data-theme="amber"] {
+[data-theme="amber"] {
   --bg: #14100e;
   --bg-fx: radial-gradient(60% 42% at 50% -4%, rgba(245, 158, 11, 0.22), transparent 72%);
 
@@ -81,7 +171,7 @@
 }
 
 /* モノクローム — UIは無彩色だけ */
-:root[data-theme="mono"] {
+[data-theme="mono"] {
   --bg: #101010;
 
   --surface-sunken: #0a0a0a;
@@ -111,7 +201,7 @@
 
 /* 黒板＋チョーク — 暗いまま素材を変える。
    暗い系だが、マーカーは輪郭＋頭文字でダンサー6色もチョーク色になる */
-:root[data-theme="chalk"] {
+[data-theme="chalk"] {
   --bg: #202723;
   --bg-fx: radial-gradient(120% 80% at 50% 0%, rgba(255, 255, 255, 0.045), transparent 60%);
 
@@ -160,7 +250,7 @@
 /* ------------------------------------------------------------ 紙・素材系 */
 
 /* 紙の隊形図 — クリーム紙・赤鉛筆 */
-:root[data-theme="paper"] {
+[data-theme="paper"] {
   --bg: #f7f4ea;
   --bg-fx: repeating-linear-gradient(0deg, transparent 0 25px, rgba(63, 107, 181, 0.14) 25px 26px);
 
@@ -195,7 +285,7 @@
 }
 
 /* 方眼ノート＋青インク — 万年筆・赤ペン */
-:root[data-theme="gridnote"] {
+[data-theme="gridnote"] {
   --bg: #f1f4f8;
   --bg-fx:
     linear-gradient(to right, rgba(30, 58, 95, 0.09) 1px, transparent 1px),
@@ -233,7 +323,7 @@
 }
 
 /* クラフト紙＋活版 — 厚紙・沈んだ文字 */
-:root[data-theme="kraft"] {
+[data-theme="kraft"] {
   --bg: #d8c8ac;
   --bg-fx: repeating-linear-gradient(90deg, rgba(58, 47, 34, 0.03) 0 1px, transparent 1px 3px);
 
@@ -268,7 +358,7 @@
 }
 
 /* トレーシングペーパー — 次のシーンが透ける */
-:root[data-theme="tracing"] {
+[data-theme="tracing"] {
   --bg: #e7eae6;
   --bg-fx: linear-gradient(135deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 60%);
 
@@ -303,7 +393,7 @@
 }
 
 /* ホワイトボード＋マーカー — 太いマーカー・強い色 */
-:root[data-theme="whiteboard"] {
+[data-theme="whiteboard"] {
   --bg: #f8fafa;
 
   --surface-sunken: #eef1f2;
@@ -342,11 +432,11 @@
  * ・ダンサー名は白文字＋黒影のままだと白地に埋もれるので反転する
  * ・マイ・フォーカスの暗幕は「暗く」ではなく「白く」伏せる
  * ・ダンサー6色は紙の上で沈むよう彩度と明度を落とす(役割と順番は同じ) */
-:root[data-theme="paper"],
-:root[data-theme="gridnote"],
-:root[data-theme="kraft"],
-:root[data-theme="tracing"],
-:root[data-theme="whiteboard"] {
+[data-theme="paper"],
+[data-theme="gridnote"],
+[data-theme="kraft"],
+[data-theme="tracing"],
+[data-theme="whiteboard"] {
   --label-text: #1a1a1a;
   --label-shadow: 0 1px 2px rgba(255, 255, 255, 0.9);
   --veil: rgba(255, 255, 255, 0.6);
@@ -357,4 +447,55 @@
   --dancer-4: #d18b2c;
   --dancer-5: #7a5cae;
   --dancer-6: #c1508a;
+}
+
+/* ---------------------------------------------------------- 背景の質感 */
+
+/* テーマ(地の色)の上に重ねる装飾。テーマとは別の軸なので、
+ * data-theme とは独立に data-texture で選ぶ。
+ *
+ * 抑えている点:
+ * ・白は3.5%、色は20%を超えない。地の見え方を変えるためのものであって、
+ *   主役はあくまでステージの上のダンサーなので
+ * ・ステージの中には掛からない。ステージは自前の面(--stage)で塗られており、
+ *   この装飾は body の後ろに敷いた1枚として、その下を通るだけ
+ * ・fixed なので、スクロールしても模様がついてこない
+ */
+:root {
+  --bg-texture: none;
+  --bg-texture-size: auto;
+}
+
+/* ホリゾント幕 — 奥の幕に上から当たる明かり */
+[data-texture="horizon"] {
+  --bg-texture: linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 45%);
+}
+
+/* スポットの円光 — 上手からの丸い明かり */
+[data-texture="spot"] {
+  --bg-texture: radial-gradient(50% 38% at 50% 0%, rgba(255, 255, 255, 0.035), transparent 70%);
+}
+
+/* 方眼と目盛り — 稽古場の床 */
+[data-texture="grid"] {
+  --bg-texture:
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  --bg-texture-size: 32px 32px;
+}
+
+/* グレイン — フィルムの粒子。SVGのfeTurbulenceをそのまま敷いている
+   (画像ファイルを増やさずに済み、拡大しても粗くならない) */
+[data-texture="grain"] {
+  --bg-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  --bg-texture-size: 140px 140px;
+}
+
+/* 暗幕 — 縦に落ちる襞 */
+[data-texture="curtain"] {
+  --bg-texture: repeating-linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.18) 0 3px,
+    transparent 3px 11px
+  );
 }

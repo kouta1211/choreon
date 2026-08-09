@@ -5,6 +5,7 @@ import { CreateProjectForm } from "@/components/organisms/CreateProjectForm";
 import { SignOutButton } from "@/components/organisms/SignOutButton";
 import { GuestEditor } from "@/components/organisms/GuestEditor";
 import { AppHeader } from "@/components/molecules/AppHeader";
+import { ThemeButton } from "@/components/organisms/ThemeButton";
 
 /**
  * トップページ。ログインしているかどうかで役割が変わる。
@@ -32,7 +33,10 @@ export default async function Home() {
     <div className="flex flex-1 flex-col px-4 py-8">
       <div className="mx-auto w-full max-w-md space-y-4 md:max-w-3xl">
         <AppHeader>
-          <SignOutButton />
+          <div className="flex items-center gap-3">
+            <ThemeButton />
+            <SignOutButton />
+          </div>
         </AppHeader>
 
         <CreateProjectForm userId={user.id} />
