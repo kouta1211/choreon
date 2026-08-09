@@ -3,6 +3,7 @@
 import { UserPlus } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
+import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 
 /**
  * いまのシーンにいるダンサーの一覧。画面が広いときだけ出す右パネルの中身。
@@ -64,7 +65,7 @@ export function DancerList() {
                     <span
                       aria-hidden
                       className="block h-3 w-3 shrink-0 rounded-full"
-                      style={{ backgroundColor: dancer.color }}
+                      style={{ backgroundColor: themedDancerColor(dancer.color) }}
                     />
                     <span className="min-w-0 flex-1 truncate text-[13px] text-fg-strong">
                       {dancer.name}

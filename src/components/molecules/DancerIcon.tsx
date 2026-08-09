@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { DancerNameLabel } from "@/components/atoms/DancerNameLabel";
 import { DancerExcessiveMoveBadge } from "@/components/atoms/DancerExcessiveMoveBadge";
 import { MARKER_SIZE } from "@/features/dancer/constants";
+import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import type { Dancer } from "@/features/dancer/types";
 
 type Props = {
@@ -66,7 +67,8 @@ function DancerMarkerImpl({
   /** シーン切り替え時、向きの補間アニメーションにかける秒数。省略時は0.3秒 */
   transitionDurationSeconds?: number;
 }) {
-  const bodyColor = isBlocked ? "#dc2626" : dancer.color;
+  // 顔被りの警告色だけはテーマに関係なく赤(意味を運ぶ色なので固定)
+  const bodyColor = isBlocked ? "#dc2626" : themedDancerColor(dancer.color);
 
   return (
     <>
@@ -133,8 +135,39 @@ function DancerMarkerImpl({
             fill={bodyColor}
             stroke="rgba(0,0,0,0.15)"
           />
+          {/* 紙・黒板系のテーマで「塗り」を「輪郭」に切り替えるための重ね。
+              CSSは変数の値で分岐できないので、常に上に重ねておき、
+              テーマが持つ変数だけで見え方を変えている:
+                暗い系  … --marker-fill: none / 線幅0 → 何も描かれず下の塗りが残る
+                紙・黒板 … 素材の色で塗りつぶし、ダンサー色の輪郭が乗る
+              こうするとJSでテーマを読む必要がなく、SSRでもズレない */}
+          <polygon
+            points="16,4 12,10 20,10"
+            fill="var(--marker-fill)"
+            stroke={bodyColor}
+            strokeWidth="var(--marker-stroke-width)"
+          />
+          <circle
+            data-testid="dancer-body-outline"
+            cx={16}
+            cy={16}
+            r={8}
+            fill="var(--marker-fill)"
+            stroke={bodyColor}
+            strokeWidth="var(--marker-stroke-width)"
+          />
         </svg>
       </motion.div>
+      {/* 輪郭表示のときだけ見える頭文字。回転レイヤーの外に置いているので、
+          向きを変えても文字は正立したまま。暗い系では --marker-initial が
+          transparent なので描かれていても見えない */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute left-0 top-0 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center text-[11px] font-bold text-[var(--marker-initial)]"
+        style={{ width: MARKER_SIZE, height: MARKER_SIZE }}
+      >
+        {[...dancer.name][0] ?? ""}
+      </span>
       <DancerNameLabel name={dancer.name} />
       {hasExcessiveMove && <DancerExcessiveMoveBadge />}
     </>

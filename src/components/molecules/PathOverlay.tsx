@@ -4,6 +4,7 @@ import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react"
 import { clamp } from "@/features/canvas/lib/dragMath";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position } from "@/features/scene/types";
+import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 
 type StagePoint = { x: number; y: number };
 
@@ -121,7 +122,7 @@ export function PathOverlay({
         id,
         isEditable,
         activeControlPoint,
-        color: dancers[id]?.color ?? "var(--dancer-6)",
+        color: themedDancerColor(dancers[id]?.color ?? ""),
         name: dancers[id]?.name ?? "",
         x1: (from.xCoordinate / stageWidthUnits) * 100,
         y1: (from.yCoordinate / stageHeightUnits) * 100,

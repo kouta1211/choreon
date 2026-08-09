@@ -2,6 +2,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position, Scene } from "@/features/scene/types";
+import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 
 type Props = {
   scene: Scene;
@@ -98,7 +99,7 @@ export function SceneThumbnail({
                 height: dotSizePx,
                 left: `${(position.xCoordinate / stageWidthUnits) * 100}%`,
                 top: `${(position.yCoordinate / stageHeightUnits) * 100}%`,
-                backgroundColor: dancer.color,
+                backgroundColor: themedDancerColor(dancer.color),
               }}
             />
           );

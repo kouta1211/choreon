@@ -90,7 +90,7 @@ describe("PathTrail", () => {
 
     expect(screen.getByTestId("path-trail-segment")).toHaveAttribute(
       "stroke",
-      "#3b82f6",
+      "var(--dancer-1)",
     );
   });
 

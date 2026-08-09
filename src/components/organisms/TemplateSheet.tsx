@@ -17,6 +17,7 @@ import {
   type FormationTransform,
 } from "@/features/canvas/lib/formationTemplates";
 import type { Project } from "@/features/project/types";
+import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 
 type Props = {
   project: Project;
@@ -64,7 +65,7 @@ export function TemplateSheet({ project }: Props) {
   const templates = templatesForCount(shownCount);
   const picked = pickedIndex === null ? null : (templates[pickedIndex] ?? null);
   const dancerColors = onStage.map(
-    (position) => dancers[position.dancerId]?.color ?? "var(--dancer-6)",
+    (position) => themedDancerColor(dancers[position.dancerId]?.color ?? ""),
   );
 
   // 開き直したときに前回の選択が残っていると、意図しない形を当ててしまう

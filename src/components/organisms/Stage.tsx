@@ -71,7 +71,7 @@ export function Stage({
       <div className="flex min-h-0 w-full flex-1 items-center justify-center [container-type:size]">
         <div
           ref={ref}
-          className={`relative touch-none rounded-xl border-2 border-accent bg-stage transition-colors ${
+          className={`relative touch-none rounded-stage border-2 border-accent bg-stage transition-colors ${
             focusedDancerId ? "bg-surface-sunken" : ""
           }`}
           style={{
@@ -83,7 +83,7 @@ export function Stage({
           {isGridVisible && (
             <div
               data-testid="stage-grid"
-              className={`pointer-events-none absolute inset-0 rounded-[10px] bg-[linear-gradient(to_right,var(--stage-grid)_1px,transparent_1px),linear-gradient(to_bottom,var(--stage-grid)_1px,transparent_1px)] transition-opacity ${
+              className={`pointer-events-none absolute inset-0 rounded-[max(0px,calc(var(--radius)-2px))] bg-[linear-gradient(to_right,var(--stage-grid)_1px,transparent_1px),linear-gradient(to_bottom,var(--stage-grid)_1px,transparent_1px)] transition-opacity ${
                 focusedDancerId ? "opacity-40" : ""
               }`}
               style={{
@@ -119,7 +119,7 @@ export function Stage({
           {focusedDancerId && (
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-0 rounded-[10px] bg-black/20"
+              className="pointer-events-none absolute inset-0 rounded-[max(0px,calc(var(--radius)-2px))] bg-[var(--veil)]"
             />
           )}
           {children}
@@ -162,7 +162,7 @@ export function EmptyStage({
     <div className="flex min-h-0 flex-1 items-center justify-center [container-type:size]">
       <div
         data-testid="empty-stage"
-        className="relative flex flex-col items-center justify-center gap-2.5 rounded-xl border-2 border-dashed border-line-strong bg-stage"
+        className="relative flex flex-col items-center justify-center gap-2.5 rounded-stage border-2 border-dashed border-line-strong bg-stage"
         style={{
           aspectRatio: `${widthUnits} / ${heightUnits}`,
           width: stageWidthRule(widthUnits, heightUnits),
@@ -170,7 +170,7 @@ export function EmptyStage({
       >
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-[10px] bg-[linear-gradient(to_right,var(--stage-grid-soft)_1px,transparent_1px),linear-gradient(to_bottom,var(--stage-grid-soft)_1px,transparent_1px)] opacity-70"
+          className="pointer-events-none absolute inset-0 rounded-[max(0px,calc(var(--radius)-2px))] bg-[linear-gradient(to_right,var(--stage-grid-soft)_1px,transparent_1px),linear-gradient(to_bottom,var(--stage-grid-soft)_1px,transparent_1px)] opacity-70"
           style={{
             backgroundSize: `${100 / widthUnits}% ${100 / heightUnits}%`,
           }}

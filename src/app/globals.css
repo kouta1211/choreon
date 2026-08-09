@@ -1,4 +1,8 @@
 @import "tailwindcss";
+/* 既定以外の9テーマ。:root の既定値を上書きする側なので、
+   themes.css のセレクタは :root[data-theme=...] にして
+   読み込み順に関係なく必ず勝つようにしてある */
+@import "./themes.css";
 
 /* テーマのトークン。
    ここに並んでいる変数「だけ」がテーマごとに差し替わる。色を使う側は
@@ -15,8 +19,10 @@
 :root {
   /* 地 */
   --bg: #19191c;
-  /* 背景に重ねる質感(ステージの外だけ)。暗い系は素の一色なので none */
+  /* 背景に重ねる素材の質感(ステージの外だけ)。既定は素の一色なので none。
+     方眼のように繰り返しの間隔を持つものは --bg-fx-size も一緒に指定する */
   --bg-fx: none;
+  --bg-fx-size: auto;
 
   /* 面。奥まっている順: sunken < stage < surface < raised < strong */
   --surface-sunken: #0f0f11;
@@ -58,6 +64,22 @@
      テーマごとに変わる */
   --radius: 12px;
 
+  /* ダンサーのマーカーの描き方。
+     空("none")＝ダンサー色で塗りつぶす(暗い系)。色が入っていれば
+     「輪郭＋その色の中地＋頭文字」で描く(紙・黒板系)。
+     紙の上では塗りつぶしの円が重いうえ、印刷した隊形図の見た目から
+     離れてしまうため */
+  --marker-fill: none;
+  --marker-initial: transparent;
+  /* 0 = 輪郭を描かない。紙・黒板系だけ太さを持たせて輪郭に切り替える */
+  --marker-stroke-width: 0;
+
+  /* ダンサー名のラベルと、マイ・フォーカス時にステージへ掛ける幕。
+     明るい素材のテーマでは白黒が反転する */
+  --label-text: #ffffff;
+  --label-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+  --veil: rgba(0, 0, 0, 0.2);
+
   /* ダンサーの6色。役割と順番はテーマが変わっても固定で、
      明るい素材のテーマのときだけ紙用の6色に差し替える */
   --dancer-1: #3b82f6;
@@ -68,43 +90,6 @@
   --dancer-6: #ec4899;
 }
 
-/* テーマ2つ目「モノクローム」(デザインHTML #19a の4枚目)。
-   UIからは色を全部抜き、アクセントも白にする。ダンサーの6色だけは
-   「誰がどこにいるか」を伝える情報なので、テーマが変わっても据え置く。
-
-   このテーマは土台が効いているかの試験紙も兼ねている。アクセントが
-   ピンク→白に変わるので、トークンへ移し忘れた色が1箇所でもあれば
-   そこだけピンクのまま残って一目で分かる。
-
-   切り替えUIはまだ無いので、確認は devtools で <html> に
-   data-theme="mono" を付けて行う */
-[data-theme="mono"] {
-  --bg: #101010;
-
-  --surface-sunken: #0a0a0a;
-  --stage: #0d0d0d;
-  --surface: #171717;
-  --surface-raised: #1c1c1c;
-  --surface-strong: #262626;
-  --scrim: #000000;
-
-  --line: #262626;
-  --line-strong: #383838;
-  --stage-grid: #262626;
-  --stage-grid-soft: #1f1f1f;
-
-  --text-strong: #ffffff;
-  --text: #ededed;
-  --text-sub: #a3a3a3;
-  --text-muted: #737373;
-
-  --accent: #fafafa;
-  /* 白いボタンの上なので、文字は地の色まで落とす */
-  --accent-fg: #101010;
-  --accent-soft: #ffffff;
-  --accent-bright: #ffffff;
-  --accent-row: #262626;
-}
 
 /* 上の変数をTailwindの色名に結び付ける。`inline` を付けると
    `bg-surface` が `background-color: var(--surface)` を直接出すので、
@@ -146,6 +131,9 @@ body {
   /* テーマが持つ質感(ホリゾント幕・グレイン・方眼など)を地の上に重ねる。
      ステージの中には掛けない指定なので、body側にだけ置いている */
   background-image: var(--bg-fx);
+  background-size: var(--bg-fx-size);
+  /* 方眼や罫線が画面をスクロールしても動かないよう、地に貼り付ける */
+  background-attachment: fixed;
   color: var(--text);
   /* layout.tsxで読み込んでいるGeistを実際に効かせる。ここが
      `Arial, Helvetica, sans-serif` の直書きになっていたため、CSS変数まで

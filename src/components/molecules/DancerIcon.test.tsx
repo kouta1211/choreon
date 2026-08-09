@@ -60,9 +60,10 @@ describe("DancerMarker", () => {
 
   it("isBlockedでなければダンサー本来の色のまま", () => {
     render(<DancerMarker dancer={makeDancer()} rotationAngle={0} />);
+    // パレット1色目は、テーマが差し替えられるよう --dancer-1 を通して塗る
     expect(screen.getByTestId("dancer-body")).toHaveAttribute(
       "fill",
-      "#3b82f6",
+      "var(--dancer-1)",
     );
   });
 

@@ -9,6 +9,7 @@ import { toUserMessage } from "@/lib/supabase/errors";
 import { deleteProject } from "@/features/project/api/projects";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import type { ProjectSummary } from "@/features/project/types";
+import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 
 type Props = {
   projects: ProjectSummary[];
@@ -104,7 +105,7 @@ export function ProjectList({ projects }: Props) {
                         key={`${color}-${index}`}
                         aria-hidden
                         className="block h-2 w-2 rounded-full"
-                        style={{ backgroundColor: color }}
+                        style={{ backgroundColor: themedDancerColor(color) }}
                       />
                     ))}
                   </span>
@@ -166,7 +167,7 @@ function ProjectThumbnail({ project }: { project: ProjectSummary }) {
           style={{
             left: `${(position.xCoordinate / project.stageWidth) * 100}%`,
             top: `${(position.yCoordinate / project.stageHeight) * 100}%`,
-            backgroundColor: position.color,
+            backgroundColor: themedDancerColor(position.color),
           }}
         />
       ))}

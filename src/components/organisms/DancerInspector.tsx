@@ -16,6 +16,7 @@ import { DANCER_COLOR_PALETTE } from "@/features/dancer/constants";
 import { DurationSecondsInput } from "@/components/molecules/DurationSecondsInput";
 import { InlineEditableText } from "@/components/molecules/InlineEditableText";
 import { Tooltip } from "@/components/atoms/Tooltip";
+import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 
 /** ダンサー個別の遷移時間の入力が許容する範囲。schema.sqlのCHECK制約と合わせている */
 const MIN_DURATION_SECONDS = 0.1;
@@ -170,12 +171,12 @@ export function DancerInspector() {
       <span
         aria-hidden
         className="w-1 shrink-0"
-        style={{ backgroundColor: dancer.color }}
+        style={{ backgroundColor: themedDancerColor(dancer.color) }}
       />
       <div
         className="min-w-0 flex-1 px-2.5 py-2"
         style={{
-          backgroundImage: `linear-gradient(90deg, ${dancer.color}1f, transparent 65%)`,
+          backgroundImage: `linear-gradient(90deg, color-mix(in oklab, ${themedDancerColor(dancer.color)} 12%, transparent), transparent 65%)`,
         }}
       >
         <div className="flex items-center gap-2">
@@ -255,7 +256,7 @@ export function DancerInspector() {
                   ? "ring-2 ring-accent ring-offset-2 ring-offset-surface-strong"
                   : ""
               }`}
-              style={{ backgroundColor: color }}
+              style={{ backgroundColor: themedDancerColor(color) }}
             />
           ))}
           {isFocused && (

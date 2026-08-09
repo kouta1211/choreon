@@ -70,7 +70,7 @@ describe("PathOverlay", () => {
 
     expect(screen.getByTestId("path-overlay")).toBeInTheDocument();
     expect(
-      document.querySelector('line[stroke="#3b82f6"]'),
+      document.querySelector('line[stroke="var(--dancer-1)"]'),
     ).toBeInTheDocument();
   });
 

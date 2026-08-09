@@ -1,0 +1,360 @@
+/* 見た目(テーマ)の定義。
+ *
+ * 既定の「ミッドナイト・ピンク」だけは globals.css の :root にあり、
+ * ここにはそれを上書きする9種を置く。差し替えるのは globals.css で
+ * 定義したトークンだけで、レイアウト・余白・文字サイズ・文言・操作方法・
+ * 44pxの的はテーマでは変えない。
+ *
+ * 値の出どころはデザインの `Choreon リデザイン.dc.html` #19a(一覧シートの
+ * ミニチュア)と #18a(素材5案)。ミニチュアに出ていない段(surface-raised や
+ * text-muted など)は、地とアクセントの関係を保ったまま補完している。
+ *
+ * ■ 明るいテーマで気をつけていること
+ * accent-soft / accent-bright は「アクセントの面や地の上に載る文字」なので、
+ * 暗いテーマでは accent より明るく、明るいテーマでは accent より暗くする。
+ * 単純に同じ方向へずらすと、白地のテーマで文字が飛ぶ。
+ */
+
+/* ---------------------------------------------------------------- 暗い系 */
+
+/* ネオン・シアン — 発光・ガラス */
+:root[data-theme="neon"] {
+  --bg: #05070a;
+  --bg-fx: radial-gradient(70% 50% at 50% 0%, rgba(34, 211, 238, 0.12), transparent 70%);
+
+  --surface-sunken: #04070a;
+  --stage: #060a0f;
+  /* ガラスに見せたいので、ドックだけ地が透ける */
+  --surface: rgba(9, 16, 22, 0.75);
+  --surface-raised: #0d151c;
+  --surface-strong: #12202a;
+  --scrim: #010407;
+
+  --line: #10242e;
+  --line-strong: #1d3a47;
+  --stage-grid: #0f2b36;
+  --stage-grid-soft: #0b1f27;
+
+  --text-strong: #ffffff;
+  --text: #e6f6fa;
+  --text-sub: #7fa8b6;
+  --text-muted: #5d8391;
+
+  --accent: #22d3ee;
+  --accent-fg: #04191f;
+  --accent-soft: #67e8f9;
+  --accent-bright: #a5f3fc;
+  --accent-row: #0a2b33;
+
+  --radius: 8px;
+}
+
+/* アンバー・ステージ — 舞台照明・板張り */
+:root[data-theme="amber"] {
+  --bg: #14100e;
+  --bg-fx: radial-gradient(60% 42% at 50% -4%, rgba(245, 158, 11, 0.22), transparent 72%);
+
+  --surface-sunken: #100c09;
+  --stage: #1b1410;
+  --surface: #221b16;
+  --surface-raised: #2a211a;
+  --surface-strong: #3a2e24;
+  --scrim: #0a0705;
+
+  --line: #2e251d;
+  --line-strong: #3d332c;
+  --stage-grid: #33261c;
+  --stage-grid-soft: #2a1f17;
+
+  --text-strong: #fffaf4;
+  --text: #f4ece3;
+  --text-sub: #b8a99b;
+  --text-muted: #8d7f72;
+
+  --accent: #f59e0b;
+  --accent-fg: #1a1208;
+  --accent-soft: #fbbf24;
+  --accent-bright: #fcd34d;
+  --accent-row: #3a2408;
+
+  --radius: 14px;
+}
+
+/* モノクローム — UIは無彩色だけ */
+:root[data-theme="mono"] {
+  --bg: #101010;
+
+  --surface-sunken: #0a0a0a;
+  --stage: #0d0d0d;
+  --surface: #171717;
+  --surface-raised: #1c1c1c;
+  --surface-strong: #262626;
+  --scrim: #000000;
+
+  --line: #262626;
+  --line-strong: #383838;
+  --stage-grid: #262626;
+  --stage-grid-soft: #1f1f1f;
+
+  --text-strong: #ffffff;
+  --text: #ededed;
+  --text-sub: #a3a3a3;
+  --text-muted: #737373;
+
+  --accent: #fafafa;
+  /* 白いボタンの上なので、文字は地の色まで落とす */
+  --accent-fg: #101010;
+  --accent-soft: #ffffff;
+  --accent-bright: #ffffff;
+  --accent-row: #262626;
+}
+
+/* 黒板＋チョーク — 暗いまま素材を変える。
+   暗い系だが、マーカーは輪郭＋頭文字でダンサー6色もチョーク色になる */
+:root[data-theme="chalk"] {
+  --bg: #202723;
+  --bg-fx: radial-gradient(120% 80% at 50% 0%, rgba(255, 255, 255, 0.045), transparent 60%);
+
+  --surface-sunken: rgba(0, 0, 0, 0.18);
+  /* 板そのものを舞台にするので、ステージは塗らない */
+  --stage: transparent;
+  --surface: rgba(255, 255, 255, 0.05);
+  --surface-raised: rgba(255, 255, 255, 0.08);
+  --surface-strong: rgba(255, 255, 255, 0.12);
+  --scrim: #131816;
+
+  --line: rgba(238, 243, 239, 0.22);
+  --line-strong: rgba(238, 243, 239, 0.5);
+  --stage-grid: rgba(238, 243, 239, 0.13);
+  --stage-grid-soft: rgba(238, 243, 239, 0.08);
+
+  --text-strong: #ffffff;
+  --text: #eef3ef;
+  --text-sub: #9db0a6;
+  --text-muted: #82958b;
+
+  --accent: #f2a8bd;
+  --accent-fg: #202723;
+  --accent-soft: #f8c9d7;
+  --accent-bright: #fce0e8;
+  --accent-row: rgba(242, 168, 189, 0.14);
+
+  --radius: 0px;
+
+  /* マーカーを輪郭＋頭文字にする(値が入っている＝輪郭表示) */
+  --marker-fill: #202723;
+  --marker-initial: #eef3ef;
+  --marker-stroke-width: 2;
+
+  /* チョークの6色。役割と順番は既定と同じ(青/赤/緑/琥珀/紫/桃)で、
+     黒板の上で見えるよう明度だけ上げている。仕様書に数値の指定が
+     無かったため、デザインの黒板アクセント(#f2a8bd)に合わせて導出した */
+  --dancer-1: #9ec5f0;
+  --dancer-2: #f3a3a0;
+  --dancer-3: #96d9bd;
+  --dancer-4: #f2cf94;
+  --dancer-5: #c3b0e8;
+  --dancer-6: #f2a8bd;
+}
+
+/* ------------------------------------------------------------ 紙・素材系 */
+
+/* 紙の隊形図 — クリーム紙・赤鉛筆 */
+:root[data-theme="paper"] {
+  --bg: #f7f4ea;
+  --bg-fx: repeating-linear-gradient(0deg, transparent 0 25px, rgba(63, 107, 181, 0.14) 25px 26px);
+
+  --surface-sunken: #efeade;
+  --stage: #f7f4ea;
+  --surface: #fffdf7;
+  --surface-raised: #fbf8f0;
+  --surface-strong: #ece7d9;
+  --scrim: #2a2724;
+
+  --line: rgba(42, 39, 36, 0.18);
+  --line-strong: rgba(42, 39, 36, 0.35);
+  --stage-grid: #cbc4b4;
+  --stage-grid-soft: #ddd7ca;
+
+  --text-strong: #14120f;
+  --text: #2a2724;
+  --text-sub: #6f6a63;
+  --text-muted: #857f76;
+
+  --accent: #c0455a;
+  --accent-fg: #ffffff;
+  --accent-soft: #a83a4d;
+  --accent-bright: #8f3141;
+  --accent-row: #f6e4e6;
+
+  --radius: 0px;
+
+  --marker-fill: #fffdf7;
+  --marker-initial: #2a2724;
+  --marker-stroke-width: 2;
+}
+
+/* 方眼ノート＋青インク — 万年筆・赤ペン */
+:root[data-theme="gridnote"] {
+  --bg: #f1f4f8;
+  --bg-fx:
+    linear-gradient(to right, rgba(30, 58, 95, 0.09) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(30, 58, 95, 0.09) 1px, transparent 1px);
+  --bg-fx-size: 22px 22px;
+
+  --surface-sunken: #e8edf4;
+  --stage: #f7f9fc;
+  --surface: #ffffff;
+  --surface-raised: #f7f9fc;
+  --surface-strong: #e3eaf3;
+  --scrim: #1e3a5f;
+
+  --line: rgba(30, 58, 95, 0.2);
+  --line-strong: rgba(30, 58, 95, 0.45);
+  --stage-grid: rgba(30, 58, 95, 0.09);
+  --stage-grid-soft: rgba(30, 58, 95, 0.06);
+
+  --text-strong: #12263f;
+  --text: #1e3a5f;
+  --text-sub: #5b7391;
+  --text-muted: #74889f;
+
+  --accent: #d13b3b;
+  --accent-fg: #ffffff;
+  --accent-soft: #b83232;
+  --accent-bright: #9e2a2a;
+  --accent-row: #fbe9e9;
+
+  --radius: 0px;
+
+  --marker-fill: #ffffff;
+  --marker-initial: #1e3a5f;
+  --marker-stroke-width: 2;
+}
+
+/* クラフト紙＋活版 — 厚紙・沈んだ文字 */
+:root[data-theme="kraft"] {
+  --bg: #d8c8ac;
+  --bg-fx: repeating-linear-gradient(90deg, rgba(58, 47, 34, 0.03) 0 1px, transparent 1px 3px);
+
+  --surface-sunken: #cbbb9c;
+  --stage: #e2d5bd;
+  --surface: #e8ddc7;
+  --surface-raised: #eee5d3;
+  --surface-strong: #d5c7a9;
+  --scrim: #3a2f22;
+
+  --line: rgba(58, 47, 34, 0.25);
+  --line-strong: rgba(58, 47, 34, 0.5);
+  --stage-grid: rgba(58, 47, 34, 0.16);
+  --stage-grid-soft: rgba(58, 47, 34, 0.1);
+
+  --text-strong: #241c12;
+  --text: #3a2f22;
+  --text-sub: #6d5c46;
+  --text-muted: #7d6c56;
+
+  --accent: #8c3b2b;
+  --accent-fg: #f5ece0;
+  --accent-soft: #7a3325;
+  --accent-bright: #672a1f;
+  --accent-row: #e0cdb6;
+
+  --radius: 0px;
+
+  --marker-fill: #e8ddc7;
+  --marker-initial: #3a2f22;
+  --marker-stroke-width: 2;
+}
+
+/* トレーシングペーパー — 次のシーンが透ける */
+:root[data-theme="tracing"] {
+  --bg: #e7eae6;
+  --bg-fx: linear-gradient(135deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 60%);
+
+  --surface-sunken: rgba(47, 58, 53, 0.08);
+  --stage: rgba(255, 255, 255, 0.6);
+  --surface: rgba(255, 255, 255, 0.72);
+  --surface-raised: rgba(255, 255, 255, 0.85);
+  --surface-strong: #dbe0dc;
+  --scrim: #2f3a35;
+
+  --line: rgba(47, 58, 53, 0.2);
+  --line-strong: rgba(47, 58, 53, 0.42);
+  --stage-grid: rgba(47, 58, 53, 0.13);
+  --stage-grid-soft: rgba(47, 58, 53, 0.08);
+
+  --text-strong: #1b2320;
+  --text: #2f3a35;
+  --text-sub: #697a72;
+  --text-muted: #78887f;
+
+  --accent: #3f7d6c;
+  --accent-fg: #ffffff;
+  --accent-soft: #356a5c;
+  --accent-bright: #2b574b;
+  --accent-row: #dceae5;
+
+  --radius: 0px;
+
+  --marker-fill: rgba(255, 255, 255, 0.85);
+  --marker-initial: #2f3a35;
+  --marker-stroke-width: 2;
+}
+
+/* ホワイトボード＋マーカー — 太いマーカー・強い色 */
+:root[data-theme="whiteboard"] {
+  --bg: #f8fafa;
+
+  --surface-sunken: #eef1f2;
+  --stage: #ffffff;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-strong: #e8ecee;
+  --scrim: #1f2937;
+
+  --line: rgba(31, 41, 55, 0.25);
+  --line-strong: #1f2937;
+  --stage-grid: rgba(31, 41, 55, 0.1);
+  --stage-grid-soft: rgba(31, 41, 55, 0.06);
+
+  --text-strong: #0f172a;
+  --text: #1f2937;
+  --text-sub: #647380;
+  --text-muted: #74828e;
+
+  --accent: #e2467a;
+  --accent-fg: #ffffff;
+  --accent-soft: #c93b6b;
+  --accent-bright: #b0325c;
+  --accent-row: #fce7ef;
+
+  --radius: 4px;
+
+  --marker-fill: #ffffff;
+  --marker-initial: #1f2937;
+  --marker-stroke-width: 2;
+}
+
+/* 明るい素材のテーマに共通の自動例外。
+ * テーマごとに書くと必ず食い違うので、まとめて当てている。
+ *
+ * ・ダンサー名は白文字＋黒影のままだと白地に埋もれるので反転する
+ * ・マイ・フォーカスの暗幕は「暗く」ではなく「白く」伏せる
+ * ・ダンサー6色は紙の上で沈むよう彩度と明度を落とす(役割と順番は同じ) */
+:root[data-theme="paper"],
+:root[data-theme="gridnote"],
+:root[data-theme="kraft"],
+:root[data-theme="tracing"],
+:root[data-theme="whiteboard"] {
+  --label-text: #1a1a1a;
+  --label-shadow: 0 1px 2px rgba(255, 255, 255, 0.9);
+  --veil: rgba(255, 255, 255, 0.6);
+
+  --dancer-1: #3f6bb5;
+  --dancer-2: #c2483f;
+  --dancer-3: #2f8f6b;
+  --dancer-4: #d18b2c;
+  --dancer-5: #7a5cae;
+  --dancer-6: #c1508a;
+}

@@ -10,6 +10,7 @@ import {
 } from "@/features/canvas/constants";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position } from "@/features/scene/types";
+import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 
 /**
  * 進むときは通ってきたぶんを消し(erase)、戻るときは通ってきたぶんを
@@ -139,7 +140,7 @@ export function PathTrail({
       return [
         {
           dancerId,
-          color: dancers[dancerId]?.color ?? "var(--dancer-6)",
+          color: themedDancerColor(dancers[dancerId]?.color ?? ""),
           x1,
           y1,
           controlX,

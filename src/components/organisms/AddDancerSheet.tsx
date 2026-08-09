@@ -16,6 +16,7 @@ import {
   pickDancerColors,
 } from "@/features/dancer/lib/newDancers";
 import type { Project } from "@/features/project/types";
+import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 
 type Props = {
   project: Project;
@@ -189,7 +190,7 @@ export function AddDancerSheet({ project }: Props) {
                 <span
                   aria-hidden
                   className="block h-3.5 w-3.5 rounded-full"
-                  style={{ backgroundColor: colors[index] }}
+                  style={{ backgroundColor: themedDancerColor(colors[index]) }}
                 />
                 <span className="font-mono text-[11px] font-semibold text-fg">
                   {name}
