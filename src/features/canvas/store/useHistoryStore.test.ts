@@ -5,16 +5,11 @@ import {
   type PositionChange,
 } from "./useHistoryStore";
 import type { Position } from "@/features/scene/types";
+import { makePosition as makeBasePosition } from "@/test/factories";
 
+// 履歴のテストは(1,1)→(x,y)の移動で組み立てている
 function makePosition(overrides: Partial<Position> = {}): Position {
-  return {
-    sceneId: "scene-1",
-    dancerId: "dancer-1",
-    xCoordinate: 1,
-    yCoordinate: 1,
-    rotationAngle: 0,
-    ...overrides,
-  };
+  return makeBasePosition({ xCoordinate: 1, yCoordinate: 1, ...overrides });
 }
 
 function makeChange(overrides: Partial<PositionChange> = {}): PositionChange {

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { persist } from "./persistence";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { createGuestProject } from "@/features/project/lib/guestProject";
@@ -14,16 +14,6 @@ function loadStore(isGuest: boolean) {
   useProjectStore.getState().hydrate({ ...snapshot, isGuest });
 }
 
-afterEach(() => {
-  useProjectStore.setState({
-    project: null,
-    dancers: {},
-    scenes: [],
-    positionsBySceneId: {},
-    isGuest: false,
-    hasUnsavedChanges: false,
-  });
-});
 
 describe("persist", () => {
   it("通常のプロジェクトではSupabaseへ渡して実行する", async () => {

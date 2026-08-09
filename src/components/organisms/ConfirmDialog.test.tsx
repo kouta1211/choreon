@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ConfirmDialog } from "./ConfirmDialog";
@@ -17,9 +17,6 @@ function openDialog(overrides: Partial<ConfirmRequest> = {}) {
   });
 }
 
-afterEach(() => {
-  useUIStore.setState({ confirm: null });
-});
 
 describe("ConfirmDialog", () => {
   it("確認の要求が無ければ何も表示しない", () => {

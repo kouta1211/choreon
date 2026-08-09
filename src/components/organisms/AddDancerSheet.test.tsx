@@ -7,34 +7,16 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import * as dancersApi from "@/features/dancer/api/dancers";
 import * as positionsApi from "@/features/scene/api/positions";
 import type { Dancer } from "@/features/dancer/types";
-import type { Project } from "@/features/project/types";
+
+import { makeDancer as makeBaseDancer, makeProject } from "@/test/factories";
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({}),
 }));
 
-function makeProject(): Project {
-  return {
-    id: "project-1",
-    userId: "user-1",
-    title: "発表会A",
-    stageWidth: 15,
-    stageHeight: 10,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-01-01T00:00:00.000Z",
-  };
-}
-
+// 自動採番の名前("1", "2"...)を検証するテストなので、既定の名前も数字にする
 function makeDancer(overrides: Partial<Dancer> = {}): Dancer {
-  return {
-    id: "dancer-1",
-    projectId: "project-1",
-    name: "1",
-    color: "#3b82f6",
-    initialDirection: 0,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    ...overrides,
-  };
+  return makeBaseDancer({ name: "1", ...overrides });
 }
 
 function openSheet() {
@@ -53,17 +35,6 @@ function mockApis() {
 
 afterEach(() => {
   vi.restoreAllMocks();
-  useProjectStore.setState({
-    project: null,
-    dancers: {},
-    scenes: [],
-    positionsBySceneId: {},
-  });
-  useUIStore.setState({
-    isAddDancerSheetOpen: false,
-    selectedSceneId: null,
-    toast: null,
-  });
 });
 
 describe("AddDancerSheet", () => {

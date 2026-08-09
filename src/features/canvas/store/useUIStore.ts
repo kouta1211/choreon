@@ -38,9 +38,6 @@ type UIState = {
   previousSceneId: string | null;
   selectedDancerId: string | null;
   isGridVisible: boolean;
-  /** ドラッグ中のダンサーID。ドラッグ中はdnd-kitのCSS transformのみで
-   * 見た目を動かすため、ここでは「どれがドラッグ中か」だけを持つ */
-  draggingDancerId: string | null;
   toast: Toast | null;
   /** オンの間、ダンサーをドラッグすると中心線を挟んだペアも連動して動く
    * (CanvasBoard.handleDragEndが読み取って処理する。ここはトグル状態のみ) */
@@ -78,7 +75,6 @@ type UIState = {
   selectScene: (sceneId: string | null) => void;
   selectDancer: (dancerId: string | null) => void;
   toggleGrid: () => void;
-  setDraggingDancerId: (dancerId: string | null) => void;
   showToast: (toast: Toast) => void;
   clearToast: () => void;
   toggleSymmetryMode: () => void;
@@ -103,7 +99,6 @@ export const useUIStore = create<UIState>((set) => ({
   previousSceneId: null,
   selectedDancerId: null,
   isGridVisible: true,
-  draggingDancerId: null,
   toast: null,
   isSymmetryMode: false,
   focusedDancerId: null,
@@ -128,7 +123,6 @@ export const useUIStore = create<UIState>((set) => ({
     ),
   selectDancer: (dancerId) => set({ selectedDancerId: dancerId }),
   toggleGrid: () => set((state) => ({ isGridVisible: !state.isGridVisible })),
-  setDraggingDancerId: (dancerId) => set({ draggingDancerId: dancerId }),
   showToast: (toast) => set({ toast }),
   clearToast: () => set({ toast: null }),
   toggleSymmetryMode: () =>

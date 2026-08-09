@@ -17,18 +17,6 @@ function toProject(row: ProjectRow): Project {
   };
 }
 
-export async function listProjects(
-  supabase: SupabaseClient<Database>,
-): Promise<Project[]> {
-  const { data, error } = await supabase
-    .from("projects")
-    .select("*")
-    .order("updated_at", { ascending: false });
-
-  if (error) throw error;
-  return data.map(toProject);
-}
-
 /**
  * 一覧のカードに出す要約つきでプロジェクトを取得する。
  *

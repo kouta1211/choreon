@@ -1,31 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { PathOverlay } from "./PathOverlay";
-import type { Dancer } from "@/features/dancer/types";
-import type { Position } from "@/features/scene/types";
 
-function makeDancer(overrides: Partial<Dancer> = {}): Dancer {
-  return {
-    id: "dancer-1",
-    projectId: "project-1",
-    name: "あいり",
-    color: "#3b82f6",
-    initialDirection: 0,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    ...overrides,
-  };
-}
-
-function makePosition(overrides: Partial<Position> = {}): Position {
-  return {
-    sceneId: "scene-1",
-    dancerId: "dancer-1",
-    xCoordinate: 2,
-    yCoordinate: 2,
-    rotationAngle: 0,
-    ...overrides,
-  };
-}
+import { makeDancer, makePosition } from "@/test/factories";
 
 /** 制御点をドラッグできる状態のオーバーレイを描画する。
  * jsdomのgetBoundingClientRectは常に0を返すため、ポインタ座標→ステージ座標の

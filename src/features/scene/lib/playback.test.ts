@@ -1,17 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getNextSceneId, totalTransitionSeconds } from "./playback";
-import type { Scene } from "@/features/scene/types";
 
-function makeScene(overrides: Partial<Scene> = {}): Scene {
-  return {
-    id: "scene-1",
-    projectId: "project-1",
-    name: "シーン1",
-    orderIndex: 0,
-    transitionDurationSeconds: 1,
-    ...overrides,
-  };
-}
+import { makeScene } from "@/test/factories";
 
 describe("getNextSceneId", () => {
   it("現在のシーンの次のシーンのidを返す", () => {

@@ -6,7 +6,8 @@ import { ConfirmDialog } from "@/components/organisms/ConfirmDialog";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import * as dancersApi from "@/features/dancer/api/dancers";
-import type { Dancer } from "@/features/dancer/types";
+
+import { makeDancer } from "@/test/factories";
 
 /** 削除は確認ダイアログ越しになったため、インスペクター単体ではなく
  * ダイアログと一緒に描画する(本番ではレイアウトが1つだけ描いている) */
@@ -23,38 +24,8 @@ vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({}),
 }));
 
-function makeDancer(overrides: Partial<Dancer> = {}): Dancer {
-  return {
-    id: "dancer-1",
-    projectId: "project-1",
-    name: "あいり",
-    color: "#3b82f6",
-    initialDirection: 0,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    ...overrides,
-  };
-}
-
 afterEach(() => {
   vi.restoreAllMocks();
-  useProjectStore.setState({
-    project: null,
-    dancers: {},
-    scenes: [],
-    positionsBySceneId: {},
-  });
-  useUIStore.setState({
-    selectedSceneId: null,
-    selectedDancerId: null,
-    isGridVisible: true,
-    draggingDancerId: null,
-    toast: null,
-    isSymmetryMode: false,
-    focusedDancerId: null,
-    isPathVisible: false,
-    isBlindSpotCheckVisible: false,
-    confirm: null,
-  });
 });
 
 describe("DancerInspector", () => {

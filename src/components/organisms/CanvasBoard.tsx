@@ -137,7 +137,6 @@ export function CanvasBoard({
   );
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const selectScene = useUIStore((state) => state.selectScene);
-  const setDraggingDancerId = useUIStore((state) => state.setDraggingDancerId);
   const setDragSnapLine = useUIStore((state) => state.setDragSnapLine);
   const showToast = useUIStore((state) => state.showToast);
   const isSymmetryMode = useUIStore((state) => state.isSymmetryMode);
@@ -203,13 +202,11 @@ export function CanvasBoard({
   );
 
   const handleDragCancel = useCallback(() => {
-    setDraggingDancerId(null);
     setDragSnapLine({ x: null, y: null });
-  }, [setDraggingDancerId, setDragSnapLine]);
+  }, [setDragSnapLine]);
 
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
-      setDraggingDancerId(null);
       setDragSnapLine({ x: null, y: null });
       if (!selectedSceneId) return;
 
@@ -341,7 +338,6 @@ export function CanvasBoard({
       isSymmetryMode,
       project.stageWidth,
       project.stageHeight,
-      setDraggingDancerId,
       setDragSnapLine,
       updateDancerPosition,
       showToast,
@@ -494,7 +490,6 @@ export function CanvasBoard({
       sensors={sensors}
       modifiers={gridSnapModifier ? [gridSnapModifier] : undefined}
       accessibility={DND_ACCESSIBILITY}
-      onDragStart={(event) => setDraggingDancerId(String(event.active.id))}
       onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}

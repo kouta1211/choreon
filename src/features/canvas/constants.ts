@@ -23,11 +23,11 @@ export const DEFAULT_TRANSITION_DURATION_SECONDS = 0.3;
  * 0にしないのは、このアプリの動きが装飾ではなく情報
  * (誰がどこへ移動するか)だから。瞬間移動にすると、シーン間で
  * 誰がどこへ動いたのかが読み取れなくなる。目が追う負担だけを下げる */
-export const REDUCED_MOTION_DURATION_SECONDS = 0.15;
+const REDUCED_MOTION_DURATION_SECONDS = 0.15;
 
 /** OSの「動きを減らす」設定が入っているか。
  * アニメーションを開始する直前に読むので、フックではなく関数にしている */
-export function prefersReducedMotion(): boolean {
+function prefersReducedMotion(): boolean {
   if (typeof window === "undefined" || !window.matchMedia) return false;
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }

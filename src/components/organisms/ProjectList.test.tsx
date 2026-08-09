@@ -54,7 +54,6 @@ function renderList(projects: ProjectSummary[]) {
 afterEach(() => {
   vi.restoreAllMocks();
   refresh.mockClear();
-  useUIStore.setState({ confirm: null, toast: null });
 });
 
 describe("ProjectList", () => {

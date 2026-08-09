@@ -1,11 +1,8 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { Stage } from "./Stage";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 
-afterEach(() => {
-  useUIStore.setState({ isGridVisible: true, focusedDancerId: null });
-});
 
 describe("Stage", () => {
   it("デフォルトではグリッドが表示される", () => {

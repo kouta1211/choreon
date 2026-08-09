@@ -5,10 +5,10 @@
 
 /** ステージの1ユニットあたりの実寸(メートル)。schema.sqlのコメント通り、
  * 1マス=約90cmという想定に合わせている */
-export const METERS_PER_STAGE_UNIT = 0.9;
+const METERS_PER_STAGE_UNIT = 0.9;
 
 /** これを超える移動は、シーン間の短い時間では現実的に不可能とみなす目安 */
-export const MAX_REALISTIC_DISTANCE_METERS = 8;
+const MAX_REALISTIC_DISTANCE_METERS = 8;
 
 export function findExcessiveMoveDancerIds(
   currentPositions: Record<string, { xCoordinate: number; yCoordinate: number }>,

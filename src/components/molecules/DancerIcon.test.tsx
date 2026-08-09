@@ -1,19 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { DancerIcon, DancerMarker } from "@/components/molecules/DancerIcon";
-import type { Dancer } from "@/features/dancer/types";
 
-function makeDancer(overrides: Partial<Dancer> = {}): Dancer {
-  return {
-    id: "dancer-1",
-    projectId: "project-1",
-    name: "あいり",
-    color: "#3b82f6",
-    initialDirection: 0,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    ...overrides,
-  };
-}
+import { makeDancer } from "@/test/factories";
 
 describe("DancerIcon", () => {
   it("名前をそのまま表示する", () => {

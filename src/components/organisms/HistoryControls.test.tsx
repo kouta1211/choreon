@@ -7,20 +7,15 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import * as positionsApi from "@/features/scene/api/positions";
 import type { Position } from "@/features/scene/types";
+import { makePosition as makeBasePosition } from "@/test/factories";
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({}),
 }));
 
+// 履歴のテストは(1,1)→(x,y)の移動で組み立てている
 function makePosition(overrides: Partial<Position> = {}): Position {
-  return {
-    sceneId: "scene-1",
-    dancerId: "dancer-1",
-    xCoordinate: 1,
-    yCoordinate: 1,
-    rotationAngle: 0,
-    ...overrides,
-  };
+  return makeBasePosition({ xCoordinate: 1, yCoordinate: 1, ...overrides });
 }
 
 /** 「dancer-1をx=1からx=5へ動かした」という履歴が1件ある状態を作る */
@@ -67,18 +62,6 @@ function currentX() {
 afterEach(() => {
   vi.restoreAllMocks();
   useHistoryStore.getState().clear();
-  useProjectStore.setState({
-    project: null,
-    dancers: {},
-    scenes: [],
-    positionsBySceneId: {},
-  });
-  useUIStore.setState({
-    selectedSceneId: null,
-    selectedDancerId: null,
-    toast: null,
-    isPlaying: false,
-  });
 });
 
 describe("HistoryControls", () => {

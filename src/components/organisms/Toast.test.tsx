@@ -9,17 +9,6 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
-  useUIStore.setState({
-    selectedSceneId: null,
-    selectedDancerId: null,
-    isGridVisible: true,
-    draggingDancerId: null,
-    toast: null,
-    isSymmetryMode: false,
-    focusedDancerId: null,
-    isPathVisible: false,
-    isBlindSpotCheckVisible: false,
-  });
 });
 
 describe("Toast", () => {

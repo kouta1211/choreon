@@ -30,33 +30,10 @@ export async function listDancers(
 }
 
 /**
- * idは呼び出し側(楽観的更新でローカルstoreに先に追加した値)をそのまま使う。
- * 挿入後にIDを差し替える必要が無くなり、ロールバック処理も単純になる
- */
-export async function createDancer(
-  supabase: SupabaseClient<Database>,
-  dancer: Pick<Dancer, "id" | "projectId" | "name" | "color" | "initialDirection">,
-): Promise<Dancer> {
-  const { data, error } = await supabase
-    .from("dancers")
-    .insert({
-      id: dancer.id,
-      project_id: dancer.projectId,
-      name: dancer.name,
-      color: dancer.color,
-      initial_direction: dancer.initialDirection,
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return toDancer(data);
-}
-
-/**
  * 複数のダンサーをまとめて作る。1人ずつinsertすると、20人追加したときに
  * 20往復することになるため、1回のリクエストにまとめる。
- * idは呼び出し側が採番したものをそのまま使う(createDancerと同じ理由)
+ * idは呼び出し側(楽観的更新でローカルstoreに先に追加した値)をそのまま使う。
+ * 挿入後にIDを差し替える必要が無くなり、ロールバック処理も単純になる
  */
 export async function createDancers(
   supabase: SupabaseClient<Database>,

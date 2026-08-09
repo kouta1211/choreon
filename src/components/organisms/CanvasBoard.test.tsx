@@ -1,67 +1,20 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { CanvasBoard } from "./CanvasBoard";
-import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import type { Project } from "@/features/project/types";
-import type { Dancer } from "@/features/dancer/types";
-import type { Scene } from "@/features/scene/types";
 
+import { makeDancer, makeProject as makeBaseProject, makeScene } from "@/test/factories";
+
+// このファイルは8×8のステージ前提で座標を数えている
 function makeProject(overrides: Partial<Project> = {}): Project {
-  return {
-    id: "project-1",
-    userId: "user-1",
+  return makeBaseProject({
     title: "サンプル",
     stageWidth: 8,
     stageHeight: 8,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-01-01T00:00:00.000Z",
     ...overrides,
-  };
-}
-
-function makeScene(overrides: Partial<Scene> = {}): Scene {
-  return {
-    id: "scene-1",
-    projectId: "project-1",
-    name: "シーン1",
-    orderIndex: 0,
-    transitionDurationSeconds: 1,
-    ...overrides,
-  };
-}
-
-function makeDancer(overrides: Partial<Dancer> = {}): Dancer {
-  return {
-    id: "dancer-1",
-    projectId: "project-1",
-    name: "あいり",
-    color: "#3b82f6",
-    initialDirection: 0,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    ...overrides,
-  };
-}
-
-afterEach(() => {
-  useProjectStore.setState({
-    project: null,
-    dancers: {},
-    scenes: [],
-    positionsBySceneId: {},
   });
-  useUIStore.setState({
-    selectedSceneId: null,
-    selectedDancerId: null,
-    isGridVisible: true,
-    draggingDancerId: null,
-    toast: null,
-    isSymmetryMode: false,
-    focusedDancerId: null,
-    isPathVisible: false,
-    isBlindSpotCheckVisible: false,
-  });
-});
+}
 
 describe("CanvasBoard", () => {
   it("シーンが無い場合は、空のステージからその場で作れるようにする", () => {

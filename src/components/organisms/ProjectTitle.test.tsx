@@ -4,28 +4,15 @@ import userEvent from "@testing-library/user-event";
 import { ProjectTitle } from "./ProjectTitle";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import * as projectsApi from "@/features/project/api/projects";
-import type { Project } from "@/features/project/types";
+
+import { makeProject } from "@/test/factories";
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({}),
 }));
 
-function makeProject(overrides: Partial<Project> = {}): Project {
-  return {
-    id: "project-1",
-    userId: "user-1",
-    title: "発表会A",
-    stageWidth: 15,
-    stageHeight: 10,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-01-01T00:00:00.000Z",
-    ...overrides,
-  };
-}
-
 afterEach(() => {
   vi.restoreAllMocks();
-  useUIStore.setState({ toast: null });
 });
 
 describe("ProjectTitle", () => {

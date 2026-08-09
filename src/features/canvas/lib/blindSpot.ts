@@ -6,7 +6,7 @@
  */
 
 /** 肩幅の目安(ステージ座標系のユニット)。この距離未満のX差なら重なって見えるとみなす */
-export const DEFAULT_SHOULDER_WIDTH_UNITS = 0.8;
+const DEFAULT_SHOULDER_WIDTH_UNITS = 0.8;
 
 export function findBlockedDancerIds(
   positionsByDancerId: Record<string, { xCoordinate: number; yCoordinate: number }>,

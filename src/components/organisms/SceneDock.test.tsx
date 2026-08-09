@@ -8,55 +8,25 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import * as scenesApi from "@/features/scene/api/scenes";
 import * as positionsApi from "@/features/scene/api/positions";
 import type { Project } from "@/features/project/types";
-import type { Scene } from "@/features/scene/types";
+
+import { makeProject as makeBaseProject, makeScene } from "@/test/factories";
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({}),
 }));
 
+// このファイルは8×8のステージ前提
 function makeProject(overrides: Partial<Project> = {}): Project {
-  return {
-    id: "project-1",
-    userId: "user-1",
+  return makeBaseProject({
     title: "サンプル",
     stageWidth: 8,
     stageHeight: 8,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    updatedAt: "2026-01-01T00:00:00.000Z",
     ...overrides,
-  };
-}
-
-function makeScene(overrides: Partial<Scene> = {}): Scene {
-  return {
-    id: "scene-1",
-    projectId: "project-1",
-    name: "シーン1",
-    orderIndex: 0,
-    transitionDurationSeconds: 1,
-    ...overrides,
-  };
+  });
 }
 
 afterEach(() => {
   vi.restoreAllMocks();
-  useProjectStore.setState({
-    project: null,
-    dancers: {},
-    scenes: [],
-    positionsBySceneId: {},
-  });
-  useUIStore.setState({
-    selectedSceneId: null,
-    selectedDancerId: null,
-    isGridVisible: true,
-    draggingDancerId: null,
-    toast: null,
-    isSymmetryMode: false,
-    focusedDancerId: null,
-    isPathVisible: false,
-    isBlindSpotCheckVisible: false,
-  });
 });
 
 describe("SceneDock", () => {
