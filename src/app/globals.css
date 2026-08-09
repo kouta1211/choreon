@@ -68,6 +68,44 @@
   --dancer-6: #ec4899;
 }
 
+/* テーマ2つ目「モノクローム」(デザインHTML #19a の4枚目)。
+   UIからは色を全部抜き、アクセントも白にする。ダンサーの6色だけは
+   「誰がどこにいるか」を伝える情報なので、テーマが変わっても据え置く。
+
+   このテーマは土台が効いているかの試験紙も兼ねている。アクセントが
+   ピンク→白に変わるので、トークンへ移し忘れた色が1箇所でもあれば
+   そこだけピンクのまま残って一目で分かる。
+
+   切り替えUIはまだ無いので、確認は devtools で <html> に
+   data-theme="mono" を付けて行う */
+[data-theme="mono"] {
+  --bg: #101010;
+
+  --surface-sunken: #0a0a0a;
+  --stage: #0d0d0d;
+  --surface: #171717;
+  --surface-raised: #1c1c1c;
+  --surface-strong: #262626;
+  --scrim: #000000;
+
+  --line: #262626;
+  --line-strong: #383838;
+  --stage-grid: #262626;
+  --stage-grid-soft: #1f1f1f;
+
+  --text-strong: #ffffff;
+  --text: #ededed;
+  --text-sub: #a3a3a3;
+  --text-muted: #737373;
+
+  --accent: #fafafa;
+  /* 白いボタンの上なので、文字は地の色まで落とす */
+  --accent-fg: #101010;
+  --accent-soft: #ffffff;
+  --accent-bright: #ffffff;
+  --accent-row: #262626;
+}
+
 /* 上の変数をTailwindの色名に結び付ける。`inline` を付けると
    `bg-surface` が `background-color: var(--surface)` を直接出すので、
    実行時に変数を差し替えるだけで色が追従する(値をコピーしてしまうと
