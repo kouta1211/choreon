@@ -156,15 +156,27 @@ export function PathTrail({
     }),
   );
 
-  // 全員ぶん終わったら1回だけ呼び出し側へ知らせる。戻る移動では、これを
-  // 合図にPathOverlayが通常の導線表示を引き継ぐ
+  // 全員ぶん終わったら1回だけ呼び出し側へ知らせる。これを合図に
+  // PathOverlayが通常の導線表示を引き継ぐ
   const completedCountRef = useRef(0);
   const handleSegmentComplete = () => {
     completedCountRef.current += 1;
     if (completedCountRef.current === segments.length) onComplete?.();
   };
 
-  if (segments.length === 0) return null;
+  // 誰も動かない区間には線が1本も無く、下のアニメーションが1つも走らない。
+  // 何もしないと onComplete が永久に呼ばれず、呼び出し側は「まだ描いている
+  // 途中」のまま止まってしまう(通常の導線表示に戻れず、線が出ないままになる)。
+  // 空だと分かった時点ですぐ知らせる
+  const isEmpty = segments.length === 0;
+  useEffect(() => {
+    if (isEmpty) onComplete?.();
+    // onCompleteは呼び出し側で毎回作られる。依存に入れると毎レンダー
+    // 走ってしまうため、下のPathTrailSegmentと同じく外している
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEmpty]);
+
+  if (isEmpty) return null;
 
   return (
     <svg

@@ -123,15 +123,23 @@ export function DancerLayer({
       isAdjacentStep && isPathVisible ? selectedSceneId : null,
     );
   }
+  // 移動の途中で導線表示を切ると、PathTrailは描き終わりを知らせないまま
+  // 消える。フラグが立ちっぱなしになり、次に導線を出したときに
+  // 「もう終わった移動」の線が最初から描き直されてしまうため、ここで畳む
+  if (!isPathVisible && animatingSceneId !== null) {
+    setAnimatingSceneId(null);
+  }
   const isTrailAnimating =
     animatingSceneId !== null && animatingSceneId === selectedSceneId;
 
+  // 顔被りは客席から引いた視線で判定するので、基準席の位置を決めるために
+  // ステージの広さが要る(端にいる人ほど視線が斜めに入るため)
   const blockedDancerIds = useMemo(
     () =>
       isBlindSpotCheckVisible
-        ? findBlockedDancerIds(positions)
+        ? findBlockedDancerIds(positions, stageWidthUnits, stageHeightUnits)
         : new Set<string>(),
-    [isBlindSpotCheckVisible, positions],
+    [isBlindSpotCheckVisible, positions, stageWidthUnits, stageHeightUnits],
   );
   // 次のシーンへの移動距離が現実的な範囲を超えているダンサー(常時判定、トグルなし)
   const excessiveMoveDancerIds = useMemo(
@@ -141,10 +149,15 @@ export function DancerLayer({
 
   return (
     <>
-      {/* 戻る移動の最中は、PathTrailが同じ区間を描き出している途中なので
-          出さない(出すと最初から全部見えてしまう)。描き終わった合図
-          (onComplete)を受けてから通常の導線表示へ引き継ぐ */}
-      {isPathVisible && !(isBackwardStep && isTrailAnimating) && (
+      {/* 移動の最中は出さない。描き終わった合図(onComplete)を受けてから
+          通常の導線表示へ引き継ぐ。
+          以前は戻る移動のときだけ隠していたが、進む移動でも同じ問題が
+          出ていた: 進んだ先の区間の線は、ダンサーがまだ移動している最中に
+          全部そろって現れる。手前ではPathTrailが今通った区間を消している
+          最中なので、2組の点線が同時に動いて見えていた。
+          「移動中はPathTrailだけ、止まっているときはPathOverlayだけ」と
+          どちらか一方に揃える */}
+      {isPathVisible && !isTrailAnimating && (
         <PathOverlay
           currentPositions={positions}
           nextPositions={nextPositions}

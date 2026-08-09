@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { PathTrail } from "./PathTrail";
 
@@ -90,6 +90,20 @@ describe("PathTrail", () => {
     renderTrail({ fromPositions: {}, toPositions: {}, segmentPositions: {} });
 
     expect(screen.queryByTestId("path-trail")).not.toBeInTheDocument();
+  });
+
+  it("線が1本も無い区間でも、描き終わりを知らせる", () => {
+    // 呼び出し側はこの合図で通常の導線表示へ戻す。1本も無いときは
+    // アニメーションが走らないので、ここで知らせないと戻れなくなる
+    const onComplete = vi.fn();
+    renderTrail({
+      fromPositions: {},
+      toPositions: {},
+      segmentPositions: {},
+      onComplete,
+    });
+
+    expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
   it("戻るとき(draw)は、開始時点では線が出ていない", () => {
