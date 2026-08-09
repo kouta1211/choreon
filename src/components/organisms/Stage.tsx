@@ -2,6 +2,7 @@
 
 import type { ReactNode, Ref } from "react";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
+import { ConcentricGuides } from "@/components/molecules/ConcentricGuides";
 
 /**
  * 「空いている領域に、縦横比を保ったまま目一杯収まる幅」を返す。
@@ -59,7 +60,7 @@ export function Stage({
   showCenterline = false,
   ref,
 }: Props) {
-  const isGridVisible = useUIStore((state) => state.isGridVisible);
+  const gridMode = useUIStore((state) => state.gridMode);
   const focusedDancerId = useUIStore((state) => state.focusedDancerId);
   const dragSnapLine = useUIStore((state) => state.dragSnapLine);
 
@@ -80,7 +81,7 @@ export function Stage({
           }}
           data-testid="stage"
         >
-          {isGridVisible && (
+          {gridMode === "square" && (
             <div
               data-testid="stage-grid"
               className={`pointer-events-none absolute inset-0 rounded-[max(0px,calc(var(--radius)-2px))] bg-[linear-gradient(to_right,var(--stage-grid)_1px,transparent_1px),linear-gradient(to_bottom,var(--stage-grid)_1px,transparent_1px)] transition-opacity ${
@@ -90,6 +91,18 @@ export function Stage({
                 backgroundSize: `${100 / widthUnits}% ${100 / heightUnits}%`,
               }}
             />
+          )}
+          {gridMode === "circle" && (
+            <div
+              className={`pointer-events-none absolute inset-0 transition-opacity ${
+                focusedDancerId ? "opacity-40" : ""
+              }`}
+            >
+              <ConcentricGuides
+                widthUnits={widthUnits}
+                heightUnits={heightUnits}
+              />
+            </div>
           )}
           {showCenterline && (
             <div

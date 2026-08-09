@@ -28,6 +28,9 @@ export type ConfirmRequest = {
   onConfirm: () => void | Promise<void>;
 };
 
+/** ステージの目盛りの出し方。円形の隊形は格子より同心円の方が読みやすい */
+export type GridMode = "square" | "circle" | "none";
+
 type UIState = {
   selectedSceneId: string | null;
   /** 直前に選択していたシーン。「どこから来たか」が分かると、隣のシーンへの
@@ -37,7 +40,10 @@ type UIState = {
    * (DancerLayerが読み取る) */
   previousSceneId: string | null;
   selectedDancerId: string | null;
-  isGridVisible: boolean;
+  /** ステージに敷く目盛り。格子(1マス=約90cm)と同心円(中心からの距離と角度)は
+   * 同じ「どこに立っているか」を別の読み方で示すもので、重ねると
+   * どちらも読めなくなるため、並立ではなく1つを選ぶ */
+  gridMode: GridMode;
   toast: Toast | null;
   /** オンの間、ダンサーをドラッグすると中心線を挟んだペアも連動して動く
    * (CanvasBoard.handleDragEndが読み取って処理する。ここはトグル状態のみ) */
@@ -74,7 +80,7 @@ type UIState = {
 
   selectScene: (sceneId: string | null) => void;
   selectDancer: (dancerId: string | null) => void;
-  toggleGrid: () => void;
+  setGridMode: (mode: GridMode) => void;
   showToast: (toast: Toast) => void;
   clearToast: () => void;
   toggleSymmetryMode: () => void;
@@ -98,7 +104,7 @@ export const useUIStore = create<UIState>((set) => ({
   selectedSceneId: null,
   previousSceneId: null,
   selectedDancerId: null,
-  isGridVisible: true,
+  gridMode: "square",
   toast: null,
   isSymmetryMode: false,
   focusedDancerId: null,
@@ -122,7 +128,7 @@ export const useUIStore = create<UIState>((set) => ({
         : { selectedSceneId: sceneId, previousSceneId: state.selectedSceneId },
     ),
   selectDancer: (dancerId) => set({ selectedDancerId: dancerId }),
-  toggleGrid: () => set((state) => ({ isGridVisible: !state.isGridVisible })),
+  setGridMode: (mode) => set({ gridMode: mode }),
   showToast: (toast) => set({ toast }),
   clearToast: () => set({ toast: null }),
   toggleSymmetryMode: () =>

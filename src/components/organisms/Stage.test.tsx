@@ -10,9 +10,18 @@ describe("Stage", () => {
     expect(screen.getByTestId("stage-grid")).toBeInTheDocument();
   });
 
-  it("isGridVisibleがfalseのときグリッドを表示しない", () => {
-    useUIStore.setState({ isGridVisible: false });
+  it("gridModeがnoneのとき目盛りを一切表示しない", () => {
+    useUIStore.setState({ gridMode: "none" });
     render(<Stage widthUnits={8} heightUnits={8} />);
+    expect(screen.queryByTestId("stage-grid")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("stage-concentric")).not.toBeInTheDocument();
+  });
+
+  it("gridModeがcircleのとき、格子ではなく同心円に差し替わる", () => {
+    useUIStore.setState({ gridMode: "circle" });
+    render(<Stage widthUnits={8} heightUnits={8} />);
+    // 両方出すと目盛りが二重になって読めないので、入れ替わることを確かめる
+    expect(screen.getByTestId("stage-concentric")).toBeInTheDocument();
     expect(screen.queryByTestId("stage-grid")).not.toBeInTheDocument();
   });
 

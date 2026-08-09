@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Eclipse, FlipHorizontal2, Grid3x3, SlidersHorizontal, Spline } from "lucide-react";
-import { useUIStore } from "@/features/canvas/store/useUIStore";
+import { useUIStore, type GridMode } from "@/features/canvas/store/useUIStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { Switch } from "@/components/atoms/Switch";
 
@@ -21,14 +21,24 @@ import { Switch } from "@/components/atoms/Switch";
  * 唯一「顔被りチェックがオンだが誰も被っていない」状態だけは
  * 見分けが付かないため、オンの数をボタンにバッジで出している。
  */
+const GRID_MODES: {
+  value: GridMode;
+  label: string;
+  description: string;
+}[] = [
+  { value: "square", label: "格子", description: "1マス=約90cm" },
+  { value: "circle", label: "同心円", description: "中心からの距離と角度で読む。円や弧の隊形向け" },
+  { value: "none", label: "なし", description: "目盛りを敷かない" },
+];
+
 export function DisplayModeMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const isSymmetryMode = useUIStore((state) => state.isSymmetryMode);
   const toggleSymmetryMode = useUIStore((state) => state.toggleSymmetryMode);
-  const isGridVisible = useUIStore((state) => state.isGridVisible);
-  const toggleGrid = useUIStore((state) => state.toggleGrid);
+  const gridMode = useUIStore((state) => state.gridMode);
+  const setGridMode = useUIStore((state) => state.setGridMode);
   const isPathVisible = useUIStore((state) => state.isPathVisible);
   const togglePathVisible = useUIStore((state) => state.togglePathVisible);
   const isBlindSpotCheckVisible = useUIStore(
@@ -60,13 +70,6 @@ export function DisplayModeMenu() {
       onChange: toggleSymmetryMode,
     },
     {
-      label: "グリッドを表示",
-      description: "1マス=約90cm",
-      icon: Grid3x3,
-      checked: isGridVisible,
-      onChange: toggleGrid,
-    },
-    {
       label: "導線を表示",
       description: "次のシーンへの動きを線で描く",
       icon: Spline,
@@ -81,6 +84,8 @@ export function DisplayModeMenu() {
       onChange: toggleBlindSpotCheckVisible,
     },
   ];
+  // 目盛りは「出す/出さない」ではなく3択なので、オンの数には数えない。
+  // 既定(格子)のままの人のバッジが常に1増えてしまい、意味が薄れるため
   const activeCount = modes.filter((mode) => mode.checked).length;
 
   return (
@@ -131,6 +136,30 @@ export function DisplayModeMenu() {
                 {dancerCount}人 · {sceneCount}シーン
               </span>
             </div>
+            <div className="flex items-center gap-2 px-2 py-1.5">
+              <Grid3x3 size={15} className="shrink-0 text-fg-muted" />
+              <span className="flex-1 text-[12.5px] text-fg">目盛り</span>
+              <span className="flex shrink-0 overflow-hidden rounded-full border border-line-strong">
+                {GRID_MODES.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    aria-pressed={gridMode === option.value}
+                    onClick={() => setGridMode(option.value)}
+                    className={`h-7 px-2.5 text-[11px] font-medium whitespace-nowrap ${
+                      gridMode === option.value
+                        ? "bg-accent/12 text-accent-soft"
+                        : "text-fg-sub"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </span>
+            </div>
+            <p className="px-2 pb-2 text-[10.5px] text-fg-muted">
+              {GRID_MODES.find((option) => option.value === gridMode)?.description}
+            </p>
             {modes.map((mode) => (
               <Switch
                 key={mode.label}
