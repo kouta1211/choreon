@@ -43,14 +43,12 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
   const preference = useThemeStore((state) => state.preference);
   const projectId = useThemeStore((state) => state.projectId);
   const setAppearance = useThemeStore((state) => state.setAppearance);
-  const setProjectOverride = useThemeStore((state) => state.setProjectOverride);
 
   const [filter, setFilter] = useState<Filter>("all");
   /** 詳細を開いているテーマ。nullなら一覧 */
   const [detailOf, setDetailOf] = useState<ThemeId | null>(null);
 
   const current = resolveAppearance(preference, projectId);
-  const isOverridden = projectId !== null && projectId in preference.byProject;
 
   const handleClose = () => {
     setDetailOf(null);
@@ -107,25 +105,6 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
               地の上に薄く重ねる装飾です。ステージの中には掛かりません。
             </p>
           </div>
-
-          {projectId && (
-            <label className="flex items-start gap-2.5 rounded-xl border border-line bg-surface-raised p-3">
-              <input
-                type="checkbox"
-                checked={isOverridden}
-                onChange={(event) => setProjectOverride(event.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--accent)]"
-              />
-              <span className="min-w-0">
-                <span className="block text-[13px] font-semibold text-fg-strong">
-                  このプロジェクトだけに使う
-                </span>
-                <span className="mt-0.5 block text-[11px] leading-relaxed text-fg-muted">
-                  外すと、ほかのプロジェクトと同じ見た目に戻ります。
-                </span>
-              </span>
-            </label>
-          )}
         </div>
       </BottomSheet>
     );

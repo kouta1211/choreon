@@ -22,7 +22,15 @@ type ThemeStore = {
   setProjectId: (projectId: string | null) => void;
   /** いま見えている見た目を変える(上書き中ならそのプロジェクトだけ) */
   setAppearance: (next: Partial<Appearance>) => void;
-  /** このプロジェクトだけ別の見た目にするかどうか */
+  /**
+   * このプロジェクトだけ別の見た目にするかどうか。
+   *
+   * まだ画面からは呼ばれていない。仕様は「テーマの入口はホームのみ」と
+   * 「詳細シートで上書きを切り替える」の両方を求めているが、ホームには
+   * 対象のプロジェクトが無いため、入口の置き場所が決まるまで保留にしている。
+   * 保存形式(byProject)と解決順(resolveAppearance)は先に用意してあるので、
+   * 入口が決まればそこから呼ぶだけで足りる。
+   */
   setProjectOverride: (enabled: boolean) => void;
 };
 
