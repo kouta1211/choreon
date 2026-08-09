@@ -34,15 +34,15 @@ export function DancerList() {
   return (
     <div className="flex min-h-0 flex-col">
       <div className="flex shrink-0 items-baseline justify-between gap-2 px-3.5 py-3">
-        <span className="text-sm font-semibold text-zinc-50">ダンサー</span>
-        <span className="shrink-0 font-mono text-[11px] text-zinc-500">
+        <span className="text-sm font-semibold text-fg-strong">ダンサー</span>
+        <span className="shrink-0 font-mono text-[11px] text-fg-muted">
           {rows.length}人
         </span>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
         {rows.length === 0 ? (
-          <p className="px-0.5 text-[11px] leading-relaxed text-zinc-500">
+          <p className="px-0.5 text-[11px] leading-relaxed text-fg-muted">
             このシーンにはまだ誰もいません。
           </p>
         ) : (
@@ -58,7 +58,7 @@ export function DancerList() {
                     }
                     aria-pressed={isSelected}
                     className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left ${
-                      isSelected ? "bg-zinc-800" : "hover:bg-zinc-800/60"
+                      isSelected ? "bg-surface-strong" : "hover:bg-surface-strong/60"
                     }`}
                   >
                     <span
@@ -66,10 +66,10 @@ export function DancerList() {
                       className="block h-3 w-3 shrink-0 rounded-full"
                       style={{ backgroundColor: dancer.color }}
                     />
-                    <span className="min-w-0 flex-1 truncate text-[13px] text-zinc-50">
+                    <span className="min-w-0 flex-1 truncate text-[13px] text-fg-strong">
                       {dancer.name}
                     </span>
-                    <span className="shrink-0 font-mono text-[10px] text-zinc-500">
+                    <span className="shrink-0 font-mono text-[10px] text-fg-muted">
                       {position.xCoordinate.toFixed(1)},
                       {position.yCoordinate.toFixed(1)}
                     </span>
@@ -83,7 +83,7 @@ export function DancerList() {
         <button
           type="button"
           onClick={() => setAddDancerSheetOpen(true)}
-          className="mt-2 flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-zinc-700 text-[12px] font-medium whitespace-nowrap text-zinc-400"
+          className="mt-2 flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-line-strong text-[12px] font-medium whitespace-nowrap text-fg-sub"
         >
           <UserPlus size={14} className="shrink-0" />
           ダンサーを追加

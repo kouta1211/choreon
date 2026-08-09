@@ -198,7 +198,7 @@ export function SceneTabs({
               {index > 0 && (
                 <div
                   aria-hidden
-                  className="pointer-events-none flex shrink-0 flex-col items-center gap-0.5 pt-[22px] text-zinc-600"
+                  className="pointer-events-none flex shrink-0 flex-col items-center gap-0.5 pt-[22px] text-fg-muted"
                 >
                   <ArrowRight size={12} />
                   <span className="font-mono text-[9px] whitespace-nowrap">
@@ -228,7 +228,7 @@ export function SceneTabs({
             style={{ width: 52 }}
           >
             <span
-              className="flex w-full items-center justify-center rounded-md border-2 border-dashed border-zinc-700 text-zinc-600"
+              className="flex w-full items-center justify-center rounded-md border-2 border-dashed border-line-strong text-fg-muted"
               style={{
                 aspectRatio: `${stageWidthUnits} / ${stageHeightUnits}`,
               }}

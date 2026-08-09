@@ -1,23 +1,114 @@
 @import "tailwindcss";
 
+/* テーマのトークン。
+   ここに並んでいる変数「だけ」がテーマごとに差し替わる。色を使う側は
+   Tailwindのユーティリティ(bg-surface / text-fg-sub / border-line など)を
+   通してこの変数を読むので、テーマの追加は下の :root を上書きする
+   [data-theme="..."] を1ブロック足すだけで済む。
+
+   参考アプリに合わせ、システム設定(ライト/ダーク)に関わらず既定は常に
+   このダークテーマ(ミッドナイト・ピンク)。純黒(#000)は硬く見えるため、
+   少し柔らかい濃いグレーにしている。
+
+   警告・エラー・成功・顔被り(amber/red/emerald)はテーマで変えない指定なので
+   ここには持たず、Tailwindの既定色をそのまま使う */
 :root {
-  /* 参考アプリに合わせ、システム設定(ライト/ダーク)に関わらず常にこの
-     ダークテーマ1本にする。純黒(#000)は硬く見えるため、少し柔らかい
-     濃いグレーにしている */
-  --background: #19191c;
-  --foreground: #ededed;
+  /* 地 */
+  --bg: #19191c;
+  /* 背景に重ねる質感(ステージの外だけ)。暗い系は素の一色なので none */
+  --bg-fx: none;
+
+  /* 面。奥まっている順: sunken < stage < surface < raised < strong */
+  --surface-sunken: #0f0f11;
+  --stage: #141417;
+  --surface: #18181b;
+  --surface-raised: #1f1f23;
+  --surface-strong: #27272a;
+  /* シート・モーダルの下に敷く幕。不透明度は使う側で /60 /72 と付ける */
+  --scrim: #09090b;
+
+  /* 線 */
+  --line: #27272a;
+  --line-strong: #3f3f46;
+  --stage-grid: #2c2c32;
+  /* サムネイル・空のステージなど、格子を主役にしたくない小さい面で使う
+     一段暗い格子。ステージ本体と同じ明るさだと点描のダンサーが埋もれる */
+  --stage-grid-soft: #232329;
+
+  /* 文字。muted が下限で、10〜11pxの小さい文字はこれより暗くしない
+     (#52525b は 10px で 1.7:1 しか出ずコントラストが足りない) */
+  --text-strong: #fafafa;
+  --text: #ededed;
+  --text-sub: #a1a1aa;
+  --text-muted: #71717a;
+
+  /* アクセント。soft は暗い地の上に置く文字色用(accentそのままだと
+     小さい文字で読みにくい)、row は選択中の行の敷き色 */
+  --accent: #ec4899;
+  /* accentを敷いたボタンの上に載る文字。accentが明るいテーマ(モノクローム等)
+     では白のままだと読めなくなるので、テーマが一緒に持つ */
+  --accent-fg: #ffffff;
+  --accent-soft: #f472b6;
+  /* accentを敷いた面の上に載せる文字。soft でもまだ沈むほど
+     アクセントが濃い場所(選択中の行・注意の帯)で使う */
+  --accent-bright: #f9a8d4;
+  --accent-row: #241019;
+
+  /* 角丸。紙・黒板系は0、ホワイトボードは4、ネオンは8…と
+     テーマごとに変わる */
+  --radius: 12px;
+
+  /* ダンサーの6色。役割と順番はテーマが変わっても固定で、
+     明るい素材のテーマのときだけ紙用の6色に差し替える */
+  --dancer-1: #3b82f6;
+  --dancer-2: #ef4444;
+  --dancer-3: #10b981;
+  --dancer-4: #f59e0b;
+  --dancer-5: #8b5cf6;
+  --dancer-6: #ec4899;
 }
 
+/* 上の変数をTailwindの色名に結び付ける。`inline` を付けると
+   `bg-surface` が `background-color: var(--surface)` を直接出すので、
+   実行時に変数を差し替えるだけで色が追従する(値をコピーしてしまうと
+   テーマ切り替えが効かない) */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-page: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-strong: var(--surface-strong);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-stage: var(--stage);
+  --color-stage-grid: var(--stage-grid);
+  --color-stage-grid-soft: var(--stage-grid-soft);
+  --color-scrim: var(--scrim);
+
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --color-fg-strong: var(--text-strong);
+  --color-fg: var(--text);
+  --color-fg-sub: var(--text-sub);
+  --color-fg-muted: var(--text-muted);
+
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-bright: var(--accent-bright);
+  --color-accent-row: var(--accent-row);
+
+  --radius-stage: var(--radius);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background-color: var(--bg);
+  /* テーマが持つ質感(ホリゾント幕・グレイン・方眼など)を地の上に重ねる。
+     ステージの中には掛けない指定なので、body側にだけ置いている */
+  background-image: var(--bg-fx);
+  color: var(--text);
   /* layout.tsxで読み込んでいるGeistを実際に効かせる。ここが
      `Arial, Helvetica, sans-serif` の直書きになっていたため、CSS変数まで
      用意しておきながら画面はずっとArialで描かれていた。
@@ -47,7 +138,7 @@ body {
    マウスで押しただけでは出ない)。
    ダンサーのマーカーは既にSVGの破線リングで示しているので除く */
 :where(button, a, input, select, textarea, [tabindex]):focus-visible {
-  outline: 2px solid var(--color-pink-500);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: inherit;
 }

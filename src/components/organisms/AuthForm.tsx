@@ -102,10 +102,10 @@ export function AuthForm({
         >
           <Mail size={20} />
         </span>
-        <p className="text-sm font-medium text-zinc-50">
+        <p className="text-sm font-medium text-fg-strong">
           確認メールを送信しました。
         </p>
-        <p className="text-xs leading-relaxed text-zinc-500">
+        <p className="text-xs leading-relaxed text-fg-muted">
           メール内のリンクを開くと登録が完了します。
         </p>
         {emailSentNote}
@@ -115,7 +115,7 @@ export function AuthForm({
             setIsEmailSent(false);
             onModeChange("login");
           }}
-          className="mt-1 text-xs text-pink-400 underline"
+          className="mt-1 text-xs text-accent-soft underline"
         >
           ログイン画面に戻る
         </button>
@@ -159,7 +159,7 @@ export function AuthForm({
         {mode === "signup" ? "登録する" : "ログイン"}
       </AuthSubmitButton>
 
-      <p className="text-center text-xs text-zinc-500">
+      <p className="text-center text-xs text-fg-muted">
         {mode === "signup" ? "既にアカウントをお持ちの方は " : "アカウントをお持ちでない方は "}
         <button
           type="button"
@@ -167,7 +167,7 @@ export function AuthForm({
             setError(null);
             onModeChange(mode === "signup" ? "login" : "signup");
           }}
-          className="text-pink-400 underline"
+          className="text-accent-soft underline"
         >
           {mode === "signup" ? "ログイン" : "新規登録"}
         </button>

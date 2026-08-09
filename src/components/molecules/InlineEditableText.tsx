@@ -66,7 +66,7 @@ export function InlineEditableText({
           if (event.key === "Enter") event.currentTarget.blur();
           if (event.key === "Escape") setDraft(null);
         }}
-        className={`h-[34px] min-w-0 rounded-[9px] border border-pink-500 bg-zinc-800 px-2.5 text-zinc-50 ring-[3px] ring-pink-500/15 outline-none ${
+        className={`h-[34px] min-w-0 rounded-[9px] border border-accent bg-surface-strong px-2.5 text-fg-strong ring-[3px] ring-accent/15 outline-none ${
           fullWidth ? "w-full" : "w-40"
         } ${textClassName}`}
       />
@@ -79,15 +79,15 @@ export function InlineEditableText({
       onClick={() => setDraft(value)}
       aria-label={`${label}を変更`}
       // 枠自体が44pxのタップ的になるよう、外側に縦の余白を足している
-      className={`inline-flex min-w-0 items-center gap-1.5 rounded-lg border border-dashed border-zinc-600 px-2 py-1 text-left ${
+      className={`inline-flex min-w-0 items-center gap-1.5 rounded-lg border border-dashed border-line-strong px-2 py-1 text-left ${
         fullWidth ? "w-full" : ""
       }`}
     >
       {prefix}
-      <span className={`min-w-0 truncate text-zinc-50 ${textClassName}`}>
+      <span className={`min-w-0 truncate text-fg-strong ${textClassName}`}>
         {value}
       </span>
-      <Pencil size={12} className="shrink-0 text-zinc-500" aria-hidden />
+      <Pencil size={12} className="shrink-0 text-fg-muted" aria-hidden />
     </button>
   );
 }

@@ -50,9 +50,9 @@ export function AuthDialog() {
           onAuthenticated={handleAuthenticated}
           intro={
             isGuest ? (
-              <p className="rounded-xl border border-zinc-800 bg-zinc-800/60 p-3 text-xs leading-relaxed text-zinc-400">
+              <p className="rounded-xl border border-line bg-surface-strong/60 p-3 text-xs leading-relaxed text-fg-sub">
                 いま作っている作品は、この端末の中にだけあります。
-                <span className="text-zinc-50">
+                <span className="text-fg-strong">
                   登録すると、そのまま保存されます。
                 </span>
               </p>

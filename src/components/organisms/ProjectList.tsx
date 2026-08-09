@@ -68,14 +68,14 @@ export function ProjectList({ projects }: Props) {
 
   return (
     <div className="space-y-2.5">
-      <p className="mx-0.5 text-[10px] font-semibold tracking-[0.14em] text-zinc-600">
+      <p className="mx-0.5 text-[10px] font-semibold tracking-[0.14em] text-fg-muted">
         プロジェクト {projects.length}件
       </p>
       <ul className="grid gap-2.5 md:grid-cols-2">
         {projects.map((project) => (
           <li
             key={project.id}
-            className="flex items-center gap-2.5 rounded-[14px] border border-zinc-800 bg-zinc-900 p-3"
+            className="flex items-center gap-2.5 rounded-[14px] border border-line bg-surface p-3"
           >
             <Link
               href={`/projects/${project.id}`}
@@ -83,15 +83,15 @@ export function ProjectList({ projects }: Props) {
             >
               <ProjectThumbnail project={project} />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[15px] font-semibold text-zinc-50">
+                <span className="block truncate text-[15px] font-semibold text-fg-strong">
                   {project.title}
                 </span>
-                <span className="mt-1.5 block font-mono text-[11px] font-medium text-zinc-400">
+                <span className="mt-1.5 block font-mono text-[11px] font-medium text-fg-sub">
                   {project.sceneCount} シーン · {project.dancerCount} 人
                   {project.sceneCount > 1 && (
                     <>
                       {" · "}
-                      <span className="text-pink-400">
+                      <span className="text-accent-soft">
                         {project.totalSeconds}s
                       </span>
                     </>
@@ -109,7 +109,7 @@ export function ProjectList({ projects }: Props) {
                     ))}
                   </span>
                 ) : (
-                  <span className="mt-2 block text-[11px] text-zinc-500">
+                  <span className="mt-2 block text-[11px] text-fg-muted">
                     タップして最初のシーンを作る
                   </span>
                 )}
@@ -120,7 +120,7 @@ export function ProjectList({ projects }: Props) {
               onClick={() => handleDelete(project)}
               disabled={deletingId === project.id}
               aria-label={`${project.title}を削除`}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[11px] text-zinc-600 hover:bg-red-950 hover:text-red-400 disabled:opacity-40"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[11px] text-fg-muted hover:bg-red-950 hover:text-red-400 disabled:opacity-40"
             >
               <Trash2 size={17} />
             </button>
@@ -139,7 +139,7 @@ function ProjectThumbnail({ project }: { project: ProjectSummary }) {
     return (
       <span
         aria-hidden
-        className="flex w-[84px] shrink-0 items-center justify-center rounded-lg border border-dashed border-zinc-700 bg-[#0f0f11] font-mono text-[9px] text-zinc-600"
+        className="flex w-[84px] shrink-0 items-center justify-center rounded-lg border border-dashed border-line-strong bg-surface-sunken font-mono text-[9px] text-fg-muted"
         style={{ aspectRatio }}
       >
         シーン 0
@@ -150,11 +150,11 @@ function ProjectThumbnail({ project }: { project: ProjectSummary }) {
   return (
     <span
       aria-hidden
-      className="relative block w-[84px] shrink-0 overflow-hidden rounded-lg border border-zinc-800 bg-[#0f0f11]"
+      className="relative block w-[84px] shrink-0 overflow-hidden rounded-lg border border-line bg-surface-sunken"
       style={{ aspectRatio }}
     >
       <span
-        className="absolute inset-0 block bg-[linear-gradient(to_right,#232329_1px,transparent_1px),linear-gradient(to_bottom,#232329_1px,transparent_1px)]"
+        className="absolute inset-0 block bg-[linear-gradient(to_right,var(--stage-grid-soft)_1px,transparent_1px),linear-gradient(to_bottom,var(--stage-grid-soft)_1px,transparent_1px)]"
         style={{
           backgroundSize: `${100 / project.stageWidth}% ${100 / project.stageHeight}%`,
         }}
@@ -180,16 +180,16 @@ function ProjectThumbnail({ project }: { project: ProjectSummary }) {
  */
 function EmptyProjectList() {
   return (
-    <div className="rounded-2xl border border-dashed border-zinc-700 px-5 py-6 text-center">
+    <div className="rounded-2xl border border-dashed border-line-strong px-5 py-6 text-center">
       <span
         aria-hidden
         className="relative mx-auto mb-3.5 block h-10 w-[110px] opacity-50"
       >
         {[
-          { left: 6, top: 26, color: "#3f3f46" },
-          { left: 30, top: 14, color: "#3f3f46" },
-          { left: 54, top: 4, color: "#71717a" },
-          { left: 78, top: 14, color: "#3f3f46" },
+          { left: 6, top: 26, color: "var(--line-strong)" },
+          { left: 30, top: 14, color: "var(--line-strong)" },
+          { left: 54, top: 4, color: "var(--text-muted)" },
+          { left: 78, top: 14, color: "var(--line-strong)" },
         ].map((dot) => (
           <span
             key={dot.left}
@@ -198,10 +198,10 @@ function EmptyProjectList() {
           />
         ))}
       </span>
-      <p className="text-sm leading-relaxed font-medium text-zinc-300">
+      <p className="text-sm leading-relaxed font-medium text-fg">
         まだプロジェクトがありません。
       </p>
-      <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
+      <p className="mt-1.5 text-xs leading-relaxed text-fg-muted">
         上の入力から曲名を入れると、
         <br />
         ステージが1つ立ち上がります。

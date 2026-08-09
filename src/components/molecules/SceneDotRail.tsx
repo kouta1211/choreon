@@ -76,20 +76,20 @@ export function SceneDotRail({
         {/* 未通過のレール */}
         <span
           aria-hidden
-          className="absolute inset-x-0 top-1/2 block h-[3px] -translate-y-1/2 rounded-full bg-zinc-700"
+          className="absolute inset-x-0 top-1/2 block h-[3px] -translate-y-1/2 rounded-full bg-line-strong"
         />
         {/* 通過済み */}
         <motion.span
           aria-hidden
           style={{ width: percent }}
-          className="absolute top-1/2 left-0 block h-[3px] -translate-y-1/2 rounded-full bg-pink-500"
+          className="absolute top-1/2 left-0 block h-[3px] -translate-y-1/2 rounded-full bg-accent"
         />
         {/* シーンの目盛り。区間の切れ目が分かるようにする */}
         {scenes.map((scene, index) => (
           <span
             key={scene.id}
             aria-hidden
-            className="absolute top-1/2 block h-[3px] w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-zinc-500"
+            className="absolute top-1/2 block h-[3px] w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-fg-muted"
             style={{ left: `${(index / lastIndex) * 100}%` }}
           />
         ))}
@@ -97,7 +97,7 @@ export function SceneDotRail({
         <motion.span
           aria-hidden
           style={{ left: percent }}
-          className="absolute top-1/2 block h-[11px] w-[11px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-pink-500 shadow-[0_0_0_3px_rgba(236,72,153,0.25)]"
+          className="absolute top-1/2 block h-[11px] w-[11px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent shadow-[0_0_0_3px_color-mix(in_oklab,var(--accent)_25%,transparent)]"
         />
 
         <input
@@ -112,7 +112,7 @@ export function SceneDotRail({
           className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
         />
       </div>
-      <span className="shrink-0 font-mono text-[10px] font-medium text-zinc-600">
+      <span className="shrink-0 font-mono text-[10px] font-medium text-fg-muted">
         {selectedIndex + 1}/{scenes.length}
       </span>
     </div>

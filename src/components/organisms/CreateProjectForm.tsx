@@ -46,14 +46,14 @@ export function CreateProjectForm({ userId }: Props) {
           placeholder="新しいプロジェクト名"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          className="h-[46px] w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3.5 text-sm text-zinc-50 placeholder:text-zinc-600 focus:border-pink-500 focus:ring-[3px] focus:ring-pink-500/16 focus:outline-none"
+          className="h-[46px] w-full rounded-xl border border-line-strong bg-surface px-3.5 text-sm text-fg-strong placeholder:text-fg-muted focus:border-accent focus:ring-[3px] focus:ring-accent/16 focus:outline-none"
         />
       </label>
       <button
         type="submit"
         disabled={isSubmitting || !title.trim()}
         aria-label="プロジェクトを作成"
-        className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-xl bg-pink-500 text-white disabled:opacity-50"
+        className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-xl bg-accent text-accent-fg disabled:opacity-50"
       >
         <Plus size={20} />
       </button>

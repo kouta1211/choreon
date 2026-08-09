@@ -42,7 +42,7 @@ export function EditorHeader({ project }: Props) {
         <Link
           href="/"
           aria-label="プロジェクト一覧に戻る"
-          className="flex h-9 w-9 shrink-0 items-center justify-center text-zinc-400"
+          className="flex h-9 w-9 shrink-0 items-center justify-center text-fg-sub"
         >
           <ChevronLeft size={20} />
         </Link>
@@ -56,7 +56,7 @@ export function EditorHeader({ project }: Props) {
           type="button"
           onClick={() => setAddDancerSheetOpen(true)}
           aria-label="ダンサーを追加"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-zinc-400"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-fg-sub"
         >
           <UserPlus size={17} />
         </button>

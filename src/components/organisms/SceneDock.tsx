@@ -102,7 +102,7 @@ export function SceneDock({ project }: Props) {
 
 
   return (
-    <div className="rounded-t-[18px] border-t border-zinc-800 bg-zinc-900 pt-2 pb-3 md:rounded-none">
+    <div className="rounded-t-[18px] border-t border-line bg-surface pt-2 pb-3 md:rounded-none">
       <button
         type="button"
         onClick={() => setSceneSheetOpen(true)}
@@ -111,7 +111,7 @@ export function SceneDock({ project }: Props) {
       >
         <span
           aria-hidden
-          className="block h-1 w-9 rounded-full bg-zinc-700"
+          className="block h-1 w-9 rounded-full bg-line-strong"
         />
       </button>
 
@@ -124,7 +124,7 @@ export function SceneDock({ project }: Props) {
             type="button"
             onClick={handleTogglePlay}
             aria-label={isPlaying ? "再生を停止" : "最後のシーンまで再生"}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pink-500 text-white"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-fg"
           >
             {isPlaying ? (
               <Pause size={16} fill="currentColor" />
@@ -141,7 +141,7 @@ export function SceneDock({ project }: Props) {
               label="シーン名"
               textClassName="text-sm font-semibold"
               prefix={
-                <span className="shrink-0 font-mono text-[11px] font-semibold text-pink-400">
+                <span className="shrink-0 font-mono text-[11px] font-semibold text-accent-soft">
                   S{selectedIndex + 1}
                 </span>
               }
@@ -169,7 +169,7 @@ export function SceneDock({ project }: Props) {
             type="button"
             onClick={() => confirmDelete(selectedScene)}
             aria-label="シーンを削除"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-600 hover:bg-red-950 hover:text-red-400"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-fg-muted hover:bg-red-950 hover:text-red-400"
           >
             <Trash2 size={15} />
           </button>

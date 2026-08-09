@@ -65,14 +65,14 @@ export function Stage({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1.5">
-      <p className="text-center text-[10px] font-semibold tracking-[0.16em] text-zinc-600">
+      <p className="text-center text-[10px] font-semibold tracking-[0.16em] text-fg-muted">
         バックステージ
       </p>
       <div className="flex min-h-0 w-full flex-1 items-center justify-center [container-type:size]">
         <div
           ref={ref}
-          className={`relative touch-none rounded-xl border-2 border-pink-500 bg-[#141417] transition-colors ${
-            focusedDancerId ? "bg-[#0f0f11]" : ""
+          className={`relative touch-none rounded-xl border-2 border-accent bg-stage transition-colors ${
+            focusedDancerId ? "bg-surface-sunken" : ""
           }`}
           style={{
             aspectRatio: `${widthUnits} / ${heightUnits}`,
@@ -83,7 +83,7 @@ export function Stage({
           {isGridVisible && (
             <div
               data-testid="stage-grid"
-              className={`pointer-events-none absolute inset-0 rounded-[10px] bg-[linear-gradient(to_right,#2c2c32_1px,transparent_1px),linear-gradient(to_bottom,#2c2c32_1px,transparent_1px)] transition-opacity ${
+              className={`pointer-events-none absolute inset-0 rounded-[10px] bg-[linear-gradient(to_right,var(--stage-grid)_1px,transparent_1px),linear-gradient(to_bottom,var(--stage-grid)_1px,transparent_1px)] transition-opacity ${
                 focusedDancerId ? "opacity-40" : ""
               }`}
               style={{
@@ -95,7 +95,7 @@ export function Stage({
             <div
               data-testid="stage-centerline"
               aria-hidden
-              className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-pink-500/50"
+              className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-accent/50"
             />
           )}
           {/* 格子スナップが効いている間、吸着先の格子線をハイライトする。
@@ -104,7 +104,7 @@ export function Stage({
             <div
               data-testid="stage-snap-line-x"
               aria-hidden
-              className="pointer-events-none absolute inset-y-0 w-0.5 -translate-x-1/2 bg-pink-400 shadow-[0_0_6px_1px_rgba(244,114,182,0.9)]"
+              className="pointer-events-none absolute inset-y-0 w-0.5 -translate-x-1/2 bg-accent-soft shadow-[0_0_6px_1px_color-mix(in_oklab,var(--accent-soft)_90%,transparent)]"
               style={{ left: `${(dragSnapLine.x / widthUnits) * 100}%` }}
             />
           )}
@@ -112,7 +112,7 @@ export function Stage({
             <div
               data-testid="stage-snap-line-y"
               aria-hidden
-              className="pointer-events-none absolute inset-x-0 h-0.5 -translate-y-1/2 bg-pink-400 shadow-[0_0_6px_1px_rgba(244,114,182,0.9)]"
+              className="pointer-events-none absolute inset-x-0 h-0.5 -translate-y-1/2 bg-accent-soft shadow-[0_0_6px_1px_color-mix(in_oklab,var(--accent-soft)_90%,transparent)]"
               style={{ top: `${(dragSnapLine.y / heightUnits) * 100}%` }}
             />
           )}
@@ -130,7 +130,7 @@ export function Stage({
         {belowStageLeft && (
           <span className="absolute left-0">{belowStageLeft}</span>
         )}
-        <p className="text-center text-[10px] font-semibold tracking-[0.16em] text-zinc-600">
+        <p className="text-center text-[10px] font-semibold tracking-[0.16em] text-fg-muted">
           客席側
         </p>
       </div>
@@ -162,7 +162,7 @@ export function EmptyStage({
     <div className="flex min-h-0 flex-1 items-center justify-center [container-type:size]">
       <div
         data-testid="empty-stage"
-        className="relative flex flex-col items-center justify-center gap-2.5 rounded-xl border-2 border-dashed border-zinc-700 bg-[#141417]"
+        className="relative flex flex-col items-center justify-center gap-2.5 rounded-xl border-2 border-dashed border-line-strong bg-stage"
         style={{
           aspectRatio: `${widthUnits} / ${heightUnits}`,
           width: stageWidthRule(widthUnits, heightUnits),
@@ -170,19 +170,19 @@ export function EmptyStage({
       >
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-[10px] bg-[linear-gradient(to_right,#232329_1px,transparent_1px),linear-gradient(to_bottom,#232329_1px,transparent_1px)] opacity-70"
+          className="pointer-events-none absolute inset-0 rounded-[10px] bg-[linear-gradient(to_right,var(--stage-grid-soft)_1px,transparent_1px),linear-gradient(to_bottom,var(--stage-grid-soft)_1px,transparent_1px)] opacity-70"
           style={{
             backgroundSize: `${100 / widthUnits}% ${100 / heightUnits}%`,
           }}
         />
-        <p className="relative text-[13.5px] font-medium text-zinc-300">
+        <p className="relative text-[13.5px] font-medium text-fg">
           まだシーンがありません
         </p>
         <button
           type="button"
           onClick={onCreateScene}
           disabled={isCreating}
-          className="relative flex h-10 items-center gap-1.5 rounded-[10px] bg-pink-500 px-4 text-[13px] font-semibold whitespace-nowrap text-white disabled:opacity-50"
+          className="relative flex h-10 items-center gap-1.5 rounded-[10px] bg-accent px-4 text-[13px] font-semibold whitespace-nowrap text-accent-fg disabled:opacity-50"
         >
           最初のシーンを作る
         </button>

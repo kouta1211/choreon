@@ -92,8 +92,8 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
                 key={scene.id}
                 className={`overflow-hidden rounded-xl ${
                   isSelected
-                    ? "border-2 border-pink-500 bg-[#241019]"
-                    : "border border-zinc-800 bg-[#1f1f23]"
+                    ? "border-2 border-accent bg-accent-row"
+                    : "border border-line bg-surface-raised"
                 }`}
               >
                 <div className="flex items-center gap-2.5 p-2.5">
@@ -114,7 +114,7 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
                     <div className="flex items-baseline gap-1.5">
                       <span
                         className={`font-mono text-[10px] font-semibold ${
-                          isSelected ? "text-pink-400" : "text-zinc-600"
+                          isSelected ? "text-accent-soft" : "text-fg-muted"
                         }`}
                       >
                         {String(index + 1).padStart(2, "0")}
@@ -131,14 +131,14 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
                             if (event.key === "Enter") event.currentTarget.blur();
                             if (event.key === "Escape") setRenamingSceneId(null);
                           }}
-                          className="min-w-0 flex-1 rounded-[9px] border border-pink-500 bg-zinc-800 px-2 py-0.5 text-sm text-zinc-50 ring-[3px] ring-pink-500/15 outline-none"
+                          className="min-w-0 flex-1 rounded-[9px] border border-accent bg-surface-strong px-2 py-0.5 text-sm text-fg-strong ring-[3px] ring-accent/15 outline-none"
                         />
                       ) : (
                         <span
                           className={`min-w-0 truncate text-sm ${
                             isSelected
                               ? "font-semibold text-white"
-                              : "font-medium text-zinc-50"
+                              : "font-medium text-fg-strong"
                           }`}
                         >
                           {scene.name}
@@ -147,7 +147,7 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
                     </div>
                     <span
                       className={`mt-1 block font-mono text-[10.5px] ${
-                        isSelected ? "text-pink-300" : "text-zinc-500"
+                        isSelected ? "text-accent-bright" : "text-fg-muted"
                       }`}
                     >
                       {index === 0
@@ -190,7 +190,7 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
         type="button"
         onClick={addScene}
         disabled={isCreating}
-        className="flex h-13 items-center justify-center gap-1.5 rounded-xl border border-dashed border-zinc-700 text-[13px] font-medium whitespace-nowrap text-zinc-400 disabled:opacity-50"
+        className="flex h-13 items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong text-[13px] font-medium whitespace-nowrap text-fg-sub disabled:opacity-50"
       >
         <Plus size={15} className="shrink-0" />
         いまの配置をコピーして追加
@@ -217,10 +217,10 @@ function SheetAction({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[9px] border bg-zinc-900 text-xs font-medium whitespace-nowrap disabled:opacity-50 ${
+      className={`flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[9px] border bg-surface text-xs font-medium whitespace-nowrap disabled:opacity-50 ${
         tone === "danger"
           ? "border-red-950 text-red-400"
-          : "border-zinc-700 text-zinc-300"
+          : "border-line-strong text-fg"
       }`}
     >
       <Icon size={13} className="shrink-0" />

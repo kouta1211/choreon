@@ -57,13 +57,13 @@ export function ConfirmDialog() {
       role="dialog"
       aria-modal
       aria-label={confirmRequest.title}
-      className="fixed inset-0 z-50 flex items-end justify-center bg-zinc-950/70 p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-scrim/70 p-4"
       onClick={(event) => {
         // 背景をタップしたときだけ閉じる(カード内のクリックは無視)
         if (event.target === event.currentTarget && !isRunning) closeConfirm();
       }}
     >
-      <div className="w-full max-w-md rounded-2xl border border-zinc-700 bg-zinc-900 p-[18px] shadow-2xl">
+      <div className="w-full max-w-md rounded-2xl border border-line-strong bg-surface p-[18px] shadow-2xl">
         <div className="flex items-start gap-3">
           <span
             aria-hidden
@@ -72,11 +72,11 @@ export function ConfirmDialog() {
             <Trash2 size={17} />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-[15px] leading-[1.35] font-semibold text-zinc-50">
+            <p className="text-[15px] leading-[1.35] font-semibold text-fg-strong">
               {confirmRequest.title}
             </p>
             {confirmRequest.description && (
-              <p className="mt-1.5 text-[12.5px] leading-[1.6] text-zinc-400">
+              <p className="mt-1.5 text-[12.5px] leading-[1.6] text-fg-sub">
                 {confirmRequest.description}
               </p>
             )}
@@ -85,7 +85,7 @@ export function ConfirmDialog() {
                 {confirmRequest.meta.map((item) => (
                   <span
                     key={item}
-                    className="rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 font-mono text-[11px] text-zinc-300"
+                    className="rounded-md border border-line-strong bg-surface-strong px-2 py-1 font-mono text-[11px] text-fg"
                   >
                     {item}
                   </span>
@@ -101,7 +101,7 @@ export function ConfirmDialog() {
             type="button"
             onClick={closeConfirm}
             disabled={isRunning}
-            className="h-[46px] flex-1 rounded-[11px] border border-zinc-700 text-sm font-medium text-zinc-50 disabled:opacity-50"
+            className="h-[46px] flex-1 rounded-[11px] border border-line-strong text-sm font-medium text-fg-strong disabled:opacity-50"
           >
             キャンセル
           </button>

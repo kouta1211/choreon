@@ -19,7 +19,7 @@ export function SignOutButton() {
     <button
       type="button"
       onClick={handleClick}
-      className="text-sm text-zinc-400 underline"
+      className="text-sm text-fg-sub underline"
     >
       ログアウト
     </button>

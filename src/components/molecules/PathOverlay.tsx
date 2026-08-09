@@ -121,7 +121,7 @@ export function PathOverlay({
         id,
         isEditable,
         activeControlPoint,
-        color: dancers[id]?.color ?? "#ec4899",
+        color: dancers[id]?.color ?? "var(--dancer-6)",
         name: dancers[id]?.name ?? "",
         x1: (from.xCoordinate / stageWidthUnits) * 100,
         y1: (from.yCoordinate / stageHeightUnits) * 100,

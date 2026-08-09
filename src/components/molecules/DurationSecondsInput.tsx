@@ -79,10 +79,10 @@ export function DurationSecondsInput({
 
   return (
     <label
-      className={`inline-flex w-fit items-center gap-1 rounded-[7px] border px-2 py-[3px] font-mono text-[11px] font-medium focus-within:border-pink-500 ${
+      className={`inline-flex w-fit items-center gap-1 rounded-[7px] border px-2 py-[3px] font-mono text-[11px] font-medium focus-within:border-accent ${
         tone === "dancer"
-          ? "border-zinc-700 bg-zinc-900 text-red-300"
-          : "border-zinc-700 bg-zinc-800 text-zinc-300"
+          ? "border-line-strong bg-surface text-red-300"
+          : "border-line-strong bg-surface-strong text-fg"
       }`}
     >
       <Timer size={12} aria-hidden className="shrink-0" />
@@ -104,7 +104,7 @@ export function DurationSecondsInput({
         // ブラウザ標準のスピナーは幅を食うので隠す
         className="w-9 bg-transparent text-center outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
-      <span aria-hidden className="whitespace-nowrap text-zinc-500">
+      <span aria-hidden className="whitespace-nowrap text-fg-muted">
         {suffix}
       </span>
     </label>

@@ -27,7 +27,7 @@ export function Switch({
   const toggle = (
     <span
       className={`relative block h-6 w-11 shrink-0 rounded-full transition-colors ${
-        checked ? "bg-pink-500" : "bg-zinc-700"
+        checked ? "bg-accent" : "bg-line-strong"
       }`}
     >
       <span
@@ -44,7 +44,7 @@ export function Switch({
       role="switch"
       aria-checked={checked}
       onClick={onChange}
-      className={`flex cursor-pointer items-center gap-2.5 text-sm text-zinc-300 ${
+      className={`flex cursor-pointer items-center gap-2.5 text-sm text-fg ${
         fullWidth ? "w-full justify-between rounded-lg px-2 py-2 text-left" : "w-fit"
       }`}
     >
@@ -55,13 +55,13 @@ export function Switch({
               <Icon
                 size={16}
                 aria-hidden
-                className={`shrink-0 ${checked ? "text-pink-400" : "text-zinc-500"}`}
+                className={`shrink-0 ${checked ? "text-accent-soft" : "text-fg-muted"}`}
               />
             )}
             <span className="min-w-0">
               <span className="block truncate">{label}</span>
               {description && (
-                <span className="mt-0.5 block text-[11px] leading-snug text-zinc-500">
+                <span className="mt-0.5 block text-[11px] leading-snug text-fg-muted">
                   {description}
                 </span>
               )}

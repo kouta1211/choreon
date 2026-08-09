@@ -25,7 +25,7 @@ export function SaveToCloudButton() {
     <button
       type="button"
       onClick={() => openAuthDialog("signup")}
-      className="flex h-8 shrink-0 items-center gap-1.5 rounded-2xl bg-pink-500 pr-3 pl-2.5 text-xs font-semibold text-white"
+      className="flex h-8 shrink-0 items-center gap-1.5 rounded-2xl bg-accent pr-3 pl-2.5 text-xs font-semibold text-accent-fg"
     >
       <CloudUpload size={15} />
       保存

@@ -93,15 +93,15 @@ export function DisplayModeMenu() {
         aria-label="表示とモード"
         className={`relative flex h-9 w-9 items-center justify-center rounded-[10px] border transition-colors ${
           isOpen
-            ? "border-pink-500 bg-pink-500/12 text-pink-400"
-            : "border-zinc-700 text-zinc-400"
+            ? "border-accent bg-accent/12 text-accent-soft"
+            : "border-line-strong text-fg-sub"
         }`}
       >
         <SlidersHorizontal size={17} />
         {activeCount > 0 && (
           <span
             aria-hidden
-            className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-pink-500 px-1 font-mono text-[9px] font-semibold text-white"
+            className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 font-mono text-[9px] font-semibold text-accent-fg"
           >
             {activeCount}
           </span>
@@ -121,13 +121,13 @@ export function DisplayModeMenu() {
           <div
             role="menu"
             aria-label="表示とモード"
-            className="absolute top-full right-0 z-40 mt-2 w-64 rounded-xl border border-zinc-700 bg-zinc-900 p-1.5 shadow-2xl"
+            className="absolute top-full right-0 z-40 mt-2 w-64 rounded-xl border border-line-strong bg-surface p-1.5 shadow-2xl"
           >
             <div className="flex items-baseline justify-between px-2 pt-1 pb-2">
-              <span className="text-[11px] font-semibold tracking-wider text-zinc-500">
+              <span className="text-[11px] font-semibold tracking-wider text-fg-muted">
                 表示とモード
               </span>
-              <span className="font-mono text-[10px] text-zinc-600">
+              <span className="font-mono text-[10px] text-fg-muted">
                 {dancerCount}人 · {sceneCount}シーン
               </span>
             </div>

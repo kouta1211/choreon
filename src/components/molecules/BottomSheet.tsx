@@ -67,7 +67,7 @@ export function BottomSheet({
             type="button"
             aria-label="閉じる"
             onClick={onClose}
-            className="absolute inset-0 bg-zinc-950/60"
+            className="absolute inset-0 bg-scrim/60"
           />
 
           <motion.div
@@ -88,7 +88,7 @@ export function BottomSheet({
                 ? { duration: 0.16 }
                 : { type: "spring", stiffness: 420, damping: 38 }
             }
-            className={`relative mx-auto flex w-full max-w-md flex-col rounded-t-[22px] border-t border-zinc-700 bg-zinc-900 pt-2.5 shadow-[0_-16px_40px_rgba(0,0,0,0.5)] lg:rounded-2xl lg:border lg:pt-3 lg:shadow-2xl ${
+            className={`relative mx-auto flex w-full max-w-md flex-col rounded-t-[22px] border-t border-line-strong bg-surface pt-2.5 shadow-[0_-16px_40px_rgba(0,0,0,0.5)] lg:rounded-2xl lg:border lg:pt-3 lg:shadow-2xl ${
               isTall ? "h-[82dvh] lg:h-auto lg:max-h-[82dvh]" : "max-h-[82dvh]"
             } ${wideMaxWidthClassName}`}
           >
@@ -96,14 +96,14 @@ export function BottomSheet({
                 無いので出さない */}
             <span
               aria-hidden
-              className="mx-auto mb-3 block h-1 w-11 shrink-0 rounded-full bg-zinc-700 lg:hidden"
+              className="mx-auto mb-3 block h-1 w-11 shrink-0 rounded-full bg-line-strong lg:hidden"
             />
-            <div className="flex shrink-0 items-baseline justify-between gap-2 border-b border-zinc-800 px-[18px] pb-3">
-              <span className="text-base font-semibold text-zinc-50">
+            <div className="flex shrink-0 items-baseline justify-between gap-2 border-b border-line px-[18px] pb-3">
+              <span className="text-base font-semibold text-fg-strong">
                 {title}
               </span>
               {titleRight && (
-                <span className="shrink-0 font-mono text-[11px] text-zinc-500">
+                <span className="shrink-0 font-mono text-[11px] text-fg-muted">
                   {titleRight}
                 </span>
               )}

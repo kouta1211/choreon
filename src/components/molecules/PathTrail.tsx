@@ -139,7 +139,7 @@ export function PathTrail({
       return [
         {
           dancerId,
-          color: dancers[dancerId]?.color ?? "#ec4899",
+          color: dancers[dancerId]?.color ?? "var(--dancer-6)",
           x1,
           y1,
           controlX,

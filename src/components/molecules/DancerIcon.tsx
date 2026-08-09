@@ -99,7 +99,7 @@ function DancerMarkerImpl({
               cy={16}
               r={15}
               fill="none"
-              stroke="#ec4899"
+              stroke="var(--accent)"
               strokeWidth={2}
             />
           )}
@@ -112,7 +112,7 @@ function DancerMarkerImpl({
               cy={16}
               r={15}
               fill="none"
-              stroke="#ec4899"
+              stroke="var(--accent)"
               strokeWidth={2}
               strokeDasharray="3 3"
             />

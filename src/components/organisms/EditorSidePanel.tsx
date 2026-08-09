@@ -31,9 +31,9 @@ export function EditorSidePanel({ project, showScenes }: Props) {
   const activeTab: Tab = showScenes ? tab : "dancers";
 
   return (
-    <aside className="flex w-[288px] shrink-0 flex-col overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/60 xl:w-[300px]">
+    <aside className="flex w-[288px] shrink-0 flex-col overflow-hidden rounded-xl border border-line bg-surface/60 xl:w-[300px]">
       {showScenes ? (
-        <div className="flex shrink-0 gap-1 border-b border-zinc-800 p-2">
+        <div className="flex shrink-0 gap-1 border-b border-line p-2">
           {(
             [
               { value: "scenes" as const, label: "シーン", count: scenes.length },
@@ -47,8 +47,8 @@ export function EditorSidePanel({ project, showScenes }: Props) {
               onClick={() => setTab(item.value)}
               className={`h-[34px] flex-1 rounded-[9px] text-xs font-medium ${
                 activeTab === item.value
-                  ? "bg-pink-500 text-white"
-                  : "text-zinc-400"
+                  ? "bg-accent text-accent-fg"
+                  : "text-fg-sub"
               }`}
             >
               {item.label}
@@ -60,8 +60,8 @@ export function EditorSidePanel({ project, showScenes }: Props) {
       {activeTab === "scenes" ? (
         <>
           <div className="flex shrink-0 items-baseline justify-between gap-2 px-3.5 py-3">
-            <span className="text-sm font-semibold text-zinc-50">シーン</span>
-            <span className="shrink-0 font-mono text-[11px] text-zinc-500">
+            <span className="text-sm font-semibold text-fg-strong">シーン</span>
+            <span className="shrink-0 font-mono text-[11px] text-fg-muted">
               {scenes.length}件 · 合計 {totalTransitionSeconds(scenes)}s
             </span>
           </div>

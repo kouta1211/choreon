@@ -97,14 +97,14 @@ export function TemplateHint() {
   if (!isUntouchedCopy && !isIdle) return null;
 
   return (
-    <div className="absolute inset-x-0 bottom-full z-20 mx-3 mb-2 flex items-start gap-2.5 rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2.5 shadow-xl">
+    <div className="absolute inset-x-0 bottom-full z-20 mx-3 mb-2 flex items-start gap-2.5 rounded-xl border border-line-strong bg-surface-strong px-3 py-2.5 shadow-xl">
       <span
         aria-hidden
-        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-pink-500/16 text-pink-400"
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-accent/16 text-accent-soft"
       >
         <LayoutGrid size={14} />
       </span>
-      <p className="min-w-0 flex-1 text-[11.5px] leading-relaxed text-zinc-300">
+      <p className="min-w-0 flex-1 text-[11.5px] leading-relaxed text-fg">
         {isUntouchedCopy
           ? "前のシーンと同じ配置のままです。既成のフォーメーションから選ぶと、1回で組み替えられます。"
           : "既成のフォーメーションから選ぶと、この人数に合う形を1回で当てられます。"}
@@ -112,7 +112,7 @@ export function TemplateHint() {
       <button
         type="button"
         onClick={() => setTemplateSheetOpen(true)}
-        className="h-[30px] shrink-0 rounded-lg bg-pink-500 px-2.5 text-[11px] font-semibold whitespace-nowrap text-white"
+        className="h-[30px] shrink-0 rounded-lg bg-accent px-2.5 text-[11px] font-semibold whitespace-nowrap text-accent-fg"
       >
         形から選ぶ
       </button>
@@ -120,7 +120,7 @@ export function TemplateHint() {
         type="button"
         onClick={() => dismissTemplateHint(selectedSceneId)}
         aria-label="ヒントを閉じる"
-        className="flex h-[30px] w-6 shrink-0 items-center justify-center rounded-lg text-zinc-500"
+        className="flex h-[30px] w-6 shrink-0 items-center justify-center rounded-lg text-fg-muted"
       >
         <X size={14} />
       </button>

@@ -71,15 +71,15 @@ export function SceneThumbnail({
       {...listeners}
     >
       <div
-        className={`relative w-full overflow-hidden rounded-md bg-[#0f0f11] transition-colors ${
-          isSelected ? "border-2 border-pink-500" : "border border-zinc-700"
+        className={`relative w-full overflow-hidden rounded-md bg-surface-sunken transition-colors ${
+          isSelected ? "border-2 border-accent" : "border border-line-strong"
         }`}
         style={{ aspectRatio: `${stageWidthUnits} / ${stageHeightUnits}` }}
       >
         {showGrid && (
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#232329_1px,transparent_1px),linear-gradient(to_bottom,#232329_1px,transparent_1px)]"
+            className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,var(--stage-grid-soft)_1px,transparent_1px),linear-gradient(to_bottom,var(--stage-grid-soft)_1px,transparent_1px)]"
             style={{
               backgroundSize: `${100 / stageWidthUnits}% ${100 / stageHeightUnits}%`,
             }}
@@ -108,14 +108,14 @@ export function SceneThumbnail({
         <div className="mt-1 flex w-full items-baseline justify-between gap-1">
           <span
             className={`min-w-0 truncate text-[11px] ${
-              isSelected ? "font-semibold text-pink-400" : "text-zinc-400"
+              isSelected ? "font-semibold text-accent-soft" : "text-fg-sub"
             }`}
           >
             {scene.name}
           </span>
           <span
             className={`shrink-0 font-mono text-[9px] ${
-              isSelected ? "font-semibold text-pink-400" : "text-zinc-600"
+              isSelected ? "font-semibold text-accent-soft" : "text-fg-muted"
             }`}
           >
             {String(index).padStart(2, "0")}

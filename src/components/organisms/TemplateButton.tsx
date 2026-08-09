@@ -34,13 +34,13 @@ export function TemplateButton() {
         onClick={() => setTemplateSheetOpen(true)}
         disabled={!isAvailable}
         aria-label="フォーメーションから選ぶ"
-        className="relative flex h-11 w-11 items-center justify-center rounded-[13px] border border-zinc-700 bg-zinc-900/90 text-zinc-300 disabled:pointer-events-none disabled:opacity-30"
+        className="relative flex h-11 w-11 items-center justify-center rounded-[13px] border border-line-strong bg-surface/90 text-fg disabled:pointer-events-none disabled:opacity-30"
       >
         <LayoutGrid size={18} />
         {isAvailable && (
           <span
             aria-hidden
-            className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-zinc-800 px-1 font-mono text-[9px] font-semibold text-zinc-300"
+            className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-surface-strong px-1 font-mono text-[9px] font-semibold text-fg"
           >
             {dancerCount}
           </span>

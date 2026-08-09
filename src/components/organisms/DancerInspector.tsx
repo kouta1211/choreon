@@ -166,7 +166,7 @@ export function DancerInspector() {
     //
     // 面にそのダンサーの色を薄く流し、左端に色帯を置く。誰の設定を
     // いじっているのかを、名前を読まなくても地の色で分かるようにするため
-    <div className="absolute inset-x-0 bottom-full z-20 mx-3 mb-2 flex items-stretch overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800 shadow-xl">
+    <div className="absolute inset-x-0 bottom-full z-20 mx-3 mb-2 flex items-stretch overflow-hidden rounded-xl border border-line-strong bg-surface-strong shadow-xl">
       <span
         aria-hidden
         className="w-1 shrink-0"
@@ -212,7 +212,7 @@ export function DancerInspector() {
               className={`ml-auto flex h-7 w-7 items-center justify-center rounded-lg ${
                 isFocused
                   ? "bg-amber-950 text-amber-400"
-                  : "text-zinc-500 hover:bg-zinc-700"
+                  : "text-fg-muted hover:bg-line-strong"
               }`}
             >
               <Focus size={15} />
@@ -225,7 +225,7 @@ export function DancerInspector() {
               onClick={handleDelete}
               disabled={isDeleting}
               aria-label="ダンサーを削除"
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-500 hover:bg-red-950 hover:text-red-400 disabled:opacity-50"
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-fg-muted hover:bg-red-950 hover:text-red-400 disabled:opacity-50"
             >
               <Trash2 size={15} />
             </button>
@@ -236,7 +236,7 @@ export function DancerInspector() {
               type="button"
               onClick={() => selectDancer(null)}
               aria-label="選択を解除"
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-700"
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-fg-muted hover:bg-line-strong"
             >
               <X size={15} />
             </button>
@@ -252,14 +252,14 @@ export function DancerInspector() {
               onClick={() => handleColorChange(color)}
               className={`h-[22px] w-[22px] rounded-full ${
                 dancer.color === color
-                  ? "ring-2 ring-pink-500 ring-offset-2 ring-offset-zinc-800"
+                  ? "ring-2 ring-accent ring-offset-2 ring-offset-surface-strong"
                   : ""
               }`}
               style={{ backgroundColor: color }}
             />
           ))}
           {isFocused && (
-            <span className="ml-auto text-[10px] text-zinc-500">
+            <span className="ml-auto text-[10px] text-fg-muted">
               マイ・フォーカス中
             </span>
           )}

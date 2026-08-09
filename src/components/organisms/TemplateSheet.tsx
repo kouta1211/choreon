@@ -64,7 +64,7 @@ export function TemplateSheet({ project }: Props) {
   const templates = templatesForCount(shownCount);
   const picked = pickedIndex === null ? null : (templates[pickedIndex] ?? null);
   const dancerColors = onStage.map(
-    (position) => dancers[position.dancerId]?.color ?? "#ec4899",
+    (position) => dancers[position.dancerId]?.color ?? "var(--dancer-6)",
   );
 
   // 開き直したときに前回の選択が残っていると、意図しない形を当ててしまう
@@ -90,9 +90,9 @@ export function TemplateSheet({ project }: Props) {
       wideMaxWidthClassName="lg:max-w-4xl"
     >
       {dancerCount < 2 ? (
-        <p className="m-3.5 rounded-xl border border-zinc-800 bg-[#1f1f23] p-4 text-xs leading-relaxed text-zinc-400">
+        <p className="m-3.5 rounded-xl border border-line bg-surface-raised p-4 text-xs leading-relaxed text-fg-sub">
           フォーメーションを選ぶには
-          <span className="text-zinc-50">2人以上</span>
+          <span className="text-fg-strong">2人以上</span>
           が必要です。ヘッダーの人物アイコンからダンサーを追加してください。
         </p>
       ) : (
@@ -126,8 +126,8 @@ export function TemplateSheet({ project }: Props) {
                   onClick={() => setPickedIndex(index)}
                   className={`flex flex-col gap-1.5 rounded-xl border p-2 text-left ${
                     isPicked
-                      ? "border-pink-500 bg-[#241019]"
-                      : "border-zinc-800 bg-[#1f1f23]"
+                      ? "border-accent bg-accent-row"
+                      : "border-line bg-surface-raised"
                   } ${shownCount === dancerCount ? "" : "opacity-75"}`}
                 >
                   <TemplatePreview
@@ -139,7 +139,7 @@ export function TemplateSheet({ project }: Props) {
                   />
                   <span
                     className={`truncate text-[11px] font-medium ${
-                      isPicked ? "text-pink-400" : "text-zinc-300"
+                      isPicked ? "text-accent-soft" : "text-fg"
                     }`}
                   >
                     {formation.name}
@@ -150,12 +150,12 @@ export function TemplateSheet({ project }: Props) {
           </div>
 
           {/* 確定ボタン。スクロールしても見失わないよう下端に貼り付ける */}
-          <div className="sticky bottom-0 -mx-3.5 -mb-3 bg-zinc-900/95 px-3.5 pt-2 pb-3 backdrop-blur">
+          <div className="sticky bottom-0 -mx-3.5 -mb-3 bg-surface/95 px-3.5 pt-2 pb-3 backdrop-blur">
             <button
               type="button"
               onClick={handleApply}
               disabled={!picked || isApplying}
-              className="h-12 w-full rounded-[11px] bg-pink-500 text-sm font-semibold text-white disabled:bg-zinc-800 disabled:text-zinc-500"
+              className="h-12 w-full rounded-[11px] bg-accent text-sm font-semibold text-accent-fg disabled:bg-surface-strong disabled:text-fg-muted"
             >
               {picked ? `${picked.name}に置き換える` : "この形に置き換える"}
             </button>
@@ -190,13 +190,13 @@ function CountRail({
             onClick={() => onChange(count)}
             className={`relative flex h-9 shrink-0 items-center rounded-[10px] border px-3 text-xs font-medium ${
               isShown
-                ? "border-pink-500 bg-pink-500/12 text-pink-400"
-                : "border-zinc-700 text-zinc-400"
+                ? "border-accent bg-accent/12 text-accent-soft"
+                : "border-line-strong text-fg-sub"
             }`}
           >
             <span className="font-mono">{count}</span>人
             {count === dancerCount && (
-              <span className="ml-1.5 rounded-[5px] bg-pink-500 px-1 py-px text-[9px] font-semibold text-white">
+              <span className="ml-1.5 rounded-[5px] bg-accent px-1 py-px text-[9px] font-semibold text-accent-fg">
                 いま
               </span>
             )}
@@ -234,7 +234,7 @@ function CountMismatchNote({
             style={{ backgroundColor: color }}
           />
         ))}
-        <span className="ml-1 text-[11px] text-zinc-500">
+        <span className="ml-1 text-[11px] text-fg-muted">
           いまステージにいる{dancerCount}人に合わせて表示しています
         </span>
       </div>
@@ -243,7 +243,7 @@ function CountMismatchNote({
 
   const gap = Math.abs(shownCount - dancerCount);
   return (
-    <p className="rounded-[10px] border border-pink-500/40 bg-pink-500/10 px-3 py-2 text-[11px] leading-relaxed text-pink-200">
+    <p className="rounded-[10px] border border-accent/40 bg-accent/10 px-3 py-2 text-[11px] leading-relaxed text-accent-bright">
       <span className="font-mono">{shownCount}</span>
       人ぶんの形です。
       {shownCount < dancerCount ? (
@@ -294,8 +294,8 @@ function TransformControls({
           onClick={() => onChange({ ...transform, [item.key]: !transform[item.key] })}
           className={`flex h-8 items-center gap-1.5 rounded-full border px-3 text-[11px] font-medium whitespace-nowrap ${
             transform[item.key]
-              ? "border-pink-500 bg-pink-500/12 text-pink-400"
-              : "border-zinc-700 text-zinc-400"
+              ? "border-accent bg-accent/12 text-accent-soft"
+              : "border-line-strong text-fg-sub"
           }`}
         >
           <item.icon size={13} />
@@ -303,7 +303,7 @@ function TransformControls({
         </button>
       ))}
 
-      <div className="flex overflow-hidden rounded-full border border-zinc-700">
+      <div className="flex overflow-hidden rounded-full border border-line-strong">
         {SPACING_LABELS.map((option) => (
           <button
             key={option.value}
@@ -312,8 +312,8 @@ function TransformControls({
             onClick={() => onChange({ ...transform, spacing: option.value })}
             className={`h-8 px-3 text-[11px] font-medium whitespace-nowrap ${
               transform.spacing === option.value
-                ? "bg-pink-500/12 text-pink-400"
-                : "text-zinc-400"
+                ? "bg-accent/12 text-accent-soft"
+                : "text-fg-sub"
             }`}
           >
             {option.label}
@@ -358,11 +358,11 @@ function TemplatePreview({
   return (
     <span
       aria-hidden
-      className="relative block w-full overflow-hidden rounded-md border border-zinc-700 bg-[#0f0f11]"
+      className="relative block w-full overflow-hidden rounded-md border border-line-strong bg-surface-sunken"
       style={{ aspectRatio: `${project.stageWidth} / ${project.stageHeight}` }}
     >
       <span
-        className="absolute inset-0 block bg-[linear-gradient(to_right,#232329_1px,transparent_1px),linear-gradient(to_bottom,#232329_1px,transparent_1px)]"
+        className="absolute inset-0 block bg-[linear-gradient(to_right,var(--stage-grid-soft)_1px,transparent_1px),linear-gradient(to_bottom,var(--stage-grid-soft)_1px,transparent_1px)]"
         style={{
           backgroundSize: `${100 / project.stageWidth}% ${100 / project.stageHeight}%`,
         }}
@@ -374,7 +374,7 @@ function TemplatePreview({
           <span
             key={index}
             className={`absolute block h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full ${
-              isUsed ? "" : "border border-zinc-600"
+              isUsed ? "" : "border border-line-strong"
             }`}
             style={{
               left: `${(point.x / project.stageWidth) * 100}%`,

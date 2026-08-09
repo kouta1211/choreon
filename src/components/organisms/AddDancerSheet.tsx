@@ -143,7 +143,7 @@ export function AddDancerSheet({ project }: Props) {
         className="flex flex-col gap-4 px-[18px] pt-4 pb-5"
       >
         <div className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-zinc-400">何人追加しますか?</span>
+          <span className="text-xs font-medium text-fg-sub">何人追加しますか?</span>
           <div className="flex items-center gap-3">
             <StepperButton
               label="1人減らす"
@@ -163,7 +163,7 @@ export function AddDancerSheet({ project }: Props) {
                 if (!Number.isFinite(parsed)) return;
                 setCount(Math.min(MAX_COUNT, Math.max(1, Math.round(parsed))));
               }}
-              className="h-[46px] w-20 rounded-[11px] border border-zinc-700 bg-zinc-800 text-center font-mono text-lg font-semibold text-zinc-50 focus:border-pink-500 focus:ring-[3px] focus:ring-pink-500/16 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              className="h-[46px] w-20 rounded-[11px] border border-line-strong bg-surface-strong text-center font-mono text-lg font-semibold text-fg-strong focus:border-accent focus:ring-[3px] focus:ring-accent/16 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
             <StepperButton
               label="1人増やす"
@@ -171,27 +171,27 @@ export function AddDancerSheet({ project }: Props) {
               onClick={() => setCount((value) => Math.min(MAX_COUNT, value + 1))}
               disabled={count >= MAX_COUNT}
             />
-            <span className="ml-1 text-sm text-zinc-500">人</span>
+            <span className="ml-1 text-sm text-fg-muted">人</span>
           </div>
         </div>
 
         {/* 何が作られるかを、追加する前に見せる */}
-        <div className="flex flex-col gap-2 rounded-xl border border-zinc-800 bg-[#1f1f23] p-3">
-          <span className="text-[11px] font-medium text-zinc-500">
+        <div className="flex flex-col gap-2 rounded-xl border border-line bg-surface-raised p-3">
+          <span className="text-[11px] font-medium text-fg-muted">
             名前と色は自動で決まります（あとで変更できます）
           </span>
           <div className="flex flex-wrap gap-1.5">
             {names.map((name, index) => (
               <span
                 key={name}
-                className="flex items-center gap-1.5 rounded-full border border-zinc-700 bg-zinc-900 py-1 pr-2.5 pl-1.5"
+                className="flex items-center gap-1.5 rounded-full border border-line-strong bg-surface py-1 pr-2.5 pl-1.5"
               >
                 <span
                   aria-hidden
                   className="block h-3.5 w-3.5 rounded-full"
                   style={{ backgroundColor: colors[index] }}
                 />
-                <span className="font-mono text-[11px] font-semibold text-zinc-200">
+                <span className="font-mono text-[11px] font-semibold text-fg">
                   {name}
                 </span>
               </span>
@@ -199,8 +199,8 @@ export function AddDancerSheet({ project }: Props) {
           </div>
         </div>
 
-        <p className="text-xs leading-relaxed text-zinc-500">
-          <span className="text-zinc-300">
+        <p className="text-xs leading-relaxed text-fg-muted">
+          <span className="text-fg">
             いま見ているシーンの空いているマス
           </span>
           に、中央から順に並びます。重ならないので、そのままドラッグで
@@ -211,14 +211,14 @@ export function AddDancerSheet({ project }: Props) {
           <button
             type="button"
             onClick={close}
-            className="h-12 flex-1 rounded-[11px] border border-zinc-700 text-sm font-medium text-zinc-50"
+            className="h-12 flex-1 rounded-[11px] border border-line-strong text-sm font-medium text-fg-strong"
           >
             キャンセル
           </button>
           <button
             type="submit"
             disabled={!selectedSceneId || isSubmitting}
-            className="h-12 flex-[2] rounded-[11px] bg-pink-500 text-[15px] font-semibold text-white disabled:opacity-50"
+            className="h-12 flex-[2] rounded-[11px] bg-accent text-[15px] font-semibold text-accent-fg disabled:opacity-50"
           >
             {count}人を追加する
           </button>
@@ -245,7 +245,7 @@ function StepperButton({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[11px] border border-zinc-700 text-zinc-300 disabled:opacity-30"
+      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[11px] border border-line-strong text-fg disabled:opacity-30"
     >
       <Icon size={18} />
     </button>
