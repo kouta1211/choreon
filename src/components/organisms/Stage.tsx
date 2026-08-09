@@ -182,7 +182,7 @@ export function EmptyStage({
           type="button"
           onClick={onCreateScene}
           disabled={isCreating}
-          className="relative flex h-10 items-center gap-1.5 rounded-[10px] bg-accent px-4 text-[13px] font-semibold whitespace-nowrap text-accent-fg disabled:opacity-50"
+          className="relative flex h-10 items-center gap-1.5 rounded-[calc(var(--radius)*0.8333)] bg-accent px-4 text-[13px] font-semibold whitespace-nowrap text-accent-fg disabled:opacity-50"
         >
           最初のシーンを作る
         </button>

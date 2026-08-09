@@ -36,6 +36,21 @@
   --color-accent-bright: var(--accent-bright);
   --color-accent-row: var(--accent-row);
 
+  /* 角丸はすべて --radius(＝ステージの角丸)からの比で決める。
+     テーマが --radius を 0 にすれば画面じゅうの角が一斉に落ち、
+     14pxにすれば全体がまとめて丸くなる。仕様の「--radius 1個で
+     全体が付いてくる」はこの形。
+
+     係数は「元の値 ÷ 12px」なので、既定(12px)では従来と1px単位で同じ。
+     Tailwind標準の名前(sm/md/lg/xl/2xl/3xl)を上書きしてあるため、
+     rounded-lg などを書いている箇所は直さなくてもテーマに追従する。
+     rounded-full は円そのもの(再生ボタン・ドット)なので対象外 */
+  --radius-sm: calc(var(--radius) * 0.3333);
+  --radius-md: calc(var(--radius) * 0.5);
+  --radius-lg: calc(var(--radius) * 0.6667);
+  --radius-xl: calc(var(--radius) * 1);
+  --radius-2xl: calc(var(--radius) * 1.3333);
+  --radius-3xl: calc(var(--radius) * 2);
   --radius-stage: var(--radius);
 
   --font-sans: var(--font-geist-sans);

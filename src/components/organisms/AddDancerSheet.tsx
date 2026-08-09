@@ -164,7 +164,7 @@ export function AddDancerSheet({ project }: Props) {
                 if (!Number.isFinite(parsed)) return;
                 setCount(Math.min(MAX_COUNT, Math.max(1, Math.round(parsed))));
               }}
-              className="h-[46px] w-20 rounded-[11px] border border-line-strong bg-surface-strong text-center font-mono text-lg font-semibold text-fg-strong focus:border-accent focus:ring-[3px] focus:ring-accent/16 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              className="h-[46px] w-20 rounded-[calc(var(--radius)*0.9167)] border border-line-strong bg-surface-strong text-center font-mono text-lg font-semibold text-fg-strong focus:border-accent focus:ring-[3px] focus:ring-accent/16 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
             <StepperButton
               label="1人増やす"
@@ -212,14 +212,14 @@ export function AddDancerSheet({ project }: Props) {
           <button
             type="button"
             onClick={close}
-            className="h-12 flex-1 rounded-[11px] border border-line-strong text-sm font-medium text-fg-strong"
+            className="h-12 flex-1 rounded-[calc(var(--radius)*0.9167)] border border-line-strong text-sm font-medium text-fg-strong"
           >
             キャンセル
           </button>
           <button
             type="submit"
             disabled={!selectedSceneId || isSubmitting}
-            className="h-12 flex-[2] rounded-[11px] bg-accent text-[15px] font-semibold text-accent-fg disabled:opacity-50"
+            className="h-12 flex-[2] rounded-[calc(var(--radius)*0.9167)] bg-accent text-[15px] font-semibold text-accent-fg disabled:opacity-50"
           >
             {count}人を追加する
           </button>
@@ -246,7 +246,7 @@ function StepperButton({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[11px] border border-line-strong text-fg disabled:opacity-30"
+      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[calc(var(--radius)*0.9167)] border border-line-strong text-fg disabled:opacity-30"
     >
       <Icon size={18} />
     </button>

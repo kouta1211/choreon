@@ -102,7 +102,7 @@ export function SceneDock({ project }: Props) {
 
 
   return (
-    <div className="rounded-t-[18px] border-t border-line bg-surface pt-2 pb-3 md:rounded-none">
+    <div className="rounded-t-[calc(var(--radius)*1.5)] border-t border-line bg-surface pt-2 pb-3 md:rounded-none">
       <button
         type="button"
         onClick={() => setSceneSheetOpen(true)}

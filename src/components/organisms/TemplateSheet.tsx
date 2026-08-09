@@ -156,7 +156,7 @@ export function TemplateSheet({ project }: Props) {
               type="button"
               onClick={handleApply}
               disabled={!picked || isApplying}
-              className="h-12 w-full rounded-[11px] bg-accent text-sm font-semibold text-accent-fg disabled:bg-surface-strong disabled:text-fg-muted"
+              className="h-12 w-full rounded-[calc(var(--radius)*0.9167)] bg-accent text-sm font-semibold text-accent-fg disabled:bg-surface-strong disabled:text-fg-muted"
             >
               {picked ? `${picked.name}に置き換える` : "この形に置き換える"}
             </button>
@@ -189,7 +189,7 @@ function CountRail({
             type="button"
             aria-pressed={isShown}
             onClick={() => onChange(count)}
-            className={`relative flex h-9 shrink-0 items-center rounded-[10px] border px-3 text-xs font-medium ${
+            className={`relative flex h-9 shrink-0 items-center rounded-[calc(var(--radius)*0.8333)] border px-3 text-xs font-medium ${
               isShown
                 ? "border-accent bg-accent/12 text-accent-soft"
                 : "border-line-strong text-fg-sub"
@@ -197,7 +197,7 @@ function CountRail({
           >
             <span className="font-mono">{count}</span>人
             {count === dancerCount && (
-              <span className="ml-1.5 rounded-[5px] bg-accent px-1 py-px text-[9px] font-semibold text-accent-fg">
+              <span className="ml-1.5 rounded-[calc(var(--radius)*0.4167)] bg-accent px-1 py-px text-[9px] font-semibold text-accent-fg">
                 いま
               </span>
             )}
@@ -244,7 +244,7 @@ function CountMismatchNote({
 
   const gap = Math.abs(shownCount - dancerCount);
   return (
-    <p className="rounded-[10px] border border-accent/40 bg-accent/10 px-3 py-2 text-[11px] leading-relaxed text-accent-bright">
+    <p className="rounded-[calc(var(--radius)*0.8333)] border border-accent/40 bg-accent/10 px-3 py-2 text-[11px] leading-relaxed text-accent-bright">
       <span className="font-mono">{shownCount}</span>
       人ぶんの形です。
       {shownCount < dancerCount ? (

@@ -88,7 +88,7 @@ export function BottomSheet({
                 ? { duration: 0.16 }
                 : { type: "spring", stiffness: 420, damping: 38 }
             }
-            className={`relative mx-auto flex w-full max-w-md flex-col rounded-t-[22px] border-t border-line-strong bg-surface pt-2.5 shadow-[0_-16px_40px_rgba(0,0,0,0.5)] lg:rounded-2xl lg:border lg:pt-3 lg:shadow-2xl ${
+            className={`relative mx-auto flex w-full max-w-md flex-col rounded-t-[calc(var(--radius)*1.8333)] border-t border-line-strong bg-surface pt-2.5 shadow-[0_-16px_40px_rgba(0,0,0,0.5)] lg:rounded-2xl lg:border lg:pt-3 lg:shadow-2xl ${
               isTall ? "h-[82dvh] lg:h-auto lg:max-h-[82dvh]" : "max-h-[82dvh]"
             } ${wideMaxWidthClassName}`}
           >

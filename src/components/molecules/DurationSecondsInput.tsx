@@ -79,7 +79,7 @@ export function DurationSecondsInput({
 
   return (
     <label
-      className={`inline-flex w-fit items-center gap-1 rounded-[7px] border px-2 py-[3px] font-mono text-[11px] font-medium focus-within:border-accent ${
+      className={`inline-flex w-fit items-center gap-1 rounded-[calc(var(--radius)*0.5833)] border px-2 py-[3px] font-mono text-[11px] font-medium focus-within:border-accent ${
         tone === "dancer"
           ? "border-line-strong bg-surface text-red-300"
           : "border-line-strong bg-surface-strong text-fg"

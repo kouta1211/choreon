@@ -91,7 +91,7 @@ export function DisplayModeMenu() {
         aria-expanded={isOpen}
         aria-haspopup="menu"
         aria-label="表示とモード"
-        className={`relative flex h-9 w-9 items-center justify-center rounded-[10px] border transition-colors ${
+        className={`relative flex h-9 w-9 items-center justify-center rounded-[calc(var(--radius)*0.8333)] border transition-colors ${
           isOpen
             ? "border-accent bg-accent/12 text-accent-soft"
             : "border-line-strong text-fg-sub"

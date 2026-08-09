@@ -67,7 +67,7 @@ export function ConfirmDialog() {
         <div className="flex items-start gap-3">
           <span
             aria-hidden
-            className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-red-950 text-red-400"
+            className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[calc(var(--radius)*0.8333)] bg-red-950 text-red-400"
           >
             <Trash2 size={17} />
           </span>
@@ -101,7 +101,7 @@ export function ConfirmDialog() {
             type="button"
             onClick={closeConfirm}
             disabled={isRunning}
-            className="h-[46px] flex-1 rounded-[11px] border border-line-strong text-sm font-medium text-fg-strong disabled:opacity-50"
+            className="h-[46px] flex-1 rounded-[calc(var(--radius)*0.9167)] border border-line-strong text-sm font-medium text-fg-strong disabled:opacity-50"
           >
             キャンセル
           </button>
@@ -109,7 +109,7 @@ export function ConfirmDialog() {
             type="button"
             onClick={handleConfirm}
             disabled={isRunning}
-            className="h-[46px] flex-1 rounded-[11px] bg-red-600 text-sm font-semibold text-white disabled:opacity-50"
+            className="h-[46px] flex-1 rounded-[calc(var(--radius)*0.9167)] bg-red-600 text-sm font-semibold text-white disabled:opacity-50"
           >
             {isRunning
               ? "削除中..."

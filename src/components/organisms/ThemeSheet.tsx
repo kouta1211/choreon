@@ -90,7 +90,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
                     type="button"
                     aria-pressed={isSelected}
                     onClick={() => setAppearance({ texture: texture.id })}
-                    className={`h-9 rounded-[9px] border px-3 text-[12px] ${
+                    className={`h-9 rounded-[calc(var(--radius)*0.75)] border px-3 text-[12px] ${
                       isSelected
                         ? "border-accent bg-accent/12 font-semibold text-accent-soft"
                         : "border-line-strong text-fg-sub"

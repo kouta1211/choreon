@@ -131,7 +131,7 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
                             if (event.key === "Enter") event.currentTarget.blur();
                             if (event.key === "Escape") setRenamingSceneId(null);
                           }}
-                          className="min-w-0 flex-1 rounded-[9px] border border-accent bg-surface-strong px-2 py-0.5 text-sm text-fg-strong ring-[3px] ring-accent/15 outline-none"
+                          className="min-w-0 flex-1 rounded-[calc(var(--radius)*0.75)] border border-accent bg-surface-strong px-2 py-0.5 text-sm text-fg-strong ring-[3px] ring-accent/15 outline-none"
                         />
                       ) : (
                         <span
@@ -217,7 +217,7 @@ function SheetAction({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[9px] border bg-surface text-xs font-medium whitespace-nowrap disabled:opacity-50 ${
+      className={`flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[calc(var(--radius)*0.75)] border bg-surface text-xs font-medium whitespace-nowrap disabled:opacity-50 ${
         tone === "danger"
           ? "border-red-950 text-red-400"
           : "border-line-strong text-fg"

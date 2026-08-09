@@ -28,7 +28,7 @@ export function ThemeButton() {
         type="button"
         aria-label="見た目を変える"
         onClick={() => setIsOpen(true)}
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] border border-accent bg-accent/12 text-accent-soft"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[calc(var(--radius)*1.0833)] border border-accent bg-accent/12 text-accent-soft"
       >
         <Palette size={19} />
       </button>

@@ -76,7 +76,7 @@ export function ProjectList({ projects }: Props) {
         {projects.map((project) => (
           <li
             key={project.id}
-            className="flex items-center gap-2.5 rounded-[14px] border border-line bg-surface p-3"
+            className="flex items-center gap-2.5 rounded-[calc(var(--radius)*1.1667)] border border-line bg-surface p-3"
           >
             <Link
               href={`/projects/${project.id}`}
@@ -121,7 +121,7 @@ export function ProjectList({ projects }: Props) {
               onClick={() => handleDelete(project)}
               disabled={deletingId === project.id}
               aria-label={`${project.title}を削除`}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[11px] text-fg-muted hover:bg-red-950 hover:text-red-400 disabled:opacity-40"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[calc(var(--radius)*0.9167)] text-fg-muted hover:bg-red-950 hover:text-red-400 disabled:opacity-40"
             >
               <Trash2 size={17} />
             </button>

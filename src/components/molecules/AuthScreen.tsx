@@ -83,7 +83,7 @@ export function AuthField({
       <span className="text-xs font-medium text-fg-sub">{label}</span>
       <input
         {...props}
-        className={`h-[46px] rounded-[11px] border bg-surface-strong px-3.5 text-sm text-fg-strong focus:ring-[3px] focus:ring-accent/16 focus:outline-none ${
+        className={`h-[46px] rounded-[calc(var(--radius)*0.9167)] border bg-surface-strong px-3.5 text-sm text-fg-strong focus:ring-[3px] focus:ring-accent/16 focus:outline-none ${
           hasError
             ? "border-red-600"
             : "border-line-strong focus:border-accent"
@@ -107,7 +107,7 @@ export function AuthSubmitButton({
     <button
       type="submit"
       disabled={isSubmitting}
-      className="flex h-12 w-full items-center justify-center gap-2 rounded-[11px] bg-accent text-sm font-semibold text-accent-fg disabled:opacity-55"
+      className="flex h-12 w-full items-center justify-center gap-2 rounded-[calc(var(--radius)*0.9167)] bg-accent text-sm font-semibold text-accent-fg disabled:opacity-55"
     >
       {isSubmitting && (
         <span

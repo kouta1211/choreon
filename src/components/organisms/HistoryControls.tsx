@@ -76,7 +76,7 @@ export function HistoryControls() {
         onClick={handleUndo}
         disabled={!canUndo}
         aria-label="元に戻す"
-        className="flex h-[38px] w-[38px] items-center justify-center rounded-[11px] border border-line-strong bg-surface/90 text-fg disabled:pointer-events-none disabled:opacity-30"
+        className="flex h-[38px] w-[38px] items-center justify-center rounded-[calc(var(--radius)*0.9167)] border border-line-strong bg-surface/90 text-fg disabled:pointer-events-none disabled:opacity-30"
       >
         <Undo2 size={17} />
       </button>
@@ -87,7 +87,7 @@ export function HistoryControls() {
         onClick={handleRedo}
         disabled={!canRedo}
         aria-label="やり直す"
-        className="flex h-[38px] w-[38px] items-center justify-center rounded-[11px] border border-line-strong bg-surface/90 text-fg disabled:pointer-events-none disabled:opacity-30"
+        className="flex h-[38px] w-[38px] items-center justify-center rounded-[calc(var(--radius)*0.9167)] border border-line-strong bg-surface/90 text-fg disabled:pointer-events-none disabled:opacity-30"
       >
         <Redo2 size={17} />
       </button>

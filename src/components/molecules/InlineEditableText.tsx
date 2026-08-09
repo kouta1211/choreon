@@ -66,7 +66,7 @@ export function InlineEditableText({
           if (event.key === "Enter") event.currentTarget.blur();
           if (event.key === "Escape") setDraft(null);
         }}
-        className={`h-[34px] min-w-0 rounded-[9px] border border-accent bg-surface-strong px-2.5 text-fg-strong ring-[3px] ring-accent/15 outline-none ${
+        className={`h-[34px] min-w-0 rounded-[calc(var(--radius)*0.75)] border border-accent bg-surface-strong px-2.5 text-fg-strong ring-[3px] ring-accent/15 outline-none ${
           fullWidth ? "w-full" : "w-40"
         } ${textClassName}`}
       />
