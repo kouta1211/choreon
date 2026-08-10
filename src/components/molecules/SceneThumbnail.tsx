@@ -1,14 +1,13 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { X } from "lucide-react";
-import type { Dancer } from "@/features/dancer/types";
-import type { Position, Scene } from "@/features/scene/types";
-import { themedDancerColor } from "@/features/dancer/lib/themedColor";
+import type { Scene } from "@/features/scene/types";
 
 type Props = {
   scene: Scene;
-  positions: Record<string, Position>;
-  dancers: Record<string, Dancer>;
+  /** 点を焼いたSVGのdataURL(useSceneThumbnailsが作る)。
+   * まだ出来ていない一瞬は空でよく、そのときは格子だけが見える */
+  thumbnail: string | undefined;
   stageWidthUnits: number;
   stageHeightUnits: number;
   isSelected: boolean;
@@ -50,8 +49,7 @@ const DEFAULT_SIZE_PX = 74;
  */
 export function SceneThumbnail({
   scene,
-  positions,
-  dancers,
+  thumbnail,
   stageWidthUnits,
   stageHeightUnits,
   isSelected,
@@ -64,9 +62,6 @@ export function SceneThumbnail({
 }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: scene.id });
-  // 大きいコマでは点も少し大きくしないと、余白ばかりが目立って
-  // 隊形の形が読み取りにくくなる
-  const dotSizePx = sizePx >= 78 ? 7 : 5;
 
   return (
     <div
@@ -101,24 +96,20 @@ export function SceneThumbnail({
             }}
           />
         )}
-        {Object.values(positions).map((position) => {
-          const dancer = dancers[position.dancerId];
-          if (!dancer) return null;
-          return (
-            <span
-              key={dancer.id}
-              aria-hidden
-              className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
-              style={{
-                width: dotSizePx,
-                height: dotSizePx,
-                left: `${(position.xCoordinate / stageWidthUnits) * 100}%`,
-                top: `${(position.yCoordinate / stageHeightUnits) * 100}%`,
-                backgroundColor: themedDancerColor(dancer.color),
-              }}
-            />
-          );
-        })}
+        {/* 点は1枚の画像に焼いてある(useSceneThumbnails)。
+            人数×シーン数だけの要素を並べる代わりに、シーンごとに1枚で済む。
+            まだ焼けていない一瞬(初回描画)は、格子だけの空の枠を出す */}
+        {thumbnail && (
+          /* next/imageは使わない。中身はメモリ上のdataURLで、最適化サーバーを
+             通す先のURLが無く、リサイズも遅延読み込みも働かないため */
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={thumbnail}
+            alt=""
+            aria-hidden
+            className="absolute inset-0 h-full w-full"
+          />
+        )}
       </div>
       {showLabel && (
         <div className="mt-1 flex w-full items-baseline justify-between gap-1">

@@ -15,8 +15,7 @@ import {
 import { ArrowRight } from "lucide-react";
 import { SceneThumbnail } from "@/components/molecules/SceneThumbnail";
 import { reorderSceneIds } from "@/features/scene/lib/sceneReorder";
-import type { Dancer } from "@/features/dancer/types";
-import type { Position, Scene } from "@/features/scene/types";
+import type { Scene } from "@/features/scene/types";
 
 type Props = {
   scenes: Scene[];
@@ -24,8 +23,8 @@ type Props = {
   onSelectScene: (sceneId: string) => void;
   onReorderScenes: (orderedSceneIds: string[]) => void;
   onDeleteScene: (scene: Scene) => void;
-  dancers: Record<string, Dancer>;
-  positionsBySceneId: Record<string, Record<string, Position>>;
+  /** シーンごとのミニチュア(dataURL)。useSceneThumbnailsが作る */
+  thumbnailBySceneId: Record<string, string>;
   stageWidthUnits: number;
   stageHeightUnits: number;
 };
@@ -68,8 +67,7 @@ export function SceneTabs({
   onSelectScene,
   onReorderScenes,
   onDeleteScene,
-  dancers,
-  positionsBySceneId,
+  thumbnailBySceneId,
   stageWidthUnits,
   stageHeightUnits,
 }: Props) {
@@ -136,8 +134,7 @@ export function SceneTabs({
               )}
               <SceneThumbnail
                 scene={scene}
-                positions={positionsBySceneId[scene.id] ?? {}}
-                dancers={dancers}
+                thumbnail={thumbnailBySceneId[scene.id]}
                 stageWidthUnits={stageWidthUnits}
                 stageHeightUnits={stageHeightUnits}
                 isSelected={scene.id === selectedSceneId}

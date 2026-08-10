@@ -11,6 +11,7 @@ import { SceneSidebar } from "@/components/organisms/SceneSidebar";
 import { EditorSidePanel } from "@/components/organisms/EditorSidePanel";
 import { EditorShortcuts } from "@/components/organisms/EditorShortcuts";
 import { UnsavedChangesGuard } from "@/components/organisms/UnsavedChangesGuard";
+import { useSceneThumbnails } from "@/features/scene/hooks/useSceneThumbnails";
 import type { Project } from "@/features/project/types";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position, Scene } from "@/features/scene/types";
@@ -59,6 +60,11 @@ export function EditorLayout({
   initialPositions,
   isGuest = false,
 }: Props) {
+  // シーン一覧のミニチュアはここで1回だけ作る。ドックのストリップ・
+  // ボトムシート・サイドバーの3箇所が同じ絵を使うので、置き場所は
+  // それら全部を含むこの層になる
+  useSceneThumbnails(project);
+
   return (
     <div className="flex h-dvh flex-col overflow-clip pb-[max(24px,env(safe-area-inset-bottom))]">
       <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col overflow-clip md:max-[1199px]:max-w-3xl min-[1200px]:max-w-[1400px]">

@@ -13,6 +13,17 @@ type ProjectState = {
   scenes: Scene[];
   positionsBySceneId: PositionsBySceneId;
 
+  /** シーンごとのミニチュア(点だけを描いたSVGのdataURL)。
+   *
+   * positionsから毎回描くこともできるが、シーン一覧は全シーンぶんの点を
+   * 一度に出す場所なので、人数×シーン数だけのDOM要素が並ぶ。1枚の画像に
+   * 焼いておけば、並べる要素はシーン数と同じになる。
+   *
+   * 中身を作るのは useSceneThumbnails。**このストアの中では作らない**。
+   * 焼くにはテーマごとの色の実測値が要り、それはDOMからしか読めないため
+   * (詳しくは useSceneThumbnails のコメント)。 */
+  thumbnailBySceneId: Record<string, string>;
+
   /** ゲスト(未ログイン)の下書きかどうか。trueの間、編集はこのstoreの中だけに
    * 留まり、Supabaseへは一切書き込まない(persist()が窓口)。
    *
@@ -33,6 +44,9 @@ type ProjectState = {
     /** 省略時はfalse(=DBに在るプロジェクト)。ゲストの下書きのときだけtrue */
     isGuest?: boolean;
   }) => void;
+
+  /** ミニチュアを丸ごと差し替える。呼ぶのは useSceneThumbnails だけ */
+  setThumbnails: (thumbnailBySceneId: Record<string, string>) => void;
 
   /** プロジェクト名の変更。ゲストの下書きをそのままクラウドへ保存するとき、
    * 名前も含めて送れるようにここへ持たせている */
@@ -84,8 +98,11 @@ export const useProjectStore = create<ProjectState>((set) => ({
   dancers: {},
   scenes: [],
   positionsBySceneId: {},
+  thumbnailBySceneId: {},
   isGuest: false,
   hasUnsavedChanges: false,
+
+  setThumbnails: (thumbnailBySceneId) => set({ thumbnailBySceneId }),
 
   hydrate: ({ project, dancers, scenes, positions, isGuest = false }) =>
     set(() => {

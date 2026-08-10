@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SceneTabs } from "./SceneTabs";
 
-import { makeDancer, makePosition, makeScene } from "@/test/factories";
+import { makeScene } from "@/test/factories";
 
 const SCENES = [
   makeScene(),
@@ -21,13 +21,7 @@ function renderSceneTabs(
       onSelectScene={onSelectScene}
       onReorderScenes={() => {}}
       onDeleteScene={() => {}}
-      dancers={{ "dancer-1": makeDancer() }}
-      positionsBySceneId={{
-        "scene-1": { "dancer-1": makePosition() },
-        "scene-2": {
-          "dancer-1": makePosition({ sceneId: "scene-2", xCoordinate: 6 }),
-        },
-      }}
+      thumbnailBySceneId={{}}
       stageWidthUnits={8}
       stageHeightUnits={8}
     />,
