@@ -48,3 +48,7 @@ next-env.d.ts
 
 # design handoff bundles exported from Claude Design (reference only, not built here)
 /design_handoff_*/
+
+# Claude Code の端末ごとの設定(権限の許可リストなど)。
+# スキル(.claude/skills)は共有するが、これは各自のものなので追跡しない
+.claude/settings.local.json
