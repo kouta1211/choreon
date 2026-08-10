@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SceneDock } from "./SceneDock";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
+import { useMusicStore } from "@/features/music/store/useMusicStore";
 import * as scenesApi from "@/features/scene/api/scenes";
 import * as positionsApi from "@/features/scene/api/positions";
 import type { Project } from "@/features/project/types";
@@ -31,6 +32,12 @@ function makeProject(overrides: Partial<Project> = {}): Project {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  // 音楽ストアはvitest.setupの初期化対象に入っていないので自分で戻す
+  useMusicStore.setState({
+    objectUrl: null,
+    fileName: null,
+    durationSeconds: null,
+  });
 });
 
 /**
@@ -177,6 +184,48 @@ describe("SceneDock", () => {
     render(<SceneDock project={makeProject()} />);
 
     expect(screen.queryByText("あいり")).not.toBeInTheDocument();
+  });
+
+  // 曲が入っている間は、曲の再生位置がシーンを決める(useMusicPlayback)。
+  // ドック側のタイマーも一緒に動くと、2つの時計が同じ選択を奪い合い、
+  // 曲より先にシーンだけが進んでしまう
+  it("曲が入っている間は、ドックのタイマーでシーンを進めない", () => {
+    vi.useFakeTimers();
+    useProjectStore.setState({
+      scenes: [
+        makeScene({ transitionDurationSeconds: 1 }),
+        makeScene({ id: "scene-2", orderIndex: 1, transitionDurationSeconds: 1 }),
+      ],
+    });
+    useUIStore.setState({ selectedSceneId: "scene-1", isPlaying: true });
+    useMusicStore.setState({ objectUrl: "blob:song", fileName: "song.mp3" });
+
+    render(<SceneDock project={makeProject()} />);
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+
+    expect(useUIStore.getState().selectedSceneId).toBe("scene-1");
+    vi.useRealTimers();
+  });
+
+  it("曲が無ければ、今までどおりタイマーで次のシーンへ進む", () => {
+    vi.useFakeTimers();
+    useProjectStore.setState({
+      scenes: [
+        makeScene({ transitionDurationSeconds: 1 }),
+        makeScene({ id: "scene-2", orderIndex: 1, transitionDurationSeconds: 1 }),
+      ],
+    });
+    useUIStore.setState({ selectedSceneId: "scene-1", isPlaying: true });
+
+    render(<SceneDock project={makeProject()} />);
+    act(() => {
+      vi.advanceTimersByTime(1500);
+    });
+
+    expect(useUIStore.getState().selectedSceneId).toBe("scene-2");
+    vi.useRealTimers();
   });
 
   it("シーン名はここでは変更できない(一覧のカードへ移した)", () => {

@@ -13,6 +13,7 @@ export type Database = {
           title: string;
           stage_width: number;
           stage_height: number;
+          music_offset_seconds: number;
           created_at: string;
           updated_at: string;
         };
@@ -22,6 +23,7 @@ export type Database = {
           title: string;
           stage_width?: number;
           stage_height?: number;
+          music_offset_seconds?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -31,6 +33,7 @@ export type Database = {
           title?: string;
           stage_width?: number;
           stage_height?: number;
+          music_offset_seconds?: number;
           created_at?: string;
           updated_at?: string;
         };

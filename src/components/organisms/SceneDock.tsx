@@ -8,6 +8,11 @@ import { SceneTabs } from "@/components/molecules/SceneTabs";
 import { SceneDotRail } from "@/components/molecules/SceneDotRail";
 import { DancerLaneRail } from "@/components/molecules/DancerLaneRail";
 import { buildDancerLanes } from "@/features/scene/lib/dancerLanes";
+import { useMusicStore } from "@/features/music/store/useMusicStore";
+import {
+  seekToSelectedScene,
+  useMusicPlayback,
+} from "@/features/music/hooks/useMusicPlayback";
 import { SceneListSheet } from "@/components/organisms/SceneListSheet";
 import { getNextSceneId } from "@/features/scene/lib/playback";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
@@ -64,6 +69,11 @@ export function SceneDock({ project }: Props) {
   const setIsPlaying = useUIStore((state) => state.setIsPlaying);
   const setSceneSheetOpen = useUIStore((state) => state.setSceneSheetOpen);
   const { reorderTo, confirmDelete, selectSceneManually } = useSceneActions();
+  const musicUrl = useMusicStore((state) => state.objectUrl);
+  const musicFileName = useMusicStore((state) => state.fileName);
+  const setMusicDuration = useMusicStore((state) => state.setDurationSeconds);
+  const hasMusic = musicUrl !== null;
+  const audioRef = useMusicPlayback();
 
   const selectedIndex = scenes.findIndex((s) => s.id === selectedSceneId);
   const selectedScene = selectedIndex >= 0 ? scenes[selectedIndex] : null;
@@ -85,6 +95,9 @@ export function SceneDock({ project }: Props) {
 
   useEffect(() => {
     if (!isPlaying) return;
+    // 曲が入っているときは、曲の再生位置がシーンを決める(useMusicPlayback)。
+    // こちらのタイマーも一緒に動かすと、2つの時計が同じ選択を奪い合う
+    if (hasMusic) return;
 
     const isFirstStep = justStartedPlayingRef.current;
     justStartedPlayingRef.current = false;
@@ -103,7 +116,14 @@ export function SceneDock({ project }: Props) {
     }, delayMs);
 
     return () => clearTimeout(timer);
-  }, [isPlaying, selectedSceneId, scenes, selectScene, setIsPlaying]);
+  }, [isPlaying, hasMusic, selectedSceneId, scenes, selectScene, setIsPlaying]);
+
+  // 手でシーンを選んだら曲もその位置へ飛ばす。再生中は曲の側が
+  // シーンを決めているので、止まっているときだけ動かす
+  useEffect(() => {
+    if (isPlaying) return;
+    seekToSelectedScene(audioRef.current);
+  }, [isPlaying, selectedSceneId, audioRef]);
 
   const handleTogglePlay = () => {
     if (!isPlaying) {
@@ -148,10 +168,11 @@ export function SceneDock({ project }: Props) {
                   {selectedScene.name}
                 </span>
               </div>
-              <span className="mt-0.5 block font-mono text-[10.5px] text-fg-muted">
+              <span className="mt-0.5 block truncate font-mono text-[10.5px] text-fg-muted">
                 {selectedIndex === 0
                   ? "先頭のシーン"
                   : `${selectedScene.transitionDurationSeconds}秒でここへ`}
+                {musicFileName && ` · ♪ ${musicFileName}`}
               </span>
             </div>
           </>
@@ -217,6 +238,19 @@ export function SceneDock({ project }: Props) {
           影響しないのでここから描く。広い画面では一覧ボタンを出さないため
           開かれることがなく、代わりにステージ横のサイドバーが担う */}
       <SceneListSheet project={project} />
+
+      {/* 曲の実体。画面には出さないが、再生位置を持つのはこの要素なので
+          描画の外(useEffect)からは作れない。src が無い間は何も読み込まない */}
+      {musicUrl && (
+        <audio
+          ref={audioRef}
+          src={musicUrl}
+          preload="auto"
+          onLoadedMetadata={(event) =>
+            setMusicDuration(event.currentTarget.duration)
+          }
+        />
+      )}
     </div>
   );
 }

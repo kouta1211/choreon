@@ -48,6 +48,10 @@ type ProjectState = {
   /** ミニチュアを丸ごと差し替える。呼ぶのは useSceneThumbnails だけ */
   setThumbnails: (thumbnailBySceneId: Record<string, string>) => void;
 
+  /** 曲の開始位置(秒)の変更。プロジェクト名と同じく、表示中の値の置き場を
+   * storeに一本化するために持たせている */
+  setMusicOffset: (seconds: number) => void;
+
   /** プロジェクト名の変更。ゲストの下書きをそのままクラウドへ保存するとき、
    * 名前も含めて送れるようにここへ持たせている */
   renameProject: (title: string) => void;
@@ -131,6 +135,11 @@ export const useProjectStore = create<ProjectState>((set) => ({
   renameProject: (title) =>
     set((state) =>
       state.project ? { project: { ...state.project, title } } : {},
+    ),
+
+  setMusicOffset: (musicOffsetSeconds) =>
+    set((state) =>
+      state.project ? { project: { ...state.project, musicOffsetSeconds } } : {},
     ),
 
   // 既にtrueなら書き換えない。この関数は編集のたびに呼ばれるので、毎回

@@ -33,6 +33,7 @@ export function makeProject(overrides: Partial<Project> = {}): Project {
     title: "発表会A",
     stageWidth: 15,
     stageHeight: 10,
+    musicOffsetSeconds: 0,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
     ...overrides,
