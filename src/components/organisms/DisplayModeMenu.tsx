@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Eclipse, FlipHorizontal2, Grid3x3, SlidersHorizontal, Spline } from "lucide-react";
+import { Eclipse, FlipHorizontal2, Grid3x3, Palette, SlidersHorizontal, Spline } from "lucide-react";
 import { useUIStore, type GridMode } from "@/features/canvas/store/useUIStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
+import { useThemeStore } from "@/features/theme/store/useThemeStore";
+import { projectIdFromPath } from "@/features/theme/lib/themePreference";
 import { Switch } from "@/components/atoms/Switch";
 
 /**
@@ -59,6 +61,23 @@ export function DisplayModeMenu() {
   useEffect(() => {
     loadViewPreference();
   }, [loadViewPreference]);
+
+  // 見た目の上書きは「どのプロジェクトの上書きか」が要るので、
+  // 開いているプロジェクトをテーマ側へ知らせる。ホーム(ThemeButton)は
+  // 開いているプロジェクトが無いため、ここが唯一の知らせ手になる
+  const loadTheme = useThemeStore((state) => state.load);
+  const setThemeProjectId = useThemeStore((state) => state.setProjectId);
+  const isThemeLoaded = useThemeStore((state) => state.isLoaded);
+  const themeProjectId = useThemeStore((state) => state.projectId);
+  const hasProjectOverride = useThemeStore((state) =>
+    state.projectId !== null && state.projectId in state.preference.byProject,
+  );
+  const setProjectOverride = useThemeStore((state) => state.setProjectOverride);
+
+  useEffect(() => {
+    loadTheme();
+    setThemeProjectId(projectIdFromPath(window.location.pathname));
+  }, [loadTheme, setThemeProjectId]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -179,6 +198,30 @@ export function DisplayModeMenu() {
                 fullWidth
               />
             ))}
+
+            {/* 見た目(テーマ)の選択そのものはホームにある。ここに置くのは
+                「この1件だけ端末の既定から外す」というスイッチだけ。
+                対象のプロジェクトが必要なので、下書き(ゲスト)では出せない */}
+            {isThemeLoaded && themeProjectId !== null && (
+              <>
+                <span
+                  aria-hidden
+                  className="my-1 block h-px bg-line"
+                />
+                <Switch
+                  checked={hasProjectOverride}
+                  onChange={() => setProjectOverride(!hasProjectOverride)}
+                  label="このプロジェクトだけ別の見た目"
+                  description={
+                    hasProjectOverride
+                      ? "ホームでテーマを変えても、ここは変わりません"
+                      : "オンにすると、いまの見た目をこのプロジェクトに固定します"
+                  }
+                  icon={Palette}
+                  fullWidth
+                />
+              </>
+            )}
           </div>
         </>
       )}
