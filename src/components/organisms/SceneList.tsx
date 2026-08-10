@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -12,8 +11,10 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Copy, Pencil, Plus, Trash2 } from "lucide-react";
+import { Copy, Plus, Trash2 } from "lucide-react";
 import { SceneThumbnail } from "@/components/molecules/SceneThumbnail";
+import { InlineEditableText } from "@/components/molecules/InlineEditableText";
+import { DurationSecondsInput } from "@/components/molecules/DurationSecondsInput";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { reorderSceneIds } from "@/features/scene/lib/sceneReorder";
@@ -21,7 +22,10 @@ import { useAddScene } from "@/features/scene/hooks/useAddScene";
 import { useDuplicateScene } from "@/features/scene/hooks/useDuplicateScene";
 import { useSceneActions } from "@/features/scene/hooks/useSceneActions";
 import type { Project } from "@/features/project/types";
-import type { Scene } from "@/features/scene/types";
+
+/** 秒の入力欄が許容する範囲。schema.sqlのCHECK制約(0より大きく30以下)と合わせている */
+const MIN_DURATION_SECONDS = 0.1;
+const MAX_DURATION_SECONDS = 30;
 
 type Props = {
   project: Project;
@@ -30,15 +34,18 @@ type Props = {
 };
 
 /**
- * シーンを縦に並べた一覧。並び替え・改名・複製・削除をここに集約する。
+ * シーンを縦に並べた一覧。シーンに対する操作(並び替え・改名・遷移時間・
+ * 複製・削除)はすべてここにある。下部のドックは「今どこにいるか」を
+ * 見せるだけの場所にして、いじる操作はこちらへ寄せてある。
  *
- * 置き場所は画面幅で変わる。狭いときはドックから開くボトムシートの中身、
- * 広いときはステージ横のサイドバーの中身。どちらでも同じものを見せたい
- * ので、外枠を持たない中身だけの部品にしてある。
+ * 置き場所は画面幅で変わる。狭いときはドックの「一覧」から開くボトム
+ * シートの中身、広いときはステージ横のサイドバーの中身。どちらでも同じ
+ * ものを見せたいので、外枠を持たない中身だけの部品にしてある。
  *
- * 操作ボタンを選択中の行だけに出しているのは、全行に3つずつ並べると
- * 一覧が読みにくくなるため。見るための一覧と、いじるための一覧を
- * 同じ画面で両立させる妥協点。
+ * 鉛筆(改名)は全行に出すが、遷移時間・複製・削除は選択中の行にだけ出す。
+ * 改名は「そのシーンを選ぶ」こととは無関係にやりたくなるのに対し、
+ * 残りは今いじっているシーンにしか使わない操作で、全行に並べると
+ * 一覧として読めなくなるため。
  */
 export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
@@ -49,18 +56,13 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
   );
   const { addScene, isCreating } = useAddScene(project);
   const { duplicateScene, isDuplicating } = useDuplicateScene(project);
-  const { renameSceneTo, reorderTo, confirmDelete, selectSceneManually } =
-    useSceneActions();
-  // 「名前」ボタンで編集に入る作りなので、行の外から編集状態を立てられる
-  // 必要がある。InlineEditableText(自分で開閉する)ではなくここで持つ
-  const [renamingSceneId, setRenamingSceneId] = useState<string | null>(null);
-
-  const commitRename = (scene: Scene, value: string) => {
-    setRenamingSceneId(null);
-    const trimmed = value.trim();
-    if (!trimmed || trimmed === scene.name) return;
-    renameSceneTo(scene, trimmed);
-  };
+  const {
+    renameSceneTo,
+    reorderTo,
+    changeDuration,
+    confirmDelete,
+    selectSceneManually,
+  } = useSceneActions();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -90,7 +92,22 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
             return (
               <div
                 key={scene.id}
-                className={`overflow-hidden rounded-xl ${
+                // カードのどこを触ってもそのシーンへ切り替わる。ミニチュアだけが
+                // 反応する作りだと、幅いっぱいのカードのうち左端しか押せず、
+                // 特に指では押し外しやすい
+                onClick={(event) => {
+                  // ボタン・入力欄の上で押したときは、その操作だけを起こす。
+                  // ミニチュアも <button> なのでここで抜けるが、あちらは
+                  // 自分の onClick で選択するので結果は同じ
+                  if (
+                    event.target instanceof Element &&
+                    event.target.closest("button, input")
+                  ) {
+                    return;
+                  }
+                  selectSceneManually(scene.id);
+                }}
+                className={`cursor-pointer overflow-hidden rounded-xl ${
                   isSelected
                     ? "border-2 border-accent bg-accent-row"
                     : "border border-line bg-surface-raised"
@@ -105,46 +122,33 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
                     stageHeightUnits={project.stageHeight}
                     isSelected={isSelected}
                     onClick={() => selectSceneManually(scene.id)}
-                    index={index + 1}
                     sizePx={thumbnailSizePx}
                     showGrid
-                    showLabel={false}
+                    // 名前と番号はカードの右側に別レイアウトで組むため、
+                    // ミニチュア側の見出しは出さない
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline gap-1.5">
-                      <span
-                        className={`font-mono text-[10px] font-semibold ${
-                          isSelected ? "text-accent-soft" : "text-fg-muted"
-                        }`}
-                      >
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-                      {renamingSceneId === scene.id ? (
-                        <input
-                          autoFocus
-                          aria-label="シーン名"
-                          defaultValue={scene.name}
-                          onBlur={(event) =>
-                            commitRename(scene, event.target.value)
-                          }
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter") event.currentTarget.blur();
-                            if (event.key === "Escape") setRenamingSceneId(null);
-                          }}
-                          className="min-w-0 flex-1 rounded-[calc(var(--radius)*0.75)] border border-accent bg-surface-strong px-2 py-0.5 text-sm text-fg-strong ring-[3px] ring-accent/15 outline-none"
-                        />
-                      ) : (
+                    {/* keyにシーンIDを渡して、並び替えなどで行が入れ替わった
+                        ときに編集中の入力欄が別のシーンへ持ち越されないようにする */}
+                    <InlineEditableText
+                      key={scene.id}
+                      value={scene.name}
+                      onCommit={(name) => renameSceneTo(scene, name)}
+                      label="シーン名"
+                      textClassName={
+                        isSelected ? "text-sm font-semibold" : "text-sm font-medium"
+                      }
+                      prefix={
                         <span
-                          className={`min-w-0 truncate text-sm ${
-                            isSelected
-                              ? "font-semibold text-white"
-                              : "font-medium text-fg-strong"
+                          className={`shrink-0 font-mono text-[10px] font-semibold ${
+                            isSelected ? "text-accent-soft" : "text-fg-muted"
                           }`}
                         >
-                          {scene.name}
+                          {String(index + 1).padStart(2, "0")}
                         </span>
-                      )}
-                    </div>
+                      }
+                      fullWidth
+                    />
                     <span
                       className={`mt-1 block font-mono text-[10.5px] ${
                         isSelected ? "text-accent-bright" : "text-fg-muted"
@@ -158,26 +162,39 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
                   </div>
                 </div>
 
-                {/* 操作は選択中の行にだけ出す。全行に並べると一覧が読みづらい */}
+                {/* 遷移時間と複製・削除は選択中の行にだけ出す。
+                    全行に並べると一覧として読めなくなる */}
                 {isSelected && (
-                  <div className="flex gap-1.5 px-2.5 pb-2.5">
-                    <SheetAction
-                      icon={Pencil}
-                      label="名前"
-                      onClick={() => setRenamingSceneId(scene.id)}
-                    />
-                    <SheetAction
-                      icon={Copy}
-                      label="複製"
-                      disabled={isDuplicating}
-                      onClick={() => duplicateScene(scene)}
-                    />
-                    <SheetAction
-                      icon={Trash2}
-                      label="削除"
-                      tone="danger"
-                      onClick={() => confirmDelete(scene)}
-                    />
+                  <div className="flex flex-col gap-2 px-2.5 pb-2.5">
+                    {index > 0 && (
+                      <DurationSecondsInput
+                        key={scene.id}
+                        label="遷移時間(秒)"
+                        value={scene.transitionDurationSeconds}
+                        // シーン自体の遷移時間は必須値(空欄にはできない)
+                        allowEmpty={false}
+                        onCommit={(value) => {
+                          if (value !== null) changeDuration(scene, value);
+                        }}
+                        min={MIN_DURATION_SECONDS}
+                        max={MAX_DURATION_SECONDS}
+                        suffix="秒でここへ"
+                      />
+                    )}
+                    <div className="flex gap-1.5">
+                      <SheetAction
+                        icon={Copy}
+                        label="複製"
+                        disabled={isDuplicating}
+                        onClick={() => duplicateScene(scene)}
+                      />
+                      <SheetAction
+                        icon={Trash2}
+                        label="削除"
+                        tone="danger"
+                        onClick={() => confirmDelete(scene)}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -206,7 +223,7 @@ function SheetAction({
   disabled = false,
   tone = "default",
 }: {
-  icon: typeof Pencil;
+  icon: typeof Copy;
   label: string;
   onClick: () => void;
   disabled?: boolean;

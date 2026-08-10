@@ -1,5 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { SceneTabs } from "./SceneTabs";
 
 import { makeDancer, makePosition, makeScene } from "@/test/factories";
@@ -18,9 +19,7 @@ function renderSceneTabs(
       scenes={SCENES}
       selectedSceneId={selectedSceneId}
       onSelectScene={onSelectScene}
-      onAddScene={() => {}}
       onReorderScenes={() => {}}
-      isCreating={false}
       dancers={{ "dancer-1": makeDancer() }}
       positionsBySceneId={{
         "scene-1": { "dancer-1": makePosition() },
@@ -34,76 +33,29 @@ function renderSceneTabs(
   );
 }
 
-/**
- * スクロールで選択が切り替わる仕組みのテスト。
- *
- * jsdomではgetBoundingClientRectが常に0を返すため、「左端に一番近いコマ」の
- * 距離計算そのものは検証できない(全コマが距離0になり、必ず先頭のコマが
- * 選ばれる)。ここで確かめたいのはその計算精度ではなく、
- * 「どういう時に選択を上書きし、どういう時に上書きしないか」という
- * 場合分けの方なので、この制約があっても意味のあるテストになる。
- */
 describe("SceneTabs", () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
+  it("コマを押すとそのシーンを選択する", async () => {
+    const onSelectScene = vi.fn();
+    const user = userEvent.setup();
+    renderSceneTabs("scene-1", onSelectScene);
 
-  afterEach(() => {
-    vi.useRealTimers();
+    await user.click(screen.getByText("シーン2"));
+
+    expect(onSelectScene).toHaveBeenCalledWith("scene-2");
   });
 
   // リグレッションテスト:
-  // 選択が変わると、そのコマが見えるところまで自動でスクロールする。
-  // その自動スクロール自体もscrollイベントを発生させるため、素直に実装すると
-  // 「選択が変わる→自動スクロール→スクロールを検知して別のコマを選び直す」
-  // という取り合いが起き、クリックしたのと違うシーンが選ばれたり、
-  // 再生が1歩で止まったりしていた
-  it("選択変更にともなう自動スクロールでは、選択を上書きし返さない", () => {
+  // 以前は「スクロールが止まった位置に一番近いコマ」を自動で選択していた。
+  // 一覧を眺めようと横に払っただけで選択が変わり、再生も止まっていたため外した。
+  // スクロールは移動手段であって、選択の意思表示ではない
+  it("横スクロールしただけでは選択を変えない", () => {
     const onSelectScene = vi.fn();
-    const { rerender } = renderSceneTabs("scene-1", onSelectScene);
-
-    // 選択がscene-2へ変わる = 自動スクロールが始まる状況
-    rerender(
-      <SceneTabs
-        scenes={SCENES}
-        selectedSceneId="scene-2"
-        onSelectScene={onSelectScene}
-        onAddScene={() => {}}
-        onReorderScenes={() => {}}
-        isCreating={false}
-        dancers={{ "dancer-1": makeDancer() }}
-        positionsBySceneId={{
-          "scene-1": { "dancer-1": makePosition() },
-          "scene-2": {
-            "dancer-1": makePosition({ sceneId: "scene-2", xCoordinate: 6 }),
-          },
-        }}
-        stageWidthUnits={8}
-        stageHeightUnits={8}
-      />,
-    );
-
-    fireEvent.scroll(screen.getByTestId("scene-strip"));
-    act(() => {
-      vi.advanceTimersByTime(200);
-    });
-
-    expect(onSelectScene).not.toHaveBeenCalled();
-  });
-
-  it("ユーザー自身のスクロール(ホイール操作)なら、スクロール位置のコマを選択する", () => {
-    const onSelectScene = vi.fn();
-    renderSceneTabs("scene-2", onSelectScene);
+    renderSceneTabs("scene-1", onSelectScene);
 
     const strip = screen.getByTestId("scene-strip");
-    // ホイールは「これは自動スクロールではない」という合図になる
     fireEvent.wheel(strip);
     fireEvent.scroll(strip);
-    act(() => {
-      vi.advanceTimersByTime(200);
-    });
 
-    // jsdomでは全コマの座標が0になるため、必ず先頭のコマが最寄りと判定される
-    expect(onSelectScene).toHaveBeenCalledWith("scene-1");
+    expect(onSelectScene).not.toHaveBeenCalled();
   });
 });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Pause, Play, Trash2 } from "lucide-react";
+import { List, Pause, Play, Plus } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { SceneTabs } from "@/components/molecules/SceneTabs";
@@ -10,31 +10,35 @@ import { SceneListSheet } from "@/components/organisms/SceneListSheet";
 import { getNextSceneId } from "@/features/scene/lib/playback";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
 import { useSceneActions } from "@/features/scene/hooks/useSceneActions";
-import { InlineEditableText } from "@/components/molecules/InlineEditableText";
-import { Tooltip } from "@/components/atoms/Tooltip";
-import { DurationSecondsInput } from "@/components/molecules/DurationSecondsInput";
 import type { Project } from "@/features/project/types";
 
 type Props = {
   project: Project;
 };
 
-/** 秒の入力欄が許容する範囲。schema.sqlのCHECK制約(0より大きく30以下)と合わせている */
-const MIN_DURATION_SECONDS = 0.1;
-const MAX_DURATION_SECONDS = 30;
-
 /**
- * 画面下端に貼り付く、時間軸側の操作一式。上から4段:
+ * 画面下端に貼り付く、時間軸側の操作。2段だけ:
  *
- *   1. ハンドル      … シーン一覧シートを開く
- *   2. 選択中シーン行 … 再生 / 名前(インライン編集) / 遷移時間 / 削除
- *   3. ストリップ    … コマを横に並べたもの。切り替えと並び替え
- *   4. ドットレール  … 曲全体のどこにいるか
+ *   1. 再生 / いま何番のどのシーンか / シーンを追加 / 一覧を開く
+ *   2. ドットレール … 曲全体のどこにいるか
  *
- * 画面が広いとき(lg以上)は 1 と 3 を出さない。シーン一覧が横の
- * サイドバーに常時出ており、開くためのハンドルも、横に流れるコマ送りも
- * 役割が重複するため。残る再生・シーン名・レールは、幅があっても
- * 下端にある方が押しやすい。
+ * ここは【見る場所】に徹していて、シーンをいじる操作(名前・遷移時間・
+ * 複製・削除)は持たない。それらはシーン一覧(SceneList)のカードにある。
+ *
+ * 中身は画面幅で変わる。
+ *
+ *   〜767px  … 上の2段だけ。追加と一覧のボタンをここに出す
+ *   768px〜  … 間にコマのストリップ(SceneTabs)を挟む。追加と一覧は出さない
+ *
+ * 狭い画面でストリップを出さないのは、以前ここが「横スクロールで止まった
+ * 位置のシーンを自動選択する」作りで、一覧を眺めようと指で払っただけで
+ * 選択が変わり再生も止まっていたため。切り替えの手段もコマ・スクロール・
+ * レールの3通りあって、限られた幅の中でどれが何なのか分からなくなっていた。
+ * 広い画面ではマウスで狙って押せるうえ、曲の流れを左から右へ一望できる
+ * 利点の方が大きいので残している(自動選択自体はどちらでも復活させない)。
+ *
+ * 追加と一覧のボタンは狭い画面だけに出す(md:hidden)。広い画面では
+ * シーン一覧が横のサイドバーに常時出ていて、そちらに同じ操作があるため。
  *
  * 再生(isPlaying)は、選択中シーンから最後のシーンまで自動的に進む
  * シーケンサー。selectSceneを呼ぶと、その瞬間にDraggableDancerIcon側が
@@ -59,8 +63,7 @@ export function SceneDock({ project }: Props) {
   const isPlaying = useUIStore((state) => state.isPlaying);
   const setIsPlaying = useUIStore((state) => state.setIsPlaying);
   const setSceneSheetOpen = useUIStore((state) => state.setSceneSheetOpen);
-  const { renameSceneTo, reorderTo, changeDuration, confirmDelete, selectSceneManually } =
-    useSceneActions();
+  const { reorderTo, selectSceneManually } = useSceneActions();
 
   const selectedIndex = scenes.findIndex((s) => s.id === selectedSceneId);
   const selectedScene = selectedIndex >= 0 ? scenes[selectedIndex] : null;
@@ -99,97 +102,84 @@ export function SceneDock({ project }: Props) {
     setIsPlaying(!isPlaying);
   };
 
-
-
   return (
-    <div className="rounded-t-[calc(var(--radius)*1.5)] border-t border-line bg-surface pt-2 pb-3 md:rounded-none">
-      <button
-        type="button"
-        onClick={() => setSceneSheetOpen(true)}
-        aria-label="シーン一覧を開く"
-        className="mx-auto mb-2.5 block px-6 py-1 md:hidden"
-      >
-        <span
-          aria-hidden
-          className="block h-1 w-9 rounded-full bg-line-strong"
-        />
-      </button>
+    <div className="rounded-t-[calc(var(--radius)*1.5)] border-t border-line bg-surface pt-2.5 pb-3 md:rounded-none">
+      {/* シーンが1つも無い状態でも、追加と一覧のボタンだけは出す
+          (ここから作り始めるため。以前はストリップの中に「+」があった) */}
+      <div className="flex items-center gap-2.5 px-3.5">
+        {selectedScene ? (
+          <>
+            <button
+              type="button"
+              onClick={handleTogglePlay}
+              aria-label={isPlaying ? "再生を停止" : "最後のシーンまで再生"}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-fg"
+            >
+              {isPlaying ? (
+                <Pause size={16} fill="currentColor" />
+              ) : (
+                <Play size={16} fill="currentColor" />
+              )}
+            </button>
 
-      {selectedScene && (
-        // 名前の欄は狭い画面では余白を埋めるが、広い画面では中身の幅に
-        // とどめる。伸ばすとシーン名とゴミ箱が1000px以上離れ、互いに
-        // 無関係な要素に見えるため
-        <div className="flex items-center gap-2.5 px-3.5 pb-2.5">
-          <button
-            type="button"
-            onClick={handleTogglePlay}
-            aria-label={isPlaying ? "再生を停止" : "最後のシーンまで再生"}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-fg"
-          >
-            {isPlaying ? (
-              <Pause size={16} fill="currentColor" />
-            ) : (
-              <Play size={16} fill="currentColor" />
-            )}
-          </button>
-
-          <div className="min-w-0 flex-1 md:flex-none">
-            <InlineEditableText
-              key={selectedScene.id}
-              value={selectedScene.name}
-              onCommit={(name) => renameSceneTo(selectedScene, name)}
-              label="シーン名"
-              textClassName="text-sm font-semibold"
-              prefix={
+            {/* いま何を見ているかの表示。押せる要素にしていないのは、
+                ここが唯一「操作ではないもの」だと形で分かるようにするため */}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline gap-1.5">
                 <span className="shrink-0 font-mono text-[11px] font-semibold text-accent-soft">
-                  S{selectedIndex + 1}
+                  {String(selectedIndex + 1).padStart(2, "0")}
                 </span>
-              }
-            />
-            <div className="mt-1.5">
-              <DurationSecondsInput
-                key={selectedScene.id}
-                label="遷移時間(秒)"
-                value={selectedScene.transitionDurationSeconds}
-                // シーン自体の遷移時間は必須値(空欄にはできない)なので
-                // allowEmpty={false}にしている
-                allowEmpty={false}
-                onCommit={(value) => {
-                  if (value !== null) changeDuration(selectedScene, value);
-                }}
-                min={MIN_DURATION_SECONDS}
-                max={MAX_DURATION_SECONDS}
-                suffix="秒でここへ"
-              />
+                <span className="min-w-0 truncate text-sm font-semibold text-fg-strong">
+                  {selectedScene.name}
+                </span>
+              </div>
+              <span className="mt-0.5 block font-mono text-[10.5px] text-fg-muted">
+                {selectedIndex === 0
+                  ? "先頭のシーン"
+                  : `${selectedScene.transitionDurationSeconds}秒でここへ`}
+              </span>
             </div>
-          </div>
+          </>
+        ) : (
+          <span className="min-w-0 flex-1 text-[13px] text-fg-muted">
+            シーンがありません
+          </span>
+        )}
 
-          <Tooltip label="シーンを削除" placement="top" align="right">
-          <button
-            type="button"
-            onClick={() => confirmDelete(selectedScene)}
-            aria-label="シーンを削除"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-fg-muted hover:bg-red-950 hover:text-red-400"
-          >
-            <Trash2 size={15} />
-          </button>
-          </Tooltip>
-        </div>
-      )}
+        <button
+          type="button"
+          onClick={handleAddScene}
+          disabled={isCreating}
+          aria-label="シーンを追加"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[calc(var(--radius)*0.75)] border border-line-strong text-fg-sub disabled:opacity-50"
+        >
+          <Plus size={17} />
+        </button>
 
-      <div className="md:hidden">
-      <SceneTabs
-        scenes={scenes}
-        selectedSceneId={selectedSceneId}
-        onSelectScene={selectSceneManually}
-        onAddScene={handleAddScene}
-        onReorderScenes={reorderTo}
-        isCreating={isCreating}
-        dancers={dancers}
-        positionsBySceneId={positionsBySceneId}
-        stageWidthUnits={project.stageWidth}
-        stageHeightUnits={project.stageHeight}
-      />
+        {/* 以前はここが無地の細いバーで、押せることも、押すと何が出るのかも
+            分からなかった。文字を出して行き先を名指しする */}
+        <button
+          type="button"
+          onClick={() => setSceneSheetOpen(true)}
+          className="flex h-10 shrink-0 items-center gap-1.5 rounded-[calc(var(--radius)*0.75)] border border-line-strong px-2.5 text-[13px] font-medium whitespace-nowrap text-fg-sub md:hidden"
+        >
+          <List size={15} className="shrink-0" />
+          一覧
+        </button>
+      </div>
+
+      {/* 曲の流れを左から右へ一望するストリップ。広い画面だけに出す */}
+      <div className="mt-2.5 hidden md:block">
+        <SceneTabs
+          scenes={scenes}
+          selectedSceneId={selectedSceneId}
+          onSelectScene={selectSceneManually}
+          onReorderScenes={reorderTo}
+          dancers={dancers}
+          positionsBySceneId={positionsBySceneId}
+          stageWidthUnits={project.stageWidth}
+          stageHeightUnits={project.stageHeight}
+        />
       </div>
 
       <SceneDotRail
@@ -203,7 +193,7 @@ export function SceneDock({ project }: Props) {
       />
 
       {/* 画面全体に重なるシート(狭い画面用)。DOM上の位置は見た目に
-          影響しないのでここから描く。広い画面ではハンドルを出さないため
+          影響しないのでここから描く。広い画面では一覧ボタンを出さないため
           開かれることがなく、代わりにステージ横のサイドバーが担う */}
       <SceneListSheet project={project} />
     </div>
