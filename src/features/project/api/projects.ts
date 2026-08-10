@@ -12,9 +12,25 @@ function toProject(row: ProjectRow): Project {
     title: row.title,
     stageWidth: row.stage_width,
     stageHeight: row.stage_height,
+    musicOffsetSeconds: row.music_offset_seconds,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+/** 曲の開始オフセット(秒)を保存する。曲そのものは端末側にしか無いので、
+ * ここで保存するのは「何秒目から始めるか」だけ */
+export async function updateMusicOffset(
+  supabase: SupabaseClient<Database>,
+  projectId: string,
+  musicOffsetSeconds: number,
+): Promise<void> {
+  const { error } = await supabase
+    .from("projects")
+    .update({ music_offset_seconds: musicOffsetSeconds })
+    .eq("id", projectId);
+
+  if (error) throw error;
 }
 
 /**
@@ -167,6 +183,7 @@ export async function insertProject(
       title: project.title,
       stage_width: project.stageWidth,
       stage_height: project.stageHeight,
+      music_offset_seconds: project.musicOffsetSeconds,
     })
     .select()
     .single();

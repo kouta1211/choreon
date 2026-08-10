@@ -75,6 +75,8 @@ export function createGuestProject(now = "1970-01-01T00:00:00.000Z"): ProjectSna
     title: "はじめてのフォーメーション",
     stageWidth: STAGE_WIDTH,
     stageHeight: STAGE_HEIGHT,
+    // 曲はまだ選ばれていないので頭出しも無い(DBのdefaultと同じ0)
+    musicOffsetSeconds: 0,
     createdAt: now,
     updatedAt: now,
   };
