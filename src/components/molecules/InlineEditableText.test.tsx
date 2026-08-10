@@ -13,7 +13,21 @@ describe("InlineEditableText", () => {
     expect(screen.getByLabelText("シーン名を変更")).toBeInTheDocument();
   });
 
-  it("押すと入力欄に変わり、Enterで確定する", async () => {
+  // リグレッションテスト:
+  // 以前はテキストを含む全体が1つのボタンで、スマホでは名前を読もうとして
+  // 触っただけで入力欄に変わり、キーボードがせり上がっていた
+  it("テキストを押しても編集に入らない(入り口は鉛筆だけ)", async () => {
+    const user = userEvent.setup();
+    render(
+      <InlineEditableText value="サビ入り" onCommit={vi.fn()} label="シーン名" />,
+    );
+
+    await user.click(screen.getByText("サビ入り"));
+
+    expect(screen.queryByLabelText("シーン名")).not.toBeInTheDocument();
+  });
+
+  it("鉛筆を押すと入力欄に変わり、Enterで確定する", async () => {
     const onCommit = vi.fn();
     const user = userEvent.setup();
     render(

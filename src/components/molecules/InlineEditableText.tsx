@@ -22,11 +22,14 @@ type Props = {
 };
 
 /**
- * タップするとその場で編集できるテキスト。プロジェクト名・シーン名・
+ * 鉛筆を押すとその場で編集できるテキスト。プロジェクト名・シーン名・
  * ダンサー名の3箇所で同じ作法にするための共通部品。
  *
- * 「押せること」は破線の枠と鉛筆アイコンで示す。以前は点線の下線だけで、
- * 編集できると分からないという指摘があったため。
+ * 編集に入る入り口は【鉛筆ボタンだけ】で、テキスト自体は押せない。
+ * 以前はテキストを含む全体が1つのボタンだったが、スマホでは名前を
+ * 読もうとして触っただけで入力欄に変わり、キーボードがせり上がっていた。
+ * 名前の周りは他の操作(カードを押してシーンを選ぶなど)と隣り合うことが
+ * 多く、「読む場所」と「変える場所」は分けた方が事故が少ない。
  *
  * 編集中かどうかを真偽値ではなく「下書きの文字列 or null」で持っている。
  * 真偽値と入力値を別々に持つと、確定・取消のたびに両方を戻す必要があり、
@@ -74,12 +77,8 @@ export function InlineEditableText({
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => setDraft(value)}
-      aria-label={`${label}を変更`}
-      // 枠自体が44pxのタップ的になるよう、外側に縦の余白を足している
-      className={`inline-flex min-w-0 items-center gap-1.5 rounded-lg border border-dashed border-line-strong px-2 py-1 text-left ${
+    <span
+      className={`inline-flex min-w-0 items-center gap-1.5 ${
         fullWidth ? "w-full" : ""
       }`}
     >
@@ -87,7 +86,16 @@ export function InlineEditableText({
       <span className={`min-w-0 truncate text-fg-strong ${textClassName}`}>
         {value}
       </span>
-      <Pencil size={12} className="shrink-0 text-fg-muted" aria-hidden />
-    </button>
+      <button
+        type="button"
+        onClick={() => setDraft(value)}
+        aria-label={`${label}を変更`}
+        // 指で押せる大きさ(32px)を確保する。鉛筆の絵だけを置くと
+        // 「飾りか操作か」が分かれないため、枠を持たせて押せると示す
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line-strong text-fg-muted"
+      >
+        <Pencil size={13} aria-hidden />
+      </button>
+    </span>
   );
 }
