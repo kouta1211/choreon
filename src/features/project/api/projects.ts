@@ -12,7 +12,10 @@ function toProject(row: ProjectRow): Project {
     title: row.title,
     stageWidth: row.stage_width,
     stageHeight: row.stage_height,
-    musicOffsetSeconds: row.music_offset_seconds,
+    // migration 0003 を当てる前のDBには、この列がまだ無い。undefinedのまま
+    // 通すと秒数の計算がNaNになり、曲を鳴らしていなくてもシーンの選択が
+    // おかしくなる。既定値(0)はDB側のdefaultと同じなので、無ければ0に落とす
+    musicOffsetSeconds: row.music_offset_seconds ?? 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -183,7 +186,14 @@ export async function insertProject(
       title: project.title,
       stage_width: project.stageWidth,
       stage_height: project.stageHeight,
-      music_offset_seconds: project.musicOffsetSeconds,
+      // 頭出しが既定(0)のままなら、この列を送らない。DB側のdefaultも0なので
+      // 保存される値は変わらず、migration 0003 を当てる前のDBでも
+      // 下書きの保存が通る。頭出しを設定した下書きを保存する場合だけは
+      // 列が要るので、そのときは素直に送って失敗させる
+      // (黙って捨てると、設定したはずの位置が次に開いたとき消えている)
+      ...(project.musicOffsetSeconds > 0
+        ? { music_offset_seconds: project.musicOffsetSeconds }
+        : {}),
     })
     .select()
     .single();
