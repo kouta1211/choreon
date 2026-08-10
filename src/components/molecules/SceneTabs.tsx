@@ -23,6 +23,7 @@ type Props = {
   selectedSceneId: string | null;
   onSelectScene: (sceneId: string) => void;
   onReorderScenes: (orderedSceneIds: string[]) => void;
+  onDeleteScene: (scene: Scene) => void;
   dancers: Record<string, Dancer>;
   positionsBySceneId: Record<string, Record<string, Position>>;
   stageWidthUnits: number;
@@ -64,6 +65,7 @@ export function SceneTabs({
   selectedSceneId,
   onSelectScene,
   onReorderScenes,
+  onDeleteScene,
   dancers,
   positionsBySceneId,
   stageWidthUnits,
@@ -141,6 +143,7 @@ export function SceneTabs({
                 index={index + 1}
                 sizePx={THUMBNAIL_SIZE_PX}
                 showLabel
+                onDelete={() => onDeleteScene(scene)}
               />
             </div>
           ))}

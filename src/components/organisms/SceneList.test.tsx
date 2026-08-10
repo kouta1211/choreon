@@ -119,6 +119,22 @@ describe("SceneList", () => {
     expect(screen.queryByLabelText(/遷移時間/)).not.toBeInTheDocument();
   });
 
+  // ×は「小さいので誤タップしやすい」場所にある。押した瞬間に消えるのでは
+  // なく、必ず確認をはさむ(シーン削除は元に戻せない)
+  it("サムネイルの×を押すと、即削除ではなく確認ダイアログを出す", async () => {
+    useProjectStore.setState({ scenes: SCENES });
+    useUIStore.setState({ selectedSceneId: "scene-1" });
+    const user = userEvent.setup();
+
+    render(<SceneList project={makeProject()} />);
+    await user.click(screen.getByLabelText("「シーン2」を削除"));
+
+    expect(useProjectStore.getState().scenes).toHaveLength(2);
+    expect(useUIStore.getState().confirm?.title).toBe(
+      "「シーン2」を削除しますか?",
+    );
+  });
+
   it("削除を確認するとSupabase削除後にローカルからも消え、別のシーンが選択される", async () => {
     useProjectStore.setState({ scenes: SCENES });
     useUIStore.setState({ selectedSceneId: "scene-1" });

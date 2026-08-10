@@ -1,5 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { X } from "lucide-react";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position, Scene } from "@/features/scene/types";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
@@ -25,6 +26,10 @@ type Props = {
    * ボタンの【中】に入れているのは、名前の部分を押しても選択できるように
    * するため。外に出すと、見た目は1つのコマなのに文字だけ反応しない */
   showLabel?: boolean;
+  /** 渡すと右上に×を出す。押したときに何をするかは呼び出し側が決める
+   * (このアプリでは確認ダイアログを開く。シーン削除は元に戻せないため、
+   * ×から即削除にはしない) */
+  onDelete?: () => void;
 };
 
 const DEFAULT_SIZE_PX = 74;
@@ -38,6 +43,10 @@ const DEFAULT_SIZE_PX = 74;
  * 親のDndContext側でactivationConstraint(一定距離動くまでドラッグ扱いに
  * しない)を設定しているため、軽くクリックしただけならonClick(選択)が
  * ちゃんと発火する。
+ *
+ * 外枠が<div>で、その中に「選ぶボタン」と「×ボタン」が並んでいるのは、
+ * <button>の入れ子が不正なHTMLだから。並び替えのつまみ(listeners)は
+ * 選ぶボタン側に付けてあり、×の上から掴んでも動き出さない。
  */
 export function SceneThumbnail({
   scene,
@@ -51,6 +60,7 @@ export function SceneThumbnail({
   sizePx = DEFAULT_SIZE_PX,
   showGrid = false,
   showLabel = false,
+  onDelete,
 }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: scene.id });
@@ -59,22 +69,23 @@ export function SceneThumbnail({
   const dotSizePx = sizePx >= 78 ? 7 : 5;
 
   return (
-    <button
+    <div
       ref={setNodeRef}
-      type="button"
       data-scene-id={scene.id}
-      onClick={onClick}
       style={{
         width: sizePx,
         transform: CSS.Transform.toString(transform),
         transition,
       }}
-      className={`flex shrink-0 touch-none flex-col ${
-        isDragging ? "z-10 opacity-70" : ""
-      }`}
-      {...attributes}
-      {...listeners}
+      className={`relative shrink-0 ${isDragging ? "z-10 opacity-70" : ""}`}
     >
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex w-full touch-none flex-col"
+        {...attributes}
+        {...listeners}
+      >
       <div
         className={`relative w-full overflow-hidden rounded-md bg-surface-sunken transition-colors ${
           isSelected ? "border-2 border-accent" : "border border-line-strong"
@@ -127,6 +138,18 @@ export function SceneThumbnail({
           </span>
         </div>
       )}
-    </button>
+      </button>
+
+      {onDelete && (
+        <button
+          type="button"
+          onClick={onDelete}
+          aria-label={`「${scene.name}」を削除`}
+          className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-line-strong bg-surface-strong text-fg-muted hover:border-red-950 hover:text-red-400"
+        >
+          <X size={11} />
+        </button>
+      )}
+    </div>
   );
 }

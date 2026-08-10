@@ -20,6 +20,7 @@ function renderSceneTabs(
       selectedSceneId={selectedSceneId}
       onSelectScene={onSelectScene}
       onReorderScenes={() => {}}
+      onDeleteScene={() => {}}
       dancers={{ "dancer-1": makeDancer() }}
       positionsBySceneId={{
         "scene-1": { "dancer-1": makePosition() },
