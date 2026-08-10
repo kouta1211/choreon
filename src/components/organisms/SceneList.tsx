@@ -124,6 +124,7 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
                     onClick={() => selectSceneManually(scene.id)}
                     sizePx={thumbnailSizePx}
                     showGrid
+                    onDelete={() => confirmDelete(scene)}
                     // 名前と番号はカードの右側に別レイアウトで組むため、
                     // ミニチュア側の見出しは出さない
                   />

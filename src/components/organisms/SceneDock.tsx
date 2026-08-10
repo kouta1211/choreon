@@ -63,7 +63,7 @@ export function SceneDock({ project }: Props) {
   const isPlaying = useUIStore((state) => state.isPlaying);
   const setIsPlaying = useUIStore((state) => state.setIsPlaying);
   const setSceneSheetOpen = useUIStore((state) => state.setSceneSheetOpen);
-  const { reorderTo, selectSceneManually } = useSceneActions();
+  const { reorderTo, confirmDelete, selectSceneManually } = useSceneActions();
 
   const selectedIndex = scenes.findIndex((s) => s.id === selectedSceneId);
   const selectedScene = selectedIndex >= 0 ? scenes[selectedIndex] : null;
@@ -175,6 +175,7 @@ export function SceneDock({ project }: Props) {
           selectedSceneId={selectedSceneId}
           onSelectScene={selectSceneManually}
           onReorderScenes={reorderTo}
+          onDeleteScene={confirmDelete}
           dancers={dancers}
           positionsBySceneId={positionsBySceneId}
           stageWidthUnits={project.stageWidth}
