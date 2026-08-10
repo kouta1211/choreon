@@ -8,7 +8,12 @@ import * as scenesApi from "@/features/scene/api/scenes";
 import * as positionsApi from "@/features/scene/api/positions";
 import type { Project } from "@/features/project/types";
 
-import { makeProject as makeBaseProject, makeScene } from "@/test/factories";
+import {
+  makeProject as makeBaseProject,
+  makeDancer,
+  makePosition,
+  makeScene,
+} from "@/test/factories";
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({}),
@@ -138,6 +143,40 @@ describe("SceneDock", () => {
     });
     expect(useUIStore.getState().selectedSceneId).toBeNull();
     expect(useUIStore.getState().toast?.type).toBe("error");
+  });
+
+  it("レーン表示に切り替えると、1人1本の線でシーンを選べる", async () => {
+    useProjectStore.setState({
+      scenes: [makeScene(), makeScene({ id: "scene-2", orderIndex: 1 })],
+      dancers: { "dancer-1": makeDancer({ name: "あいり" }) },
+      positionsBySceneId: {
+        "scene-1": { "dancer-1": makePosition() },
+        "scene-2": {
+          "dancer-1": makePosition({ sceneId: "scene-2", xCoordinate: 9 }),
+        },
+      },
+    });
+    useUIStore.setState({ selectedSceneId: "scene-1", railMode: "lanes" });
+    const user = userEvent.setup();
+
+    render(<SceneDock project={makeProject()} />);
+    expect(screen.getByText("あいり")).toBeInTheDocument();
+    await user.click(screen.getByLabelText("2番目のシーンへ"));
+
+    expect(useUIStore.getState().selectedSceneId).toBe("scene-2");
+  });
+
+  it("既定ではレーンを出さない(現在地のレールのまま)", () => {
+    useProjectStore.setState({
+      scenes: [makeScene()],
+      dancers: { "dancer-1": makeDancer({ name: "あいり" }) },
+      positionsBySceneId: { "scene-1": { "dancer-1": makePosition() } },
+    });
+    useUIStore.setState({ selectedSceneId: "scene-1" });
+
+    render(<SceneDock project={makeProject()} />);
+
+    expect(screen.queryByText("あいり")).not.toBeInTheDocument();
   });
 
   it("シーン名はここでは変更できない(一覧のカードへ移した)", () => {

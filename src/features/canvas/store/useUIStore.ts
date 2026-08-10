@@ -4,6 +4,7 @@ import {
   parseViewPreference,
   VIEW_STORAGE_KEY,
   type GridMode,
+  type RailMode,
   type ViewPreference,
 } from "@/features/canvas/lib/viewPreference";
 
@@ -37,7 +38,7 @@ export type ConfirmRequest = {
 
 /** ステージの目盛りの出し方。円形の隊形は格子より同心円の方が読みやすい。
  * 定義は端末に保存する側(viewPreference)に置いてある */
-export type { GridMode };
+export type { GridMode, RailMode };
 
 type UIState = {
   selectedSceneId: string | null;
@@ -52,6 +53,8 @@ type UIState = {
    * 同じ「どこに立っているか」を別の読み方で示すもので、重ねると
    * どちらも読めなくなるため、並立ではなく1つを選ぶ */
   gridMode: GridMode;
+  /** ドック最下段をドットレールにするかレーン表示にするか */
+  railMode: RailMode;
   toast: Toast | null;
   /** オンの間、ダンサーをドラッグすると中心線を挟んだペアも連動して動く
    * (CanvasBoard.handleDragEndが読み取って処理する。ここはトグル状態のみ) */
@@ -89,6 +92,7 @@ type UIState = {
   selectScene: (sceneId: string | null) => void;
   selectDancer: (dancerId: string | null) => void;
   setGridMode: (mode: GridMode) => void;
+  setRailMode: (mode: RailMode) => void;
   showToast: (toast: Toast) => void;
   clearToast: () => void;
   toggleSymmetryMode: () => void;
@@ -121,6 +125,24 @@ function persistViewPreference(preference: ViewPreference) {
   }
 }
 
+/** いまの状態から保存する形を組み、変えた1項目だけを上書きして書き戻す。
+ *
+ * 以前は各setterが保存対象を1つずつ手で並べていた。覚える項目が増えるたびに
+ * 全部のsetterへ足して回る必要があり、書き漏れたsetterを通ったときだけ
+ * その項目が既定へ戻る、という気づきにくい壊れ方をする */
+function persistFromState(
+  state: UIState,
+  changed: Partial<ViewPreference>,
+): void {
+  persistViewPreference({
+    gridMode: state.gridMode,
+    railMode: state.railMode,
+    isPathVisible: state.isPathVisible,
+    isBlindSpotCheckVisible: state.isBlindSpotCheckVisible,
+    ...changed,
+  });
+}
+
 export const useUIStore = create<UIState>((set) => ({
   selectedSceneId: null,
   previousSceneId: null,
@@ -129,6 +151,7 @@ export const useUIStore = create<UIState>((set) => ({
    // ブラウザ描画を一致させるため、ここでは必ず既定から始め、
    // 読み込みは loadViewPreference に任せる
   gridMode: DEFAULT_VIEW_PREFERENCE.gridMode,
+  railMode: DEFAULT_VIEW_PREFERENCE.railMode,
   toast: null,
   isSymmetryMode: false,
   focusedDancerId: null,
@@ -154,12 +177,13 @@ export const useUIStore = create<UIState>((set) => ({
   selectDancer: (dancerId) => set({ selectedDancerId: dancerId }),
   setGridMode: (mode) =>
     set((state) => {
-      persistViewPreference({
-        gridMode: mode,
-        isPathVisible: state.isPathVisible,
-        isBlindSpotCheckVisible: state.isBlindSpotCheckVisible,
-      });
+      persistFromState(state, { gridMode: mode });
       return { gridMode: mode };
+    }),
+  setRailMode: (mode) =>
+    set((state) => {
+      persistFromState(state, { railMode: mode });
+      return { railMode: mode };
     }),
   showToast: (toast) => set({ toast }),
   clearToast: () => set({ toast: null }),
@@ -169,21 +193,13 @@ export const useUIStore = create<UIState>((set) => ({
   togglePathVisible: () =>
     set((state) => {
       const isPathVisible = !state.isPathVisible;
-      persistViewPreference({
-        gridMode: state.gridMode,
-        isPathVisible,
-        isBlindSpotCheckVisible: state.isBlindSpotCheckVisible,
-      });
+      persistFromState(state, { isPathVisible });
       return { isPathVisible };
     }),
   toggleBlindSpotCheckVisible: () =>
     set((state) => {
       const isBlindSpotCheckVisible = !state.isBlindSpotCheckVisible;
-      persistViewPreference({
-        gridMode: state.gridMode,
-        isPathVisible: state.isPathVisible,
-        isBlindSpotCheckVisible,
-      });
+      persistFromState(state, { isBlindSpotCheckVisible });
       return { isBlindSpotCheckVisible };
     }),
   loadViewPreference: () => {

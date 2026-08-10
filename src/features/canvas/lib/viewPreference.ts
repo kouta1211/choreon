@@ -24,17 +24,30 @@ export function isGridMode(value: unknown): value is GridMode {
   return GRID_MODES.includes(value as GridMode);
 }
 
+/** ドック最下段の見せ方。
+ *   dots  … 曲全体のどこにいるかを1本のレールで示す(既定)
+ *   lanes … 1人1本の横線で「誰がいつ動くか」を出す */
+export type RailMode = "dots" | "lanes";
+
+const RAIL_MODES: RailMode[] = ["dots", "lanes"];
+
+export function isRailMode(value: unknown): value is RailMode {
+  return RAIL_MODES.includes(value as RailMode);
+}
+
 /** localStorageのキー。値の形を変えるときはここも変えて、古い形を無視させる */
 export const VIEW_STORAGE_KEY = "choreon.view.v1";
 
 export type ViewPreference = {
   gridMode: GridMode;
+  railMode: RailMode;
   isPathVisible: boolean;
   isBlindSpotCheckVisible: boolean;
 };
 
 export const DEFAULT_VIEW_PREFERENCE: ViewPreference = {
   gridMode: "square",
+  railMode: "dots",
   isPathVisible: false,
   isBlindSpotCheckVisible: false,
 };
@@ -63,6 +76,9 @@ export function parseViewPreference(raw: string | null): ViewPreference {
     gridMode: isGridMode(record.gridMode)
       ? record.gridMode
       : DEFAULT_VIEW_PREFERENCE.gridMode,
+    railMode: isRailMode(record.railMode)
+      ? record.railMode
+      : DEFAULT_VIEW_PREFERENCE.railMode,
     isPathVisible:
       typeof record.isPathVisible === "boolean"
         ? record.isPathVisible
