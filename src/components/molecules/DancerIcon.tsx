@@ -6,7 +6,12 @@ import { DancerNameLabel } from "@/components/atoms/DancerNameLabel";
 import { DancerExcessiveMoveBadge } from "@/components/atoms/DancerExcessiveMoveBadge";
 import { MARKER_SIZE } from "@/features/dancer/constants";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
+import { resolveTransitionDuration } from "@/features/canvas/constants";
 import type { Dancer } from "@/features/dancer/types";
+
+/** ホバー・ドラッグに対して大きさが変わるまでの秒数。
+ * シーンの遷移時間とは別物で、こちらは操作への返事なので短い固定値にする */
+const FEEDBACK_SCALE_SECONDS = 0.15;
 
 type Props = {
   dancer: Dancer;
@@ -37,6 +42,8 @@ function DancerMarkerImpl({
   isSelected = false,
   isRotating = false,
   isFocused = false,
+  isHovered = false,
+  isDragging = false,
   isBlocked = false,
   hasExcessiveMove = false,
   hasKeyboardFocus = false,
@@ -53,6 +60,13 @@ function DancerMarkerImpl({
    * (選択はインスペクターを開くための一時的な状態、フォーカスは
    * シーンをまたいで維持される「自分を目立たせる」ための状態) */
   isFocused?: boolean;
+  /** マウスのポインタが乗っているかどうか。掴む前に「これで合っているか」を
+   * 確かめるための反応で、指やペンでは立たない(触れた瞬間から動かす
+   * タッチ操作には「乗せているだけ」という状態が無いため) */
+  isHovered?: boolean;
+  /** いま掴んで動かしている最中かどうか。指やカーソルの下に隠れるので、
+   * はみ出す大きさと影で「持ち上がっている」ことを外から分かるようにする */
+  isDragging?: boolean;
   /** 「顔被りチェック」で、手前の他のダンサーに隠れていると判定された場合true。
    * trueの間は自分の色ではなく警告色で塗る */
   isBlocked?: boolean;
@@ -67,6 +81,16 @@ function DancerMarkerImpl({
   /** シーン切り替え時、向きの補間アニメーションにかける秒数。省略時は0.3秒 */
   transitionDurationSeconds?: number;
 }) {
+  // 大きさは強い順に1つだけ効かせる。掛け合わせると、掴んだフォーカス中の
+  // ダンサーだけが極端に膨らむ
+  const markerScale = isDragging
+    ? 1.25
+    : isFocused
+      ? 1.15
+      : isHovered
+        ? 1.08
+        : 1;
+
   // 顔被りの警告色だけはテーマに関係なく赤(意味を運ぶ色なので固定)
   const bodyColor = isBlocked ? "#dc2626" : themedDancerColor(dancer.color);
   // シーンを切り替えると顔被りの判定がやり直され、この色が入れ替わる。
@@ -78,15 +102,49 @@ function DancerMarkerImpl({
     <>
       <motion.div
         aria-hidden
-        className="absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2"
-        style={{ width: MARKER_SIZE, height: MARKER_SIZE }}
-        animate={{ rotate: rotationAngle, scale: isFocused ? 1.15 : 1 }}
+        className="absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2"
+        style={{
+          width: MARKER_SIZE,
+          height: MARKER_SIZE,
+          // 掴んでいる間だけ、ステージから浮いて見えるように影を落とす。
+          // 指やカーソルで本体が隠れても、影のはみ出しで「持ち上がっている」
+          // ことが分かる
+          filter: isDragging
+            ? "drop-shadow(0 6px 10px rgba(0,0,0,0.45))"
+            : undefined,
+        }}
+        animate={{ rotate: rotationAngle, scale: markerScale }}
         transition={{
-          duration: isRotating ? 0 : transitionDurationSeconds,
-          ease: "easeOut",
+          // 向きと大きさで秒数を分ける。以前は両方に
+          // transitionDurationSeconds(=シーンの遷移時間)が掛かっていたため、
+          // 3秒のシーンでは掴んでから大きくなるまで3秒待たされていた。
+          // 向きの補間は「何秒で振り向くか」という振付の情報なのでそのまま、
+          // 大きさは操作への返事なので短い固定値にする
+          rotate: {
+            duration: isRotating ? 0 : transitionDurationSeconds,
+            ease: "easeOut",
+          },
+          scale: {
+            duration: resolveTransitionDuration(FEEDBACK_SCALE_SECONDS),
+            ease: "easeOut",
+          },
         }}
       >
         <svg viewBox="0 0 32 32" className="h-full w-full overflow-visible">
+          {/* 掴む前の「これで合っているか」の返事。選択リングと同じ場所に
+              出すと紛らわしいので、一回り外側に細く薄く敷く */}
+          {isHovered && !isSelected && (
+            <circle
+              data-testid="dancer-hover-ring"
+              cx={16}
+              cy={16}
+              r={15}
+              fill="none"
+              stroke="var(--accent)"
+              strokeWidth={1.5}
+              opacity={0.5}
+            />
+          )}
           {isFocused && (
             <circle
               data-testid="dancer-focus-ring"
