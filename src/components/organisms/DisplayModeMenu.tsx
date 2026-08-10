@@ -1,8 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Eclipse, FlipHorizontal2, Grid3x3, Palette, SlidersHorizontal, Spline } from "lucide-react";
-import { useUIStore, type GridMode } from "@/features/canvas/store/useUIStore";
+import {
+  Eclipse,
+  FlipHorizontal2,
+  Grid3x3,
+  Palette,
+  Rows3,
+  SlidersHorizontal,
+  Spline,
+} from "lucide-react";
+import {
+  useUIStore,
+  type GridMode,
+  type RailMode,
+} from "@/features/canvas/store/useUIStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useThemeStore } from "@/features/theme/store/useThemeStore";
 import { projectIdFromPath } from "@/features/theme/lib/themePreference";
@@ -33,6 +45,19 @@ const GRID_MODES: {
   { value: "none", label: "なし", description: "目盛りを敷かない" },
 ];
 
+const RAIL_MODES: {
+  value: RailMode;
+  label: string;
+  description: string;
+}[] = [
+  { value: "dots", label: "現在地", description: "曲全体のどこにいるかを1本で示す" },
+  {
+    value: "lanes",
+    label: "レーン",
+    description: "1人1本の線。太い線=動く区間、丸=止まる位置",
+  },
+];
+
 export function DisplayModeMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -41,6 +66,8 @@ export function DisplayModeMenu() {
   const toggleSymmetryMode = useUIStore((state) => state.toggleSymmetryMode);
   const gridMode = useUIStore((state) => state.gridMode);
   const setGridMode = useUIStore((state) => state.setGridMode);
+  const railMode = useUIStore((state) => state.railMode);
+  const setRailMode = useUIStore((state) => state.setRailMode);
   const isPathVisible = useUIStore((state) => state.isPathVisible);
   const togglePathVisible = useUIStore((state) => state.togglePathVisible);
   const isBlindSpotCheckVisible = useUIStore(
@@ -186,6 +213,33 @@ export function DisplayModeMenu() {
             </div>
             <p className="px-2 pb-2 text-[10.5px] text-fg-muted">
               {GRID_MODES.find((option) => option.value === gridMode)?.description}
+            </p>
+
+            {/* 下端のレール。空間(ステージ)では読めない「誰がいつ動くか」を
+                時間の軸で出すかどうか。目盛りと同じ形の切り替えにしている */}
+            <div className="flex items-center gap-2 px-2 py-1.5">
+              <Rows3 size={15} className="shrink-0 text-fg-muted" />
+              <span className="flex-1 text-[12.5px] text-fg">下のレール</span>
+              <span className="flex shrink-0 overflow-hidden rounded-full border border-line-strong">
+                {RAIL_MODES.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    aria-pressed={railMode === option.value}
+                    onClick={() => setRailMode(option.value)}
+                    className={`h-7 px-2.5 text-[11px] font-medium whitespace-nowrap ${
+                      railMode === option.value
+                        ? "bg-accent/12 text-accent-soft"
+                        : "text-fg-sub"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </span>
+            </div>
+            <p className="px-2 pb-2 text-[10.5px] text-fg-muted">
+              {RAIL_MODES.find((option) => option.value === railMode)?.description}
             </p>
             {modes.map((mode) => (
               <Switch
