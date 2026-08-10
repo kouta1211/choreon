@@ -12,14 +12,18 @@ type Props = {
   stageHeightUnits: number;
   isSelected: boolean;
   onClick: () => void;
-  /** 並び順の表示用(1始まり) */
-  index: number;
-  /** サムネイル本体の幅(px)。ドックは74px、シーン一覧シートは78px */
+  /** 並び順の表示用(1始まり)。showLabelがtrueのときだけ使う */
+  index?: number;
+  /** サムネイル本体の幅(px)。シーン一覧シートは78px、狭いサイドバーは64px */
   sizePx?: number;
-  /** ミニチュアの中に格子を描くか。小さいドックでは線が潰れて
-   * ノイズになるだけなので、大きく出すシート側でだけ描く */
+  /** ミニチュアの中に格子を描くか。小さく出す場所では線が潰れて
+   * ノイズになるだけなので、大きく出す側でだけ描く */
   showGrid?: boolean;
-  /** 名前と番号の行を出すか(シート側は行ごと別レイアウトで組む) */
+  /** 名前と番号の行を出すか。ストリップ(SceneTabs)はここに出し、
+   * シーン一覧(SceneList)は行ごと別レイアウトで組むので出さない。
+   *
+   * ボタンの【中】に入れているのは、名前の部分を押しても選択できるように
+   * するため。外に出すと、見た目は1つのコマなのに文字だけ反応しない */
   showLabel?: boolean;
 };
 
@@ -46,7 +50,7 @@ export function SceneThumbnail({
   index,
   sizePx = DEFAULT_SIZE_PX,
   showGrid = false,
-  showLabel = true,
+  showLabel = false,
 }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: scene.id });
@@ -119,7 +123,7 @@ export function SceneThumbnail({
               isSelected ? "font-semibold text-accent-soft" : "text-fg-muted"
             }`}
           >
-            {String(index).padStart(2, "0")}
+            {String(index ?? 0).padStart(2, "0")}
           </span>
         </div>
       )}

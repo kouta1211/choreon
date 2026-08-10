@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SceneDock } from "./SceneDock";
-import { ConfirmDialog } from "@/components/organisms/ConfirmDialog";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import * as scenesApi from "@/features/scene/api/scenes";
@@ -29,15 +28,30 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+/**
+ * ドックは「今どこにいるか」を見せる場所で、シーンをいじる操作は持たない。
+ * 改名・遷移時間・複製・削除はシーン一覧のカード側にあるので、
+ * それらのテストは SceneList.test.tsx にある。
+ */
 describe("SceneDock", () => {
-  it("シーンをクリックすると選択状態になる", async () => {
-    useProjectStore.setState({ scenes: [makeScene()] });
-    const user = userEvent.setup();
+  it("選択中のシーンの番号と名前を出す", () => {
+    useProjectStore.setState({
+      scenes: [makeScene(), makeScene({ id: "scene-2", name: "サビ", orderIndex: 1 })],
+    });
+    useUIStore.setState({ selectedSceneId: "scene-2" });
 
     render(<SceneDock project={makeProject()} />);
-    await user.click(screen.getByText("シーン1"));
 
-    expect(useUIStore.getState().selectedSceneId).toBe("scene-1");
+    // 名前と番号は広い画面用のストリップにも出るため、ドックの行に固有の
+    // 文言(遷移時間の説明)で「この行が出ていること」を確かめる
+    expect(screen.getByText("1秒でここへ")).toBeInTheDocument();
+    expect(screen.getAllByText("サビ").length).toBeGreaterThan(0);
+  });
+
+  it("シーンが1つも無くても追加ボタンは出す", () => {
+    render(<SceneDock project={makeProject()} />);
+
+    expect(screen.getByLabelText("シーンを追加")).toBeInTheDocument();
   });
 
   it("追加ボタンでシーンを作成し、選択状態にする", async () => {
@@ -126,69 +140,12 @@ describe("SceneDock", () => {
     expect(useUIStore.getState().toast?.type).toBe("error");
   });
 
-  it("選択中のシーン名を変更できる", async () => {
+  it("シーン名はここでは変更できない(一覧のカードへ移した)", () => {
     useProjectStore.setState({ scenes: [makeScene()] });
     useUIStore.setState({ selectedSceneId: "scene-1" });
-    vi.spyOn(scenesApi, "renameScene").mockResolvedValue(undefined);
-    const user = userEvent.setup();
 
     render(<SceneDock project={makeProject()} />);
-    await user.click(screen.getByLabelText("シーン名を変更"));
-    const input = screen.getByDisplayValue("シーン1");
-    await user.clear(input);
-    await user.type(input, "オープニング");
-    await user.keyboard("{Enter}");
 
-    await waitFor(() => {
-      expect(useProjectStore.getState().scenes[0].name).toBe("オープニング");
-    });
-  });
-
-  it("選択中シーンの遷移時間を変更できる", async () => {
-    useProjectStore.setState({ scenes: [makeScene()] });
-    useUIStore.setState({ selectedSceneId: "scene-1" });
-    vi.spyOn(scenesApi, "updateSceneDuration").mockResolvedValue(undefined);
-    const user = userEvent.setup();
-
-    render(<SceneDock project={makeProject()} />);
-    const input = screen.getByLabelText(/遷移時間/);
-    await user.clear(input);
-    await user.type(input, "2.5");
-    await user.keyboard("{Enter}");
-
-    await waitFor(() => {
-      expect(
-        useProjectStore.getState().scenes[0].transitionDurationSeconds,
-      ).toBe(2.5);
-    });
-    expect(scenesApi.updateSceneDuration).toHaveBeenCalledWith(
-      expect.anything(),
-      "scene-1",
-      2.5,
-    );
-  });
-
-  it("削除を確認するとSupabase削除後にローカルからも消え、別のシーンが選択される", async () => {
-    useProjectStore.setState({
-      scenes: [makeScene(), makeScene({ id: "scene-2", name: "シーン2", orderIndex: 1 })],
-    });
-    useUIStore.setState({ selectedSceneId: "scene-1" });
-    vi.spyOn(scenesApi, "deleteScene").mockResolvedValue(undefined);
-    const user = userEvent.setup();
-
-    render(
-      <>
-        <SceneDock project={makeProject()} />
-        <ConfirmDialog />
-      </>,
-    );
-    await user.click(screen.getByLabelText("シーンを削除"));
-    expect(screen.getByText("「シーン1」を削除しますか?")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "削除する" }));
-
-    await waitFor(() => {
-      expect(useProjectStore.getState().scenes).toHaveLength(1);
-    });
-    expect(useUIStore.getState().selectedSceneId).toBe("scene-2");
+    expect(screen.queryByLabelText("シーン名を変更")).not.toBeInTheDocument();
   });
 });
