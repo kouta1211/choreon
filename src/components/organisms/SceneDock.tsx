@@ -48,9 +48,8 @@ type Props = {
 export function SceneDock({ project }: Props) {
   const { addScene: handleAddScene, isCreating } = useAddScene(project);
   const scenes = useProjectStore((state) => state.scenes);
-  const dancers = useProjectStore((state) => state.dancers);
-  const positionsBySceneId = useProjectStore(
-    (state) => state.positionsBySceneId,
+  const thumbnailBySceneId = useProjectStore(
+    (state) => state.thumbnailBySceneId,
   );
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const selectScene = useUIStore((state) => state.selectScene);
@@ -170,8 +169,7 @@ export function SceneDock({ project }: Props) {
           onSelectScene={selectSceneManually}
           onReorderScenes={reorderTo}
           onDeleteScene={confirmDelete}
-          dancers={dancers}
-          positionsBySceneId={positionsBySceneId}
+          thumbnailBySceneId={thumbnailBySceneId}
           stageWidthUnits={project.stageWidth}
           stageHeightUnits={project.stageHeight}
         />
