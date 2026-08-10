@@ -69,6 +69,10 @@ function DancerMarkerImpl({
 }) {
   // 顔被りの警告色だけはテーマに関係なく赤(意味を運ぶ色なので固定)
   const bodyColor = isBlocked ? "#dc2626" : themedDancerColor(dancer.color);
+  // シーンを切り替えると顔被りの判定がやり直され、この色が入れ替わる。
+  // 移動しながら色が瞬時に変わると点滅して見えるので、色だけ短く送らせる
+  // (Tailwind v4のtransition-colorsはfillとstrokeも対象に含む)
+  const bodyColorTransition = "transition-colors";
 
   return (
     <>
@@ -125,6 +129,7 @@ function DancerMarkerImpl({
             points="16,4 12,10 20,10"
             fill={bodyColor}
             stroke="rgba(0,0,0,0.15)"
+            className={bodyColorTransition}
           />
           {/* 頭(=本体)。回転の中心と一致しているため、回転してもその場から動かない */}
           <circle
@@ -134,6 +139,7 @@ function DancerMarkerImpl({
             r={8}
             fill={bodyColor}
             stroke="rgba(0,0,0,0.15)"
+            className={bodyColorTransition}
           />
           {/* 紙・黒板系のテーマで「塗り」を「輪郭」に切り替えるための重ね。
               CSSは変数の値で分岐できないので、常に上に重ねておき、
@@ -146,6 +152,7 @@ function DancerMarkerImpl({
             fill="var(--marker-fill)"
             stroke={bodyColor}
             strokeWidth="var(--marker-stroke-width)"
+            className={bodyColorTransition}
           />
           <circle
             data-testid="dancer-body-outline"
@@ -155,6 +162,7 @@ function DancerMarkerImpl({
             fill="var(--marker-fill)"
             stroke={bodyColor}
             strokeWidth="var(--marker-stroke-width)"
+            className={bodyColorTransition}
           />
         </svg>
       </motion.div>

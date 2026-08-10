@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion } from "motion/react";
 import { PathOverlay } from "@/components/molecules/PathOverlay";
 import { PathTrail } from "@/components/molecules/PathTrail";
 import { DraggableDancerIcon } from "@/components/organisms/DraggableDancerIcon";
@@ -9,7 +10,11 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { findBlockedDancerIds } from "@/features/canvas/lib/blindSpot";
 import { findExcessiveMoveDancerIds } from "@/features/canvas/lib/physicalLimits";
 import { getSceneStep } from "@/features/canvas/lib/sceneStep";
-import { EMPTY_POSITIONS } from "@/features/canvas/constants";
+import {
+  EMPTY_POSITIONS,
+  OVERLAY_FADE_IN_SECONDS,
+  resolveTransitionDuration,
+} from "@/features/canvas/constants";
 
 type Props = {
   stageWidthUnits: number;
@@ -158,20 +163,32 @@ export function DancerLayer({
           「移動中はPathTrailだけ、止まっているときはPathOverlayだけ」と
           どちらか一方に揃える */}
       {isPathVisible && !isTrailAnimating && (
-        <PathOverlay
-          currentPositions={positions}
-          nextPositions={nextPositions}
-          dancers={dancers}
-          stageWidthUnits={stageWidthUnits}
-          stageHeightUnits={stageHeightUnits}
-          editableDancerId={selectedDancerId}
-          onCurveControlPointChange={
-            nextSceneId
-              ? (dancerId, point) =>
-                  onCurveControlPointChange(dancerId, nextSceneId, point)
-              : undefined
-          }
-        />
+        // シーンが変わると別の区間の線に丸ごと入れ替わる。そのまま出すと
+        // ステージの上でダンサーだけが滑らかに動いている中、線だけが
+        // 点滅したように見えるので、短く馴染ませてから出す。
+        // keyに選択中シーンを渡して、シーンが変わるたびに描き直させる
+        // (同じ要素の中身だけが差し替わると initial が効かない)
+        <motion.div
+          key={selectedSceneId}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: resolveTransitionDuration(OVERLAY_FADE_IN_SECONDS) }}
+        >
+          <PathOverlay
+            currentPositions={positions}
+            nextPositions={nextPositions}
+            dancers={dancers}
+            stageWidthUnits={stageWidthUnits}
+            stageHeightUnits={stageHeightUnits}
+            editableDancerId={selectedDancerId}
+            onCurveControlPointChange={
+              nextSceneId
+                ? (dancerId, point) =>
+                    onCurveControlPointChange(dancerId, nextSceneId, point)
+                : undefined
+            }
+          />
+        </motion.div>
       )}
       {/* 通過中の区間の導線を、進んだぶんだけ消していく。
           key に選択中シーンを指定して、シーンを移るたびに作り直す
