@@ -550,16 +550,6 @@ export function availableCounts(): number[] {
   );
 }
 
-/** 指定した人数に最も近い、テンプレートのある人数を返す。
- * 同じだけ離れているときは少ない方(余った人はその場に残せばよい) */
-export function nearestAvailableCount(count: number): number | null {
-  const counts = availableCounts();
-  if (counts.length === 0) return null;
-  return counts.reduce((best, current) =>
-    Math.abs(current - count) < Math.abs(best - count) ? current : best,
-  );
-}
-
 // ---------------------------------------------------------------------------
 // 変形
 // ---------------------------------------------------------------------------

@@ -4,7 +4,6 @@ import {
   availableCounts,
   DEFAULT_TRANSFORM,
   FORMATION_TEMPLATES,
-  nearestAvailableCount,
   resolveFormationPoints,
   selectPointsForDancers,
   templatesForCount,
@@ -48,20 +47,6 @@ describe("FORMATION_TEMPLATES", () => {
       const names = templatesForCount(count).map((item) => item.name);
       expect(new Set(names).size).toBe(names.length);
     }
-  });
-});
-
-describe("nearestAvailableCount", () => {
-  it("その人数があればそのまま返す", () => {
-    expect(nearestAvailableCount(5)).toBe(5);
-  });
-
-  it("多すぎる人数なら一番近い(最大の)人数を返す", () => {
-    expect(nearestAvailableCount(12)).toBe(10);
-  });
-
-  it("少なすぎる人数なら最小の人数を返す", () => {
-    expect(nearestAvailableCount(1)).toBe(2);
   });
 });
 
