@@ -5,6 +5,10 @@ type Props = {
   stageHeightUnits: number;
 };
 
+/** センターから振る番号の上限。これより外はステージの角に近く、
+ * 目盛りとして読ませる価値より紛らわしさが勝つ */
+const MAX_MARK = 6;
+
 /**
  * バミリ — 客席側の縁に貼る目盛り。
  *
@@ -22,8 +26,10 @@ type Props = {
  */
 export function StageMarks({ stageWidthUnits, stageHeightUnits }: Props) {
   const center = stageWidthUnits / 2;
-  // 端まで1ユニット刻み。中央(0)を含めて、そこから両側へ
-  const steps = Math.floor(center);
+  // 中央(0)から両側へ1ユニット刻み。ただし端までは振らない。
+  // いちばん外の目盛りはステージの角に重なって読みづらいうえ、
+  // その位置に人が立つこと自体が少ないため
+  const steps = Math.min(MAX_MARK, Math.floor(center));
 
   const marks: { key: string; xUnits: number; label: number }[] = [
     { key: "c", xUnits: center, label: 0 },
