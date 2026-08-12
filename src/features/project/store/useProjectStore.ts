@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { Project } from "@/features/project/types";
 import type { Dancer } from "@/features/dancer/types";
+import { sortScenes } from "@/features/scene/lib/sceneTiming";
 import type { Position, Scene } from "@/features/scene/types";
 
 /** シーンごと・ダンサーごとのPosition。DBの複合PK(scene_id, dancer_id)に対応させ、
@@ -73,7 +74,6 @@ type ProjectState = {
   // 実際の削除(確定後更新)にも流用する
   removeScene: (sceneId: string) => void;
   renameScene: (sceneId: string, name: string) => void;
-  reorderScenes: (orderedSceneIds: string[]) => void;
   applySceneTimes: (timesById: Map<string, number>) => void;
 
   // --- Position ---
@@ -124,7 +124,7 @@ export const useProjectStore = create<ProjectState>((set) => ({
       return {
         project,
         dancers: dancersById,
-        scenes: [...scenes].sort((a, b) => a.orderIndex - b.orderIndex),
+        scenes: sortScenes(scenes),
         positionsBySceneId,
         isGuest,
         // 読み込んだ直後は、まだ何も編集していない
@@ -176,11 +176,7 @@ export const useProjectStore = create<ProjectState>((set) => ({
     })),
 
   addScene: (scene) =>
-    set((state) => ({
-      scenes: [...state.scenes, scene].sort(
-        (a, b) => a.orderIndex - b.orderIndex,
-      ),
-    })),
+    set((state) => ({ scenes: sortScenes([...state.scenes, scene]) })),
 
   removeScene: (sceneId) =>
     set((state) => {
@@ -203,23 +199,17 @@ export const useProjectStore = create<ProjectState>((set) => ({
    * (リップル)があるので、常に一括で受ける */
   applySceneTimes: (timesById) =>
     set((state) => ({
-      scenes: state.scenes.map((scene) => {
-        const next = timesById.get(scene.id);
-        return next === undefined ? scene : { ...scene, timeSeconds: next };
-      }),
+      // 並べ直すのを忘れない。時刻が並び順の正なので、隣を追い越す
+      // 時刻を入れたらその場で順番も入れ替わる
+      scenes: sortScenes(
+        state.scenes.map((scene) => {
+          const next = timesById.get(scene.id);
+          return next === undefined ? scene : { ...scene, timeSeconds: next };
+        }),
+      ),
     })),
 
-  reorderScenes: (orderedSceneIds) =>
-    set((state) => {
-      const sceneById = new Map(state.scenes.map((s) => [s.id, s]));
-      const reordered = orderedSceneIds
-        .map((id, index) => {
-          const scene = sceneById.get(id);
-          return scene ? { ...scene, orderIndex: index } : null;
-        })
-        .filter((scene): scene is Scene => scene !== null);
-      return { scenes: reordered };
-    }),
+
 
   // 既存レコードとマージする(丸ごと置き換えない)。渡さなかったフィールドは
   // 既存の値を保持する。例えばドラッグでxCoordinate/yCoordinateだけを渡した

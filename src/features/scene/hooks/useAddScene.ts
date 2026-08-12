@@ -9,12 +9,19 @@ import { createScene } from "@/features/scene/api/scenes";
 import { upsertPositions } from "@/features/scene/api/positions";
 import type { Project } from "@/features/project/types";
 import { randomId } from "@/lib/randomId";
-import { DEFAULT_SEGMENT_SECONDS } from "@/features/scene/lib/sceneTiming";
+import { insertTimeSeconds } from "@/features/scene/lib/sceneTiming";
+import { useMusicStore } from "@/features/music/store/useMusicStore";
 
 /**
- * 「いまの配置をコピーして新しいシーンを末尾に追加する」処理。
+ * 「いまの配置をコピーして、いま聞いている位置に新しいシーンを作る」処理。
  *
- * ドック(SceneTimeline)と、シーンが1つも無いときの空ステージの両方から
+ * ■ なぜ末尾ではなく再生位置なのか
+ * 曲を流しながら「ここで隊形を変えたい」と思った場所に置けることが、
+ * 時間軸を持つ画面の値打ちそのもの。末尾へ足す作りだと、置いてから
+ * 時刻を打ち直すことになり、思った場所と手の動きが1往復ずれる。
+ * 並び順は時刻の昇順で決まるので、途中に割り込んでもそのまま並ぶ。
+ *
+ * ドック(SceneDock)と、シーンが1つも無いときの空ステージの両方から
  * 呼ばれる。ページはServer Componentで関数を渡せないため、propsで配るのでは
  * なく共有のフックにしている。
  *
@@ -36,16 +43,23 @@ export function useAddScene(project: Project) {
   const handleAddScene = async () => {
     setIsCreating(true);
     const previousSelectedSceneId = useUIStore.getState().selectedSceneId;
+
+    // 押した瞬間の再生位置。曲が止まっていればシークした位置になる。
+    // シーンがまだ1つも無いときだけは曲の頭から始める(最初の隊形は
+    // 「曲のこの秒から」ではなく「はじまり」なので)
+    const timeSeconds =
+      scenes.length === 0
+        ? 0
+        : insertTimeSeconds(scenes, useMusicStore.getState().currentTime);
+
     const scene = {
       id: randomId(),
       projectId: project.id,
       name: `シーン${scenes.length + 1}`,
+      // 並び順の正は時刻。order_index は同じ時刻に並んだときの
+      // 打ち消し合いを防ぐためだけに残っている
       orderIndex: scenes.length,
-      // 末尾へ、既定の移動時間ぶん後ろに置く。時刻は絶対値なので、
-      // 「前のシーンから1秒後」を自分で計算して持つ
-      timeSeconds:
-        (scenes[scenes.length - 1]?.timeSeconds ?? 0) +
-        (scenes.length > 0 ? DEFAULT_SEGMENT_SECONDS : 0),
+      timeSeconds,
     };
     const copiedPositions = Object.values(
       useProjectStore.getState().positionsBySceneId[

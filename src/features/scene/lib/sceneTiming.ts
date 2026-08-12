@@ -138,7 +138,14 @@ export function retimeScene(
 
 /**
  * シーンを丸ごと別の時刻へ動かす(タイムライン上でつまんで動かす操作)。
- * 前後のシーンを追い越さない範囲に収める。
+ *
+ * 【前後を追い越してよい】。並び順は時刻の昇順で決まるので、隣を
+ * 追い越せばそのまま順番が入れ替わる。追い越さないよう手前で止めると、
+ * 「3番目を頭に持ってきたい」がこの操作ではできなくなり、
+ * 一覧を開いて並び替えるしかなくなる。
+ *
+ * 曲の頭より手前へは行かない。負の時刻は「曲が始まる前」という
+ * 意味になってしまう。
  */
 export function moveSceneTo(
   scenes: TimedScene[],
@@ -148,20 +155,108 @@ export function moveSceneTo(
   const timesById = new Map(scenes.map((s) => [s.id, s.timeSeconds]));
   if (index < 0 || index >= scenes.length) return timesById;
 
-  const previous = scenes[index - 1];
-  const next = scenes[index + 1];
-  const lower = previous ? previous.timeSeconds + MIN_SEGMENT_SECONDS : 0;
-  const upper = next ? next.timeSeconds - MIN_SEGMENT_SECONDS : Infinity;
-
-  // 前後が既に詰まっている場合、lower が upper を上回ることがある。
-  // そのときは動かさない(押しのけるより、動かない方が読み取りやすい)
-  if (lower > upper) return timesById;
-
+  const target = roundSeconds(Math.max(0, seconds));
+  // ちょうど同じ時刻に重ねると、どちらの隊形を出すか決まらなくなる。
+  // 既に居るところへ置こうとしたときだけ、最小の間隔ぶんずらす
+  const taken = scenes.some(
+    (scene, i) => i !== index && scene.timeSeconds === target,
+  );
   timesById.set(
     scenes[index].id,
-    roundSeconds(Math.min(upper, Math.max(lower, seconds))),
+    taken ? roundSeconds(target + MIN_SEGMENT_SECONDS) : target,
   );
   return timesById;
+}
+
+/**
+ * 一覧で行を並び替えたときの時刻。
+ *
+ * 動いた1つだけを、【新しい隣同士の中間】へ置く。触っていないシーンの
+ * 時刻は変えない。全部を等間隔に振り直すやり方もあるが、それだと
+ * 曲に合わせて置いた他のシーンまで動く。
+ *
+ * 動いた1つを、位置のずれがいちばん大きいものとして選ぶ。隣同士の
+ * 入れ替えはどちらを動いたと見ても結果の並びは同じなので、
+ * 取り違えても困らない。
+ */
+export function retimeForOrder(
+  scenes: TimedScene[],
+  orderedIds: string[],
+): Map<string, number> {
+  const timesById = new Map(scenes.map((s) => [s.id, s.timeSeconds]));
+  const oldIndexById = new Map(scenes.map((scene, i) => [scene.id, i]));
+
+  let movedId: string | null = null;
+  let largestShift = 0;
+  orderedIds.forEach((id, newIndex) => {
+    const oldIndex = oldIndexById.get(id);
+    if (oldIndex === undefined) return;
+    const shift = Math.abs(newIndex - oldIndex);
+    if (shift > largestShift) {
+      largestShift = shift;
+      movedId = id;
+    }
+  });
+  if (movedId === null) return timesById;
+
+  const at = orderedIds.indexOf(movedId);
+  const before = timesById.get(orderedIds[at - 1] ?? "");
+  const after = timesById.get(orderedIds[at + 1] ?? "");
+
+  let target: number;
+  if (before !== undefined && after !== undefined) {
+    target = (before + after) / 2;
+  } else if (before !== undefined) {
+    target = before + DEFAULT_SEGMENT_SECONDS;
+  } else if (after !== undefined) {
+    // 先頭へ移した。曲の頭より手前は無いので、0との中間に置く
+    target = after / 2;
+  } else {
+    return timesById;
+  }
+
+  timesById.set(movedId, roundSeconds(Math.max(0, target)));
+  return timesById;
+}
+
+/**
+ * 新しいシーンを置く時刻。押した瞬間の再生位置に作る。
+ *
+ * そこに既に居る場合は、次のシーンとの中間へ割り込む。曲を聴きながら
+ * 「ここ」と思った場所に置けることが要点なので、末尾へ足す作りには戻さない。
+ */
+export function insertTimeSeconds(
+  scenes: TimedScene[],
+  atSeconds: number,
+): number {
+  const target = roundSeconds(Math.max(0, atSeconds));
+  const sorted = [...scenes].sort((a, b) => a.timeSeconds - b.timeSeconds);
+
+  const collision = sorted.find(
+    (scene) => Math.abs(scene.timeSeconds - target) < MIN_SEGMENT_SECONDS,
+  );
+  if (!collision) return target;
+
+  const next = sorted.find(
+    (scene) => scene.timeSeconds > collision.timeSeconds,
+  );
+  if (!next) return roundSeconds(collision.timeSeconds + DEFAULT_SEGMENT_SECONDS);
+  return roundSeconds(
+    Math.max(
+      collision.timeSeconds + MIN_SEGMENT_SECONDS,
+      (collision.timeSeconds + next.timeSeconds) / 2,
+    ),
+  );
+}
+
+/** 時刻の昇順。同じ時刻なら元の並び(order_index)を保つ。
+ * 並び順の正は時刻なので、読み込みも追加も編集もここを通す */
+export function sortScenes<T extends TimedScene & { orderIndex: number }>(
+  scenes: T[],
+): T[] {
+  return [...scenes].sort(
+    (a, b) => a.timeSeconds - b.timeSeconds || a.orderIndex - b.orderIndex,
+  );
 }
 
 /**

@@ -8,10 +8,13 @@ import {
   deleteScene,
   renameScene as renameSceneApi,
   updateSceneTimes,
-  updateSceneOrder,
 } from "@/features/scene/api/scenes";
 import type { Scene } from "@/features/scene/types";
-import { moveSceneTo, retimeScene } from "@/features/scene/lib/sceneTiming";
+import {
+  moveSceneTo,
+  retimeForOrder,
+  retimeScene,
+} from "@/features/scene/lib/sceneTiming";
 
 /**
  * シーンの改名・並び替え・遷移時間・削除。
@@ -29,7 +32,6 @@ export function useSceneActions() {
   );
   const removeScene = useProjectStore((state) => state.removeScene);
   const renameScene = useProjectStore((state) => state.renameScene);
-  const reorderScenes = useProjectStore((state) => state.reorderScenes);
   const applySceneTimes = useProjectStore((state) => state.applySceneTimes);
   const selectScene = useUIStore((state) => state.selectScene);
   const setIsPlaying = useUIStore((state) => state.setIsPlaying);
@@ -51,27 +53,15 @@ export function useSceneActions() {
     }
   };
 
-  // 並び順のID配列を受け取り、各シーンのorderIndexを配列内の位置に
-  // 合わせて一括で更新する
+  /**
+   * 一覧で行を並び替えたとき。
+   *
+   * 並び順の正は時刻なので、順番そのものを保存する場所は無い。
+   * 動かした行の【時刻】を新しい隣同士の中間へ書き換えることで、
+   * 結果としてその位置に並ぶ(sceneTiming の retimeForOrder)。
+   */
   const reorderTo = async (orderedSceneIds: string[]) => {
-    const previousOrder = scenes.map((scene) => scene.id);
-    reorderScenes(orderedSceneIds);
-
-    try {
-      await persist((supabase) =>
-        Promise.all(
-          orderedSceneIds.map((id, index) =>
-            updateSceneOrder(supabase, id, index),
-          ),
-        ),
-      );
-    } catch (error) {
-      reorderScenes(previousOrder);
-      showToast({
-        message: toUserMessage(error, "シーンの並び替えに失敗しました"),
-        type: "error",
-      });
-    }
+    await commitTimes(retimeForOrder(scenes, orderedSceneIds));
   };
 
   /** シーンを別の時刻へ動かす。
