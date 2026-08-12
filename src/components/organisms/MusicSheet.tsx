@@ -10,6 +10,7 @@ import { persist } from "@/features/project/lib/persistence";
 import { updateMusicOffset } from "@/features/project/api/projects";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { totalTransitionSeconds } from "@/features/scene/lib/playback";
+import { MetronomeControls } from "@/components/molecules/MetronomeControls";
 import type { Project } from "@/features/project/types";
 
 type Props = {
@@ -126,6 +127,19 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
             相手には同じ曲を選んでもらってください(開始位置は共有されます)。
           </p>
         </div>
+
+        {/* 曲が無いときだけ拍を出す。曲があるときは、そちらが時間の物差しに
+            なるので、2つの拍が同時に鳴ると合わせる先が分からなくなる */}
+        {!fileName && (
+          <div className="flex flex-col gap-2 border-t border-line pt-3.5">
+            <p className="text-[13px] text-fg">曲がないときの拍</p>
+            <MetronomeControls />
+            <p className="text-[11px] leading-snug text-fg-muted">
+              曲を用意する前でも、振付の速さを耳で確かめられます。
+              再生ボタンを押している間だけ鳴ります。
+            </p>
+          </div>
+        )}
 
         <div>
           <label className="flex items-center gap-2.5">

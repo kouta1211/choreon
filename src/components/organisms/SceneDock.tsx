@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { List, Pause, Pencil, Play, Plus } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
@@ -11,12 +11,13 @@ import {
   seekToSelectedScene,
   useMusicPlayback,
 } from "@/features/music/hooks/useMusicPlayback";
+import { useSilentClock } from "@/features/music/hooks/useSilentClock";
+import { useMetronome } from "@/features/music/hooks/useMetronome";
 import {
   nearestSceneIndexAtSeconds,
   sceneStartSeconds,
 } from "@/features/music/lib/musicTimeline";
 import { SceneListSheet } from "@/components/organisms/SceneListSheet";
-import { getNextSceneId } from "@/features/scene/lib/playback";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
 import { useSceneActions } from "@/features/scene/hooks/useSceneActions";
 import type { Project } from "@/features/project/types";
@@ -69,41 +70,23 @@ export function SceneDock({ project }: Props) {
   const musicUrl = useMusicStore((state) => state.objectUrl);
   const musicFileName = useMusicStore((state) => state.fileName);
   const setMusicDuration = useMusicStore((state) => state.setDurationSeconds);
+  const bpm = useMusicStore((state) => state.bpm);
+  const isMetronomeEnabled = useMusicStore((state) => state.isMetronomeEnabled);
+  const setCurrentTime = useMusicStore((state) => state.setCurrentTime);
   const hasMusic = musicUrl !== null;
   const audioRef = useMusicPlayback();
 
   const selectedIndex = scenes.findIndex((s) => s.id === selectedSceneId);
   const selectedScene = selectedIndex >= 0 ? scenes[selectedIndex] : null;
 
-  // 再生ボタンを押した直後の1歩目だけは待たずに動き始めるための目印。
-  // 押した瞬間(false→trueに切り替える側)でtrueにし、シーケンサー側で
-  // 読んだら即falseに戻す(詳しくは上のコンポーネント doc コメント参照)
-  const justStartedPlayingRef = useRef(false);
-
-  useEffect(() => {
-    if (!isPlaying) return;
-    // 曲が入っているときは、曲の再生位置がシーンを決める(useMusicPlayback)。
-    // こちらのタイマーも一緒に動かすと、2つの時計が同じ選択を奪い合う
-    if (hasMusic) return;
-
-    const isFirstStep = justStartedPlayingRef.current;
-    justStartedPlayingRef.current = false;
-    const currentScene = scenes.find((scene) => scene.id === selectedSceneId);
-    const delayMs = isFirstStep
-      ? 0
-      : (currentScene?.transitionDurationSeconds ?? 0) * 1000;
-    const nextSceneId = getNextSceneId(scenes, selectedSceneId);
-
-    const timer = setTimeout(() => {
-      if (nextSceneId) {
-        selectScene(nextSceneId);
-      } else {
-        setIsPlaying(false);
-      }
-    }, delayMs);
-
-    return () => clearTimeout(timer);
-  }, [isPlaying, hasMusic, selectedSceneId, scenes, selectScene, setIsPlaying]);
+  // 曲が無いときの時計。曲があるときは<audio>が時刻の正になる
+  // (useMusicPlayback)。どちらのモードでも「時刻 → シーン」と一方向に
+  // 流れるので、時計は常に1つだけになる
+  useSilentClock();
+  useMetronome({
+    isActive: isPlaying && !hasMusic && isMetronomeEnabled,
+    bpm,
+  });
 
   // 手でシーンを選んだら曲もその位置へ飛ばす。再生中は曲の側が
   // シーンを決めているので、止まっているときだけ動かす
@@ -114,27 +97,34 @@ export function SceneDock({ project }: Props) {
 
   const handleTogglePlay = () => {
     if (!isPlaying) {
-      justStartedPlayingRef.current = true;
+      // 選択中のシーンの時刻から始める。曲があれば<audio>側が
+      // seekToSelectedScene で既にそこへ寄っている
+      if (!hasMusic && selectedIndex >= 0) {
+        setCurrentTime(sceneStartSeconds(scenes)[selectedIndex] ?? 0);
+      }
       setIsPlaying(true);
       return;
     }
 
     // 止めるときは、いちばん近いシーンへ寄せてから止める。
-    // 曲を鳴らしていると、押した瞬間の再生位置は区間の途中であることが多い。
-    // そこで止めると「シーン2と3のあいだ」という、隊形としては存在しない
-    // 状態で残り、次に押したときにどこから続くのかも分からなくなる
-    const audio = audioRef.current;
-    if (audio && scenes.length > 0) {
+    // 押した瞬間の時刻は区間の途中であることが多く、そこで止めると
+    // 「シーン2と3のあいだ」という、隊形としては存在しない状態で残る。
+    // 次に押したときにどこから続くのかも分からなくなる
+    if (scenes.length > 0) {
+      const audio = audioRef.current;
       const offset =
         useProjectStore.getState().project?.musicOffsetSeconds ?? 0;
-      const index = nearestSceneIndexAtSeconds(
-        scenes,
-        audio.currentTime - offset,
-      );
+      const elapsed = hasMusic
+        ? (audio?.currentTime ?? 0) - offset
+        : useMusicStore.getState().currentTime;
+
+      const index = nearestSceneIndexAtSeconds(scenes, elapsed);
       const scene = scenes[index];
       if (scene) {
         selectScene(scene.id);
-        audio.currentTime = offset + sceneStartSeconds(scenes)[index];
+        const start = sceneStartSeconds(scenes)[index];
+        if (hasMusic && audio) audio.currentTime = offset + start;
+        else setCurrentTime(start);
       }
     }
     setIsPlaying(false);

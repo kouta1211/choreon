@@ -6,6 +6,12 @@ import {
   loadTrack,
   saveTrack,
 } from "@/features/music/lib/musicStorage";
+import {
+  clampBpm,
+  DEFAULT_METRONOME_SETTING,
+  loadMetronomeSetting,
+  saveMetronomeSetting,
+} from "@/features/music/lib/metronomePreference";
 
 type MusicStore = {
   /** 再生に使うURL。端末のファイルから作った一時的なもの */
@@ -18,9 +24,21 @@ type MusicStore = {
   /** どの作品の曲を持っているか。作品を移ったら入れ替える */
   projectId: string | null;
 
+  /** いま時間軸のどこを見ているか(秒)。曲があれば<audio>から、
+   * 無ければ自前の時計(useSilentClock)から入る。
+   * どちらのモードでも「時刻 → シーン」の一方向に流れる */
+  currentTime: number;
+  /** メトロノームの速さ。作品ごとに端末へ覚える */
+  bpm: number;
+  /** メトロノームを鳴らすか。曲が入っている間は使わない */
+  isMetronomeEnabled: boolean;
+
   load: (file: File, projectId: string) => void;
   clear: (projectId: string) => void;
   setDurationSeconds: (seconds: number) => void;
+  setCurrentTime: (seconds: number) => void;
+  setBpm: (bpm: number) => void;
+  toggleMetronome: () => void;
   /** 端末に控えてある曲を読み直す。作品を開いたときに1回呼ぶ */
   restore: (projectId: string) => Promise<void>;
 };
@@ -46,6 +64,9 @@ export const useMusicStore = create<MusicStore>((set, get) => ({
   fileName: null,
   durationSeconds: null,
   projectId: null,
+  currentTime: 0,
+  bpm: DEFAULT_METRONOME_SETTING.bpm,
+  isMetronomeEnabled: DEFAULT_METRONOME_SETTING.isEnabled,
 
   load: (file, projectId) => {
     // 選び直すたびに前のURLを解放する。放っておくと、選んだ曲の数だけ
@@ -75,33 +96,56 @@ export const useMusicStore = create<MusicStore>((set, get) => ({
   },
 
   setDurationSeconds: (seconds) => set({ durationSeconds: seconds }),
+  setCurrentTime: (seconds) => set({ currentTime: Math.max(0, seconds) }),
 
-  restore: async (projectId) => {
-    // 既にこの作品の曲が入っていれば何もしない(選んだ直後の再入場など)
-    if (get().projectId === projectId && get().objectUrl) return;
-
-    const stored = await loadTrack(projectId);
-    if (!stored) {
-      // 別の作品の曲が残っていたら消す。作品を移ったのに前の曲が
-      // 鳴っていると、合っていない振付を合っているものとして見てしまう
-      if (get().projectId !== projectId) {
-        revoke(get().objectUrl);
-        set({
-          objectUrl: null,
-          fileName: null,
-          durationSeconds: null,
-          projectId: null,
+  setBpm: (bpm) =>
+    set((state) => {
+      const next = clampBpm(bpm);
+      if (state.projectId) {
+        saveMetronomeSetting(state.projectId, {
+          bpm: next,
+          isEnabled: state.isMetronomeEnabled,
         });
       }
+      return { bpm: next };
+    }),
+
+  toggleMetronome: () =>
+    set((state) => {
+      const isMetronomeEnabled = !state.isMetronomeEnabled;
+      if (state.projectId) {
+        saveMetronomeSetting(state.projectId, {
+          bpm: state.bpm,
+          isEnabled: isMetronomeEnabled,
+        });
+      }
+      return { isMetronomeEnabled };
+    }),
+
+  restore: async (projectId) => {
+    // 既にこの作品の曲が入っていれば、曲の読み直しだけ省く
+    const isSameProject = get().projectId === projectId;
+    const metronome = loadMetronomeSetting(projectId);
+
+    if (isSameProject && get().objectUrl) {
+      set({ bpm: metronome.bpm, isMetronomeEnabled: metronome.isEnabled });
       return;
     }
 
+    const stored = await loadTrack(projectId);
+
+    // 別の作品の曲が残っていたら消す。作品を移ったのに前の曲が
+    // 鳴っていると、合っていない振付を合っているものとして見てしまう。
+    // projectId は曲の有無に関わらず入れる(BPMの保存先になるため)
     revoke(get().objectUrl);
     set({
-      objectUrl: URL.createObjectURL(stored.file),
-      fileName: stored.fileName,
+      objectUrl: stored ? URL.createObjectURL(stored.file) : null,
+      fileName: stored ? stored.fileName : null,
       durationSeconds: null,
       projectId,
+      currentTime: 0,
+      bpm: metronome.bpm,
+      isMetronomeEnabled: metronome.isEnabled,
     });
   },
 }));
