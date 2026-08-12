@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -32,8 +32,13 @@ import {
 } from "@/features/canvas/lib/gridSnapModifier";
 import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
-import { upsertPosition, upsertPositions } from "@/features/scene/api/positions";
+import {
+  upsertPosition,
+  upsertPositions,
+} from "@/features/scene/api/positions";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
+import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
+import { useStageScrubGesture } from "@/features/canvas/hooks/useStageScrubGesture";
 import type { Project } from "@/features/project/types";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position, Scene } from "@/features/scene/types";
@@ -105,6 +110,7 @@ export function CanvasBoard({
 }: Props) {
   const { addScene, isCreating: isCreatingScene } = useAddScene(project);
   const stageRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   // 指が数px動いただけでドラッグ扱いになると、ダンサーをタップして
   // 選択する操作(DancerInspectorを開く)がしづらくなるため、
   // 8px以上動いてから初めてドラッグとみなす
@@ -140,6 +146,21 @@ export function CanvasBoard({
   const setDragSnapLine = useUIStore((state) => state.setDragSnapLine);
   const showToast = useUIStore((state) => state.showToast);
   const isSymmetryMode = useUIStore((state) => state.isSymmetryMode);
+
+  // ステージを横に払って前後のシーンへ移るジェスチャ。ダンサーのドラッグ
+  // (dnd-kit)とは掴む対象で住み分けており、ダンサーとボタンの上から
+  // 始まった指はこちらでは拾わない(useStageScrubGesture参照)
+  const scenes = useProjectStore((state) => state.scenes);
+  const scrub = useSceneScrub();
+  const sceneIds = useMemo(() => scenes.map((scene) => scene.id), [scenes]);
+  const scrubHandlers = useStageScrubGesture({
+    stageRef,
+    trackRef,
+    sceneIds,
+    selectedSceneId,
+    selectScene,
+    scrub,
+  });
 
   // サーバーから取得済みのデータ(props)をZustand storeへ同期する。
   // 「Reactの外にある別のシステム(ここではグローバルなstore)にデータを渡す」
@@ -308,7 +329,11 @@ export function CanvasBoard({
           useHistoryStore.getState().push({ kind: "move", changes });
         } catch (error) {
           for (const change of changes) {
-            updateDancerPosition(change.sceneId, change.dancerId, change.before);
+            updateDancerPosition(
+              change.sceneId,
+              change.dancerId,
+              change.before,
+            );
           }
           showToast({
             message: toUserMessage(error, "位置の保存に失敗しました"),
@@ -439,9 +464,8 @@ export function CanvasBoard({
       sceneId: string,
       point: { x: number; y: number } | null,
     ) => {
-      const before = useProjectStore.getState().positionsBySceneId[sceneId]?.[
-        dancerId
-      ];
+      const before =
+        useProjectStore.getState().positionsBySceneId[sceneId]?.[dancerId];
       if (!before) return;
 
       const after = {
@@ -496,6 +520,8 @@ export function CanvasBoard({
     >
       <Stage
         ref={stageRef}
+        trackRef={trackRef}
+        scrubHandlers={scrubHandlers}
         widthUnits={project.stageWidth}
         heightUnits={project.stageHeight}
         showCenterline={isSymmetryMode}

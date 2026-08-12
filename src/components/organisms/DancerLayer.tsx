@@ -10,6 +10,7 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { findBlockedDancerIds } from "@/features/canvas/lib/blindSpot";
 import { findExcessiveMoveDancerIds } from "@/features/canvas/lib/physicalLimits";
 import { getSceneStep } from "@/features/canvas/lib/sceneStep";
+import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
 import {
   EMPTY_POSITIONS,
   OVERLAY_FADE_IN_SECONDS,
@@ -105,6 +106,14 @@ export function DancerLayer({
     (state) => state.positionsBySceneId[previousSceneId ?? ""] ?? EMPTY_POSITIONS,
   );
 
+  // ステージを横にドラッグしている最中の移動先。掴んでいない間はnull
+  const scrub = useSceneScrub();
+  const scrubTargetSceneId = scrub?.targetSceneId ?? null;
+  const scrubTargetPositions = useProjectStore(
+    (state) =>
+      state.positionsBySceneId[scrubTargetSceneId ?? ""] ?? EMPTY_POSITIONS,
+  );
+
   // 今通っている区間の情報がどちらのシーン側にあるか。戻るときだけ
   // 「さっきまでいたシーン」側に入っている
   const segmentPositions = isBackwardStep ? previousPositions : positions;
@@ -151,6 +160,19 @@ export function DancerLayer({
     () => findExcessiveMoveDancerIds(positions, nextPositions),
     [positions, nextPositions],
   );
+
+  // 描くダンサー。通常は選択中シーンに座標を持つ人だけだが、スクラブ中は
+  // 移動先にしか居ない人も描き始める(そうしないと、指で half まで引いた時点で
+  // 「これから出てくる人」が画面に居らず、確定した瞬間に唐突に現れる)
+  const renderedDancerIds = useMemo(() => {
+    const ids = Object.keys(positions);
+    if (!scrubTargetSceneId) return ids;
+    const seen = new Set(ids);
+    for (const id of Object.keys(scrubTargetPositions)) {
+      if (!seen.has(id)) ids.push(id);
+    }
+    return ids;
+  }, [positions, scrubTargetSceneId, scrubTargetPositions]);
 
   return (
     <>
@@ -207,21 +229,28 @@ export function DancerLayer({
           onComplete={() => setAnimatingSceneId(null)}
         />
       )}
-      {Object.values(positions).map((position) => {
-        const dancer = dancers[position.dancerId];
+      {renderedDancerIds.map((dancerId) => {
+        const dancer = dancers[dancerId];
         if (!dancer) return null;
+
+        const position = positions[dancerId];
+        const scrubTarget = scrubTargetPositions[dancerId];
+        // 選択中シーンに居ない = スクラブの移動先にだけ居る人。
+        // 足場が無いので、移動先の座標にそのまま置いて濃さで出入りさせる
+        const anchor = position ?? scrubTarget;
+        if (!anchor) return null;
 
         // この区間ぶんの設定(曲線の制御点・ダンサー個別の遷移時間)が入った行。
         // 進むときは選択中シーンの行、戻るときは直前のシーンの行になる
-        const segmentPosition = segmentPositions[position.dancerId];
+        const segmentPosition = segmentPositions[dancerId];
 
         return (
           <DraggableDancerIcon
             key={dancer.id}
             dancer={dancer}
-            x={position.xCoordinate}
-            y={position.yCoordinate}
-            rotationAngle={position.rotationAngle}
+            x={anchor.xCoordinate}
+            y={anchor.yCoordinate}
+            rotationAngle={anchor.rotationAngle}
             stageWidthUnits={stageWidthUnits}
             stageHeightUnits={stageHeightUnits}
             onRotateEnd={onRotateEnd}
@@ -238,6 +267,10 @@ export function DancerLayer({
             }
             isBlocked={blockedDancerIds.has(dancer.id)}
             hasExcessiveMove={excessiveMoveDancerIds.has(dancer.id)}
+            scrubFromX={position?.xCoordinate ?? null}
+            scrubFromY={position?.yCoordinate ?? null}
+            scrubToX={scrubTarget?.xCoordinate ?? null}
+            scrubToY={scrubTarget?.yCoordinate ?? null}
           />
         );
       })}

@@ -15,6 +15,8 @@ import { DancerMarker } from "@/components/molecules/DancerIcon";
 import { RotationHandle } from "@/components/atoms/RotationHandle";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { quadraticBezierAt } from "@/features/canvas/lib/curvePath";
+import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
+import { interpolateDancerPoint } from "@/features/canvas/lib/sceneScrub";
 import {
   DEFAULT_TRANSITION_DURATION_SECONDS,
   resolveTransitionDuration,
@@ -50,6 +52,15 @@ type Props = {
   isBlocked?: boolean;
   /** 次のシーンへの移動距離が現実的な範囲を超えているか(常時判定) */
   hasExcessiveMove?: boolean;
+  /** ステージを横にドラッグしている間の、区間の両端でのこのダンサーの位置
+   * (ステージ座標系)。ダンサーは追加したシーンにしか座標を持たないため
+   * (AddDancerSheet参照)、途中から出てくる・途中で捌ける人は片側がnullになる。
+   * オブジェクトではなくスカラーで渡しているのは、このコンポーネントがmemo化
+   * されているため。毎レンダー新しいオブジェクトを作ると比較が必ず外れる */
+  scrubFromX?: number | null;
+  scrubFromY?: number | null;
+  scrubToX?: number | null;
+  scrubToY?: number | null;
 };
 
 /**
@@ -114,6 +125,10 @@ function DraggableDancerIconImpl({
   curveControlY,
   isBlocked = false,
   hasExcessiveMove = false,
+  scrubFromX = null,
+  scrubFromY = null,
+  scrubToX = null,
+  scrubToY = null,
 }: Props) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   // dataは格子スナップ用のModifier(gridSnapModifier)がactive.data.current経由で
@@ -220,6 +235,17 @@ function DraggableDancerIconImpl({
   const top = useTransform(topPct, (value) => `${value}%`);
   const wasDraggingRef = useRef(isDragging);
 
+  // 濃さもMotionValueに一本化している。誰かにフォーカスが当たっている間の
+  // 「自分以外を薄くする」と、スクラブ中の「片側のシーンにしか居ない人を
+  // 出入りさせる」が同じopacityを取り合うため、宣言的なanimate propと
+  // MotionValueを混ぜると、どちらが勝つかがレンダーの順番に左右される
+  const dimmedOpacity = isDimmed ? 0.3 : 1;
+  const opacity = useMotionValue(dimmedOpacity);
+
+  const scrub = useSceneScrub();
+  const scrubProgressValue = scrub?.progress;
+  const isScrubbing = scrub?.targetSceneId != null;
+
   // 制御点もステージ座標系から%へ直しておく(x/yと同じ土俵に乗せる)。
   // 片方だけ設定されている状態は曲線として意味を成さないので直線扱いにする
   const hasCurve = curveControlX != null && curveControlY != null;
@@ -235,6 +261,11 @@ function DraggableDancerIconImpl({
     wasDraggingRef.current = isDragging;
     // ドラッグ中はleft/topを動かさない(dnd-kitのtransformだけで見た目を動かす)
     if (isDragging) return;
+    // スクラブ中は下のuseEffectが指の位置から毎フレームleft/topを決めている。
+    // ここで時間ベースのアニメーションを走らせると、両者が同じ値を取り合う。
+    // 指を離してこのフラグが下りた時に、改めてこの効果が走り、
+    // 「途中まで動かした位置」から本来の位置へ戻る/進むアニメーションになる
+    if (isScrubbing) return;
     if (justFinishedDragging) {
       leftPct.set(leftPercent);
       topPct.set(topPercent);
@@ -285,6 +316,7 @@ function DraggableDancerIconImpl({
     };
   }, [
     isDragging,
+    isScrubbing,
     leftPercent,
     topPercent,
     leftPct,
@@ -293,6 +325,68 @@ function DraggableDancerIconImpl({
     controlLeftPercent,
     controlTopPercent,
   ]);
+
+  // スクラブ中の位置。指の進捗(0〜1)を購読して、今のシーンの位置と
+  // 移動先の位置のあいだを線形に結ぶ。ここでは曲線(制御点)を使わない:
+  // 曲線は「何秒でどう動くか」という時間の話で、指で前後に往復できる
+  // スクラブでは行きと帰りで違う道を通ってしまうため
+  useEffect(() => {
+    if (!isScrubbing || !scrubProgressValue) return;
+    if (isDragging) return;
+
+    // %へ直してから補間する。区間の両端はステージ座標系で渡ってくるが、
+    // left/topは%で持っているため(このファイル冒頭のコメント参照)
+    const from =
+      scrubFromX == null || scrubFromY == null
+        ? null
+        : {
+            x: (scrubFromX / stageWidthUnits) * 100,
+            y: (scrubFromY / stageHeightUnits) * 100,
+          };
+    const to =
+      scrubToX == null || scrubToY == null
+        ? null
+        : {
+            x: (scrubToX / stageWidthUnits) * 100,
+            y: (scrubToY / stageHeightUnits) * 100,
+          };
+
+    const apply = (progress: number) => {
+      const point = interpolateDancerPoint(from, to, progress);
+      if (!point) return;
+      leftPct.set(point.x);
+      topPct.set(point.y);
+      opacity.set(point.opacity * dimmedOpacity);
+    };
+
+    apply(scrubProgressValue.get());
+    return scrubProgressValue.on("change", apply);
+  }, [
+    isScrubbing,
+    isDragging,
+    scrubProgressValue,
+    scrubFromX,
+    scrubFromY,
+    scrubToX,
+    scrubToY,
+    stageWidthUnits,
+    stageHeightUnits,
+    leftPct,
+    topPct,
+    opacity,
+    dimmedOpacity,
+  ]);
+
+  // スクラブしていない間の濃さ。以前はmotion.divのanimate propで
+  // 宣言的に書いていたぶんを、MotionValueへ移して同じ秒数で再現している
+  useEffect(() => {
+    if (isScrubbing) return;
+    const animation = animate(opacity, dimmedOpacity, {
+      duration: 0.3,
+      ease: "easeOut",
+    });
+    return () => animation.stop();
+  }, [isScrubbing, opacity, dimmedOpacity]);
 
   return (
     <motion.div
@@ -303,11 +397,10 @@ function DraggableDancerIconImpl({
       className={`absolute touch-none select-none ${
         isDragging ? "z-10 cursor-grabbing" : "cursor-grab"
       }`}
-      animate={{ opacity: isDimmed ? 0.3 : 1 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
       style={{
         left,
         top,
+        opacity,
         transform: transform ? CSS.Translate.toString(transform) : undefined,
       }}
       // マウス以外(指・ペン)では立てない。上の isHovered のコメント参照
