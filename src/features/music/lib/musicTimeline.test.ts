@@ -6,17 +6,15 @@ import {
 } from "./musicTimeline";
 import { makeScene } from "@/test/factories";
 
-/** 1→2へ2秒、2→3へ3秒。到着は 0s / 2s / 5s */
+/** 0s / 2s / 5s に置かれた3シーン */
 const SCENES = [
-  makeScene({ transitionDurationSeconds: 1 }),
-  makeScene({ id: "scene-2", orderIndex: 1, transitionDurationSeconds: 2 }),
-  makeScene({ id: "scene-3", orderIndex: 2, transitionDurationSeconds: 3 }),
+  makeScene({ timeSeconds: 0 }),
+  makeScene({ id: "scene-2", orderIndex: 1, timeSeconds: 2 }),
+  makeScene({ id: "scene-3", orderIndex: 2, timeSeconds: 5 }),
 ];
 
 describe("sceneStartSeconds", () => {
-  // 先頭の遷移秒数は「そこへ入ってくる時間」だが、入ってくる元が無い。
-  // ここを足すと曲全体が先頭シーンの秒数だけ後ろへずれる
-  it("先頭は0秒。自分より前の遷移だけを足す", () => {
+  it("シーンが持っている時刻をそのまま返す", () => {
     expect(sceneStartSeconds(SCENES)).toEqual([0, 2, 5]);
   });
 
@@ -24,11 +22,11 @@ describe("sceneStartSeconds", () => {
     expect(sceneStartSeconds([])).toEqual([]);
   });
 
-  it("小数を足しても誤差が積もらない", () => {
+  it("小数の時刻もそのまま扱える", () => {
     const starts = sceneStartSeconds([
-      makeScene(),
-      makeScene({ id: "s2", orderIndex: 1, transitionDurationSeconds: 0.1 }),
-      makeScene({ id: "s3", orderIndex: 2, transitionDurationSeconds: 0.2 }),
+      makeScene({ timeSeconds: 0 }),
+      makeScene({ id: "s2", orderIndex: 1, timeSeconds: 0.1 }),
+      makeScene({ id: "s3", orderIndex: 2, timeSeconds: 0.3 }),
     ]);
 
     expect(starts).toEqual([0, 0.1, 0.3]);

@@ -11,6 +11,7 @@ import { insertSceneIdAfter } from "@/features/scene/lib/sceneReorder";
 import type { Project } from "@/features/project/types";
 import type { Scene } from "@/features/scene/types";
 import { randomId } from "@/lib/randomId";
+import { duplicateTimeSeconds } from "@/features/scene/lib/sceneTiming";
 
 /**
  * 選択したシーンを複製して、その【すぐ後ろ】に差し込む。
@@ -45,7 +46,9 @@ export function useDuplicateScene(project: Project) {
       projectId: project.id,
       name: `${source.name} のコピー`,
       orderIndex: source.orderIndex + 1,
-      transitionDurationSeconds: source.transitionDurationSeconds,
+      // 元のシーンと、その次のシーンのちょうど中間へ置く。
+      // 次が無ければ既定の移動時間ぶん後ろへ
+      timeSeconds: duplicateTimeSeconds(scenes, source),
     };
     const copiedPositions = Object.values(
       positionsBySceneId[source.id] ?? {},

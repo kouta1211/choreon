@@ -80,6 +80,7 @@ export type Database = {
           name: string;
           order_index: number;
           transition_duration_seconds: number;
+          time_seconds: number;
           created_at: string;
         };
         Insert: {
@@ -88,6 +89,7 @@ export type Database = {
           name: string;
           order_index: number;
           transition_duration_seconds?: number;
+          time_seconds?: number;
           created_at?: string;
         };
         Update: {
@@ -96,6 +98,7 @@ export type Database = {
           name?: string;
           order_index?: number;
           transition_duration_seconds?: number;
+          time_seconds?: number;
           created_at?: string;
         };
         Relationships: [

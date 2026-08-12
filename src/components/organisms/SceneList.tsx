@@ -14,7 +14,11 @@ import {
 import { Copy, Plus, Trash2 } from "lucide-react";
 import { SceneThumbnail } from "@/components/molecules/SceneThumbnail";
 import { InlineEditableText } from "@/components/molecules/InlineEditableText";
-import { SceneTransitionField } from "@/components/molecules/SceneTransitionField";
+import {
+  formatClock,
+  SceneTimeField,
+} from "@/components/molecules/SceneTimeField";
+import { sceneDurations } from "@/features/scene/lib/sceneTiming";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { reorderSceneIds } from "@/features/scene/lib/sceneReorder";
@@ -54,7 +58,7 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
   const {
     renameSceneTo,
     reorderTo,
-    changeDuration,
+    changeSceneTime,
     confirmDelete,
     selectSceneManually,
   } = useSceneActions();
@@ -74,6 +78,8 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
       ),
     );
   };
+
+  const durations = sceneDurations(scenes);
 
   return (
     <div className="flex flex-col gap-2">
@@ -151,27 +157,26 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
                         isSelected ? "text-accent-bright" : "text-fg-muted"
                       }`}
                     >
-                      {index === 0
-                        ? "先頭"
-                        : `${scene.transitionDurationSeconds}s でここへ`}
+                      {formatClock(scene.timeSeconds)}
+                      {index > 0 && ` · ${durations[index]}s で移動`}
                       {isSelected && " · 表示中"}
                     </span>
                   </div>
                 </div>
 
-                {/* 遷移時間と複製・削除は選択中の行にだけ出す。
+                {/* 時刻と複製・削除は選択中の行にだけ出す。
                     全行に並べると一覧として読めなくなる */}
                 {isSelected && (
                   <div className="flex flex-col gap-2 px-2.5 pb-2.5">
-                    {index > 0 && (
-                      <SceneTransitionField
-                        fieldKey={scene.id}
-                        value={scene.transitionDurationSeconds}
-                        onCommit={(value) => changeDuration(scene, value)}
-                        fromSceneName={scenes[index - 1].name}
-                        sceneName={scene.name}
-                      />
-                    )}
+                    <SceneTimeField
+                      fieldKey={scene.id}
+                      timeSeconds={scene.timeSeconds}
+                      segmentSeconds={durations[index]}
+                      isFirst={index === 0}
+                      onCommit={(seconds, ripple) =>
+                        changeSceneTime(scene, seconds, ripple)
+                      }
+                    />
                     <div className="flex gap-1.5">
                       <SheetAction
                         icon={Copy}

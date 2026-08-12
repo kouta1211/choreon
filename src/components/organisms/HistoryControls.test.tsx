@@ -40,7 +40,7 @@ function seedMovedDancer() {
         projectId: "project-1",
         name: "シーン1",
         orderIndex: 0,
-        transitionDurationSeconds: 1,
+        timeSeconds: 1,
       },
     ],
     positionsBySceneId: { "scene-1": { "dancer-1": after } },

@@ -21,6 +21,7 @@ import {
   OVERLAY_FADE_IN_SECONDS,
   resolveTransitionDuration,
 } from "@/features/canvas/constants";
+import { sceneDurations } from "@/features/scene/lib/sceneTiming";
 
 type Props = {
   stageWidthUnits: number;
@@ -156,8 +157,9 @@ export function DancerLayer({
 
   // 次のシーンへの移動が速すぎるダンサー(常時判定、トグルなし)。
   // 判定には「その区間に何秒あるか」が要るので、次のシーンの遷移時間を渡す
-  const nextSceneSeconds =
-    scenes[selectedSceneIndex + 1]?.transitionDurationSeconds ?? 1;
+  // 「次のシーンへ移動するのにかかる秒数」= 次の時刻 − 今の時刻
+  const durations = sceneDurations(scenes);
+  const nextSceneSeconds = durations[selectedSceneIndex + 1] ?? 1;
   const excessiveMoves = useMemo(
     () => findExcessiveMoves(positions, nextPositions, nextSceneSeconds),
     [positions, nextPositions, nextSceneSeconds],
@@ -180,7 +182,8 @@ export function DancerLayer({
   // 各アイコンに同じ計算をさせずに済む
   const setIsTransitioning = useUIStore((state) => state.setIsTransitioning);
   const movingSceneId = isAdjacentStep ? selectedSceneId : null;
-  const movingSeconds = segmentScene?.transitionDurationSeconds ?? 0;
+  const movingSeconds =
+    durations[scenes.findIndex((scene) => scene.id === segmentScene?.id)] ?? 0;
   useEffect(() => {
     if (!movingSceneId || movingSeconds <= 0) return;
     setIsTransitioning(true);
@@ -295,7 +298,7 @@ export function DancerLayer({
           fromPositions={previousPositions}
           toPositions={positions}
           segmentPositions={segmentPositions}
-          sceneDurationSeconds={segmentScene?.transitionDurationSeconds}
+          sceneDurationSeconds={movingSeconds}
           dancers={dancers}
           stageWidthUnits={stageWidthUnits}
           stageHeightUnits={stageHeightUnits}
@@ -329,8 +332,7 @@ export function DancerLayer({
             onRotateEnd={onRotateEnd}
             onNudge={onNudge}
             transitionDurationSeconds={
-              segmentPosition?.dancerTransitionDurationSeconds ??
-              segmentScene?.transitionDurationSeconds
+              segmentPosition?.dancerTransitionDurationSeconds ?? movingSeconds
             }
             curveControlX={
               isAdjacentStep ? segmentPosition?.curveControlX : null

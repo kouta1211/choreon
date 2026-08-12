@@ -20,6 +20,10 @@
  * 重なり、どちらの隊形を出せばよいか決まらなくなる */
 export const MIN_SEGMENT_SECONDS = 0.1;
 
+/** シーンを新しく作るときに空ける秒数。以前の
+ * transition_duration_seconds の既定値(1秒)と揃えている */
+export const DEFAULT_SEGMENT_SECONDS = 1;
+
 type TimedScene = { id: string; timeSeconds: number };
 
 /**
@@ -131,4 +135,26 @@ export function moveSceneTo(
     roundSeconds(Math.min(upper, Math.max(lower, seconds))),
   );
   return timesById;
+}
+
+/**
+ * 複製したシーンを置く時刻。元のシーンと、その次のシーンの中間。
+ * 次が無ければ既定の移動時間ぶん後ろへ置く。
+ *
+ * 中間に置くのは、複製が「元のすぐ後ろ」に並ぶ操作だから。
+ * 末尾へ足すと、順番(order_index)と時刻の並びが食い違う
+ */
+export function duplicateTimeSeconds(
+  scenes: TimedScene[],
+  source: TimedScene,
+): number {
+  const index = scenes.findIndex((scene) => scene.id === source.id);
+  const next = index >= 0 ? scenes[index + 1] : undefined;
+  if (!next) return roundSeconds(source.timeSeconds + DEFAULT_SEGMENT_SECONDS);
+
+  const middle = (source.timeSeconds + next.timeSeconds) / 2;
+  // 元と次が既に詰まっている場合は、最低限だけ空けて割り込む
+  return roundSeconds(
+    Math.max(source.timeSeconds + MIN_SEGMENT_SECONDS, middle),
+  );
 }

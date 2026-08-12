@@ -44,8 +44,13 @@ describe("SceneDock", () => {
   it("選択中のシーンの番号と名前を出す", () => {
     useProjectStore.setState({
       scenes: [
-        makeScene(),
-        makeScene({ id: "scene-2", name: "サビ", orderIndex: 1 }),
+        makeScene({ timeSeconds: 0 }),
+        makeScene({
+          id: "scene-2",
+          name: "サビ",
+          orderIndex: 1,
+          timeSeconds: 1,
+        }),
       ],
     });
     useUIStore.setState({ selectedSceneId: "scene-2" });
@@ -53,8 +58,8 @@ describe("SceneDock", () => {
     render(<SceneDock project={makeProject()} />);
 
     // 名前と番号は広い画面用のストリップにも出るため、ドックの行に固有の
-    // 文言(遷移時間の説明)で「この行が出ていること」を確かめる
-    expect(screen.getByText("1秒でここへ")).toBeInTheDocument();
+    // 文言(時刻と移動時間)で「この行が出ていること」を確かめる
+    expect(screen.getByText(/0:01\.0 · 1秒で移動/)).toBeInTheDocument();
     expect(screen.getAllByText("サビ").length).toBeGreaterThan(0);
   });
 
@@ -151,17 +156,17 @@ describe("SceneDock", () => {
   });
 
   // 曲が入っている間は、曲の再生位置がシーンを決める(useMusicPlayback)。
-  // ドック側のタイマーも一緒に動くと、2つの時計が同じ選択を奪い合い、
-  // 曲より先にシーンだけが進んでしまう
-  it("曲が入っている間は、ドックのタイマーでシーンを進めない", () => {
+  // 曲なしの時計(useSilentClock)も一緒に動くと、2つの時計が同じ選択を
+  // 奪い合い、曲より先にシーンだけが進んでしまう
+  it("曲が入っている間は、曲なしの時計でシーンを進めない", () => {
     vi.useFakeTimers();
     useProjectStore.setState({
       scenes: [
-        makeScene({ transitionDurationSeconds: 1 }),
+        makeScene({ timeSeconds: 0 }),
         makeScene({
           id: "scene-2",
           orderIndex: 1,
-          transitionDurationSeconds: 1,
+          timeSeconds: 1,
         }),
       ],
     });
@@ -181,11 +186,11 @@ describe("SceneDock", () => {
     vi.useFakeTimers();
     useProjectStore.setState({
       scenes: [
-        makeScene({ transitionDurationSeconds: 1 }),
+        makeScene({ timeSeconds: 1 }),
         makeScene({
           id: "scene-2",
           orderIndex: 1,
-          transitionDurationSeconds: 1,
+          timeSeconds: 1,
         }),
       ],
     });

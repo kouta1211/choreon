@@ -10,7 +10,7 @@ function toScene(row: SceneRow): Scene {
     projectId: row.project_id,
     name: row.name,
     orderIndex: row.order_index,
-    transitionDurationSeconds: row.transition_duration_seconds,
+    timeSeconds: row.time_seconds,
   };
 }
 
@@ -40,7 +40,7 @@ export async function createScene(
       project_id: scene.projectId,
       name: scene.name,
       order_index: scene.orderIndex,
-      transition_duration_seconds: scene.transitionDurationSeconds,
+      time_seconds: scene.timeSeconds,
     })
     .select()
     .single();
@@ -65,7 +65,7 @@ export async function createScenes(
         project_id: scene.projectId,
         name: scene.name,
         order_index: scene.orderIndex,
-        transition_duration_seconds: scene.transitionDurationSeconds,
+        time_seconds: scene.timeSeconds,
       })),
     )
     .select();
@@ -100,17 +100,26 @@ export async function updateSceneOrder(
   if (error) throw error;
 }
 
-export async function updateSceneDuration(
+/** シーンの時刻をまとめて書き戻す。
+ * 1つ動かすと隣も動くこと(リップル)があるので、常に複数件で受ける */
+export async function updateSceneTimes(
   supabase: SupabaseClient<Database>,
-  sceneId: string,
-  transitionDurationSeconds: number,
+  times: { id: string; timeSeconds: number }[],
 ): Promise<void> {
-  const { error } = await supabase
-    .from("scenes")
-    .update({ transition_duration_seconds: transitionDurationSeconds })
-    .eq("id", sceneId);
+  if (times.length === 0) return;
 
-  if (error) throw error;
+  // 1件ずつのupdateを並べる。upsertにすると、他の列(name/order_index)を
+  // 送らないぶんが既定値で上書きされてしまう
+  const results = await Promise.all(
+    times.map(({ id, timeSeconds }) =>
+      supabase
+        .from("scenes")
+        .update({ time_seconds: timeSeconds })
+        .eq("id", id),
+    ),
+  );
+  const failed = results.find((result) => result.error);
+  if (failed?.error) throw failed.error;
 }
 
 export async function deleteScene(

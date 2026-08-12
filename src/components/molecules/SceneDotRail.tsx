@@ -7,6 +7,7 @@ import {
   SCENE_TRANSITION_EASE,
 } from "@/features/canvas/constants";
 import type { Scene } from "@/features/scene/types";
+import { sceneDurations } from "@/features/scene/lib/sceneTiming";
 
 type Props = {
   scenes: Scene[];
@@ -49,8 +50,7 @@ export function SceneDotRail({
   );
   // 再生中に進む区間の長さ。「このシーンへ入ってくるのにかかる秒数」なので、
   // 動いているのは1つ前のシーンから今のシーンまで
-  const currentDurationSeconds =
-    scenes[selectedIndex]?.transitionDurationSeconds ?? 0;
+  const currentDurationSeconds = sceneDurations(scenes)[selectedIndex] ?? 0;
 
   useEffect(() => {
     if (selectedIndex < 0) return;

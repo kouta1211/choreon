@@ -46,7 +46,7 @@ export function makeScene(overrides: Partial<Scene> = {}): Scene {
     projectId: "project-1",
     name: "シーン1",
     orderIndex: 0,
-    transitionDurationSeconds: 1,
+    timeSeconds: 0,
     ...overrides,
   };
 }

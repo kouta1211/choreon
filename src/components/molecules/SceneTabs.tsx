@@ -16,6 +16,7 @@ import { ArrowRight } from "lucide-react";
 import { SceneThumbnail } from "@/components/molecules/SceneThumbnail";
 import { reorderSceneIds } from "@/features/scene/lib/sceneReorder";
 import type { Scene } from "@/features/scene/types";
+import { sceneDurations } from "@/features/scene/lib/sceneTiming";
 
 type Props = {
   scenes: Scene[];
@@ -75,6 +76,7 @@ export function SceneTabs({
   // 並び替え用ドラッグは、軽くクリックしただけならonClick(選択)の方を
   // 発火させたいため、ステージ上のダンサードラッグと同じく一定距離
   // 動いて初めてドラッグ扱いにする
+  const durations = sceneDurations(scenes);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
@@ -128,7 +130,7 @@ export function SceneTabs({
                 >
                   <ArrowRight size={12} />
                   <span className="font-mono text-[9px] whitespace-nowrap">
-                    {scene.transitionDurationSeconds}s
+                    {durations[index]}s
                   </span>
                 </div>
               )}

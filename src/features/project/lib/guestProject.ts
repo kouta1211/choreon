@@ -3,6 +3,7 @@ import type { Project } from "@/features/project/types";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position, Scene } from "@/features/scene/types";
 import { randomId } from "@/lib/randomId";
+import { DEFAULT_SEGMENT_SECONDS } from "@/features/scene/lib/sceneTiming";
 
 /** プロジェクト1件ぶんの中身をまとめたもの。ゲストの下書きを作るときも、
  * それをクラウドへ保存するときも、この形で受け渡しする */
@@ -98,8 +99,8 @@ export function createGuestProject(
     projectId: project.id,
     name: `シーン${index + 1}`,
     orderIndex: index,
-    // DBのdefault(1秒)と合わせている
-    transitionDurationSeconds: 1,
+    // 1秒おきに並べた種。時刻は絶対値で持つ
+    timeSeconds: index * DEFAULT_SEGMENT_SECONDS,
   }));
 
   const positions: Position[] = scenes.flatMap((scene, sceneIndex) =>

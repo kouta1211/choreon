@@ -7,10 +7,11 @@ import { toUserMessage } from "@/lib/supabase/errors";
 import {
   deleteScene,
   renameScene as renameSceneApi,
-  updateSceneDuration as updateSceneDurationApi,
+  updateSceneTimes,
   updateSceneOrder,
 } from "@/features/scene/api/scenes";
 import type { Scene } from "@/features/scene/types";
+import { moveSceneTo, retimeScene } from "@/features/scene/lib/sceneTiming";
 
 /**
  * シーンの改名・並び替え・遷移時間・削除。
@@ -29,9 +30,7 @@ export function useSceneActions() {
   const removeScene = useProjectStore((state) => state.removeScene);
   const renameScene = useProjectStore((state) => state.renameScene);
   const reorderScenes = useProjectStore((state) => state.reorderScenes);
-  const updateSceneDuration = useProjectStore(
-    (state) => state.updateSceneDuration,
-  );
+  const applySceneTimes = useProjectStore((state) => state.applySceneTimes);
   const selectScene = useUIStore((state) => state.selectScene);
   const setIsPlaying = useUIStore((state) => state.setIsPlaying);
   const showToast = useUIStore((state) => state.showToast);
@@ -75,18 +74,64 @@ export function useSceneActions() {
     }
   };
 
-  const changeDuration = async (scene: Scene, seconds: number) => {
-    const previousDuration = scene.transitionDurationSeconds;
-    updateSceneDuration(scene.id, seconds);
+  /** シーンを別の時刻へ動かす。
+   * ripple を立てると以降のシーンも同じだけずれる。
+   * 立てていなければ前後を追い越さない範囲に収まる */
+  const changeSceneTime = async (
+    scene: Scene,
+    seconds: number,
+    ripple = false,
+  ) => {
+    const index = scenes.findIndex((s) => s.id === scene.id);
+    if (index === -1) return;
+
+    if (!ripple) {
+      await commitTimes(moveSceneTo(scenes, index, seconds));
+      return;
+    }
+    // 以降をまとめてずらす。retimeScene は「前のシーンからの秒数」で
+    // 受けるので、時刻の差に直して渡す
+    const previousTime = scenes[index - 1]?.timeSeconds ?? 0;
+    await commitTimes(
+      retimeScene(scenes, index, seconds - previousTime, true).timesById,
+    );
+  };
+
+  /** 「このシーンへ入ってくる時間」を変える。
+   * ripple を立てると、以降のシーンも同じだけ後ろへずれる */
+  const changeSegmentSeconds = async (
+    scene: Scene,
+    seconds: number,
+    ripple: boolean,
+  ) => {
+    const index = scenes.findIndex((s) => s.id === scene.id);
+    if (index === -1) return;
+    await commitTimes(retimeScene(scenes, index, seconds, ripple).timesById);
+  };
+
+  /** 楽観的更新 → 保存 → 失敗したら元の時刻へ戻す。
+   * 動いたシーンだけを送る(全件送ると、触っていない行まで書き換わる) */
+  const commitTimes = async (timesById: Map<string, number>) => {
+    const changed = scenes
+      .filter((scene) => {
+        const next = timesById.get(scene.id);
+        return next !== undefined && next !== scene.timeSeconds;
+      })
+      .map((scene) => ({
+        id: scene.id,
+        timeSeconds: timesById.get(scene.id)!,
+      }));
+    if (changed.length === 0) return;
+
+    const previous = new Map(scenes.map((s) => [s.id, s.timeSeconds]));
+    applySceneTimes(timesById);
 
     try {
-      await persist((supabase) =>
-        updateSceneDurationApi(supabase, scene.id, seconds),
-      );
+      await persist((supabase) => updateSceneTimes(supabase, changed));
     } catch (error) {
-      updateSceneDuration(scene.id, previousDuration);
+      applySceneTimes(previous);
       showToast({
-        message: toUserMessage(error, "遷移時間の変更に失敗しました"),
+        message: toUserMessage(error, "シーンの時刻の変更に失敗しました"),
         type: "error",
       });
     }
@@ -127,7 +172,8 @@ export function useSceneActions() {
   return {
     renameSceneTo,
     reorderTo,
-    changeDuration,
+    changeSceneTime,
+    changeSegmentSeconds,
     confirmDelete,
     selectSceneManually,
   };

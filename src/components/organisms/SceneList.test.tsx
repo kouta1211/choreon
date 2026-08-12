@@ -14,8 +14,8 @@ vi.mock("@/lib/supabase/client", () => ({
 }));
 
 const SCENES = [
-  makeScene(),
-  makeScene({ id: "scene-2", name: "シーン2", orderIndex: 1 }),
+  makeScene({ timeSeconds: 0 }),
+  makeScene({ id: "scene-2", name: "シーン2", orderIndex: 1, timeSeconds: 2 }),
 ];
 
 afterEach(() => {
@@ -41,13 +41,13 @@ describe("SceneList", () => {
     expect(useUIStore.getState().selectedSceneId).toBe("scene-2");
   });
 
-  it("カードの遷移時間の行を押しても、そのシーンに切り替わる", async () => {
+  it("カードの時刻の行を押しても、そのシーンに切り替わる", async () => {
     useProjectStore.setState({ scenes: SCENES });
     useUIStore.setState({ selectedSceneId: "scene-1" });
     const user = userEvent.setup();
 
     render(<SceneList project={makeProject()} />);
-    await user.click(screen.getByText("1s でここへ"));
+    await user.click(screen.getByText(/0:02\.0/));
 
     expect(useUIStore.getState().selectedSceneId).toBe("scene-2");
   });
@@ -83,40 +83,76 @@ describe("SceneList", () => {
     });
   });
 
-  it("選択中シーンの遷移時間を変更できる", async () => {
+  it("選択中シーンの時刻を変更できる", async () => {
     useProjectStore.setState({ scenes: SCENES });
-    // 先頭シーンには「ここへ入ってくる時間」が無いので、2番目を選ぶ
     useUIStore.setState({ selectedSceneId: "scene-2" });
-    vi.spyOn(scenesApi, "updateSceneDuration").mockResolvedValue(undefined);
+    vi.spyOn(scenesApi, "updateSceneTimes").mockResolvedValue(undefined);
     const user = userEvent.setup();
 
     render(<SceneList project={makeProject()} />);
-    // ラベルは<label>で入力欄を包む形なので、後ろの「秒でここへ」まで
-    // 読み取られる。完全一致ではなく部分一致で引く
-    const input = screen.getByLabelText(/遷移時間/);
+    const input = screen.getByLabelText(/曲のこの位置/);
     await user.clear(input);
-    await user.type(input, "2.5");
+    await user.type(input, "3.5");
     await user.tab();
 
     await waitFor(() => {
-      expect(
-        useProjectStore.getState().scenes[1].transitionDurationSeconds,
-      ).toBe(2.5);
+      expect(useProjectStore.getState().scenes[1].timeSeconds).toBe(3.5);
     });
-    expect(scenesApi.updateSceneDuration).toHaveBeenCalledWith(
-      expect.anything(),
-      "scene-2",
-      2.5,
-    );
+    expect(scenesApi.updateSceneTimes).toHaveBeenCalledWith(expect.anything(), [
+      { id: "scene-2", timeSeconds: 3.5 },
+    ]);
   });
 
-  it("先頭シーンには遷移時間の入力を出さない(そこへ入ってくる元が無いため)", () => {
+  // 時刻は分秒でも打てる。稽古で「1分20秒あたり」と言うときの形
+  it("分秒の形(1:20)でも受け付ける", async () => {
+    useProjectStore.setState({ scenes: SCENES });
+    useUIStore.setState({ selectedSceneId: "scene-2" });
+    vi.spyOn(scenesApi, "updateSceneTimes").mockResolvedValue(undefined);
+    const user = userEvent.setup();
+
+    render(<SceneList project={makeProject()} />);
+    const input = screen.getByLabelText(/曲のこの位置/);
+    await user.clear(input);
+    await user.type(input, "1:20");
+    await user.tab();
+
+    await waitFor(() => {
+      expect(useProjectStore.getState().scenes[1].timeSeconds).toBe(80);
+    });
+  });
+
+  // これが絶対時刻にした理由そのもの。触っていないシーンは動かない
+  it("既定では、変えたシーン以外の時刻は動かない", async () => {
+    const three = [
+      makeScene({ timeSeconds: 0 }),
+      makeScene({ id: "scene-2", orderIndex: 1, timeSeconds: 2 }),
+      makeScene({ id: "scene-3", orderIndex: 2, timeSeconds: 5 }),
+    ];
+    useProjectStore.setState({ scenes: three });
+    useUIStore.setState({ selectedSceneId: "scene-2" });
+    vi.spyOn(scenesApi, "updateSceneTimes").mockResolvedValue(undefined);
+    const user = userEvent.setup();
+
+    render(<SceneList project={makeProject()} />);
+    const input = screen.getByLabelText(/曲のこの位置/);
+    await user.clear(input);
+    await user.type(input, "3");
+    await user.tab();
+
+    await waitFor(() => {
+      expect(useProjectStore.getState().scenes[1].timeSeconds).toBe(3);
+    });
+    expect(useProjectStore.getState().scenes[2].timeSeconds).toBe(5);
+  });
+
+  // 先頭にも時刻はある(0秒とは限らない)ので、入力欄は出す
+  it("先頭シーンにも時刻の入力を出す", () => {
     useProjectStore.setState({ scenes: SCENES });
     useUIStore.setState({ selectedSceneId: "scene-1" });
 
     render(<SceneList project={makeProject()} />);
 
-    expect(screen.queryByLabelText(/遷移時間/)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/曲のこの位置/)).toBeInTheDocument();
   });
 
   // ×は「小さいので誤タップしやすい」場所にある。押した瞬間に消えるのでは

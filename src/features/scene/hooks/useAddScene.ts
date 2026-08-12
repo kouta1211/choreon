@@ -9,6 +9,7 @@ import { createScene } from "@/features/scene/api/scenes";
 import { upsertPositions } from "@/features/scene/api/positions";
 import type { Project } from "@/features/project/types";
 import { randomId } from "@/lib/randomId";
+import { DEFAULT_SEGMENT_SECONDS } from "@/features/scene/lib/sceneTiming";
 
 /**
  * 「いまの配置をコピーして新しいシーンを末尾に追加する」処理。
@@ -40,8 +41,11 @@ export function useAddScene(project: Project) {
       projectId: project.id,
       name: `シーン${scenes.length + 1}`,
       orderIndex: scenes.length,
-      // DBのdefault(1秒)と合わせている
-      transitionDurationSeconds: 1,
+      // 末尾へ、既定の移動時間ぶん後ろに置く。時刻は絶対値なので、
+      // 「前のシーンから1秒後」を自分で計算して持つ
+      timeSeconds:
+        (scenes[scenes.length - 1]?.timeSeconds ?? 0) +
+        (scenes.length > 0 ? DEFAULT_SEGMENT_SECONDS : 0),
     };
     const copiedPositions = Object.values(
       useProjectStore.getState().positionsBySceneId[

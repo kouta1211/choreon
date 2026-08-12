@@ -74,10 +74,7 @@ type ProjectState = {
   removeScene: (sceneId: string) => void;
   renameScene: (sceneId: string, name: string) => void;
   reorderScenes: (orderedSceneIds: string[]) => void;
-  updateSceneDuration: (
-    sceneId: string,
-    transitionDurationSeconds: number,
-  ) => void;
+  applySceneTimes: (timesById: Map<string, number>) => void;
 
   // --- Position ---
   // ドラッグ操作の確定時(dnd-kitのonDragEnd)に1回だけ呼ばれる想定。
@@ -202,11 +199,14 @@ export const useProjectStore = create<ProjectState>((set) => ({
       ),
     })),
 
-  updateSceneDuration: (sceneId, transitionDurationSeconds) =>
+  /** 複数シーンの時刻をまとめて差し替える。1つ動かすと隣も動くこと
+   * (リップル)があるので、常に一括で受ける */
+  applySceneTimes: (timesById) =>
     set((state) => ({
-      scenes: state.scenes.map((scene) =>
-        scene.id === sceneId ? { ...scene, transitionDurationSeconds } : scene,
-      ),
+      scenes: state.scenes.map((scene) => {
+        const next = timesById.get(scene.id);
+        return next === undefined ? scene : { ...scene, timeSeconds: next };
+      }),
     })),
 
   reorderScenes: (orderedSceneIds) =>

@@ -21,6 +21,7 @@ import { SceneListSheet } from "@/components/organisms/SceneListSheet";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
 import { useSceneActions } from "@/features/scene/hooks/useSceneActions";
 import type { Project } from "@/features/project/types";
+import { sceneDurations } from "@/features/scene/lib/sceneTiming";
 
 type Props = {
   project: Project;
@@ -76,6 +77,7 @@ export function SceneDock({ project }: Props) {
   const hasMusic = musicUrl !== null;
   const audioRef = useMusicPlayback();
 
+  const durations = sceneDurations(scenes);
   const selectedIndex = scenes.findIndex((s) => s.id === selectedSceneId);
   const selectedScene = selectedIndex >= 0 ? scenes[selectedIndex] : null;
 
@@ -179,7 +181,7 @@ export function SceneDock({ project }: Props) {
               <span className="mt-0.5 block truncate font-mono text-[10.5px] text-fg-muted">
                 {selectedIndex === 0
                   ? "先頭のシーン"
-                  : `${selectedScene.transitionDurationSeconds}秒でここへ`}
+                  : `${formatClock(selectedScene.timeSeconds)} · ${durations[selectedIndex]}秒で移動`}
                 {musicFileName && ` · ♪ ${musicFileName}`}
               </span>
             </div>
@@ -252,4 +254,11 @@ export function SceneDock({ project }: Props) {
       )}
     </div>
   );
+}
+
+/** 秒を 0:12.4 の形にする。曲の中の位置は分秒で見た方が探しやすい */
+function formatClock(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  const rest = seconds - minutes * 60;
+  return `${minutes}:${rest.toFixed(1).padStart(4, "0")}`;
 }

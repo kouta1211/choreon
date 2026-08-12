@@ -1,3 +1,4 @@
+import { totalSeconds } from "@/features/scene/lib/sceneTiming";
 import type { Scene } from "@/features/scene/types";
 
 /**
@@ -18,18 +19,11 @@ export function getNextSceneId(
 }
 
 /**
- * 最初から最後まで再生したときの合計秒数。
+ * 最初から最後まで再生したときの長さ。
+ * シーンが時刻を持つので、先頭と最後の差がそのまま作品の長さになる。
  *
- * 先頭シーンのtransitionDurationSecondsは「そこへ入ってくる時間」で、
- * 先頭には入ってくる元が無いため足さない(schema.sqlにも「先頭のシーンの
- * 値は使われない」と書いてある通り)。つまりN個のシーンなら遷移はN-1回。
- *
- * 小数の足し算は 0.1 + 0.2 = 0.30000000000000004 になるため、
- * 表示用に小数第1位で丸めている(入力の刻みが0.1なのでこれで足りる)。
+ * 表示用に小数第1位で丸める(入力の刻みが0.1なのでこれで足りる)。
  */
 export function totalTransitionSeconds(scenes: Scene[]): number {
-  const total = scenes
-    .slice(1)
-    .reduce((sum, scene) => sum + scene.transitionDurationSeconds, 0);
-  return Math.round(total * 10) / 10;
+  return Math.round(totalSeconds(scenes) * 10) / 10;
 }

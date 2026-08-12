@@ -17,6 +17,7 @@ import { DurationSecondsInput } from "@/components/molecules/DurationSecondsInpu
 import { InlineEditableText } from "@/components/molecules/InlineEditableText";
 import { Tooltip } from "@/components/atoms/Tooltip";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
+import { sceneDurations } from "@/features/scene/lib/sceneTiming";
 
 /** ダンサー個別の遷移時間の入力が許容する範囲。schema.sqlのCHECK制約と合わせている */
 const MIN_DURATION_SECONDS = 0.1;
@@ -66,7 +67,10 @@ export function DancerInspector() {
 
   if (!dancer) return null;
 
-  const selectedScene = scenes.find((scene) => scene.id === selectedSceneId);
+  // このシーンへ入ってくる区間の長さ。個別の上書きが空欄のときの目安として出す
+  const selectedSegmentSeconds =
+    sceneDurations(scenes)[scenes.findIndex((s) => s.id === selectedSceneId)] ??
+    1;
 
   // このダンサー・このシーンだけの遷移時間の上書き。空欄=シーンの既定値を使う。
   // 値の妥当性チェック(範囲外・未変更なら何もしない)はDurationSecondsInput側で
@@ -201,9 +205,7 @@ export function DancerInspector() {
               onCommit={handleDurationOverrideCommit}
               min={MIN_DURATION_SECONDS}
               max={MAX_DURATION_SECONDS}
-              placeholder={String(
-                selectedScene?.transitionDurationSeconds ?? 1,
-              )}
+              placeholder={String(selectedSegmentSeconds)}
               suffix="秒"
               tone="dancer"
             />

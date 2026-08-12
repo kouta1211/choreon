@@ -1,27 +1,16 @@
 import type { Scene } from "@/features/scene/types";
 
 /**
- * 各シーンが「通しで再生したときの何秒目に到着するか」。
+ * 各シーンが「曲の何秒目にあたるか」。
  *
- * transitionDurationSeconds は「そのシーンへ入ってくるまでの時間」なので、
- * 到着時刻は自分より前の遷移をすべて足したもの。先頭には入ってくる元が
- * 無いため0秒（`totalTransitionSeconds` と同じ規則。schema.sql にも
- * 「先頭のシーンの値は使われない」と書いてある）。
+ * シーンが時刻を直接持つようになったので、ここは取り出すだけ。
+ * 以前は先頭から遷移時間を足し上げていて、途中で1つ変えると
+ * それ以降が全部ずれた(sceneTiming.ts の冒頭を参照)。
  *
- * 曲と合わせるための土台になる値で、ここがずれると全部ずれる。
+ * 呼び出し側の形を変えずに済ませるため、関数としては残している。
  */
 export function sceneStartSeconds(scenes: Scene[]): number[] {
-  const starts: number[] = [];
-  let elapsed = 0;
-
-  scenes.forEach((scene, index) => {
-    if (index > 0) elapsed += scene.transitionDurationSeconds;
-    // 0.1 + 0.2 = 0.30000000000000004 のような誤差が、シーン数だけ積もる。
-    // 入力の刻みが0.1なので、その桁で丸めれば意味のある差は落ちない
-    starts.push(Math.round(elapsed * 1000) / 1000);
-  });
-
-  return starts;
+  return scenes.map((scene) => scene.timeSeconds);
 }
 
 /**
