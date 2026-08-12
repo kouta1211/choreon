@@ -5,6 +5,7 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
 import { EMPTY_POSITIONS } from "@/features/canvas/constants";
+import { stageWidthRule } from "@/components/organisms/Stage";
 
 type Props = {
   /** ステージのどちら側か。before=1つ前のシーン、after=1つ次のシーン */
@@ -51,7 +52,7 @@ export function StageSideScene({ side, widthUnits, heightUnits }: Props) {
         className="invisible shrink-0"
         style={{
           aspectRatio: `${widthUnits} / ${heightUnits}`,
-          width: `min(100cqw, calc(100cqh * ${widthUnits} / ${heightUnits}))`,
+          width: stageWidthRule(widthUnits, heightUnits),
         }}
       />
     );

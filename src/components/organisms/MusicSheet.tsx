@@ -21,12 +21,15 @@ type Props = {
 /**
  * 曲を選び、頭出しの位置を決めるシート。
  *
- * 曲そのものは保存しない。端末のファイルをその場で読むだけなので、
- * 開き直すたびに選び直しになる。代わりにアップロードが要らず、
- * 未ログインの下書きでも同じように鳴らせる。
+ * 曲そのものはサーバーへ上げない。端末のファイルを読むだけで、控えも
+ * この端末の中(IndexedDB)にしか置かない。アップロードが要らず、
+ * 未ログインの下書きでも同じように鳴らせる代わりに、共有した相手には
+ * 曲が付いていかない。
  *
- * 保存するのは「曲の何秒目から始めるか」だけ。これは端末の好みではなく
- * 作品の一部なので、プロジェクトに持たせている(projects.music_offset_seconds)。
+ * クラウドに保存するのは「曲の何秒目から始めるか」だけ。これは端末の
+ * 好みではなく作品の一部なので、プロジェクトに持たせている
+ * (projects.music_offset_seconds)。共有した相手が同じ曲を選べば、
+ * 頭出しの位置はそのまま合う。
  */
 export function MusicSheet({ project, isOpen, onClose }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -92,30 +95,35 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
           />
 
           {fileName && (
-            <div className="mt-2 flex items-center gap-2 rounded-xl border border-line bg-surface-raised px-3 py-2.5">
-              <Music size={15} className="shrink-0 text-accent-soft" />
-              <span className="min-w-0 flex-1 truncate text-[13px] text-fg-strong">
-                {fileName}
-              </span>
-              {durationSeconds !== null && (
-                <span className="shrink-0 font-mono text-[11px] text-fg-muted">
-                  {formatClock(durationSeconds)}
+            <div className="mt-2 flex flex-col gap-1.5 rounded-xl border border-line bg-surface-raised px-3 py-2.5">
+              <div className="flex items-center gap-2">
+                <Music size={15} className="shrink-0 text-accent-soft" />
+                <span className="min-w-0 flex-1 truncate text-[13px] text-fg-strong">
+                  {fileName}
                 </span>
-              )}
-              <button
-                type="button"
-                onClick={() => clearMusic(project.id)}
-                aria-label="曲を外す"
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-muted"
-              >
-                <X size={15} />
-              </button>
+                {durationSeconds !== null && (
+                  <span className="shrink-0 font-mono text-[11px] text-fg-muted">
+                    {formatClock(durationSeconds)}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => clearMusic(project.id)}
+                  aria-label="曲を外す"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-muted"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+              <p className="text-[10.5px] leading-snug text-fg-muted">
+                この端末に控えてあります。開き直しても入ったままです。
+              </p>
             </div>
           )}
 
           <p className="mt-2 text-[11px] leading-snug text-fg-muted">
-            曲はこの端末で読み込むだけで、保存はしません。開き直したときは
-            もう一度選んでください。
+            音源はこの端末から出ません。作品を共有しても曲は付いていかないので、
+            相手には同じ曲を選んでもらってください(開始位置は共有されます)。
           </p>
         </div>
 

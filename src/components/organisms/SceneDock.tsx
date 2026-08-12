@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { List, Pause, Play, Plus } from "lucide-react";
+import { List, Pause, Pencil, Play, Plus } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { SceneTabs } from "@/components/molecules/SceneTabs";
@@ -140,8 +140,10 @@ export function SceneDock({ project }: Props) {
               )}
             </button>
 
-            {/* いま何を見ているかの表示。押せる要素にしていないのは、
-                ここが唯一「操作ではないもの」だと形で分かるようにするため */}
+            {/* いま何を見ているかの表示。名前そのものは押せないままにして
+                いる(触ったつもりの無い改名を防ぐ。SceneListのカードと同じ
+                方針)。代わりに鉛筆を隣へ出し、開いているシーンの詳細設定へ
+                一覧を経由せずに入れるようにしている */}
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline gap-1.5">
                 <span className="shrink-0 font-mono text-[11px] font-semibold text-accent-soft">
@@ -150,6 +152,14 @@ export function SceneDock({ project }: Props) {
                 <span className="min-w-0 truncate text-sm font-semibold text-fg-strong">
                   {selectedScene.name}
                 </span>
+                <button
+                  type="button"
+                  onClick={() => setSceneSheetOpen(true)}
+                  aria-label={`「${selectedScene.name}」の設定を開く`}
+                  className="flex h-6 w-6 shrink-0 translate-y-0.5 items-center justify-center rounded-[calc(var(--radius)*0.5)] border border-line-strong text-fg-muted"
+                >
+                  <Pencil size={11} />
+                </button>
               </div>
               <span className="mt-0.5 block truncate font-mono text-[10.5px] text-fg-muted">
                 {selectedIndex === 0

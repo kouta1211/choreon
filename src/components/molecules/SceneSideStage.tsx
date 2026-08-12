@@ -10,6 +10,7 @@ import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { interpolateDancerPoint } from "@/features/canvas/lib/sceneScrub";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position } from "@/features/scene/types";
+import { stageWidthRule } from "@/components/organisms/Stage";
 
 type Props = {
   widthUnits: number;
@@ -66,7 +67,7 @@ export function SceneSideStage({
       className="relative shrink-0 rounded-stage border border-line-strong bg-stage transition-opacity duration-200"
       style={{
         aspectRatio: `${widthUnits} / ${heightUnits}`,
-        width: `min(100cqw, calc(100cqh * ${widthUnits} / ${heightUnits}))`,
+        width: stageWidthRule(widthUnits, heightUnits),
         opacity: isActiveGesture ? 0.55 : 0.3,
       }}
     >

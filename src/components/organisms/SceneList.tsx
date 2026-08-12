@@ -14,7 +14,7 @@ import {
 import { Copy, Plus, Trash2 } from "lucide-react";
 import { SceneThumbnail } from "@/components/molecules/SceneThumbnail";
 import { InlineEditableText } from "@/components/molecules/InlineEditableText";
-import { DurationSecondsInput } from "@/components/molecules/DurationSecondsInput";
+import { SceneTransitionField } from "@/components/molecules/SceneTransitionField";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { reorderSceneIds } from "@/features/scene/lib/sceneReorder";
@@ -22,10 +22,6 @@ import { useAddScene } from "@/features/scene/hooks/useAddScene";
 import { useDuplicateScene } from "@/features/scene/hooks/useDuplicateScene";
 import { useSceneActions } from "@/features/scene/hooks/useSceneActions";
 import type { Project } from "@/features/project/types";
-
-/** 秒の入力欄が許容する範囲。schema.sqlのCHECK制約(0より大きく30以下)と合わせている */
-const MIN_DURATION_SECONDS = 0.1;
-const MAX_DURATION_SECONDS = 30;
 
 type Props = {
   project: Project;
@@ -135,7 +131,9 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
                       onCommit={(name) => renameSceneTo(scene, name)}
                       label="シーン名"
                       textClassName={
-                        isSelected ? "text-sm font-semibold" : "text-sm font-medium"
+                        isSelected
+                          ? "text-sm font-semibold"
+                          : "text-sm font-medium"
                       }
                       prefix={
                         <span
@@ -166,18 +164,12 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
                 {isSelected && (
                   <div className="flex flex-col gap-2 px-2.5 pb-2.5">
                     {index > 0 && (
-                      <DurationSecondsInput
-                        key={scene.id}
-                        label="遷移時間(秒)"
+                      <SceneTransitionField
+                        fieldKey={scene.id}
                         value={scene.transitionDurationSeconds}
-                        // シーン自体の遷移時間は必須値(空欄にはできない)
-                        allowEmpty={false}
-                        onCommit={(value) => {
-                          if (value !== null) changeDuration(scene, value);
-                        }}
-                        min={MIN_DURATION_SECONDS}
-                        max={MAX_DURATION_SECONDS}
-                        suffix="秒でここへ"
+                        onCommit={(value) => changeDuration(scene, value)}
+                        fromSceneName={scenes[index - 1].name}
+                        sceneName={scene.name}
                       />
                     )}
                     <div className="flex gap-1.5">
