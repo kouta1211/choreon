@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, type PointerEvent as ReactPointerEvent } from "react";
+import { useState } from "react";
 import { RotateCw } from "lucide-react";
 import { snapRotation } from "@/features/canvas/lib/dragMath";
 
@@ -20,11 +21,11 @@ const HANDLE_DISTANCE_PX = 46;
 
 /**
  * 中心座標とポインタ座標から、DancerMarkerの角度規約(0度=客席側=画面の下、
- * 時計回りに増加)に合わせた角度を計算する。
+ * 時計回りに増加)に合わせた角度を計算する。吸着は掛けない生の角度。
  * atan2(-dx, dy) は「下方向を0度、時計回り」という向きになる
  * (通常のatan2(dy, dx)は右方向が0度・反時計回りなので、そのままでは使えない)。
  */
-function angleFromPointer(
+function rawAngleFromPointer(
   center: { x: number; y: number },
   pointerX: number,
   pointerY: number,
@@ -32,10 +33,18 @@ function angleFromPointer(
   const dx = pointerX - center.x;
   const dy = pointerY - center.y;
   const degrees = (Math.atan2(-dx, dy) * 180) / Math.PI;
-  // 8方向(0/45/90…)の近くまで来たら、ちょうどの角度へ寄せる。
-  // 「客席を向く」「下手を向く」のような言葉で言える向きは狙って
-  // 合わせたい場面が多いが、指先で1度単位は出せない
-  return snapRotation((degrees + 360) % 360);
+  return (degrees + 360) % 360;
+}
+
+/** 8方向(0/45/90…)の近くまで来たら、ちょうどの角度へ寄せたもの。
+ * 「客席を向く」「下手を向く」のような言葉で言える向きは狙って
+ * 合わせたい場面が多いが、指先で1度単位は出せない */
+function angleFromPointer(
+  center: { x: number; y: number },
+  pointerX: number,
+  pointerY: number,
+): number {
+  return snapRotation(rawAngleFromPointer(center, pointerX, pointerY));
 }
 
 /**
@@ -60,6 +69,10 @@ function RotationHandleImpl({
   onRotateEnd,
   getCenter,
 }: Props) {
+  // 8方向へ吸着している最中かどうか。効いていることが指先では分からないので、
+  // 格子スナップが吸着先の格子線を光らせるのと同じように、ガイド線を光らせる
+  const [isSnapped, setIsSnapped] = useState(false);
+
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     event.stopPropagation();
     try {
@@ -75,11 +88,15 @@ function RotationHandleImpl({
     event.stopPropagation();
     const center = getCenter();
     if (!center) return;
-    onRotateChange(angleFromPointer(center, event.clientX, event.clientY));
+    const raw = rawAngleFromPointer(center, event.clientX, event.clientY);
+    const snapped = snapRotation(raw);
+    setIsSnapped(snapped !== raw);
+    onRotateChange(snapped);
   };
 
   const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
     event.stopPropagation();
+    setIsSnapped(false);
     const center = getCenter();
     onRotateEnd(
       center ? angleFromPointer(center, event.clientX, event.clientY) : angle,
@@ -95,7 +112,13 @@ function RotationHandleImpl({
           角度0度は客席側(下)なので、線もハンドルも下へ伸ばす */}
       <div
         aria-hidden
-        className="absolute top-0 left-0 w-px -translate-x-1/2 border-l border-dashed border-accent"
+        data-snapped={isSnapped || undefined}
+        className={
+          isSnapped
+            ? // 格子スナップの吸着線と同じ見せ方。太くして光らせる
+              "absolute top-0 left-0 w-0.5 -translate-x-1/2 bg-accent-soft shadow-[0_0_6px_1px_color-mix(in_oklab,var(--accent-soft)_90%,transparent)]"
+            : "absolute top-0 left-0 w-px -translate-x-1/2 border-l border-dashed border-accent"
+        }
         style={{ height: HANDLE_DISTANCE_PX }}
       />
       <div
@@ -111,7 +134,11 @@ function RotationHandleImpl({
         onPointerUp={handlePointerUp}
       >
         <div
-          className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-accent bg-surface text-accent-soft shadow-sm"
+          className={`flex h-6 w-6 items-center justify-center rounded-full border-2 bg-surface text-accent-soft ${
+            isSnapped
+              ? "border-accent-soft shadow-[0_0_6px_1px_color-mix(in_oklab,var(--accent-soft)_90%,transparent)]"
+              : "border-accent shadow-sm"
+          }`}
           style={{ transform: `rotate(${-angle}deg)` }}
         >
           <RotateCw size={13} />

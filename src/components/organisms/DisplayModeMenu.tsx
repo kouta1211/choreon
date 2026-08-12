@@ -109,7 +109,7 @@ export function DisplayModeMenu() {
     },
     {
       label: "顔被りチェック",
-      description: "客席から見えなくなる人に印を出す(移動中も見る)",
+      description: "手前の人の真後ろに入っている人に印を出す",
       icon: EyeOff,
       checked: isBlindSpotCheckVisible,
       onChange: toggleBlindSpotCheck,

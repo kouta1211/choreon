@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findBlindSpotSpans, findBlockedDancerIds } from "./blindSpot";
+import { findBlockedDancerIds } from "./blindSpot";
 
 const at = (x: number, y: number) => ({ xCoordinate: x, yCoordinate: y });
 
@@ -56,40 +56,5 @@ describe("findBlockedDancerIds", () => {
 
   it("誰も居なければ空", () => {
     expect(findBlockedDancerIds({}).size).toBe(0);
-  });
-});
-
-describe("findBlindSpotSpans", () => {
-  // 両端では横にずれていて隠れないが、入れ替わる途中で必ず真後ろを通る
-  it("両端で隠れていなくても、移動の途中で隠れるなら拾う", () => {
-    const from = { back: at(4, 2), front: at(10, 6) };
-    const to = { back: at(10, 2), front: at(4, 6) };
-
-    expect(findBlockedDancerIds(from).size).toBe(0);
-    expect(findBlockedDancerIds(to).size).toBe(0);
-
-    const spans = findBlindSpotSpans(from, to);
-    expect(spans.has("back")).toBe(true);
-    expect(spans.get("back")?.atStart).toBe(false);
-  });
-
-  it("最初から隠れている場合は atStart が立つ", () => {
-    const stacked = { back: at(7, 2), front: at(7, 6) };
-    const spans = findBlindSpotSpans(stacked, stacked);
-    expect(spans.get("back")?.atStart).toBe(true);
-    expect(spans.get("back")?.from).toBe(0);
-  });
-
-  // 横一列のまま平行移動しても、誰の前にも入らない
-  it("横一列のまま動く区間では警告を出さない", () => {
-    const from = { a: at(4, 6), b: at(6, 6), c: at(8, 6) };
-    const to = { a: at(5, 6), b: at(7, 6), c: at(9, 6) };
-    expect(findBlindSpotSpans(from, to).size).toBe(0);
-  });
-
-  it("片側にしか居ない人がいても壊れない", () => {
-    const from = { a: at(7, 2) };
-    const to = { a: at(7, 2), b: at(7, 6) };
-    expect(() => findBlindSpotSpans(from, to)).not.toThrow();
   });
 });

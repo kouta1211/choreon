@@ -9,7 +9,7 @@ import { DraggableDancerIcon } from "@/components/organisms/DraggableDancerIcon"
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { findExcessiveMoves } from "@/features/canvas/lib/physicalLimits";
-import { findBlindSpotSpans } from "@/features/canvas/lib/blindSpot";
+import { findBlockedDancerIds } from "@/features/canvas/lib/blindSpot";
 import { getSceneStep } from "@/features/canvas/lib/sceneStep";
 import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
 import {
@@ -159,15 +159,15 @@ export function DancerLayer({
     [positions, nextPositions, nextSceneSeconds],
   );
 
-  // 客席から見えなくなる人。静止した隊形だけでなく、次のシーンへ移動する
-  // 【途中】も調べる(すれ違いざまに一瞬だけ消える並びを拾うため)。
-  // 次のシーンが無い最後のシーンでは、その場の隊形だけを見る
-  const blindSpots = useMemo(
+  // 客席から見えなくなる人。いま見えている隊形だけを見る
+  // (移動の途中は調べない。何も起きていない隊形の上に印が出て、
+  // 画面を見ても理由が見つからないため)
+  const blockedDancerIds = useMemo(
     () =>
       isBlindSpotCheckVisible
-        ? findBlindSpotSpans(positions, nextSceneId ? nextPositions : positions)
-        : new Map(),
-    [isBlindSpotCheckVisible, positions, nextPositions, nextSceneId],
+        ? findBlockedDancerIds(positions)
+        : new Set<string>(),
+    [isBlindSpotCheckVisible, positions],
   );
 
   // シーン移動のアニメーションが走っている間に印を立てる。掴ませない
@@ -304,8 +304,7 @@ export function DancerLayer({
               isAdjacentStep ? segmentPosition?.curveControlY : null
             }
             excessiveMove={excessiveMoves.get(dancer.id) ?? null}
-            blindSpot={blindSpots.get(dancer.id) ?? null}
-            segmentSeconds={nextSceneSeconds}
+            isBlocked={blockedDancerIds.has(dancer.id)}
             scrubFromX={position?.xCoordinate ?? null}
             scrubFromY={position?.yCoordinate ?? null}
             scrubToX={scrubTarget?.xCoordinate ?? null}
