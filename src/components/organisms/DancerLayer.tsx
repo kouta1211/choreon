@@ -80,9 +80,6 @@ export function DancerLayer({
   const isBlindSpotCheckVisible = useUIStore(
     (state) => state.isBlindSpotCheckVisible,
   );
-  const positionsBySceneId = useProjectStore(
-    (state) => state.positionsBySceneId,
-  );
   const positions = useProjectStore(
     (state) =>
       state.positionsBySceneId[selectedSceneId ?? ""] ?? EMPTY_POSITIONS,
@@ -223,10 +220,6 @@ export function DancerLayer({
       {/* バミリは配置を読むための下敷きなので、導線やダンサーより先に敷く */}
       {isStageMarksVisible && (
         <StageMarks
-          scenes={scenes}
-          positionsBySceneId={positionsBySceneId}
-          dancers={dancers}
-          selectedSceneId={selectedSceneId}
           stageWidthUnits={stageWidthUnits}
           stageHeightUnits={stageHeightUnits}
         />

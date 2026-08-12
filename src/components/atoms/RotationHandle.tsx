@@ -18,9 +18,9 @@ type Props = {
 const HANDLE_DISTANCE_PX = 46;
 
 /**
- * 中心座標とポインタ座標から、DancerMarkerの角度規約(0度=真上、
+ * 中心座標とポインタ座標から、DancerMarkerの角度規約(0度=客席側=画面の下、
  * 時計回りに増加)に合わせた角度を計算する。
- * atan2(dx, -dy) は「上方向を0度、時計回り」という向きになる
+ * atan2(-dx, dy) は「下方向を0度、時計回り」という向きになる
  * (通常のatan2(dy, dx)は右方向が0度・反時計回りなので、そのままでは使えない)。
  */
 function angleFromPointer(
@@ -30,7 +30,7 @@ function angleFromPointer(
 ): number {
   const dx = pointerX - center.x;
   const dy = pointerY - center.y;
-  const degrees = (Math.atan2(dx, -dy) * 180) / Math.PI;
+  const degrees = (Math.atan2(-dx, dy) * 180) / Math.PI;
   return (degrees + 360) % 360;
 }
 
@@ -87,10 +87,11 @@ function RotationHandleImpl({
       className="absolute left-0 top-0"
       style={{ transform: `translate(-50%, -50%) rotate(${angle}deg)` }}
     >
-      {/* 本体中心からハンドルへのガイド線(装飾のみ) */}
+      {/* 本体中心からハンドルへのガイド線(装飾のみ)。
+          角度0度は客席側(下)なので、線もハンドルも下へ伸ばす */}
       <div
         aria-hidden
-        className="absolute left-0 top-0 w-px -translate-x-1/2 -translate-y-full border-l border-dashed border-accent"
+        className="absolute top-0 left-0 w-px -translate-x-1/2 border-l border-dashed border-accent"
         style={{ height: HANDLE_DISTANCE_PX }}
       />
       <div
@@ -100,7 +101,7 @@ function RotationHandleImpl({
         aria-valuemax={359}
         aria-valuenow={Math.round(angle)}
         className="absolute left-0 top-0 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 touch-none items-center justify-center"
-        style={{ transform: `translateY(-${HANDLE_DISTANCE_PX}px)` }}
+        style={{ transform: `translateY(${HANDLE_DISTANCE_PX}px)` }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}

@@ -21,7 +21,10 @@ type Props = {
   /** ステージ座標系での位置(0..stageWidthUnits / 0..stageHeightUnits) */
   x: number;
   y: number;
-  /** 向き(度)。0度 = ステージ上方向(客席から見て奥)を向く */
+  /** 向き(度)。0度 = 客席を向く(画面では下)。時計回りに増える。
+   * 踊り手は基本的に正面を向くので、既定の0度が正面になるようにしている
+   * (以前は0度が奥=バックステージ向きで、既定のまま置いたダンサーが
+   * 全員そっぽを向いていた) */
   rotationAngle: number;
   stageWidthUnits: number;
   stageHeightUnits: number;
@@ -188,9 +191,10 @@ function DancerMarkerImpl({
             />
           )}
           {/* 鼻先(向きの手がかり)。頭からずれた位置にあるため、回転すると
-              頭の周りを振り子のように動いて見える */}
+              頭の周りを振り子のように動いて見える。
+              下向き(客席側)に描いてあるので、回転0度がそのまま正面になる */}
           <polygon
-            points="16,4 12,10 20,10"
+            points="16,28 12,22 20,22"
             fill={bodyColor}
             stroke="rgba(0,0,0,0.15)"
             className={bodyColorTransition}
@@ -212,7 +216,7 @@ function DancerMarkerImpl({
                 紙・黒板 … 素材の色で塗りつぶし、ダンサー色の輪郭が乗る
               こうするとJSでテーマを読む必要がなく、SSRでもズレない */}
           <polygon
-            points="16,4 12,10 20,10"
+            points="16,28 12,22 20,22"
             fill="var(--marker-fill)"
             stroke={bodyColor}
             strokeWidth="var(--marker-stroke-width)"
