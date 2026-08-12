@@ -14,6 +14,7 @@ import { EmptyStage, Stage } from "@/components/organisms/Stage";
 import { HistoryControls } from "@/components/organisms/HistoryControls";
 import { TemplateButton } from "@/components/organisms/TemplateButton";
 import { DancerLayer } from "@/components/organisms/DancerLayer";
+import { StageSideScene } from "@/components/organisms/StageSideScene";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useHistoryStore } from "@/features/canvas/store/useHistoryStore";
@@ -522,6 +523,20 @@ export function CanvasBoard({
         ref={stageRef}
         trackRef={trackRef}
         scrubHandlers={scrubHandlers}
+        trackBefore={
+          <StageSideScene
+            side="before"
+            widthUnits={project.stageWidth}
+            heightUnits={project.stageHeight}
+          />
+        }
+        trackAfter={
+          <StageSideScene
+            side="after"
+            widthUnits={project.stageWidth}
+            heightUnits={project.stageHeight}
+          />
+        }
         widthUnits={project.stageWidth}
         heightUnits={project.stageHeight}
         showCenterline={isSymmetryMode}
