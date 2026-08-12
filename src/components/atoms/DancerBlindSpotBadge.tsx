@@ -24,6 +24,12 @@ type Props = {
  *
  * 隠れるのが移動の【途中だけ】のこともあるので、いつ隠れるかを文で添える。
  * 「ずっと隠れている」と「すれ違いざまに一瞬隠れる」では、直し方が違う。
+ *
+ * ■ 「いま」と「この先」を見た目で分ける
+ * 今の隊形では誰も隠れていないのに印だけが付いていると、画面を見ても
+ * 理由が見つからず、誤検知にしか見えない(実際そう報告された)。
+ * 今まさに隠れている人は塗りつぶし、移動の途中でだけ隠れる人は輪郭だけに
+ * して、「この隊形の話ではない」ことを形で示す。
  */
 export function DancerBlindSpotBadge({
   span,
@@ -42,7 +48,11 @@ export function DancerBlindSpotBadge({
       role="img"
       aria-label={description}
       title={description}
-      className="absolute top-0 left-0 flex h-4 w-4 items-center justify-center rounded-full bg-sky-500 text-white"
+      className={`absolute top-0 left-0 flex h-4 w-4 items-center justify-center rounded-full ${
+        span.atStart
+          ? "bg-sky-500 text-white"
+          : "border border-sky-400/80 bg-surface text-sky-300"
+      }`}
       style={{
         transform: `translate(-50%, -50%) translate(${-MARKER_SIZE / 2 + 4}px, ${-MARKER_SIZE / 2 + 4}px)`,
       }}

@@ -2,6 +2,7 @@
 
 import { memo, type PointerEvent as ReactPointerEvent } from "react";
 import { RotateCw } from "lucide-react";
+import { snapRotation } from "@/features/canvas/lib/dragMath";
 
 type Props = {
   /** 表示に使う現在の角度(度)。ライブドラッグ中は呼び出し側のローカルstateを渡す */
@@ -31,7 +32,10 @@ function angleFromPointer(
   const dx = pointerX - center.x;
   const dy = pointerY - center.y;
   const degrees = (Math.atan2(-dx, dy) * 180) / Math.PI;
-  return (degrees + 360) % 360;
+  // 8方向(0/45/90…)の近くまで来たら、ちょうどの角度へ寄せる。
+  // 「客席を向く」「下手を向く」のような言葉で言える向きは狙って
+  // 合わせたい場面が多いが、指先で1度単位は出せない
+  return snapRotation((degrees + 360) % 360);
 }
 
 /**

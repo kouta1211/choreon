@@ -62,8 +62,8 @@ export function StageMarks({ stageWidthUnits, stageHeightUnits }: Props) {
               }}
             />
             <span
-              className={`pb-0.5 font-mono text-[8px] leading-none ${
-                isCenter ? "font-semibold text-accent-soft" : "text-fg-muted"
+              className={`pb-1 font-mono text-[12px] leading-none ${
+                isCenter ? "font-bold text-accent-soft" : "text-fg-sub"
               }`}
             >
               {mark.label}

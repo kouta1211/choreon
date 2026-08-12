@@ -45,3 +45,32 @@ export function snapToGrid(value: number, tolerance: number): number {
 export function isCloseToInteger(value: number, epsilon = 0.01): boolean {
   return Math.abs(value - Math.round(value)) < epsilon;
 }
+
+/** 向きを吸着させる刻み(度)。0/45/90…の8方向。上下左右と斜めは、
+ * 「客席を向く」「下手を向く」のように言葉で言える向きなので、
+ * 狙って合わせたい場面が多い */
+export const ROTATION_SNAP_STEP_DEGREES = 45;
+
+/** 刻みからこの範囲内なら吸着させる(度)。刻みの1/4弱。
+ * 広すぎると中間の角度が作れなくなり、狭すぎると狙って合わせられない */
+export const ROTATION_SNAP_TOLERANCE_DEGREES = 10;
+
+/**
+ * 向きを8方向へ吸着させる。近くなければ、指の角度をそのまま返す。
+ *
+ * 位置の格子スナップ(snapToGrid)と同じ考え方。ぴったりの角度は
+ * 指先の精度では出せないが、目では「まっすぐか、少し傾いているか」が
+ * はっきり分かってしまう。
+ */
+export function snapRotation(
+  degrees: number,
+  step: number = ROTATION_SNAP_STEP_DEGREES,
+  tolerance: number = ROTATION_SNAP_TOLERANCE_DEGREES,
+): number {
+  const nearest = Math.round(degrees / step) * step;
+  // 359度→360度のように、丸めた先が一周ぶん外へ出ることがある
+  const normalized = ((nearest % 360) + 360) % 360;
+  // 0度と359度のような、一周をまたいだ距離を正しく測る
+  const distance = Math.abs(((degrees - normalized + 540) % 360) - 180);
+  return distance <= tolerance ? normalized : degrees;
+}

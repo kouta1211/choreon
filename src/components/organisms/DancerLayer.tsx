@@ -165,21 +165,9 @@ export function DancerLayer({
   const blindSpots = useMemo(
     () =>
       isBlindSpotCheckVisible
-        ? findBlindSpotSpans(
-            positions,
-            nextSceneId ? nextPositions : positions,
-            stageWidthUnits,
-            stageHeightUnits,
-          )
+        ? findBlindSpotSpans(positions, nextSceneId ? nextPositions : positions)
         : new Map(),
-    [
-      isBlindSpotCheckVisible,
-      positions,
-      nextPositions,
-      nextSceneId,
-      stageWidthUnits,
-      stageHeightUnits,
-    ],
+    [isBlindSpotCheckVisible, positions, nextPositions, nextSceneId],
   );
 
   // シーン移動のアニメーションが走っている間に印を立てる。掴ませない

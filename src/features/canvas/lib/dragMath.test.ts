@@ -4,6 +4,7 @@ import {
   isCloseToInteger,
   pixelDeltaToUnitDelta,
   snapToGrid,
+  snapRotation,
   unitDeltaToPixelDelta,
 } from "./dragMath";
 
@@ -68,5 +69,35 @@ describe("isCloseToInteger", () => {
 
   it("誤差の範囲を超えるとfalse", () => {
     expect(isCloseToInteger(4.9)).toBe(false);
+  });
+});
+
+describe("snapRotation", () => {
+  it("刻みのすぐ近くなら、ちょうどの角度に吸着する", () => {
+    expect(snapRotation(3)).toBe(0);
+    expect(snapRotation(88)).toBe(90);
+    expect(snapRotation(48)).toBe(45);
+    expect(snapRotation(272)).toBe(270);
+  });
+
+  it("離れていれば指の角度をそのまま返す", () => {
+    expect(snapRotation(20)).toBe(20);
+    expect(snapRotation(60)).toBe(60);
+  });
+
+  // 一周をまたぐ側。359度は0度の「すぐ手前」であって、遠い角度ではない
+  it("0度をまたいでも吸着する", () => {
+    expect(snapRotation(357)).toBe(0);
+    expect(snapRotation(2)).toBe(0);
+  });
+
+  it("しきい値ちょうどは吸着させる", () => {
+    expect(snapRotation(10)).toBe(0);
+    expect(snapRotation(11)).toBe(11);
+  });
+
+  it("刻みと許容範囲は差し替えられる", () => {
+    expect(snapRotation(80, 90, 15)).toBe(90);
+    expect(snapRotation(80, 90, 5)).toBe(80);
   });
 });
