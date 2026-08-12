@@ -12,6 +12,14 @@ import {
   loadMetronomeSetting,
   saveMetronomeSetting,
 } from "@/features/music/lib/metronomePreference";
+import {
+  loadPxPerSecond,
+  savePxPerSecond,
+} from "@/features/music/lib/timelinePreference";
+import {
+  clampPxPerSecond,
+  DEFAULT_PX_PER_SECOND,
+} from "@/features/music/lib/timelineScale";
 
 type MusicStore = {
   /** 再生に使うURL。端末のファイルから作った一時的なもの */
@@ -32,6 +40,8 @@ type MusicStore = {
   bpm: number;
   /** メトロノームを鳴らすか。曲が入っている間は使わない */
   isMetronomeEnabled: boolean;
+  /** 時間軸の倍率(1秒を何pxで描くか)。BPMと同じく作品ごとに端末へ覚える */
+  pxPerSecond: number;
 
   load: (file: File, projectId: string) => void;
   clear: (projectId: string) => void;
@@ -39,6 +49,7 @@ type MusicStore = {
   setCurrentTime: (seconds: number) => void;
   setBpm: (bpm: number) => void;
   toggleMetronome: () => void;
+  setPxPerSecond: (pxPerSecond: number) => void;
   /** 端末に控えてある曲を読み直す。作品を開いたときに1回呼ぶ */
   restore: (projectId: string) => Promise<void>;
 };
@@ -67,6 +78,7 @@ export const useMusicStore = create<MusicStore>((set, get) => ({
   currentTime: 0,
   bpm: DEFAULT_METRONOME_SETTING.bpm,
   isMetronomeEnabled: DEFAULT_METRONOME_SETTING.isEnabled,
+  pxPerSecond: DEFAULT_PX_PER_SECOND,
 
   load: (file, projectId) => {
     // 選び直すたびに前のURLを解放する。放っておくと、選んだ曲の数だけ
@@ -122,13 +134,24 @@ export const useMusicStore = create<MusicStore>((set, get) => ({
       return { isMetronomeEnabled };
     }),
 
+  setPxPerSecond: (pxPerSecond) =>
+    set((state) => {
+      const next = clampPxPerSecond(pxPerSecond);
+      if (state.projectId) savePxPerSecond(state.projectId, next);
+      return { pxPerSecond: next };
+    }),
+
   restore: async (projectId) => {
     // 既にこの作品の曲が入っていれば、曲の読み直しだけ省く
     const isSameProject = get().projectId === projectId;
     const metronome = loadMetronomeSetting(projectId);
 
     if (isSameProject && get().objectUrl) {
-      set({ bpm: metronome.bpm, isMetronomeEnabled: metronome.isEnabled });
+      set({
+        bpm: metronome.bpm,
+        isMetronomeEnabled: metronome.isEnabled,
+        pxPerSecond: loadPxPerSecond(projectId),
+      });
       return;
     }
 
@@ -146,6 +169,7 @@ export const useMusicStore = create<MusicStore>((set, get) => ({
       currentTime: 0,
       bpm: metronome.bpm,
       isMetronomeEnabled: metronome.isEnabled,
+      pxPerSecond: loadPxPerSecond(projectId),
     });
   },
 }));

@@ -4,8 +4,8 @@ import { useEffect } from "react";
 import { List, Pause, Pencil, Play, Plus } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import { SceneTabs } from "@/components/molecules/SceneTabs";
-import { SceneDotRail } from "@/components/molecules/SceneDotRail";
+import { MusicTimeline } from "@/components/organisms/MusicTimeline";
+import { PlayheadClock } from "@/components/molecules/PlayheadClock";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import {
   seekToSelectedScene,
@@ -19,7 +19,6 @@ import {
 } from "@/features/music/lib/musicTimeline";
 import { SceneListSheet } from "@/components/organisms/SceneListSheet";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
-import { useSceneActions } from "@/features/scene/hooks/useSceneActions";
 import type { Project } from "@/features/project/types";
 import { sceneDurations } from "@/features/scene/lib/sceneTiming";
 
@@ -30,17 +29,19 @@ type Props = {
 /**
  * 画面下端に貼り付く、時間軸側の操作。3段:
  *
- *   1. 再生 / いま何番のどのシーンか / シーンを追加 / 一覧を開く
- *   2. ストリップ … コマを横に並べたもの。切り替えと並び替え、×で削除
- *   3. ドットレール … 曲全体のどこにいるか
+ *   1. 持ち手 … 押すとシーン一覧のシートが開く
+ *   2. 操作行 … 再生 / いま何番のどのシーンか / シーンを追加 / 一覧を開く
+ *   3. 時間軸 … 曲の波形の上に、シーンのコマを時刻どおりに置いたもの
+ *              (その下に曲全体を示すミニマップ)
  *
- * ここは【見る場所】に徹していて、シーン名や遷移時間を書き換える操作は
- * 持たない。それらはシーン一覧(SceneList)のカードにある。
+ * ここは【見る場所】に徹していて、シーン名を書き換える操作は持たない。
+ * それらはシーン一覧(SceneList)のカードにある。時刻だけは、時間軸の上で
+ * コマを横へ動かして決められる。
  *
- * ストリップには以前「横スクロールで止まった位置のシーンを自動選択する」
- * 処理があり、一覧を眺めようと指で払っただけで選択が変わって再生も
- * 止まっていた。その処理だけを外してあり、いまはタップと並び替えしか
- * 反応しない(SceneTabs のコメント参照)。
+ * ■ ストリップ(等間隔のコマ列)をやめた理由
+ * シーンが時刻を持つようになったので、等間隔に並べると 0秒・5秒・5.1秒・
+ * 6秒のような配置が均等に見え、どこが詰まっているかが読めなくなった。
+ * いまは横位置がそのまま時刻で、間隔がそのまま移動時間になっている。
  *
  * 一覧のボタンは狭い画面だけに出す(md:hidden)。広い画面では
  * シーン一覧が横のサイドバーに常時出ていて、そちらに同じ操作があるため。
@@ -59,25 +60,27 @@ type Props = {
 export function SceneDock({ project }: Props) {
   const { addScene: handleAddScene, isCreating } = useAddScene(project);
   const scenes = useProjectStore((state) => state.scenes);
-  const thumbnailBySceneId = useProjectStore(
-    (state) => state.thumbnailBySceneId,
-  );
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const selectScene = useUIStore((state) => state.selectScene);
   const isPlaying = useUIStore((state) => state.isPlaying);
   const setIsPlaying = useUIStore((state) => state.setIsPlaying);
   const setSceneSheetOpen = useUIStore((state) => state.setSceneSheetOpen);
-  const { reorderTo, confirmDelete, selectSceneManually } = useSceneActions();
   const musicUrl = useMusicStore((state) => state.objectUrl);
   const musicFileName = useMusicStore((state) => state.fileName);
   const setMusicDuration = useMusicStore((state) => state.setDurationSeconds);
   const bpm = useMusicStore((state) => state.bpm);
   const isMetronomeEnabled = useMusicStore((state) => state.isMetronomeEnabled);
   const setCurrentTime = useMusicStore((state) => state.setCurrentTime);
+  const musicDuration = useMusicStore((state) => state.durationSeconds);
   const hasMusic = musicUrl !== null;
   const audioRef = useMusicPlayback();
 
   const durations = sceneDurations(scenes);
+  // 時刻表示の分母。曲が入っていれば曲の長さ、無ければ最後のシーンまで
+  const totalSeconds = Math.max(
+    musicDuration ?? 0,
+    scenes[scenes.length - 1]?.timeSeconds ?? 0,
+  );
   const selectedIndex = scenes.findIndex((s) => s.id === selectedSceneId);
   const selectedScene = selectedIndex >= 0 ? scenes[selectedIndex] : null;
 
@@ -132,13 +135,17 @@ export function SceneDock({ project }: Props) {
     setIsPlaying(false);
   };
 
-  const selectSceneByIndex = (index: number) => {
-    const scene = scenes[index];
-    if (scene) selectSceneManually(scene.id);
-  };
-
   return (
     <div className="rounded-t-[calc(var(--radius)*1.5)] border-t border-line bg-surface pt-2.5 pb-3 md:rounded-none">
+      {/* 持ち手。シートが下から出てくることを形で示す。狭い画面だけ
+          (広い画面では一覧が横に常時出ていて、開く相手が無い) */}
+      <button
+        type="button"
+        onClick={() => setSceneSheetOpen(true)}
+        aria-label="シーン一覧を開く"
+        className="mx-auto mb-2.5 block h-1 w-9 rounded-full bg-line-strong md:hidden"
+      />
+
       {/* シーンが1つも無い状態でも、追加と一覧のボタンだけは出す
           (ここから作り始めるため。以前はストリップの中に「+」があった) */}
       <div className="flex items-center gap-2.5 px-3.5">
@@ -178,10 +185,14 @@ export function SceneDock({ project }: Props) {
                   <Pencil size={11} />
                 </button>
               </div>
+              {/* 時刻は【いま再生している位置】。選択中シーンの時刻ではなく
+                  再生位置を出すのは、時間軸を触ってシークしたときに
+                  どこまで進んだかを読む先がここしか無いため */}
               <span className="mt-0.5 block truncate font-mono text-[10.5px] text-fg-muted">
-                {selectedIndex === 0
-                  ? "先頭のシーン"
-                  : `${formatClock(selectedScene.timeSeconds)} · ${durations[selectedIndex]}秒で移動`}
+                <PlayheadClock
+                  totalSeconds={totalSeconds > 0 ? totalSeconds : null}
+                />
+                {selectedIndex > 0 && ` · ${durations[selectedIndex]}秒で移動`}
                 {musicFileName && ` · ♪ ${musicFileName}`}
               </span>
             </div>
@@ -214,26 +225,10 @@ export function SceneDock({ project }: Props) {
         </button>
       </div>
 
-      {/* 曲の流れを左から右へ一望するストリップ */}
+      {/* 曲の時間軸。シーンは「曲の何秒目か」の位置に載る */}
       <div className="mt-2.5">
-        <SceneTabs
-          scenes={scenes}
-          selectedSceneId={selectedSceneId}
-          onSelectScene={selectSceneManually}
-          onReorderScenes={reorderTo}
-          onDeleteScene={confirmDelete}
-          thumbnailBySceneId={thumbnailBySceneId}
-          stageWidthUnits={project.stageWidth}
-          stageHeightUnits={project.stageHeight}
-        />
+        <MusicTimeline project={project} audioRef={audioRef} />
       </div>
-
-      <SceneDotRail
-        scenes={scenes}
-        selectedIndex={selectedIndex}
-        isPlaying={isPlaying}
-        onSelectIndex={selectSceneByIndex}
-      />
 
       {/* 画面全体に重なるシート(狭い画面用)。DOM上の位置は見た目に
           影響しないのでここから描く。広い画面では一覧ボタンを出さないため
@@ -254,11 +249,4 @@ export function SceneDock({ project }: Props) {
       )}
     </div>
   );
-}
-
-/** 秒を 0:12.4 の形にする。曲の中の位置は分秒で見た方が探しやすい */
-function formatClock(seconds: number): string {
-  const minutes = Math.floor(seconds / 60);
-  const rest = seconds - minutes * 60;
-  return `${minutes}:${rest.toFixed(1).padStart(4, "0")}`;
 }

@@ -59,6 +59,12 @@ export function useMusicPlayback() {
       const offset =
         useProjectStore.getState().project?.musicOffsetSeconds ?? 0;
       const elapsed = audio.currentTime - offset;
+
+      // 曲があるときも「いま何秒目か」を1箇所へ書き出す。時間軸(MusicTimeline)の
+      // 再生ヘッドはここを読む。曲の有無で読み先が変わらないようにするため、
+      // 曲が無いときの時計(useSilentClock)と同じ場所へ入れる
+      useMusicStore.getState().setCurrentTime(elapsed);
+
       const index = sceneIndexAtSeconds(scenes, elapsed);
       if (index === -1) return;
 

@@ -30,6 +30,17 @@ const RESET_STORES = [
   makeReset(useProjectStore),
 ];
 
+// jsdom は ResizeObserver を持っていない。要素の幅を測って描く部分
+// (時間軸の帯など)は、これが無いと描画そのものが例外で落ちる。
+// 実際にサイズを通知する必要は無く、「呼べる」ことだけが要る
+if (typeof globalThis.ResizeObserver === "undefined") {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
+
 // globals: true を使わないと@testing-library/reactの自動afterEach cleanupが
 // 効かず、あるテストで描画したDOMが次のテストに残ってしまう。
 // (例: 同じdata-testidを持つ要素が複数ヒットしてgetByTestId等が失敗する)

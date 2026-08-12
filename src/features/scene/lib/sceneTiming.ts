@@ -20,9 +20,31 @@
  * 重なり、どちらの隊形を出せばよいか決まらなくなる */
 export const MIN_SEGMENT_SECONDS = 0.1;
 
-/** シーンを新しく作るときに空ける秒数。以前の
- * transition_duration_seconds の既定値(1秒)と揃えている */
-export const DEFAULT_SEGMENT_SECONDS = 1;
+/**
+ * シーンを新しく作るときに空ける秒数。
+ *
+ * 以前は1秒だった(transition_duration_seconds の既定値の名残)。
+ * ただしステージを横切る距離を1秒で動くのは、このアプリ自身が
+ * 「走らないと間に合いません」と警告する速さで、追加した直後の
+ * まっさらなシーンに警告が出ていた。
+ *
+ * 2秒にすると、時間軸の上でもコマ同士が重ならずに並ぶ。
+ */
+export const DEFAULT_SEGMENT_SECONDS = 2;
+
+/** 時刻の刻み。入力欄(SceneTimeField)が受け付ける桁と同じ */
+export const SECONDS_STEP = 0.1;
+
+/**
+ * 時刻を 0.1秒 の刻みへ寄せる。
+ *
+ * 時間軸の上でコマを掴んで動かすと、1pxごとに 1/26秒 のような端数が出て
+ * 「1.077秒で移動」のような数字になる。人が読む数でも、入力欄で打てる
+ * 数でもないので、置いた瞬間に丸める。
+ */
+export function snapSeconds(seconds: number): number {
+  return Math.round(seconds / SECONDS_STEP) * SECONDS_STEP;
+}
 
 type TimedScene = { id: string; timeSeconds: number };
 

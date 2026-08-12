@@ -57,9 +57,10 @@ describe("SceneDock", () => {
 
     render(<SceneDock project={makeProject()} />);
 
-    // 名前と番号は広い画面用のストリップにも出るため、ドックの行に固有の
-    // 文言(時刻と移動時間)で「この行が出ていること」を確かめる
-    expect(screen.getByText(/0:01\.0 · 1秒で移動/)).toBeInTheDocument();
+    // 時刻は【いま再生している位置】(先頭なら0:00.0)。その隣に、
+    // 選択中のシーンへ入ってくるのにかかる秒数が出る
+    expect(screen.getByText(/· 1秒で移動/)).toBeInTheDocument();
+    expect(screen.getByText("0:00.0")).toBeInTheDocument();
     expect(screen.getAllByText("サビ").length).toBeGreaterThan(0);
   });
 

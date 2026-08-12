@@ -1,0 +1,187 @@
+/**
+ * 時間軸の「1秒を何pxで描くか」と、それに伴う置き場所の計算。
+ *
+ * ■ 倍率を自動で決めない理由
+ * 「曲全体が1画面に収まるように倍率を計算する」ことはできるが、そうすると
+ * 3分の曲と30秒の曲で【指1本ぶんが何秒か】が変わる。同じ距離だけ指を
+ * 動かしても進む量が曲ごとに違うと、感覚が身に付かない。
+ *
+ * そこで倍率は固定にし、既定を 1秒=24px にする(窓が15秒ぶん)。
+ * 全体を眺めたいときはミニマップがあり、細かく置きたいときはピンチで
+ * 広げられる。曲の長さは倍率ではなく「軸の長さ」の側で吸収する。
+ */
+
+/** 引きの限界。1画面(360px)に45秒 */
+export const MIN_PX_PER_SECOND = 8;
+/** 寄りの限界。1画面に3秒。0.1秒(最小の間隔)が12px */
+export const MAX_PX_PER_SECOND = 120;
+/**
+ * 既定。390pxの画面でちょうど15秒ぶんが見える。
+ *
+ * 24px/秒 だと窓が16.3秒になり、さらに「新しいシーンの既定の間隔」である
+ * 2秒が 48px にしかならず、コマ(50px以上)に1歩届かずに旗へ落ちる。
+ * 何も設定していない作品で隊形の絵が出ないのは、この画面の値打ちを
+ * いちばん損なう。
+ */
+export const DEFAULT_PX_PER_SECOND = 26;
+
+/**
+ * 再生中、再生ヘッドを窓のどこに置くか。
+ * 中央(0.5)より少し左にするのは、これから来る隊形を見る時間が要るため。
+ */
+export const PLAYHEAD_ANCHOR = 0.43;
+
+/**
+ * 曲の頭(0秒)の手前に空ける余白。
+ *
+ * これが無いと、0秒に置いたシーンのコマは中心が軸の原点に来るため、
+ * 左半分が切れる。先頭のシーンはどの作品にも必ずあるので、
+ * 「いちばん最初の隊形だけ読めない」ことになる。
+ *
+ * 【軸の座標はこの余白を含む】。0秒は軸の 0px ではなく 30px にある。
+ * 位置の計算は必ず axisX / axisSecondsAt を通し、掛け算を直に書かない
+ * (書くと、余白を足し忘れた箇所だけが半コマずれる)。
+ */
+export const LEAD_IN_PX = 30;
+
+/** その時刻が軸の何pxに来るか */
+export function axisX(seconds: number, pxPerSecond: number): number {
+  return LEAD_IN_PX + seconds * pxPerSecond;
+}
+
+/** 軸の何pxが何秒にあたるか。axisX の逆 */
+export function axisSecondsAt(x: number, pxPerSecond: number): number {
+  if (pxPerSecond <= 0) return 0;
+  return (x - LEAD_IN_PX) / pxPerSecond;
+}
+
+/** これ以上あればコマ(ミニステージの絵)のまま置ける */
+export const CARD_MIN_GAP_PX = 50;
+/** これ以上あれば旗(番号だけ)にできる。下回ると束ねる */
+export const FLAG_MIN_GAP_PX = 26;
+
+export function clampPxPerSecond(value: number): number {
+  if (!Number.isFinite(value)) return DEFAULT_PX_PER_SECOND;
+  return Math.min(MAX_PX_PER_SECOND, Math.max(MIN_PX_PER_SECOND, value));
+}
+
+/**
+ * 軸の長さ(px)。曲の長さと、最後のシーンの位置の【長い方】に合わせる。
+ *
+ * 曲より後ろにシーンを置くこともできる(曲を差し替える前に組む場合など)。
+ * そのときに軸が曲の終わりで切れていると、置いたシーンへ辿り着けない。
+ * 末尾に窓半分ぶんの余白を足して、最後のシーンを画面の中ほどまで
+ * 引っ張って来られるようにする。
+ */
+export function contentWidth(
+  totalSeconds: number,
+  pxPerSecond: number,
+  viewportWidth: number,
+): number {
+  return Math.max(
+    viewportWidth,
+    LEAD_IN_PX + totalSeconds * pxPerSecond + viewportWidth / 2,
+  );
+}
+
+/** はみ出さない範囲へ収める */
+export function clampScrollX(
+  scrollX: number,
+  content: number,
+  viewport: number,
+): number {
+  if (!Number.isFinite(scrollX)) return 0;
+  return Math.min(Math.max(0, content - viewport), Math.max(0, scrollX));
+}
+
+/** その時刻が窓の定位置(PLAYHEAD_ANCHOR)へ来るスクロール量 */
+export function scrollForSeconds(
+  seconds: number,
+  pxPerSecond: number,
+  viewport: number,
+  content: number,
+): number {
+  return clampScrollX(
+    axisX(seconds, pxPerSecond) - viewport * PLAYHEAD_ANCHOR,
+    content,
+    viewport,
+  );
+}
+
+/**
+ * ピンチの前後で【指の下の時刻が動かない】ようにするスクロール量。
+ *
+ * 倍率だけ変えると、つまんだ場所ではなく軸の左端を軸に伸び縮みする。
+ * 見たかった箇所が画面の外へ逃げるので、指の位置を固定点にする。
+ */
+export function scrollAfterZoom(
+  scrollX: number,
+  anchorX: number,
+  previousPxPerSecond: number,
+  nextPxPerSecond: number,
+): number {
+  const seconds = axisSecondsAt(scrollX + anchorX, previousPxPerSecond);
+  return Math.max(0, axisX(seconds, nextPxPerSecond) - anchorX);
+}
+
+/** シーンを軸の上でどう見せるか */
+export type TimelineItemKind = "card" | "flag" | "cluster";
+
+export type TimelineItem = {
+  kind: TimelineItemKind;
+  /** 含まれるシーンの番号。card / flag は1つ、cluster は2つ以上 */
+  indexes: number[];
+  /** 置く時刻。cluster は含まれるシーンの中間 */
+  seconds: number;
+};
+
+/**
+ * 詰まっているところを縮退させる。コマ → 旗 → 束ね。
+ *
+ * ■ 左隣との距離だけで決める理由
+ * 前後の両方を見て決めると、間隔の違う3つが並んだときに真ん中の1つだけが
+ * 落ち、倍率を少し変えるたびに落ちる相手が入れ替わって、ちらついて見える。
+ * 「左隣より近ければ縮む」という一方向の規則なら、倍率に対して単調に変わる。
+ *
+ * ■ 縮退は見た目の話でしかない
+ * 0.5秒間隔でも、ピンチで 120px/秒 まで開けば 60px あき、コマのまま読める。
+ * ここで決めているのは【引きで眺めているときにどう見せるか】であって、
+ * 置ける間隔を制限しているわけではない。
+ */
+export function degradeScenes(
+  times: number[],
+  pxPerSecond: number,
+): TimelineItem[] {
+  const items: TimelineItem[] = [];
+
+  times.forEach((seconds, index) => {
+    // 先頭には左隣が無いので、必ずコマのまま
+    const gapPx =
+      index === 0 ? Infinity : (seconds - times[index - 1]) * pxPerSecond;
+
+    if (gapPx >= CARD_MIN_GAP_PX) {
+      items.push({ kind: "card", indexes: [index], seconds });
+      return;
+    }
+    if (gapPx >= FLAG_MIN_GAP_PX) {
+      items.push({ kind: "flag", indexes: [index], seconds });
+      return;
+    }
+
+    // 直前の項目を巻き込んで束ねる。「4シーン」と数えるとき、
+    // 巻き込まれた側も数のうちに入っていないと辻褄が合わない
+    const previous = items[items.length - 1];
+    if (!previous) {
+      items.push({ kind: "cluster", indexes: [index], seconds });
+      return;
+    }
+    previous.kind = "cluster";
+    previous.indexes.push(index);
+    previous.seconds =
+      (times[previous.indexes[0]] +
+        times[previous.indexes[previous.indexes.length - 1]]) /
+      2;
+  });
+
+  return items;
+}
