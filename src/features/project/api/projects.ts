@@ -151,6 +151,18 @@ export async function listProjectSummaries(
   });
 }
 
+/**
+ * 1件取ってくる。見えなければ null。
+ *
+ * ■ 「権限が無い」も null として扱う
+ * ログインしていない相手には、RLS で行が絞られる前に GRANT の段で
+ * 弾かれ、42501(insufficient_privilege)の例外になる。これをそのまま
+ * 投げると、404 で済むはずのところが 500 になる。500 は
+ * 「その先に何かある」ことを教えてしまううえ、画面にもエラーが出る。
+ *
+ * 呼び出し側から見れば「見えない」ことに変わりはないので、
+ * どちらも null にして notFound() へ落とす。
+ */
 export async function getProject(
   supabase: SupabaseClient<Database>,
   projectId: string,
@@ -161,7 +173,10 @@ export async function getProject(
     .eq("id", projectId)
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    if (error.code === "42501") return null;
+    throw error;
+  }
   return data ? toProject(data) : null;
 }
 

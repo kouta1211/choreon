@@ -4,23 +4,26 @@ import { getProject } from "@/features/project/api/projects";
 import { listDancers } from "@/features/dancer/api/dancers";
 import { listScenes } from "@/features/scene/api/scenes";
 import { listPositionsByScenes } from "@/features/scene/api/positions";
-import { EditorLayout } from "@/components/templates/EditorLayout";
+import { ViewerLayout } from "@/components/templates/ViewerLayout";
 
 /**
- * 保存済みのプロジェクトを開くエディタ。
+ * 閲覧専用のビューア。稽古場でダンサーがスマホから見る画面。
  *
- * ここはデータを取ってくるだけで、画面の組み立ては EditorLayout に任せる。
- * 未ログインの下書き(トップページ)と同じ画面を出すため、配置を2箇所に
- * 持たせない。
+ * 取ってくるものはエディタと同じで、渡す先が編集の操作を持たない層
+ * (ViewerLayout)になる。
  *
- * 取得結果に user_id の絞り込みが無いのは、RLSのポリシー
- * (auth.uid() = user_id)が境界になっているため。他人のIDを直接叩いても
- * 行が返らず notFound() になり、存在の有無も漏れない。
+ * ■ いま見られるのは作品の持ち主だけ
+ * RLSのポリシー(auth.uid() = user_id)が境界なので、他人のIDを直接
+ * 叩いても行が返らず notFound() になる。第三者へ配れる共有リンクは、
+ * 先に RLS とサーバー経由の器を決めてから足す(そこを決める前にUIだけ
+ * 作ると、作り直しになる)。
+ *
+ * `?p=<dancerId>` を付けると、開いた時点でそのポジションが選ばれる。
+ * 振付師が一人ひとりに違うリンクを配れるようにするため。
  */
-export default async function ProjectPage(
-  props: PageProps<"/projects/[projectId]">,
-) {
+export default async function ViewerPage(props: PageProps<"/view/[projectId]">) {
   const { projectId } = await props.params;
+  const search = await props.searchParams;
   const supabase = await createClient();
 
   // 【作品を先に引く】。まとめて取ると、権限が無い相手にはダンサーの
@@ -42,12 +45,14 @@ export default async function ProjectPage(
     scenes.map((scene) => scene.id),
   );
 
+  const requested = search?.p;
   return (
-    <EditorLayout
+    <ViewerLayout
       project={project}
-      initialDancers={dancers}
-      initialScenes={scenes}
-      initialPositions={positions}
+      dancers={dancers}
+      scenes={scenes}
+      positions={positions}
+      requestedDancerId={typeof requested === "string" ? requested : null}
     />
   );
 }

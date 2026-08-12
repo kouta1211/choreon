@@ -1,0 +1,174 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Pause, Play, Spline } from "lucide-react";
+import { useViewerStore } from "@/features/viewer/store/useViewerStore";
+import { ViewerEntry } from "@/components/organisms/ViewerEntry";
+import { ViewerStage } from "@/components/organisms/ViewerStage";
+import { ViewerScrub } from "@/components/organisms/ViewerScrub";
+import { ViewerRoute } from "@/components/organisms/ViewerRoute";
+import { PressableButton } from "@/components/atoms/PressableButton";
+import { themedDancerColor } from "@/features/dancer/lib/themedColor";
+import type { Dancer } from "@/features/dancer/types";
+import type { Project } from "@/features/project/types";
+import type { Position, Scene } from "@/features/scene/types";
+
+type Props = {
+  project: Project;
+  dancers: Dancer[];
+  scenes: Scene[];
+  positions: Position[];
+  /** ?p= で指定されたポジション。振付師が個別にリンクを配れる */
+  requestedDancerId: string | null;
+};
+
+/**
+ * 稽古場でダンサーが見る画面。編集の操作は一切出さない。
+ *
+ * ■ 出さないもの
+ * ダンサーのドラッグ・回転ハンドル・シーンの追加/削除/並び替え・
+ * テンプレート・インスペクター・履歴・シンメトリー・作品名の編集・保存。
+ * 隠すのではなく【持っていない】 — ストアが編集のアクションを持たないので、
+ * 支援技術から押せるボタンも、効くショートカットも存在しない。
+ *
+ * ■ 階層がエディタと逆
+ * 主操作は再生ではなくスクラブ。知りたいのは特定の瞬間の立ち位置で、
+ * それは指で止められる操作の方が速い。帯が画面幅いっぱいで、
+ * 再生ボタンは36pxの枠線ボタンに格下げしてある。
+ *
+ * ■ 横持ちは2カラム
+ * 稽古場では横に置いて見ることが多い。縦のままだとステージが潰れる。
+ */
+export function ViewerLayout({
+  project,
+  dancers,
+  scenes,
+  positions,
+  requestedDancerId,
+}: Props) {
+  const hydrate = useViewerStore((state) => state.hydrate);
+  const hasChosen = useViewerStore((state) => state.hasChosen);
+  const focusedDancerId = useViewerStore((state) => state.focusedDancerId);
+  const focusDancer = useViewerStore((state) => state.focusDancer);
+  const isPathVisible = useViewerStore((state) => state.isPathVisible);
+  const togglePath = useViewerStore((state) => state.togglePath);
+  const currentSeconds = useViewerStore((state) => state.currentSeconds);
+  const setCurrentSeconds = useViewerStore((state) => state.setCurrentSeconds);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  useEffect(() => {
+    hydrate({ project, dancers, scenes, positions, requestedDancerId });
+  }, [hydrate, project, dancers, scenes, positions, requestedDancerId]);
+
+  const lastSeconds =
+    scenes.length > 0 ? scenes[scenes.length - 1].timeSeconds : 0;
+
+  // 通し再生。主役ではないので、時計は素朴な rAF で足りる
+  useEffect(() => {
+    if (!isPlaying) return;
+
+    let frame = 0;
+    let previous = performance.now();
+    const step = (now: number) => {
+      frame = requestAnimationFrame(step);
+      const elapsed = (now - previous) / 1000;
+      previous = now;
+
+      const next = useViewerStore.getState().currentSeconds + elapsed;
+      if (next >= lastSeconds) {
+        setCurrentSeconds(lastSeconds);
+        setIsPlaying(false);
+        return;
+      }
+      setCurrentSeconds(next);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [isPlaying, lastSeconds, setCurrentSeconds]);
+
+  if (!hasChosen) return <ViewerEntry />;
+
+  const dancer = dancers.find((item) => item.id === focusedDancerId);
+
+  return (
+    <div className="flex h-dvh flex-col overflow-clip pb-[max(24px,env(safe-area-inset-bottom))]">
+      <header className="flex h-10 shrink-0 items-center gap-2 px-4">
+        <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-fg-strong">
+          {project.title}
+        </span>
+        {/* 自分のポジション。押すと選び直せる */}
+        <PressableButton
+          onClick={() => focusDancer(null)}
+          className="flex h-8 shrink-0 items-center gap-1.5 rounded-2xl border border-line-strong px-[11px] text-[12px] text-fg-sub"
+        >
+          {dancer ? (
+            <>
+              <span
+                aria-hidden
+                style={{ background: themedDancerColor(dancer.color) }}
+                className="block h-1.5 w-1.5 rounded-full"
+              />
+              {dancer.name}
+            </>
+          ) : (
+            "全員"
+          )}
+        </PressableButton>
+      </header>
+
+      {/* 横持ちと広い画面では、ステージの右に道順を置く */}
+      <div className="flex min-h-0 flex-1 flex-col gap-2 px-3.5 landscape:flex-row md:flex-row">
+        <div
+          className="flex min-h-0 min-w-0 flex-1 items-center justify-center [container-type:size]"
+          style={{ maxWidth: "min(100%, 640px)" }}
+        >
+          <ViewerStage />
+        </div>
+
+        <div className="flex shrink-0 flex-col gap-2 landscape:w-[300px] landscape:justify-center md:w-[320px] md:justify-center">
+          <ViewerRoute />
+        </div>
+      </div>
+
+      <div className="shrink-0 px-3.5 pt-2">
+        <ViewerScrub />
+
+        <div className="mt-1 flex items-center gap-2">
+          <PressableButton
+            kind="icon"
+            onClick={() => {
+              if (currentSeconds >= lastSeconds) setCurrentSeconds(0);
+              setIsPlaying((playing) => !playing);
+            }}
+            aria-label={isPlaying ? "止める" : "通しで再生"}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line-strong text-fg-sub"
+          >
+            {isPlaying ? (
+              <Pause size={14} fill="currentColor" />
+            ) : (
+              <Play size={14} fill="currentColor" />
+            )}
+          </PressableButton>
+
+          {/* 導線だけは切れるようにする。隊形だけ見たいことがある。
+              格子・顔被り・シンメトリーは、見る人には要らない */}
+          {focusedDancerId && (
+            <PressableButton
+              role="switch"
+              aria-checked={isPathVisible}
+              onClick={togglePath}
+              className={`flex h-8 shrink-0 items-center gap-1.5 rounded-2xl border px-[11px] text-[12px] ${
+                isPathVisible
+                  ? "border-accent bg-accent/16 text-accent-soft"
+                  : "border-line-strong text-fg-muted"
+              }`}
+            >
+              <Spline size={13} />
+              導線
+            </PressableButton>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
