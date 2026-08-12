@@ -10,6 +10,7 @@ import { upsertPositions } from "@/features/scene/api/positions";
 import { insertSceneIdAfter } from "@/features/scene/lib/sceneReorder";
 import type { Project } from "@/features/project/types";
 import type { Scene } from "@/features/scene/types";
+import { randomId } from "@/lib/randomId";
 
 /**
  * 選択したシーンを複製して、その【すぐ後ろ】に差し込む。
@@ -40,7 +41,7 @@ export function useDuplicateScene(project: Project) {
     const previousSelectedSceneId = useUIStore.getState().selectedSceneId;
 
     const duplicate = {
-      id: crypto.randomUUID(),
+      id: randomId(),
       projectId: project.id,
       name: `${source.name} のコピー`,
       orderIndex: source.orderIndex + 1,

@@ -2,6 +2,7 @@ import { DANCER_COLOR_PALETTE } from "@/features/dancer/constants";
 import type { Project } from "@/features/project/types";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position, Scene } from "@/features/scene/types";
+import { randomId } from "@/lib/randomId";
 
 /** プロジェクト1件ぶんの中身をまとめたもの。ゲストの下書きを作るときも、
  * それをクラウドへ保存するときも、この形で受け渡しする */
@@ -67,7 +68,9 @@ const SEED_LAYOUT: [number, number][][] = [
  *
  * 中身はあくまで叩き台なので、ダンサーもシーンも自由に消して作り直せる。
  */
-export function createGuestProject(now = "1970-01-01T00:00:00.000Z"): ProjectSnapshot {
+export function createGuestProject(
+  now = "1970-01-01T00:00:00.000Z",
+): ProjectSnapshot {
   const project: Project = {
     id: SEED_IDS.project,
     // 保存するまで持ち主は決まらない。保存時にログインしたユーザーを入れる
@@ -128,7 +131,7 @@ export function createGuestProject(now = "1970-01-01T00:00:00.000Z"): ProjectSna
 export function withFreshIds(
   snapshot: ProjectSnapshot,
   userId: string,
-  createId: () => string = () => crypto.randomUUID(),
+  createId: () => string = randomId,
 ): ProjectSnapshot {
   const projectId = createId();
   const sceneIdByOld = new Map(

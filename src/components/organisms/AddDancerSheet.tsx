@@ -17,6 +17,7 @@ import {
 } from "@/features/dancer/lib/newDancers";
 import type { Project } from "@/features/project/types";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
+import { randomId } from "@/lib/randomId";
 
 type Props = {
   project: Project;
@@ -46,6 +47,7 @@ export function AddDancerSheet({ project }: Props) {
     (state) => state.setAddDancerSheetOpen,
   );
   const dancers = useProjectStore((state) => state.dancers);
+  const scenes = useProjectStore((state) => state.scenes);
   const addDancer = useProjectStore((state) => state.addDancer);
   const removeDancer = useProjectStore((state) => state.removeDancer);
   const updateDancerPosition = useProjectStore(
@@ -87,20 +89,31 @@ export function AddDancerSheet({ project }: Props) {
     );
 
     const created = names.map((name, index) => ({
-      id: crypto.randomUUID(),
+      id: randomId(),
       projectId: project.id,
       name,
       color: colors[index],
       initialDirection: 0,
       createdAt: new Date().toISOString(),
     }));
-    const positions = created.map((dancer, index) => ({
-      sceneId: selectedSceneId,
-      dancerId: dancer.id,
-      xCoordinate: spots[index].x,
-      yCoordinate: spots[index].y,
-      rotationAngle: 0,
-    }));
+    // 【全シーンぶん】作る。以前は今開いているシーンにしか座標を作って
+    // いなかったため、追加した直後に別のシーンへ移ると、その人だけ
+    // 居なくなったように見えていた(座標が無い=描かれない)。
+    // ダンサーは作品に属するものでシーンに属するものではないので、
+    // どのシーンを開いても居るのが正しい。
+    //
+    // 立ち位置は全シーンで同じにする。「まだ動かしていない人」として
+    // 同じ場所に立っている状態から始まり、動かしたシーンだけが変わっていく
+    const targetScenes = scenes.length > 0 ? scenes : [{ id: selectedSceneId }];
+    const positions = targetScenes.flatMap((scene) =>
+      created.map((dancer, index) => ({
+        sceneId: scene.id,
+        dancerId: dancer.id,
+        xCoordinate: spots[index].x,
+        yCoordinate: spots[index].y,
+        rotationAngle: 0,
+      })),
+    );
 
     // 楽観的更新: 先にローカルへ反映し、保存に失敗したらまとめて取り消す
     for (const dancer of created) addDancer(dancer);
@@ -144,7 +157,9 @@ export function AddDancerSheet({ project }: Props) {
         className="flex flex-col gap-4 px-[18px] pt-4 pb-5"
       >
         <div className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-fg-sub">何人追加しますか?</span>
+          <span className="text-xs font-medium text-fg-sub">
+            何人追加しますか?
+          </span>
           <div className="flex items-center gap-3">
             <StepperButton
               label="1人減らす"
@@ -169,7 +184,9 @@ export function AddDancerSheet({ project }: Props) {
             <StepperButton
               label="1人増やす"
               icon={Plus}
-              onClick={() => setCount((value) => Math.min(MAX_COUNT, value + 1))}
+              onClick={() =>
+                setCount((value) => Math.min(MAX_COUNT, value + 1))
+              }
               disabled={count >= MAX_COUNT}
             />
             <span className="ml-1 text-sm text-fg-muted">人</span>
@@ -201,9 +218,7 @@ export function AddDancerSheet({ project }: Props) {
         </div>
 
         <p className="text-xs leading-relaxed text-fg-muted">
-          <span className="text-fg">
-            いま見ているシーンの空いているマス
-          </span>
+          <span className="text-fg">いま見ているシーンの空いているマス</span>
           に、中央から順に並びます。重ならないので、そのままドラッグで
           動かせます。
         </p>

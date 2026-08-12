@@ -73,15 +73,19 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
             <Upload size={15} className="shrink-0" />
             {fileName ? "別の曲を選ぶ" : "端末から曲を選ぶ"}
           </button>
+          {/* Android の一部端末は audio/* だけだと .wav を選ばせない
+              (端末側が wav に MIME を割り当てていないことがあり、
+              その場合ファイルが灰色で並ぶ)。拡張子も並べておくと、
+              MIMEと拡張子のどちらで判定する端末でも通る */}
           <input
             ref={fileInputRef}
             type="file"
-            accept="audio/*"
+            accept="audio/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.opus"
             className="hidden"
             aria-label="曲のファイル"
             onChange={(event) => {
               const file = event.target.files?.[0];
-              if (file) loadMusic(file);
+              if (file) loadMusic(file, project.id);
               // 同じファイルをもう一度選んでもchangeが飛ぶようにする
               event.target.value = "";
             }}
@@ -100,7 +104,7 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
               )}
               <button
                 type="button"
-                onClick={clearMusic}
+                onClick={() => clearMusic(project.id)}
                 aria-label="曲を外す"
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-muted"
               >

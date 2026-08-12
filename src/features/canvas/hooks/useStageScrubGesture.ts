@@ -35,6 +35,8 @@ type Params = {
   sceneIds: string[];
   selectedSceneId: string | null;
   selectScene: (sceneId: string) => void;
+  /** ステージの何も無いところを叩いたときに選択を外すために使う */
+  selectDancer: (dancerId: string | null) => void;
   scrub: ReturnType<typeof useSceneScrub>;
 };
 
@@ -51,6 +53,7 @@ export function useStageScrubGesture({
   sceneIds,
   selectedSceneId,
   selectScene,
+  selectDancer,
   scrub,
 }: Params) {
   // ジェスチャ1回ぶんの走り書き。stateに置くと毎pointermoveで再レンダーになる
@@ -167,6 +170,16 @@ export function useStageScrubGesture({
         event.currentTarget.releasePointerCapture(event.pointerId);
       }
 
+      // 6pxのしきい値を一度も越えていない = 払ったのではなく叩いた。
+      // ステージの何も無いところを叩いたときは選択を外す。ダンサーとボタンの
+      // 上から始まった指は onPointerDown で弾いてあるので、ここへは来ない
+      if (current.axis === null) {
+        selectDancer(null);
+        clearTrack();
+        scrub.setTargetSceneId(null);
+        return;
+      }
+
       const spanPx = span();
       const duration = resolveTransitionDuration(SNAP_SECONDS);
       const committed = shouldCommitScrub({
@@ -208,7 +221,7 @@ export function useStageScrubGesture({
         },
       );
     },
-    [scrub, span, selectScene, writeTrack, clearTrack],
+    [scrub, span, selectScene, selectDancer, writeTrack, clearTrack],
   );
 
   return { onPointerDown, onPointerMove, onPointerUp };

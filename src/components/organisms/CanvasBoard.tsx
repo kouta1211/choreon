@@ -139,6 +139,7 @@ export function CanvasBoard({
   );
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const selectScene = useUIStore((state) => state.selectScene);
+  const selectDancer = useUIStore((state) => state.selectDancer);
   const setDragSnapLine = useUIStore((state) => state.setDragSnapLine);
   const showToast = useUIStore((state) => state.showToast);
 
@@ -154,6 +155,7 @@ export function CanvasBoard({
     sceneIds,
     selectedSceneId,
     selectScene,
+    selectDancer,
     scrub,
   });
 

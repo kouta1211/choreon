@@ -4,7 +4,12 @@ import { useSceneThumbnails } from "./useSceneThumbnails";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useThemeStore } from "@/features/theme/store/useThemeStore";
 import { DEFAULT_PREFERENCE } from "@/features/theme/lib/themePreference";
-import { makeDancer, makePosition, makeProject, makeScene } from "@/test/factories";
+import {
+  makeDancer,
+  makePosition,
+  makeProject,
+  makeScene,
+} from "@/test/factories";
 
 const PROJECT = makeProject({ stageWidth: 10, stageHeight: 10 });
 

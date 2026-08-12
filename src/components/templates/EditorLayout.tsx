@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+
 import { CanvasBoard } from "@/components/organisms/CanvasBoard";
 import { EditorHeader } from "@/components/organisms/EditorHeader";
 import { AddDancerSheet } from "@/components/organisms/AddDancerSheet";
@@ -13,6 +15,7 @@ import { EditorShortcuts } from "@/components/organisms/EditorShortcuts";
 import { UnsavedChangesGuard } from "@/components/organisms/UnsavedChangesGuard";
 import { useSceneThumbnails } from "@/features/scene/hooks/useSceneThumbnails";
 import { SceneScrubProvider } from "@/features/canvas/hooks/useSceneScrub";
+import { useMusicStore } from "@/features/music/store/useMusicStore";
 import type { Project } from "@/features/project/types";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position, Scene } from "@/features/scene/types";
@@ -65,6 +68,14 @@ export function EditorLayout({
   // ボトムシート・サイドバーの3箇所が同じ絵を使うので、置き場所は
   // それら全部を含むこの層になる
   useSceneThumbnails(project);
+
+  // この端末に控えてある曲を戻す。作品ごとに1曲なので、別の作品を開いたら
+  // 入れ替わる(useMusicStore.restore)。音源はサーバーへ上げていないので、
+  // 共有された相手の端末では何も戻らない
+  const restoreMusic = useMusicStore((state) => state.restore);
+  useEffect(() => {
+    void restoreMusic(project.id);
+  }, [restoreMusic, project.id]);
 
   return (
     <SceneScrubProvider>
