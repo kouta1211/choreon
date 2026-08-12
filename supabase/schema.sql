@@ -19,6 +19,11 @@ create table public.projects (
   title text not null,
   stage_width integer not null default 14,
   stage_height integer not null default 10,
+  -- 曲の何秒目からこの作品が始まるか。振付は曲の頭からではなく
+  -- イントロの後から始まることが多いので、その頭出しの位置を覚えておく。
+  -- 音源そのものは持たない(端末のファイルを選ぶ方式でStorageは使わない)
+  music_offset_seconds numeric not null default 0
+    check (music_offset_seconds::float8 >= 0),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

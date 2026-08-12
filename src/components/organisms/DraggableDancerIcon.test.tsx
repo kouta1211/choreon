@@ -108,6 +108,77 @@ describe("DraggableDancerIcon", () => {
     expect(screen.getByTestId("dancer-focus-ring")).toBeInTheDocument();
   });
 
+  it("マウスを乗せるとリングが付き、離すと消える", () => {
+    render(
+      <DndContext>
+        <DraggableDancerIcon
+          dancer={makeDancer()}
+          x={2}
+          y={2}
+          rotationAngle={0}
+          stageWidthUnits={8}
+          stageHeightUnits={8}
+        />
+      </DndContext>,
+    );
+    const icon = screen.getByTestId("dancer-icon");
+
+    fireEvent.pointerEnter(icon, { pointerType: "mouse" });
+    expect(screen.getByTestId("dancer-hover-ring")).toBeInTheDocument();
+
+    fireEvent.pointerLeave(icon);
+    expect(screen.queryByTestId("dancer-hover-ring")).not.toBeInTheDocument();
+  });
+
+  // リグレッションテスト:
+  // タッチでも pointerenter は飛ぶ。素通しにすると、スマートフォンで一度
+  // 触ったダンサーがホバーしたまま貼り付き、指を離しても元に戻らない
+  // (タッチには「乗せているだけ」という状態が無いので、離れる合図も来ない)
+  it("指で触れただけではホバー扱いにしない", () => {
+    render(
+      <DndContext>
+        <DraggableDancerIcon
+          dancer={makeDancer()}
+          x={2}
+          y={2}
+          rotationAngle={0}
+          stageWidthUnits={8}
+          stageHeightUnits={8}
+        />
+      </DndContext>,
+    );
+
+    fireEvent.pointerEnter(screen.getByTestId("dancer-icon"), {
+      pointerType: "touch",
+    });
+
+    expect(screen.queryByTestId("dancer-hover-ring")).not.toBeInTheDocument();
+  });
+
+  // 選択リングと同じ場所に2本重なると、どちらが何なのか分からなくなる
+  it("選択中はホバーのリングを重ねない", () => {
+    useUIStore.setState({ selectedDancerId: "dancer-1" });
+    render(
+      <DndContext>
+        <DraggableDancerIcon
+          dancer={makeDancer()}
+          x={2}
+          y={2}
+          rotationAngle={0}
+          stageWidthUnits={8}
+          stageHeightUnits={8}
+        />
+      </DndContext>,
+    );
+
+    fireEvent.pointerEnter(screen.getByTestId("dancer-icon"), {
+      pointerType: "mouse",
+    });
+
+    expect(screen.queryByTestId("dancer-hover-ring")).not.toBeInTheDocument();
+    expect(screen.getByTestId("dancer-selection-ring")).toBeInTheDocument();
+  });
+
   it("他のダンサーがフォーカス中のとき、自分は薄く表示される", async () => {
     useUIStore.setState({ focusedDancerId: "someone-else" });
     render(

@@ -143,6 +143,10 @@ function DraggableDancerIconImpl({
   // 当たっているか」の見た目用ローカルstate。Tab移動時にInspectorを
   // 開かせないための分離(詳しくは上のコメント参照)
   const [hasKeyboardFocus, setHasKeyboardFocus] = useState(false);
+  // ポインタが乗っているか。マウスのときだけ立てる。
+  // タッチでも pointerenter は飛ぶので、素通しにするとスマートフォンで
+  // 一度触った人がホバーしたまま貼り付き、離しても元に戻らなくなる
+  const [isHovered, setIsHovered] = useState(false);
   const isDragging = transform !== null;
 
   // dnd-kitのsetNodeRefと、回転中心の座標を読み取るための自前refを
@@ -294,7 +298,11 @@ function DraggableDancerIconImpl({
     <motion.div
       ref={setRefs}
       data-testid="dancer-icon"
-      className="absolute touch-none select-none"
+      // 掴んでいる間だけ手前へ出す。誰にもz順を与えていないので、素のままだと
+      // DOMで後ろにいるダンサーの下へ潜り、掴んだ本人が隠れてしまう
+      className={`absolute touch-none select-none ${
+        isDragging ? "z-10 cursor-grabbing" : "cursor-grab"
+      }`}
       animate={{ opacity: isDimmed ? 0.3 : 1 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
       style={{
@@ -302,6 +310,11 @@ function DraggableDancerIconImpl({
         top,
         transform: transform ? CSS.Translate.toString(transform) : undefined,
       }}
+      // マウス以外(指・ペン)では立てない。上の isHovered のコメント参照
+      onPointerEnter={(event) => {
+        if (event.pointerType === "mouse") setIsHovered(true);
+      }}
+      onPointerLeave={() => setIsHovered(false)}
       onClick={(event) => {
         selectDancer(dancer.id);
         // クリックした場所によっては(見た目上の本体は子のSVGなど)ブラウザの
@@ -321,6 +334,8 @@ function DraggableDancerIconImpl({
         dancer={dancer}
         rotationAngle={displayRotation}
         isSelected={isSelected}
+        isHovered={isHovered}
+        isDragging={isDragging}
         isRotating={liveRotation !== null}
         isFocused={isFocused}
         isBlocked={isBlocked}

@@ -33,15 +33,18 @@ GRANT状況とRLSポリシーが意図通りであることを必ず確認する
 supabase/migrations/0000_bounds_and_stage_defaults.sql
 supabase/migrations/0001_transition_and_curve.sql
 supabase/migrations/0002_stage_width_14.sql
+supabase/migrations/0003_music_offset.sql
 ```
 
 どのファイルも「何度実行しても安全」に書いてあるため、適用済みか分からない
 場合はとりあえず流してよい。各ファイル末尾に、意図した列が揃ったかを確認する
 クエリが付いている。
 
-> マイグレーションが未適用のままだと、遷移時間の変更や導線の曲線編集が
-> PostgRESTのエラー(`PGRST204`)で失敗する。その場合アプリは
+> マイグレーションが未適用のままだと、遷移時間の変更や導線の曲線編集、
+> 曲の頭出しの保存がPostgRESTのエラー(`PGRST204`)で失敗する。その場合アプリは
 > 「DBのマイグレーションが未適用です。〜」というトーストを表示する。
+> なお0003については、頭出しを既定(0秒)のままにしているかぎり読み書きとも
+> 未適用のDBで通るようにしてあるので、曲を使わない作品は影響を受けない。
 
 ### 環境変数
 
