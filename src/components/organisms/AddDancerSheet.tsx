@@ -150,7 +150,7 @@ export function AddDancerSheet({ project }: Props) {
       isOpen={isOpen}
       onClose={close}
       title="ダンサーを追加"
-      wideMaxWidthClassName="lg:max-w-md"
+      wideMaxWidthClassName="min-[1200px]:max-w-md"
     >
       <form
         onSubmit={handleSubmit}

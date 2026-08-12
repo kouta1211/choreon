@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { List, Pause, Pencil, Play, Plus } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
@@ -74,6 +74,7 @@ export function SceneDock({ project }: Props) {
   const musicDuration = useMusicStore((state) => state.durationSeconds);
   const hasMusic = musicUrl !== null;
   const audioRef = useMusicPlayback();
+  const dockRef = useRef<HTMLDivElement>(null);
 
   const durations = sceneDurations(scenes);
   // 時刻表示の分母。曲が入っていれば曲の長さ、無ければ最後のシーンまで
@@ -101,6 +102,28 @@ export function SceneDock({ project }: Props) {
     isActive: isPlaying && !hasMusic && isMetronomeEnabled,
     bpm,
   });
+
+  // トーストはドックの直上に出す。ドックの高さは曲の有無や画面の段で
+  // 変わるので、実測してCSS変数へ流す。ドックの無い画面(作品一覧など)では
+  // 変数が無く、Toast側の既定値が効く
+  useEffect(() => {
+    const dock = dockRef.current;
+    if (!dock) return;
+
+    const publish = () => {
+      document.documentElement.style.setProperty(
+        "--toast-bottom",
+        `${dock.offsetHeight + 12}px`,
+      );
+    };
+    const observer = new ResizeObserver(publish);
+    observer.observe(dock);
+    publish();
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.removeProperty("--toast-bottom");
+    };
+  }, []);
 
   // 手でシーンを選んだら曲もその位置へ飛ばす。再生中は曲の側が
   // シーンを決めているので、止まっているときだけ動かす
@@ -145,7 +168,10 @@ export function SceneDock({ project }: Props) {
   };
 
   return (
-    <div className="rounded-t-[calc(var(--radius)*1.5)] border-t border-line bg-surface pt-2.5 pb-3 md:rounded-none">
+    <div
+      ref={dockRef}
+      className="rounded-t-[calc(var(--radius)*1.5)] border-t border-line bg-surface pt-2.5 pb-3 md:rounded-none"
+    >
       {/* 持ち手。シートが下から出てくることを形で示す。狭い画面だけ
           (広い画面では一覧が横に常時出ていて、開く相手が無い) */}
       <button

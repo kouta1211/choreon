@@ -41,7 +41,7 @@ export function AuthDialog() {
       isOpen={mode !== null}
       onClose={closeAuthDialog}
       title={mode === "login" ? "ログイン" : "アカウントを作る"}
-      wideMaxWidthClassName="lg:max-w-md"
+      wideMaxWidthClassName="min-[1200px]:max-w-md"
     >
       <div className="px-4 pt-1 pb-4">
         <AuthForm

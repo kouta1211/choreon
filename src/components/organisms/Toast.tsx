@@ -1,57 +1,117 @@
 "use client";
 
-import { useEffect } from "react";
-import { Check, X } from "lucide-react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { AlertTriangle, Check, X } from "lucide-react";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
+import { capturePointer, releasePointer } from "@/lib/pointerCapture";
 
+/** 読み切るのに要る時間。「元に戻す」が付いていれば、決める時間も要る */
 const AUTO_DISMISS_MS = 4000;
+const AUTO_DISMISS_WITH_ACTION_MS = 7000;
+/** これだけ横へ払ったら消す */
+const SWIPE_DISMISS_PX = 64;
 
 /**
- * useUIStore.toastを画面下部に表示し、一定時間後に自動で消す。
- * setTimeoutの後片付け(clearTimeout)が要るので、これはuseEffectの
- * クリーンアップ関数を使う典型例になっている。
+ * 画面の下から出る短い知らせ。
  *
- * 成功と失敗を色だけで区別せず、アイコンも変えている。ダークな面の上では
- * 赤と緑の差が思ったより弱く、色覚によっては差が付かないため。
+ * ■ ドックの直上に置く
+ * 画面の下端は指と safe-area で埋まっている。そこへ出すと、指で隠れるか、
+ * 消そうとして下のボタンを押す。
+ *
+ * ■ 面の色は変えない
+ * 成功・注意・エラーの区別は【アイコンの中だけ】が持つ。面まで赤や緑に
+ * すると、ステージ上のダンサーの色(6色から選べ、赤も緑もある)と
+ * 競合して、何色が何の意味なのか読めなくなる。
+ *
+ * ■ ×ボタンを置かない
+ * 20px の × は的が小さい。横へ払う方が速く、失敗しても消えないだけ。
+ *
+ * ■ 同時に出るのは1つ
+ * 積み上げると、古い知らせが新しい操作の邪魔をする。次が来たら差し替える。
  */
 export function Toast() {
   const toast = useUIStore((state) => state.toast);
   const clearToast = useUIStore((state) => state.clearToast);
+  // 払った量は、いまのトーストと一緒に持つ。次の知らせに差し替わったら
+  // 自然に0へ戻るので、effect の中で state を書き戻さずに済む
+  const [drag, setDrag] = useState<{ id: unknown; px: number } | null>(null);
+  const dragPx = drag && drag.id === toast?.message ? drag.px : 0;
+  const startXRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!toast) return;
-    const timer = setTimeout(clearToast, AUTO_DISMISS_MS);
+    const timer = setTimeout(
+      clearToast,
+      toast.action ? AUTO_DISMISS_WITH_ACTION_MS : AUTO_DISMISS_MS,
+    );
     return () => clearTimeout(timer);
   }, [toast, clearToast]);
 
   if (!toast) return null;
 
   const isError = toast.type === "error";
+  const isWarning = toast.type === "warning";
+
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    startXRef.current = event.clientX;
+    capturePointer(event.currentTarget, event.pointerId);
+  };
+
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (startXRef.current === null) return;
+    setDrag({ id: toast.message, px: event.clientX - startXRef.current });
+  };
+
+  const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    const startX = startXRef.current;
+    startXRef.current = null;
+    releasePointer(event.currentTarget, event.pointerId);
+    if (startX === null) return;
+
+    if (Math.abs(event.clientX - startX) > SWIPE_DISMISS_PX) clearToast();
+    else setDrag(null);
+  };
 
   return (
     <div
       role="status"
-      className={`fixed bottom-5 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 items-center gap-2.5 rounded-xl border px-3.5 py-2.5 shadow-xl ${
-        isError
-          ? "border-red-600 bg-red-950 text-red-200"
-          : "border-emerald-600 bg-emerald-950 text-emerald-200"
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      style={{
+        transform: `translateX(${dragPx}px)`,
+        opacity: Math.max(0.2, 1 - Math.abs(dragPx) / (SWIPE_DISMISS_PX * 2)),
+      }}
+      className={`overlay-panel fixed right-[14px] bottom-[var(--toast-bottom,24px)] left-[14px] z-50 flex touch-pan-y items-center gap-[10px] rounded-[13px] px-3 py-[11px] md:left-auto md:w-[380px] ${
+        dragPx === 0
+          ? "transition-[transform,opacity] duration-200 motion-reduce:transition-none"
+          : ""
       }`}
     >
       <span
         aria-hidden
-        className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full text-white ${
-          isError ? "bg-red-600" : "bg-emerald-600"
+        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] ${
+          isError
+            ? "bg-red-500/18 text-red-400"
+            : isWarning
+              ? "bg-amber-500/18 text-amber-400"
+              : "bg-emerald-500/18 text-emerald-400"
         }`}
       >
         {isError ? (
-          <X size={11} strokeWidth={3} />
+          <X size={12} strokeWidth={3} />
+        ) : isWarning ? (
+          <AlertTriangle size={12} strokeWidth={2.5} />
         ) : (
-          <Check size={11} strokeWidth={3} />
+          <Check size={12} strokeWidth={3} />
         )}
       </span>
-      <span className="min-w-0 flex-1 text-[13px] font-medium">
+
+      <span className="min-w-0 flex-1 text-[12px] leading-[1.4] text-fg">
         {toast.message}
       </span>
+
       {toast.action && (
         <button
           type="button"
@@ -60,9 +120,7 @@ export function Toast() {
             clearToast();
             toast.action?.onAction();
           }}
-          className={`shrink-0 rounded-md px-2 py-1 font-mono text-[11px] font-semibold underline ${
-            isError ? "text-red-300" : "text-emerald-300"
-          }`}
+          className="flex h-[30px] shrink-0 items-center rounded-[calc(var(--radius)*0.6)] border border-line-strong px-[11px] text-[12px] font-medium text-fg-strong"
         >
           {toast.action.label}
         </button>

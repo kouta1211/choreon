@@ -126,3 +126,16 @@ body::before {
     scroll-behavior: auto !important;
   }
 }
+
+/* 地の上に浮く板(モーダル・説明・トースト・シート)の素材。
+   材質そのものはテーマが決める(themes.css の --overlay-*)。
+   クラス1つにまとめてあるのは、板が5種類あって、そのすべてで
+   「同じ厚みの同じ板」に見える必要があるため */
+.overlay-panel {
+  background: var(--overlay-bg);
+  backdrop-filter: var(--overlay-blur);
+  -webkit-backdrop-filter: var(--overlay-blur);
+  border: 1px solid var(--overlay-line);
+  box-shadow: var(--overlay-sheen), var(--overlay-shadow);
+  color: var(--fg);
+}

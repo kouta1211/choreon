@@ -624,3 +624,108 @@
     transparent 7px 18px
   );
 }
+
+/* ---------------------------------------------- 重なる板の素材 */
+
+/* モーダル・説明・トースト・シートのような「地の上に浮くもの」の材質。
+ *
+ * ■ なぜテーマごとに変えるのか
+ * ぼかし(磨りガラス)を全テーマへ一律に当てると、紙のテーマだけ
+ * 「紙の上にガラスが乗っている」という嘘になる。素材そのものを
+ * テーマの持ち物にして、暗い系は磨りガラス、紙・素材系は
+ * トレーシングペーパー、黒板は曇ったアクリルにする。
+ *
+ * ■ 押し心地(usePressable)はテーマで変えない
+ * 沈み込みの量や触覚は素材ではなく【操作の性質】なので、
+ * どのテーマでも同じにする。
+ *
+ * ■ backdrop-filter を掛ける先
+ * 重なる板にだけ使う。ドックやヘッダーへ常設で掛けると、ステージを
+ * ドラッグしている間じゅう再合成が走ってスクロールが重くなる。 */
+:root,
+[data-theme] {
+  --overlay-bg: rgba(31, 31, 35, 0.84);
+  --overlay-blur: blur(20px) saturate(1.4);
+  --overlay-line: rgba(255, 255, 255, 0.11);
+  --overlay-sheen: inset 0 1px 0 rgba(255, 255, 255, 0.13);
+  --overlay-shadow: 0 18px 50px -16px rgba(9, 9, 11, 0.92);
+}
+
+/* トレーシングペーパー。紙の上に重ねるのは紙。
+ * 影を短く硬くするのは、ガラスのように厚みで浮かせるのではなく
+ * 「1枚めくって上に置いた」ように見せるため */
+[data-theme="paper"],
+[data-theme="gridnote"],
+[data-theme="kraft"],
+[data-theme="tracing"],
+[data-theme="whiteboard"] {
+  --overlay-bg: rgba(253, 251, 245, 0.9);
+  --overlay-blur: blur(6px);
+  --overlay-line: rgba(90, 74, 58, 0.22);
+  --overlay-sheen: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --overlay-shadow: 0 4px 12px -4px rgba(90, 74, 58, 0.3);
+}
+
+/* 曇ったアクリル。黒板の上に置くものは白い板になる(白黒が反転する) */
+[data-theme="chalk"] {
+  --overlay-bg: rgba(232, 240, 233, 0.9);
+  --overlay-blur: blur(10px);
+  --overlay-line: rgba(20, 40, 28, 0.18);
+  --overlay-sheen: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --overlay-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.6);
+}
+
+/* 黒板の上の白い板では、文字も反転させないと読めない。
+ * 板の中だけに効かせたいので、素材のクラス(.overlay-panel)側で受ける */
+[data-theme="chalk"] .overlay-panel {
+  --fg: #16241c;
+  --fg-strong: #0b1610;
+  --fg-sub: #3c5548;
+  --fg-muted: #6b8578;
+  --line: rgba(20, 40, 28, 0.14);
+  --line-strong: rgba(20, 40, 28, 0.26);
+  --surface-raised: rgba(255, 255, 255, 0.5);
+  --surface-strong: rgba(255, 255, 255, 0.75);
+}
+
+/* ぼかしが使えない環境では、透けたぶんだけ地の格子が読めてしまう。
+ * ぼかしの代わりに不透明度を上げる */
+@supports not (backdrop-filter: blur(1px)) {
+  :root,
+  [data-theme] {
+    --overlay-bg: rgba(31, 31, 35, 0.96);
+  }
+
+  [data-theme="paper"],
+  [data-theme="gridnote"],
+  [data-theme="kraft"],
+  [data-theme="tracing"],
+  [data-theme="whiteboard"] {
+    --overlay-bg: rgba(253, 251, 245, 0.98);
+  }
+
+  [data-theme="chalk"] {
+    --overlay-bg: rgba(232, 240, 233, 0.98);
+  }
+}
+
+/* 「透明なものを減らす」設定。ぼかしを切り、不透明の面にする */
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  [data-theme] {
+    --overlay-blur: none;
+    --overlay-bg: rgb(31, 31, 35);
+  }
+
+  [data-theme="paper"],
+  [data-theme="gridnote"],
+  [data-theme="kraft"],
+  [data-theme="tracing"],
+  [data-theme="whiteboard"] {
+    --overlay-bg: rgb(253, 251, 245);
+  }
+
+  [data-theme="chalk"] {
+    --overlay-bg: rgb(232, 240, 233);
+  }
+}

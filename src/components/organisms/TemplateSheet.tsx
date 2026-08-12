@@ -88,7 +88,7 @@ export function TemplateSheet({ project }: Props) {
       title="フォーメーション"
       titleRight={templates.length > 0 ? `${templates.length}種` : undefined}
       isTall
-      wideMaxWidthClassName="lg:max-w-4xl"
+      wideMaxWidthClassName="min-[1200px]:max-w-4xl"
     >
       {dancerCount < 2 ? (
         <p className="m-3.5 rounded-xl border border-line bg-surface-raised p-4 text-xs leading-relaxed text-fg-sub">

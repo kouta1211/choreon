@@ -9,7 +9,9 @@ import {
 
 type Toast = {
   message: string;
-  type: "success" | "error";
+  /** 面の色は変えず、アイコンの中だけが色を持つ(Toast.tsx)。
+   * 注意(warning)は「できたが、気に留めてほしい」場合に使う */
+  type: "success" | "warning" | "error";
   /** 右端に出す1つだけの操作。失敗なら「再試行」、取り消せる操作なら
    * 「元に戻す」。知らせて終わりにせず、その場で次の一手を出す */
   action?: { label: string; onAction: () => void };

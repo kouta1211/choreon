@@ -72,7 +72,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
             一覧へ戻る
           </button>
         }
-        wideMaxWidthClassName="lg:max-w-md"
+        wideMaxWidthClassName="min-[1200px]:max-w-md"
       >
         <div className="flex flex-col gap-4 px-[18px] py-4">
           <ThemePreview themeId={detailTheme.id} size="large" />
@@ -121,7 +121,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
       title="見た目"
       titleRight={`${THEMES.length}種`}
       isTall
-      wideMaxWidthClassName="lg:max-w-2xl"
+      wideMaxWidthClassName="min-[1200px]:max-w-2xl"
     >
       <div className="flex items-center gap-1.5 border-b border-line px-[18px] py-3">
         {FILTERS.map((item) => {
