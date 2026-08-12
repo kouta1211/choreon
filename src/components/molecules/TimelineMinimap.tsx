@@ -31,6 +31,7 @@ type Props = {
   pxPerSecond: number;
   /** 各シーンの時刻。位置の把握用に点だけ置く */
   sceneTimes: number[];
+  /** 拍のグリッドを地にする(曲が無いとき)。曲があれば波形が地になる */
   bpm: number | null;
   originSeconds: number;
 };

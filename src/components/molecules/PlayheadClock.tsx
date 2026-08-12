@@ -2,10 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
+import { countAt, formatCount } from "@/features/music/lib/counts";
 
 type Props = {
   /** 曲(または最後のシーン)の長さ。分からなければ null */
   totalSeconds: number | null;
+  /** 曲が入っていないときは、時刻ではなくカウントで読む。
+   * 稽古場で数える単位がそちらなので、無い曲の秒数より通じる */
+  counts: { bpm: number; originSeconds: number } | null;
 };
 
 /**
@@ -20,25 +24,37 @@ type Props = {
  * 購読はセレクタ経由ではなく subscribe で直接行う。セレクタで
  * currentTime を読むと、0.01秒の変化でも再描画が起きてしまう。
  */
-export function PlayheadClock({ totalSeconds }: Props) {
+export function PlayheadClock({ totalSeconds, counts }: Props) {
+  const format = (seconds: number) =>
+    counts
+      ? formatCount(countAt(seconds, counts.bpm, counts.originSeconds))
+      : formatClock(seconds);
+
   const [text, setText] = useState(() =>
-    formatClock(useMusicStore.getState().currentTime),
+    format(useMusicStore.getState().currentTime),
   );
 
   useEffect(() => {
     const update = (seconds: number) => {
-      const next = formatClock(seconds);
+      const next = counts
+        ? formatCount(countAt(seconds, counts.bpm, counts.originSeconds))
+        : formatClock(seconds);
       setText((previous) => (previous === next ? previous : next));
     };
     update(useMusicStore.getState().currentTime);
     return useMusicStore.subscribe((state) => update(state.currentTime));
-  }, []);
+    // counts は { bpm, originSeconds } の入れ物なので、中身で比べる
+  }, [counts?.bpm, counts?.originSeconds, counts]);
 
   return (
     <>
       <span className="tabular-nums">{text}</span>
-      {totalSeconds !== null && (
-        <span className="text-fg-sub"> / {formatMinutes(totalSeconds)}</span>
+      {counts ? (
+        <span className="text-fg-sub"> · BPM {counts.bpm}</span>
+      ) : (
+        totalSeconds !== null && (
+          <span className="text-fg-sub"> / {formatMinutes(totalSeconds)}</span>
+        )
       )}
     </>
   );

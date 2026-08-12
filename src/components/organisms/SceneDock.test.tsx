@@ -60,7 +60,8 @@ describe("SceneDock", () => {
     // 時刻は【いま再生している位置】(先頭なら0:00.0)。その隣に、
     // 選択中のシーンへ入ってくるのにかかる秒数が出る
     expect(screen.getByText(/· 1秒で移動/)).toBeInTheDocument();
-    expect(screen.getByText("0:00.0")).toBeInTheDocument();
+    // 曲が入っていないので、時刻ではなくカウントで読む
+    expect(screen.getByText("1セット 1カウント")).toBeInTheDocument();
     expect(screen.getAllByText("サビ").length).toBeGreaterThan(0);
   });
 

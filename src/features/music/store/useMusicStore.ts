@@ -7,7 +7,6 @@ import {
   saveTrack,
 } from "@/features/music/lib/musicStorage";
 import {
-  clampBpm,
   DEFAULT_METRONOME_SETTING,
   loadMetronomeSetting,
   saveMetronomeSetting,
@@ -33,8 +32,6 @@ type MusicStore = {
    * 無ければ自前の時計(useSilentClock)から入る。
    * どちらのモードでも「時刻 → シーン」の一方向に流れる */
   currentTime: number;
-  /** メトロノームの速さ。作品ごとに端末へ覚える */
-  bpm: number;
   /** メトロノームを鳴らすか。曲が入っている間は使わない */
   isMetronomeEnabled: boolean;
   /** 時間軸の倍率(1秒を何pxで描くか)。BPMと同じく作品ごとに端末へ覚える。
@@ -45,7 +42,6 @@ type MusicStore = {
   clear: (projectId: string) => void;
   setDurationSeconds: (seconds: number) => void;
   setCurrentTime: (seconds: number) => void;
-  setBpm: (bpm: number) => void;
   toggleMetronome: () => void;
   setPxPerSecond: (pxPerSecond: number) => void;
   /** 端末に控えてある曲を読み直す。作品を開いたときに1回呼ぶ */
@@ -74,7 +70,6 @@ export const useMusicStore = create<MusicStore>((set, get) => ({
   durationSeconds: null,
   projectId: null,
   currentTime: 0,
-  bpm: DEFAULT_METRONOME_SETTING.bpm,
   isMetronomeEnabled: DEFAULT_METRONOME_SETTING.isEnabled,
   pxPerSecond: null,
 
@@ -108,26 +103,11 @@ export const useMusicStore = create<MusicStore>((set, get) => ({
   setDurationSeconds: (seconds) => set({ durationSeconds: seconds }),
   setCurrentTime: (seconds) => set({ currentTime: Math.max(0, seconds) }),
 
-  setBpm: (bpm) =>
-    set((state) => {
-      const next = clampBpm(bpm);
-      if (state.projectId) {
-        saveMetronomeSetting(state.projectId, {
-          bpm: next,
-          isEnabled: state.isMetronomeEnabled,
-        });
-      }
-      return { bpm: next };
-    }),
-
   toggleMetronome: () =>
     set((state) => {
       const isMetronomeEnabled = !state.isMetronomeEnabled;
       if (state.projectId) {
-        saveMetronomeSetting(state.projectId, {
-          bpm: state.bpm,
-          isEnabled: isMetronomeEnabled,
-        });
+        saveMetronomeSetting(state.projectId, { isEnabled: isMetronomeEnabled });
       }
       return { isMetronomeEnabled };
     }),
@@ -146,7 +126,6 @@ export const useMusicStore = create<MusicStore>((set, get) => ({
 
     if (isSameProject && get().objectUrl) {
       set({
-        bpm: metronome.bpm,
         isMetronomeEnabled: metronome.isEnabled,
         pxPerSecond: loadPxPerSecond(projectId),
       });
@@ -165,7 +144,6 @@ export const useMusicStore = create<MusicStore>((set, get) => ({
       durationSeconds: null,
       projectId,
       currentTime: 0,
-      bpm: metronome.bpm,
       isMetronomeEnabled: metronome.isEnabled,
       pxPerSecond: loadPxPerSecond(projectId),
     });

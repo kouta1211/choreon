@@ -56,6 +56,8 @@ type ProjectState = {
   /** プロジェクト名の変更。ゲストの下書きをそのままクラウドへ保存するとき、
    * 名前も含めて送れるようにここへ持たせている */
   renameProject: (title: string) => void;
+  /** 曲の速さ。カウントで組むときの物差しなので、作品が持つ */
+  setBpm: (bpm: number) => void;
 
   /** ゲストの編集が1つでも起きたことを記録する(persist()から呼ばれる) */
   markUnsaved: () => void;
@@ -135,6 +137,11 @@ export const useProjectStore = create<ProjectState>((set) => ({
   renameProject: (title) =>
     set((state) =>
       state.project ? { project: { ...state.project, title } } : {},
+    ),
+
+  setBpm: (bpm: number) =>
+    set((state) =>
+      state.project ? { project: { ...state.project, bpm } } : {},
     ),
 
   setMusicOffset: (musicOffsetSeconds) =>

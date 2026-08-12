@@ -1,4 +1,5 @@
 import { DANCER_COLOR_PALETTE } from "@/features/dancer/constants";
+import { DEFAULT_BPM } from "@/features/music/lib/metronomePreference";
 import type { Project } from "@/features/project/types";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position, Scene } from "@/features/scene/types";
@@ -81,6 +82,9 @@ export function createGuestProject(
     stageHeight: STAGE_HEIGHT,
     // 曲はまだ選ばれていないので頭出しも無い(DBのdefaultと同じ0)
     musicOffsetSeconds: 0,
+    // 曲を入れずにカウントで組み始めることもできる。DBのdefaultと同じ
+    bpm: DEFAULT_BPM,
+    beatsPerBar: 4,
     createdAt: now,
     updatedAt: now,
   };

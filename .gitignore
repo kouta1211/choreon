@@ -46,8 +46,17 @@ next-env.d.ts
 /*.jpeg
 /*.png
 
-# design handoff bundles exported from Claude Design (reference only, not built here)
+# design handoff bundles exported from Claude Design (reference only, not built here).
+# The export drops its loose companions in the repo root too -- the .dc.html
+# reference pages, support.js, the .thumbnail preview and an uploads/ folder of
+# pasted images. None of it is built or linted here; leaving support.js tracked
+# would fail `npm run verify` on rules that only make sense for our own source.
 /design_handoff_*/
+/design_handoff_choreon_INDEX.md
+/*.dc.html
+/support.js
+/.thumbnail
+/uploads/
 
 # Claude Code の端末ごとの設定(権限の許可リストなど)。
 # スキル(.claude/skills)は共有するが、これは各自のものなので追跡しない

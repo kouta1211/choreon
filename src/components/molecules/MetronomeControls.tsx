@@ -2,6 +2,7 @@
 
 import { Music4 } from "lucide-react";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
+import { useBpm } from "@/features/music/hooks/useBpm";
 import { MAX_BPM, MIN_BPM } from "@/features/music/lib/metronomePreference";
 
 /** 押すだけで置ける速さ。バラード〜アップテンポの目安 */
@@ -19,8 +20,7 @@ const PRESETS = [90, 110, 128, 140];
  * 合わせればよいのか分からなくなる。
  */
 export function MetronomeControls() {
-  const bpm = useMusicStore((state) => state.bpm);
-  const setBpm = useMusicStore((state) => state.setBpm);
+  const { bpm, setBpm } = useBpm();
   const isEnabled = useMusicStore((state) => state.isMetronomeEnabled);
   const toggleMetronome = useMusicStore((state) => state.toggleMetronome);
 

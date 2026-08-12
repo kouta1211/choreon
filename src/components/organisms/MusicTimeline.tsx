@@ -8,7 +8,7 @@ import {
   type PointerEvent,
   type RefObject,
 } from "react";
-import { motion, useMotionValue, useTransform } from "motion/react";
+import { animate, motion, useMotionValue, useTransform } from "motion/react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
@@ -26,9 +26,12 @@ import {
   contentWidth,
   LEAD_IN_PX,
   degradeScenes,
+  PLAYHEAD_ANCHOR,
   scrollAfterZoom,
   scrollForSeconds,
 } from "@/features/music/lib/timelineScale";
+import { flickTargetSeconds, snapToBeat } from "@/features/music/lib/counts";
+import { TAP_PATTERN, vibrate } from "@/lib/haptics";
 import { TimelineWaveform } from "@/components/molecules/TimelineWaveform";
 import {
   TimelineSceneCard,
@@ -36,6 +39,7 @@ import {
   TimelineSceneFlag,
 } from "@/components/molecules/TimelineSceneCard";
 import { TimelineMinimap } from "@/components/molecules/TimelineMinimap";
+import { CountControls } from "@/components/molecules/CountControls";
 import { capturePointer, releasePointer } from "@/lib/pointerCapture";
 import { useScreenKind } from "@/components/hooks/useIsWideScreen";
 import {
@@ -44,12 +48,15 @@ import {
 } from "@/features/music/lib/timelineLayout";
 import { Minus, Plus } from "lucide-react";
 import { snapSeconds } from "@/features/scene/lib/sceneTiming";
+import { DEFAULT_BPM } from "@/features/music/lib/metronomePreference";
 import type { Project } from "@/features/project/types";
 
 /** ＋ − ボタン1回ぶんの倍率。段(ZOOM_STEPS)より細かく刻む */
 const ZOOM_BUTTON_FACTOR = 1.5;
 /** これ未満の移動はタップ。それ以上は軸を引っ張る操作 */
 const PAN_THRESHOLD_PX = 6;
+/** 押しっぱなしにすると、拍への吸着をやめて自由に置けるようになる */
+const FREEHAND_HOLD_MS = 450;
 /** 触るのをやめてから、再生ヘッドの追従が戻るまでの時間 */
 const FOLLOW_RESUME_MS = 1200;
 
@@ -95,7 +102,7 @@ export function MusicTimeline({ project, audioRef }: Props) {
   const setCurrentTime = useMusicStore((state) => state.setCurrentTime);
   const musicDuration = useMusicStore((state) => state.durationSeconds);
   const hasMusic = useMusicStore((state) => state.objectUrl !== null);
-  const bpm = useMusicStore((state) => state.bpm);
+  const bpm = useProjectStore((state) => state.project?.bpm ?? DEFAULT_BPM);
   // 倍率は作品ごとに端末へ覚える。0.5秒刻みで組む作品と、8秒ごとに
   // 大きく変わる作品とでは、見たい細かさが違う(読み込みは restore が行う)。
   // 一度も触っていなければ、帯の実幅から決める(§3-1)
@@ -217,8 +224,38 @@ export function MusicTimeline({ project, audioRef }: Props) {
   // 1本なら軸を引く(離すまでに動いていなければシーク)、2本なら倍率。
   // コマの上から始まった操作はコマ側が受け取る(stopPropagation)
   const pointersRef = useRef(new Map<number, number>());
-  const panRef = useRef({ startX: 0, startScroll: 0, moved: false });
+  const panRef = useRef({
+    startX: 0,
+    startScroll: 0,
+    moved: false,
+    /** 直前の pointermove の位置と時刻。離したときの勢いを出すのに使う */
+    lastX: 0,
+    lastAt: 0,
+    velocity: 0,
+    /** 長押ししてから引いているか。そのときは拍に吸着させない */
+    freehand: false,
+  });
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pinchRef = useRef({ distance: 0, pxPerSecond: 0 });
+  /** 指を離したらどこで止まるか。曲が無いときだけ、引いている間に出す */
+  const [snapPreviewSeconds, setSnapPreviewSeconds] = useState<number | null>(
+    null,
+  );
+
+  /** 曲が無いときだけ、8カウントの頭へ吸着させる。曲があるときは
+   * 波形が手がかりになるので、自由に止まれた方がよい */
+  const shouldSnap = !hasMusic;
+
+  /** 指を離したらどの時刻で止まるか。窓の定位置(43%)に来るものを返す */
+  const flickTarget = (scroll: number, velocityPxPerMs: number) => {
+    const seenSeconds = axisSecondsAt(
+      scroll + viewport * PLAYHEAD_ANCHOR,
+      pxPerSecond,
+    );
+    // px/ms を 秒/秒 に直す。1000倍して ms を秒に、pxPerSecond で割って px を秒に
+    const velocity = (velocityPxPerMs * 1000) / pxPerSecond;
+    return flickTargetSeconds(seenSeconds, velocity, bpm, offsetSeconds);
+  };
 
   const holdFollow = () => {
     isTouchingRef.current = true;
@@ -292,7 +329,18 @@ export function MusicTimeline({ project, audioRef }: Props) {
       startX: event.clientX,
       startScroll: scrollX.get(),
       moved: false,
+      lastX: event.clientX,
+      lastAt: event.timeStamp,
+      velocity: 0,
+      freehand: false,
     };
+
+    // 長押ししてから引くと、拍の裏へ自由に置ける。押しっぱなしで
+    // 待つ、という操作なので、間違って出ることはない
+    if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+    holdTimerRef.current = setTimeout(() => {
+      if (!panRef.current.moved) panRef.current.freehand = true;
+    }, FREEHAND_HOLD_MS);
   };
 
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
@@ -318,12 +366,27 @@ export function MusicTimeline({ project, audioRef }: Props) {
       return;
     }
 
-    const delta = event.clientX - panRef.current.startX;
-    if (!panRef.current.moved && Math.abs(delta) < PAN_THRESHOLD_PX) return;
-    panRef.current.moved = true;
-    scrollX.set(
-      clampScrollX(panRef.current.startScroll - delta, contentPx, viewport),
-    );
+    const pan = panRef.current;
+    const delta = event.clientX - pan.startX;
+    if (!pan.moved && Math.abs(delta) < PAN_THRESHOLD_PX) return;
+    pan.moved = true;
+
+    // 勢いは直前の1区間だけで測る。全体の平均だと、止める直前に
+    // 減速したことが結果に出ない
+    const elapsed = event.timeStamp - pan.lastAt;
+    if (elapsed > 0) {
+      pan.velocity = (pan.lastX - event.clientX) / elapsed;
+      pan.lastX = event.clientX;
+      pan.lastAt = event.timeStamp;
+    }
+
+    const next = clampScrollX(pan.startScroll - delta, contentPx, viewport);
+    scrollX.set(next);
+
+    // 離す前に行き先を見せる。足りなければ、そのまま押し続けられる
+    if (shouldSnap && !pan.freehand) {
+      setSnapPreviewSeconds(flickTarget(next, pan.velocity));
+    }
   };
 
   const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
@@ -337,18 +400,32 @@ export function MusicTimeline({ project, audioRef }: Props) {
     pointers.delete(event.pointerId);
     releasePointer(event.currentTarget, event.pointerId);
 
+    if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+
     // 動かさずに離したらシーク
     if (pointers.size === 0 && !panRef.current.moved) {
       const rect = event.currentTarget.getBoundingClientRect();
       seekTo(
         axisSecondsAt(scrollX.get() + event.clientX - rect.left, pxPerSecond),
       );
+    } else if (pointers.size === 0 && shouldSnap && !panRef.current.freehand) {
+      // 曲が無いときだけ、8カウントの頭で止める。拍の途中で止まると
+      // 「4セット目の3.4カウント」という読めない位置になる
+      const target = flickTarget(scrollX.get(), panRef.current.velocity);
+      animate(scrollX, scrollForSeconds(target, pxPerSecond, viewport, contentPx), {
+        duration: 0.22,
+        ease: [0.2, 0.8, 0.2, 1],
+      });
+      vibrate(TAP_PATTERN);
     }
+    setSnapPreviewSeconds(null);
     if (pointers.size === 0) releaseFollow();
   };
 
   const handlePointerCancel = (event: PointerEvent<HTMLDivElement>) => {
     if (!pointersRef.current.delete(event.pointerId)) return;
+    if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+    setSnapPreviewSeconds(null);
     if (pointersRef.current.size === 0) releaseFollow();
   };
 
@@ -392,6 +469,18 @@ export function MusicTimeline({ project, audioRef }: Props) {
     );
   };
 
+  /**
+   * コマを置く時刻。
+   *
+   * 曲が無いときは【1拍】に吸着させる。帯のスクロールは8カウント単位、
+   * コマの配置は1拍単位 — 置く場所は細かく、見る場所は大きく飛びたい。
+   * 曲があるときは波形に合わせたいので、0.1秒の刻みだけに丸める。
+   */
+  const placeAt = (seconds: number) =>
+    hasMusic
+      ? snapSeconds(seconds)
+      : snapToBeat(seconds, bpm, offsetSeconds);
+
   const items = degradeScenes(
     scenes.map((scene) => scene.timeSeconds),
     pxPerSecond,
@@ -399,7 +488,14 @@ export function MusicTimeline({ project, audioRef }: Props) {
   );
   const selectedIndex = scenes.findIndex((s) => s.id === selectedSceneId);
 
+  const scrim = `color-mix(in oklab, var(--scrim) ${hasMusic ? 72 : 50}%, transparent)`;
+
   const layerX = useTransform(scrollX, (value) => -value);
+  // 破線の行き先。軸と一緒に流れるので、スクロール量を引く
+  const previewX = useTransform(
+    scrollX,
+    (scroll) => axisX(snapPreviewSeconds ?? 0, pxPerSecond) - scroll,
+  );
   const playheadX = useTransform(
     [playheadSeconds, scrollX],
     ([seconds, scroll]: number[]) => axisX(seconds, pxPerSecond) - scroll,
@@ -424,8 +520,9 @@ export function MusicTimeline({ project, audioRef }: Props) {
           width={viewport}
           height={layout.bandHeight}
           playheadSeconds={playheadSeconds}
-          bpm={hasMusic ? null : bpm}
-          originSeconds={0}
+          bpm={bpm}
+          originSeconds={offsetSeconds}
+          showSetNumbers
           className="absolute inset-0"
         />
 
@@ -436,8 +533,9 @@ export function MusicTimeline({ project, audioRef }: Props) {
           style={{
             top: (layout.bandHeight - layout.scrimHeight) / 2,
             height: layout.scrimHeight,
-            background:
-              "linear-gradient(to bottom, transparent, color-mix(in oklab, var(--scrim) 72%, transparent) 28%, color-mix(in oklab, var(--scrim) 72%, transparent) 72%, transparent)",
+            // 曲なしのときは薄くする。縞と拍線がコマの下で切れると、
+            // 「どこまで動いたか」の手がかりが途切れて見える
+            background: `linear-gradient(to bottom, transparent, ${scrim} 28%, ${scrim} 72%, transparent)`,
           }}
           className="pointer-events-none absolute inset-x-0 block"
         />
@@ -489,15 +587,22 @@ export function MusicTimeline({ project, audioRef }: Props) {
                 layout={layout}
                 onSelect={() => selectSceneManually(scene.id)}
                 onMoveSeconds={(delta) =>
-                  void changeSceneTime(
-                    scene,
-                    snapSeconds(scene.timeSeconds + delta),
-                  )
+                  void changeSceneTime(scene, placeAt(scene.timeSeconds + delta))
                 }
               />
             );
           })}
         </motion.div>
+
+        {/* 指を離したときの止まり先。押している間だけ出す。
+            足りなければ、そのまま押し続けられる */}
+        {snapPreviewSeconds !== null && (
+          <motion.span
+            aria-hidden
+            style={{ x: previewX }}
+            className="pointer-events-none absolute inset-y-0 left-0 z-20 block w-0 border-l-2 border-dashed border-accent-soft"
+          />
+        )}
 
         {/* 再生ヘッドはコマより手前。貫いて見えることで
             「いまこの隊形」が読める */}
@@ -538,7 +643,11 @@ export function MusicTimeline({ project, audioRef }: Props) {
         </div>
       )}
 
-      {layout.showMinimap && viewport > 0 && (
+      {/* 曲が無いときは、ミニマップの段を速さの操作にあてる。
+          描く波形が無いうえ、段を増やすと縦の余白を食う */}
+      {!hasMusic && <CountControls />}
+
+      {hasMusic && layout.showMinimap && viewport > 0 && (
         <TimelineMinimap
           waveform={waveform}
           contentPx={contentPx}
@@ -546,8 +655,8 @@ export function MusicTimeline({ project, audioRef }: Props) {
           scrollX={scrollX}
           pxPerSecond={pxPerSecond}
           sceneTimes={scenes.map((scene) => scene.timeSeconds)}
-          bpm={hasMusic ? null : bpm}
-          originSeconds={0}
+          bpm={bpm}
+          originSeconds={offsetSeconds}
         />
       )}
     </div>

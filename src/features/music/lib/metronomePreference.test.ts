@@ -18,28 +18,28 @@ describe("loadMetronomeSetting", () => {
   });
 
   it("保存した設定をそのまま読む", () => {
-    saveMetronomeSetting("p1", { bpm: 92, isEnabled: true });
-    expect(loadMetronomeSetting("p1")).toEqual({ bpm: 92, isEnabled: true });
+    saveMetronomeSetting("p1", { isEnabled: true });
+    expect(loadMetronomeSetting("p1")).toEqual({ isEnabled: true });
   });
 
-  // BPMは作品ごと。別の作品を開いて前の曲の速さが残っていては困る
+  // 鳴らすかどうかは、その場に居る人の都合(稽古場か電車か)。
+  // 作品ごとに別々に覚える
   it("プロジェクトごとに別々に持つ", () => {
-    saveMetronomeSetting("p1", { bpm: 92, isEnabled: true });
-    saveMetronomeSetting("p2", { bpm: 140, isEnabled: false });
+    saveMetronomeSetting("p1", { isEnabled: true });
+    saveMetronomeSetting("p2", { isEnabled: false });
 
-    expect(loadMetronomeSetting("p1").bpm).toBe(92);
-    expect(loadMetronomeSetting("p2").bpm).toBe(140);
+    expect(loadMetronomeSetting("p1").isEnabled).toBe(true);
+    expect(loadMetronomeSetting("p2").isEnabled).toBe(false);
     expect(loadMetronomeSetting("p3")).toEqual(DEFAULT_METRONOME_SETTING);
   });
 
-  it("範囲外のBPMは既定に落とす", () => {
+  // 速さ(BPM)は作品が持つようになった。古い形が残っていても無視する
+  it("古い形に入っていたBPMは読まない", () => {
     localStorage.setItem(
       METRONOME_STORAGE_KEY,
-      JSON.stringify({ p1: { bpm: 9999, isEnabled: true } }),
+      JSON.stringify({ p1: { bpm: 92, isEnabled: true } }),
     );
-    expect(loadMetronomeSetting("p1").bpm).toBe(DEFAULT_BPM);
-    // 他の項目は生きたまま
-    expect(loadMetronomeSetting("p1").isEnabled).toBe(true);
+    expect(loadMetronomeSetting("p1")).toEqual({ isEnabled: true });
   });
 
   it("壊れたJSONでも既定に落として画面を止めない", () => {
@@ -55,9 +55,9 @@ describe("loadMetronomeSetting", () => {
 
 describe("saveMetronomeSetting", () => {
   it("他のプロジェクトの設定を消さない", () => {
-    saveMetronomeSetting("p1", { bpm: 92, isEnabled: true });
-    saveMetronomeSetting("p2", { bpm: 140, isEnabled: false });
-    expect(loadMetronomeSetting("p1").bpm).toBe(92);
+    saveMetronomeSetting("p1", { isEnabled: true });
+    saveMetronomeSetting("p2", { isEnabled: false });
+    expect(loadMetronomeSetting("p1").isEnabled).toBe(true);
   });
 });
 

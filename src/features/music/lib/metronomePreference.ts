@@ -20,13 +20,18 @@ export const MIN_BPM = 40;
 export const MAX_BPM = 240;
 export const DEFAULT_BPM = 120;
 
+/**
+ * 端末に覚えるのは【鳴らすかどうか】だけ。
+ *
+ * 速さ(BPM)は作品が持つ(projects.bpm)。曲が無いときの時間の物差しに
+ * なったので、端末どまりだと共有された相手の画面でカウントが引けない。
+ * 鳴らすかどうかは、その場に居る人の都合(稽古場か電車か)なので端末の好み。
+ */
 export type MetronomeSetting = {
-  bpm: number;
   isEnabled: boolean;
 };
 
 export const DEFAULT_METRONOME_SETTING: MetronomeSetting = {
-  bpm: DEFAULT_BPM,
   isEnabled: false,
 };
 
@@ -35,15 +40,6 @@ export const METRONOME_STORAGE_KEY = "choreon.metronome.v1";
 
 /** プロジェクトIDごとの設定をまとめて持つ */
 type Stored = Record<string, MetronomeSetting>;
-
-function isBpm(value: unknown): value is number {
-  return (
-    typeof value === "number" &&
-    Number.isFinite(value) &&
-    value >= MIN_BPM &&
-    value <= MAX_BPM
-  );
-}
 
 function parseAll(raw: string | null): Stored {
   if (!raw) return {};
@@ -63,7 +59,6 @@ function parseAll(raw: string | null): Stored {
     if (typeof value !== "object" || value === null) continue;
     const record = value as Record<string, unknown>;
     result[projectId] = {
-      bpm: isBpm(record.bpm) ? record.bpm : DEFAULT_BPM,
       isEnabled:
         typeof record.isEnabled === "boolean" ? record.isEnabled : false,
     };

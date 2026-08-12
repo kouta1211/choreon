@@ -3,7 +3,15 @@
 import { useEffect, useRef } from "react";
 import type { MotionValue } from "motion/react";
 import { useThemeStore } from "@/features/theme/store/useThemeStore";
-import { beatTimesInWindow, isDownbeat } from "@/features/music/lib/metronome";
+import {
+  beatTimesInWindow,
+  isDownbeat,
+  secondsPerBeat,
+} from "@/features/music/lib/metronome";
+import {
+  BEATS_PER_SET,
+  shouldDrawBeatLines,
+} from "@/features/music/lib/counts";
 import { peakBetween, type Waveform } from "@/features/music/lib/waveformPeaks";
 
 type Props = {
@@ -23,6 +31,8 @@ type Props = {
   bpm: number | null;
   /** 1拍目がどこか(曲の頭出しのオフセット) */
   originSeconds: number;
+  /** セット番号を出すか。ミニマップでは細かすぎて読めない */
+  showSetNumbers?: boolean;
   /** 全体を薄くする。ミニマップで使う */
   opacity?: number;
   className?: string;
@@ -62,6 +72,7 @@ export function TimelineWaveform({
   playheadSeconds,
   bpm,
   originSeconds,
+  showSetNumbers = false,
   opacity = 1,
   className,
 }: Props) {
@@ -87,16 +98,35 @@ export function TimelineWaveform({
     const played = styles.getPropertyValue("--accent-soft").trim();
     const ink = parseInk(styles.getPropertyValue("--texture-ink"));
 
-    const draw = () => {
-      const fromSeconds = (scrollX.get() - originPx) / pxPerSecond;
-      context.setTransform(ratio, 0, 0, ratio, 0, 0);
-      context.clearRect(0, 0, width, height);
+    /**
+     * カウントの地。8カウントごとの縞・拍線・セット番号の3層。
+     *
+     * ■ 縞がいちばん大事
+     * これが無いと無地の帯を指で払うことになり、【どれだけ動いたか】が
+     * 分からない。波形が担っていた手がかりの役目を、ここが引き継ぐ。
+     */
+    const drawCounts = (
+      context: CanvasRenderingContext2D,
+      { fromSeconds, toSeconds }: { fromSeconds: number; toSeconds: number },
+    ) => {
+      if (!bpm) return;
+      const setSeconds = secondsPerBeat(bpm) * BEATS_PER_SET;
+      const x = (seconds: number) => (seconds - fromSeconds) * pxPerSecond;
 
-      // 曲が無いときは拍のグリッド。波形の代わりに置くもので、
-      // 「機能が欠けた画面」ではなく「カウントで組む画面」にする
-      if (!waveform) {
-        if (!bpm) return;
-        const toSeconds = fromSeconds + width / pxPerSecond;
+      // 1. 8カウントごとの縞。交互に薄く塗る
+      const firstSet = Math.floor(
+        Math.max(0, fromSeconds - originSeconds) / setSeconds,
+      );
+      const lastSet = Math.ceil((toSeconds - originSeconds) / setSeconds);
+      context.fillStyle = `rgba(${ink}, 0.03)`;
+      for (let set = firstSet; set <= lastSet; set += 1) {
+        if (set % 2 !== 0) continue;
+        const start = originSeconds + set * setSeconds;
+        context.fillRect(x(start), 0, setSeconds * pxPerSecond, height);
+      }
+
+      // 2. 拍線。潰れて灰色の面になる細かさでは描かない
+      if (shouldDrawBeatLines(bpm, pxPerSecond)) {
         for (const beat of beatTimesInWindow(
           bpm,
           Math.max(0, fromSeconds),
@@ -106,12 +136,45 @@ export function TimelineWaveform({
           const isBar = isDownbeat(beat, bpm, originSeconds);
           context.fillStyle = `rgba(${ink}, ${isBar ? 0.13 : 0.05})`;
           context.fillRect(
-            Math.round((beat - fromSeconds) * pxPerSecond),
+            Math.round(x(beat)),
             isBar ? 0 : height * 0.25,
             1,
             isBar ? height : height * 0.5,
           );
         }
+      }
+
+      // 3. セット番号。小節番号ではなく、稽古場で数える単位の番号
+      if (showSetNumbers && setSeconds * pxPerSecond >= 34) {
+        context.fillStyle = `rgba(${ink}, 0.34)`;
+        context.font = '9px ui-monospace, SFMono-Regular, Menlo, monospace';
+        context.textBaseline = "top";
+        for (let set = Math.max(0, firstSet); set <= lastSet; set += 1) {
+          const start = originSeconds + set * setSeconds;
+          if (start < 0) continue;
+          context.fillText(String(set + 1), Math.round(x(start)) + 3, 3);
+        }
+      }
+
+      // 4. 再生済みの側。波形のときの塗り分けにあたるもの
+      if (playheadSeconds !== null) {
+        const playedX = x(playheadSeconds.get());
+        if (playedX > 0) {
+          context.fillStyle = `color-mix(in oklab, ${played} 7%, transparent)`;
+          context.fillRect(0, 0, Math.min(width, playedX), height);
+        }
+      }
+    };
+
+    const draw = () => {
+      const fromSeconds = (scrollX.get() - originPx) / pxPerSecond;
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      context.clearRect(0, 0, width, height);
+
+      // 曲が無いときはカウントの地。波形の代わりに置くもので、
+      // 「機能が欠けた画面」ではなく「カウントで組む画面」にする
+      if (!waveform) {
+        if (bpm) drawCounts(context, { fromSeconds, toSeconds: fromSeconds + width / pxPerSecond });
         return;
       }
 
@@ -154,6 +217,7 @@ export function TimelineWaveform({
     playheadSeconds,
     bpm,
     originSeconds,
+    showSetNumbers,
     themePreference,
   ]);
 

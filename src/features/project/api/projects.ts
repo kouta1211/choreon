@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import type { Project, ProjectSummary } from "@/features/project/types";
 import { listPositionsByScenes } from "@/features/scene/api/positions";
+import { DEFAULT_BPM } from "@/features/music/lib/metronomePreference";
 
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
 
@@ -16,9 +17,35 @@ function toProject(row: ProjectRow): Project {
     // 通すと秒数の計算がNaNになり、曲を鳴らしていなくてもシーンの選択が
     // おかしくなる。既定値(0)はDB側のdefaultと同じなので、無ければ0に落とす
     musicOffsetSeconds: row.music_offset_seconds ?? 0,
+    // migration 0005 を当てる前のDBには、この2つの列がまだ無い。
+    // 既定値はDB側のdefaultと同じ
+    bpm: (row as { bpm?: number }).bpm ?? DEFAULT_BPM,
+    beatsPerBar: (row as { beats_per_bar?: number }).beats_per_bar ?? 4,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+/**
+ * 曲の速さ(BPM)を保存する。
+ *
+ * migration 0005 を当てていないDBでは列が無く、Supabaseが
+ * 「そんな列は無い」(PGRST204)を返す。BPMは端末側の表示にもう反映されて
+ * いるので、その1件だけは【黙って流す】。ここで例外にすると、
+ * マイグレーション前のDBでスライダーを触るたびにエラーが出る。
+ */
+export async function updateProjectBpm(
+  supabase: SupabaseClient<Database>,
+  projectId: string,
+  bpm: number,
+): Promise<void> {
+  const { error } = await supabase
+    .from("projects")
+    // 列がまだ無いDBがあるため、型定義から外れる書き込みになる
+    .update({ bpm } as never)
+    .eq("id", projectId);
+
+  if (error && error.code !== "PGRST204") throw error;
 }
 
 /** 曲の開始オフセット(秒)を保存する。曲そのものは端末側にしか無いので、

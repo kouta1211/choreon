@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { List, Pause, Pencil, Play, Plus } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
@@ -68,7 +68,7 @@ export function SceneDock({ project }: Props) {
   const musicUrl = useMusicStore((state) => state.objectUrl);
   const musicFileName = useMusicStore((state) => state.fileName);
   const setMusicDuration = useMusicStore((state) => state.setDurationSeconds);
-  const bpm = useMusicStore((state) => state.bpm);
+  const bpm = project.bpm;
   const isMetronomeEnabled = useMusicStore((state) => state.isMetronomeEnabled);
   const setCurrentTime = useMusicStore((state) => state.setCurrentTime);
   const musicDuration = useMusicStore((state) => state.durationSeconds);
@@ -83,6 +83,15 @@ export function SceneDock({ project }: Props) {
   );
   const selectedIndex = scenes.findIndex((s) => s.id === selectedSceneId);
   const selectedScene = selectedIndex >= 0 ? scenes[selectedIndex] : null;
+  // 曲が無ければカウントで読む。毎レンダー新しい入れ物を作ると
+  // PlayheadClock の購読が張り直されるので、中身が同じなら使い回す
+  const countSetting = useMemo(
+    () =>
+      hasMusic
+        ? null
+        : { bpm, originSeconds: project.musicOffsetSeconds ?? 0 },
+    [hasMusic, bpm, project.musicOffsetSeconds],
+  );
 
   // 曲が無いときの時計。曲があるときは<audio>が時刻の正になる
   // (useMusicPlayback)。どちらのモードでも「時刻 → シーン」と一方向に
@@ -191,6 +200,7 @@ export function SceneDock({ project }: Props) {
               <span className="mt-0.5 block truncate font-mono text-[10.5px] text-fg-muted">
                 <PlayheadClock
                   totalSeconds={totalSeconds > 0 ? totalSeconds : null}
+                  counts={countSetting}
                 />
                 {selectedIndex > 0 && ` · ${durations[selectedIndex]}秒で移動`}
                 {musicFileName && ` · ♪ ${musicFileName}`}
