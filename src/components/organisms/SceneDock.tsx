@@ -11,6 +11,10 @@ import {
   seekToSelectedScene,
   useMusicPlayback,
 } from "@/features/music/hooks/useMusicPlayback";
+import {
+  nearestSceneIndexAtSeconds,
+  sceneStartSeconds,
+} from "@/features/music/lib/musicTimeline";
 import { SceneListSheet } from "@/components/organisms/SceneListSheet";
 import { getNextSceneId } from "@/features/scene/lib/playback";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
@@ -111,8 +115,29 @@ export function SceneDock({ project }: Props) {
   const handleTogglePlay = () => {
     if (!isPlaying) {
       justStartedPlayingRef.current = true;
+      setIsPlaying(true);
+      return;
     }
-    setIsPlaying(!isPlaying);
+
+    // 止めるときは、いちばん近いシーンへ寄せてから止める。
+    // 曲を鳴らしていると、押した瞬間の再生位置は区間の途中であることが多い。
+    // そこで止めると「シーン2と3のあいだ」という、隊形としては存在しない
+    // 状態で残り、次に押したときにどこから続くのかも分からなくなる
+    const audio = audioRef.current;
+    if (audio && scenes.length > 0) {
+      const offset =
+        useProjectStore.getState().project?.musicOffsetSeconds ?? 0;
+      const index = nearestSceneIndexAtSeconds(
+        scenes,
+        audio.currentTime - offset,
+      );
+      const scene = scenes[index];
+      if (scene) {
+        selectScene(scene.id);
+        audio.currentTime = offset + sceneStartSeconds(scenes)[index];
+      }
+    }
+    setIsPlaying(false);
   };
 
   const selectSceneByIndex = (index: number) => {

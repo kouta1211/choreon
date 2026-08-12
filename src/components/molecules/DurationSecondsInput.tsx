@@ -63,7 +63,8 @@ export function DurationSecondsInput({
       return;
     }
     const isValid =
-      parsed === null || (Number.isFinite(parsed) && parsed >= min && parsed <= max);
+      parsed === null ||
+      (Number.isFinite(parsed) && parsed >= min && parsed <= max);
     if (!isValid) {
       event.target.value = value === null ? "" : String(value);
       return;

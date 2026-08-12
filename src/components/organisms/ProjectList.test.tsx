@@ -17,9 +17,7 @@ vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({}),
 }));
 
-function makeProject(
-  overrides: Partial<ProjectSummary> = {},
-): ProjectSummary {
+function makeProject(overrides: Partial<ProjectSummary> = {}): ProjectSummary {
   return {
     id: "1",
     userId: "user-1",
@@ -60,13 +58,18 @@ afterEach(() => {
 describe("ProjectList", () => {
   it("プロジェクトが無い場合は案内文を表示する", () => {
     render(<ProjectList projects={[]} />);
-    expect(screen.getByText("まだプロジェクトがありません。")).toBeInTheDocument();
+    expect(
+      screen.getByText("まだプロジェクトがありません。"),
+    ).toBeInTheDocument();
   });
 
   it("プロジェクトのタイトルを一覧表示する", () => {
     render(
       <ProjectList
-        projects={[makeProject({ id: "1", title: "発表会A" }), makeProject({ id: "2", title: "発表会B" })]}
+        projects={[
+          makeProject({ id: "1", title: "発表会A" }),
+          makeProject({ id: "2", title: "発表会B" }),
+        ]}
       />,
     );
     expect(screen.getByText("発表会A")).toBeInTheDocument();
@@ -81,9 +84,7 @@ describe("ProjectList", () => {
     renderList([makeProject({ id: "1", title: "発表会A" })]);
 
     await user.click(screen.getByLabelText("発表会Aを削除"));
-    expect(
-      screen.getByText("「発表会A」を削除しますか?"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("「発表会A」を削除しますか?")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "削除する" }));
 
     await waitFor(() => {

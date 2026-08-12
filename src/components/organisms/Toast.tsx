@@ -43,7 +43,11 @@ export function Toast() {
           isError ? "bg-red-600" : "bg-emerald-600"
         }`}
       >
-        {isError ? <X size={11} strokeWidth={3} /> : <Check size={11} strokeWidth={3} />}
+        {isError ? (
+          <X size={11} strokeWidth={3} />
+        ) : (
+          <Check size={11} strokeWidth={3} />
+        )}
       </span>
       <span className="min-w-0 flex-1 text-[13px] font-medium">
         {toast.message}

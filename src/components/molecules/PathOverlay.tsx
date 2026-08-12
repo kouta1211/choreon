@@ -1,6 +1,10 @@
 "use client";
 
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import {
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { clamp } from "@/features/canvas/lib/dragMath";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position } from "@/features/scene/types";
@@ -140,7 +144,10 @@ export function PathOverlay({
   // に変換する。gridSnapModifierのpx⇔ユニット変換と同じ考え方。
   // SVGはステージいっぱい(absolute inset-0)に敷いてあるため、その矩形が
   // そのままステージの矩形として使える
-  const toStagePoint = (clientX: number, clientY: number): StagePoint | null => {
+  const toStagePoint = (
+    clientX: number,
+    clientY: number,
+  ): StagePoint | null => {
     const rect = svgRef.current?.getBoundingClientRect();
     if (!rect || rect.width === 0 || rect.height === 0) return null;
     return {

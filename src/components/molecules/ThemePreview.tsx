@@ -44,7 +44,9 @@ export function ThemePreview({ themeId, size = "small" }: Props) {
           </span>
           <span
             className={`shrink-0 border border-accent px-1 font-semibold text-accent ${
-              isLarge ? "text-[8px] leading-[15px]" : "text-[6.5px] leading-[11px]"
+              isLarge
+                ? "text-[8px] leading-[15px]"
+                : "text-[6.5px] leading-[11px]"
             }`}
           >
             モード

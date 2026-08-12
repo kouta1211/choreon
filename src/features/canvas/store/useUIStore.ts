@@ -58,8 +58,11 @@ type UIState = {
   focusedDancerId: string | null;
   /** オンの間、選択中シーン→次のシーンへの移動導線をステージ上に描画する */
   isPathVisible: boolean;
-  /** オンの間、奥のダンサーが手前のダンサーに隠れていないか(顔被り)を判定して警告表示する */
-  isBlindSpotCheckVisible: boolean;
+  /** ステージを横に払ってシーンを送る操作を受け付けるか */
+  isSwipeSceneChangeEnabled: boolean;
+  /** シーン移動のアニメーションが進行中か。この間はダンサーを掴ませない
+   * (掴むと、移動アニメーションとドラッグが同じ座標を取り合う) */
+  isTransitioning: boolean;
   /** ドラッグ中の格子スナップ状態(CanvasBoardのonDragMoveが更新し、Stageが
    * 該当する格子線をハイライト表示するために読む) */
   dragSnapLine: DragSnapLine;
@@ -90,7 +93,8 @@ type UIState = {
   clearToast: () => void;
   setFocusedDancer: (dancerId: string | null) => void;
   togglePathVisible: () => void;
-  toggleBlindSpotCheckVisible: () => void;
+  toggleSwipeSceneChange: () => void;
+  setIsTransitioning: (isTransitioning: boolean) => void;
   setDragSnapLine: (line: DragSnapLine) => void;
   setIsPlaying: (isPlaying: boolean) => void;
   setSceneSheetOpen: (isOpen: boolean) => void;
@@ -129,7 +133,7 @@ function persistFromState(
   persistViewPreference({
     gridMode: state.gridMode,
     isPathVisible: state.isPathVisible,
-    isBlindSpotCheckVisible: state.isBlindSpotCheckVisible,
+    isSwipeSceneChangeEnabled: state.isSwipeSceneChangeEnabled,
     ...changed,
   });
 }
@@ -145,7 +149,8 @@ export const useUIStore = create<UIState>((set) => ({
   toast: null,
   focusedDancerId: null,
   isPathVisible: DEFAULT_VIEW_PREFERENCE.isPathVisible,
-  isBlindSpotCheckVisible: DEFAULT_VIEW_PREFERENCE.isBlindSpotCheckVisible,
+  isSwipeSceneChangeEnabled: DEFAULT_VIEW_PREFERENCE.isSwipeSceneChangeEnabled,
+  isTransitioning: false,
   dragSnapLine: { x: null, y: null },
   isPlaying: false,
   isSceneSheetOpen: false,
@@ -172,17 +177,21 @@ export const useUIStore = create<UIState>((set) => ({
   showToast: (toast) => set({ toast }),
   clearToast: () => set({ toast: null }),
   setFocusedDancer: (dancerId) => set({ focusedDancerId: dancerId }),
+  setIsTransitioning: (isTransitioning) =>
+    set((state) =>
+      state.isTransitioning === isTransitioning ? {} : { isTransitioning },
+    ),
+  toggleSwipeSceneChange: () =>
+    set((state) => {
+      const isSwipeSceneChangeEnabled = !state.isSwipeSceneChangeEnabled;
+      persistFromState(state, { isSwipeSceneChangeEnabled });
+      return { isSwipeSceneChangeEnabled };
+    }),
   togglePathVisible: () =>
     set((state) => {
       const isPathVisible = !state.isPathVisible;
       persistFromState(state, { isPathVisible });
       return { isPathVisible };
-    }),
-  toggleBlindSpotCheckVisible: () =>
-    set((state) => {
-      const isBlindSpotCheckVisible = !state.isBlindSpotCheckVisible;
-      persistFromState(state, { isBlindSpotCheckVisible });
-      return { isBlindSpotCheckVisible };
     }),
   loadViewPreference: () => {
     let preference = DEFAULT_VIEW_PREFERENCE;

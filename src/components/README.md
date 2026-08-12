@@ -26,11 +26,11 @@ src/components/
 判断は **「アプリの状態（Zustandのストア）に触るか」** を基準にする。
 見た目の複雑さではなく依存の向きで決めた方が、迷いにくく後からもずれない。
 
-| 層 | 目安 | 例 |
-|---|---|---|
-| atoms | ストアに触らない。propsだけで完結し、他のアプリ内コンポーネントも使わない | `Tooltip` `Switch` `RotationHandle` |
-| molecules | ストアに触らない。atomsや他のmoleculesを組み立てる | `InlineEditableText` `BottomSheet` `SceneThumbnail` |
-| organisms | ストアを読む・書く、またはSupabaseを呼ぶ | `CanvasBoard` `SceneDock` `DancerInspector` |
+| 層        | 目安                                                                      | 例                                                  |
+| --------- | ------------------------------------------------------------------------- | --------------------------------------------------- |
+| atoms     | ストアに触らない。propsだけで完結し、他のアプリ内コンポーネントも使わない | `Tooltip` `Switch` `RotationHandle`                 |
+| molecules | ストアに触らない。atomsや他のmoleculesを組み立てる                        | `InlineEditableText` `BottomSheet` `SceneThumbnail` |
+| organisms | ストアを読む・書く、またはSupabaseを呼ぶ                                  | `CanvasBoard` `SceneDock` `DancerInspector`         |
 
 **依存は下向きだけ**。organisms → molecules → atoms の順にしか import しない。
 molecules がストアを読み始めたら、それは organisms へ移すサイン。

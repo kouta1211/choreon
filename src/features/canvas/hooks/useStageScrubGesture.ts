@@ -16,10 +16,6 @@ import {
 import { resolveTransitionDuration } from "@/features/canvas/constants";
 import type { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
 
-/** カードの間隔(px)。仕様書の gap:32 に合わせている。
- * spanの計算に入るので、CSS側のgapと必ず同じ値にすること */
-export const SCRUB_CARD_GAP_PX = 32;
-
 /** 指を離してから隣のシーンに収まるまで(秒)。仕様書の .32s */
 const SNAP_SECONDS = 0.32;
 
@@ -29,31 +25,36 @@ const SNAP_EASE = [0.2, 0.7, 0.2, 1] as const;
 type Params = {
   /** 中央のステージ。1シーンぶんの移動距離(span)をここの実寸から測る */
   stageRef: React.RefObject<HTMLDivElement | null>;
-  /** prev/active/next を横に並べた入れ物。transformを直接書き込む */
-  trackRef: React.RefObject<HTMLDivElement | null>;
   /** 表示順のシーンID */
   sceneIds: string[];
   selectedSceneId: string | null;
   selectScene: (sceneId: string) => void;
   /** ステージの何も無いところを叩いたときに選択を外すために使う */
   selectDancer: (dancerId: string | null) => void;
+  /** 払ってシーンを送る操作を受け付けるか(表示とモードの設定)。
+   * オフでも【叩いて選択を外す】方は生かす。あちらは操作の作法であって
+   * シーン送りの機能ではない */
+  isSwipeEnabled: boolean;
   scrub: ReturnType<typeof useSceneScrub>;
 };
 
 /**
  * ステージを横に払って、前後のシーンへ隊形ごと移動するジェスチャ。
  *
- * トラックのtransformをReactのstateではなくDOMへ直接書いているのは、
- * 指の動きに1フレームでも遅れると「指に貼り付いていない」感触になるため。
- * 同じ理由で隊形の進捗もMotionValueで配っている(useSceneScrub参照)。
+ * ステージ自体は動かさない。以前は前後のシーンの板を横にスライドさせて
+ * いたが、見ている面が指と一緒に流れると、肝心の隊形が読み取りにくかった。
+ * 動くのは【ダンサーだけ】で、板は常に同じ場所に留まる。
+ *
+ * 進捗をMotionValueで配っているのは、pointermoveのたびにReactを
+ * 描き直させないため(useSceneScrub参照)。
  */
 export function useStageScrubGesture({
   stageRef,
-  trackRef,
   sceneIds,
   selectedSceneId,
   selectScene,
   selectDancer,
+  isSwipeEnabled,
   scrub,
 }: Params) {
   // ジェスチャ1回ぶんの走り書き。stateに置くと毎pointermoveで再レンダーになる
@@ -68,28 +69,13 @@ export function useStageScrubGesture({
     targetSceneId: string | null;
   } | null>(null);
 
-  /** 1シーンぶんの移動距離。カード1枚＋隙間 */
-  const span = useCallback(() => {
-    const width = stageRef.current?.offsetWidth ?? 0;
-    return width + SCRUB_CARD_GAP_PX;
-  }, [stageRef]);
-
-  const writeTrack = useCallback(
-    (x: number, transition: string) => {
-      const track = trackRef.current;
-      if (!track) return;
-      track.style.transition = transition;
-      track.style.transform = `translateX(${x}px)`;
-    },
-    [trackRef],
+  /** 「1シーンぶん」とみなす指の移動距離。ステージの横幅そのもの。
+   * ステージは動かさないので、これは見た目の距離ではなく
+   * 「どれだけ引けば隣まで行くか」の目盛りとして使う */
+  const span = useCallback(
+    () => stageRef.current?.offsetWidth ?? 0,
+    [stageRef],
   );
-
-  const clearTrack = useCallback(() => {
-    const track = trackRef.current;
-    if (!track) return;
-    track.style.transition = "";
-    track.style.transform = "";
-  }, [trackRef]);
 
   const onPointerDown = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -143,6 +129,10 @@ export function useStageScrubGesture({
         current.axis = axis;
       }
 
+      // 払っての送りが切られている間は、軸だけ決めて何も動かさない
+      // (指を離したときに「叩いた」と誤判定されないようにするため)
+      if (!isSwipeEnabled) return;
+
       const index = sceneIds.indexOf(selectedSceneId ?? "");
       // 左へ払う(dx<0) = 次のシーンを引き寄せる
       const targetSceneId =
@@ -154,10 +144,9 @@ export function useStageScrubGesture({
 
       const delta = applyRubberBand(dx, targetSceneId !== null);
       current.delta = delta;
-      writeTrack(delta, "none");
       scrub.progress.set(scrubProgress(delta, span()));
     },
-    [scrub, sceneIds, selectedSceneId, span, writeTrack],
+    [scrub, sceneIds, selectedSceneId, span, isSwipeEnabled],
   );
 
   const onPointerUp = useCallback(
@@ -175,7 +164,6 @@ export function useStageScrubGesture({
       // 上から始まった指は onPointerDown で弾いてあるので、ここへは来ない
       if (current.axis === null) {
         selectDancer(null);
-        clearTrack();
         scrub.setTargetSceneId(null);
         return;
       }
@@ -191,10 +179,6 @@ export function useStageScrubGesture({
 
       if (committed && current.targetSceneId) {
         const targetSceneId = current.targetSceneId;
-        writeTrack(
-          Math.sign(current.delta) * spanPx,
-          `transform ${duration}s cubic-bezier(${SNAP_EASE.join(",")})`,
-        );
         // 隊形の方も最後まで送り届ける。ここで進捗を0へ戻さないのが要点:
         // 戻すと、シーンの差し替えが画面に出るまでの1フレームだけ
         // ダンサーが元の隊形へ跳ね返って見える。1のまま放っておけば
@@ -203,25 +187,19 @@ export function useStageScrubGesture({
           () => {
             selectScene(targetSceneId);
             scrub.setTargetSceneId(null);
-            clearTrack();
           },
         );
         return;
       }
 
       // 届かなかった。元の位置へ戻す
-      writeTrack(
-        0,
-        `transform ${duration}s cubic-bezier(${SNAP_EASE.join(",")})`,
-      );
       animate(scrub.progress, 0, { duration, ease: [...SNAP_EASE] }).then(
         () => {
           scrub.setTargetSceneId(null);
-          clearTrack();
         },
       );
     },
-    [scrub, span, selectScene, selectDancer, writeTrack, clearTrack],
+    [scrub, span, selectScene, selectDancer],
   );
 
   return { onPointerDown, onPointerMove, onPointerUp };

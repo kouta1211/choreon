@@ -71,26 +71,26 @@ export function HistoryControls() {
   return (
     <div className="absolute right-2 bottom-2 flex gap-1.5">
       <Tooltip label="元に戻す (Ctrl+Z)" placement="top">
-      <button
-        type="button"
-        onClick={handleUndo}
-        disabled={!canUndo}
-        aria-label="元に戻す"
-        className="flex h-[38px] w-[38px] items-center justify-center rounded-[calc(var(--radius)*0.9167)] border border-line-strong bg-surface/90 text-fg disabled:pointer-events-none disabled:opacity-30"
-      >
-        <Undo2 size={17} />
-      </button>
+        <button
+          type="button"
+          onClick={handleUndo}
+          disabled={!canUndo}
+          aria-label="元に戻す"
+          className="flex h-[38px] w-[38px] items-center justify-center rounded-[calc(var(--radius)*0.9167)] border border-line-strong bg-surface/90 text-fg disabled:pointer-events-none disabled:opacity-30"
+        >
+          <Undo2 size={17} />
+        </button>
       </Tooltip>
       <Tooltip label="やり直す (Ctrl+Shift+Z)" placement="top" align="right">
-      <button
-        type="button"
-        onClick={handleRedo}
-        disabled={!canRedo}
-        aria-label="やり直す"
-        className="flex h-[38px] w-[38px] items-center justify-center rounded-[calc(var(--radius)*0.9167)] border border-line-strong bg-surface/90 text-fg disabled:pointer-events-none disabled:opacity-30"
-      >
-        <Redo2 size={17} />
-      </button>
+        <button
+          type="button"
+          onClick={handleRedo}
+          disabled={!canRedo}
+          aria-label="やり直す"
+          className="flex h-[38px] w-[38px] items-center justify-center rounded-[calc(var(--radius)*0.9167)] border border-line-strong bg-surface/90 text-fg disabled:pointer-events-none disabled:opacity-30"
+        >
+          <Redo2 size={17} />
+        </button>
       </Tooltip>
     </div>
   );

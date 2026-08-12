@@ -131,7 +131,11 @@
 /* ネオン・シアン — 発光・ガラス */
 [data-theme="neon"] {
   --bg: #05070a;
-  --bg-fx: radial-gradient(70% 50% at 50% 0%, rgba(34, 211, 238, 0.12), transparent 70%);
+  --bg-fx: radial-gradient(
+    70% 50% at 50% 0%,
+    rgba(34, 211, 238, 0.12),
+    transparent 70%
+  );
 
   --surface-sunken: #04070a;
   --stage: #060a0f;
@@ -163,7 +167,11 @@
 /* アンバー・ステージ — 舞台照明・板張り */
 [data-theme="amber"] {
   --bg: #14100e;
-  --bg-fx: radial-gradient(60% 42% at 50% -4%, rgba(245, 158, 11, 0.22), transparent 72%);
+  --bg-fx: radial-gradient(
+    60% 42% at 50% -4%,
+    rgba(245, 158, 11, 0.22),
+    transparent 72%
+  );
 
   --surface-sunken: #100c09;
   --stage: #1b1410;
@@ -224,7 +232,11 @@
    暗い系だが、マーカーは輪郭＋頭文字でダンサー6色もチョーク色になる */
 [data-theme="chalk"] {
   --bg: #202723;
-  --bg-fx: radial-gradient(120% 80% at 50% 0%, rgba(255, 255, 255, 0.045), transparent 60%);
+  --bg-fx: radial-gradient(
+    120% 80% at 50% 0%,
+    rgba(255, 255, 255, 0.045),
+    transparent 60%
+  );
 
   --surface-sunken: rgba(0, 0, 0, 0.18);
   /* 板そのものを舞台にするので、ステージは塗らない */
@@ -273,7 +285,11 @@
 /* 紙の隊形図 — クリーム紙・赤鉛筆 */
 [data-theme="paper"] {
   --bg: #f7f4ea;
-  --bg-fx: repeating-linear-gradient(0deg, transparent 0 25px, rgba(63, 107, 181, 0.14) 25px 26px);
+  --bg-fx: repeating-linear-gradient(
+    0deg,
+    transparent 0 25px,
+    rgba(63, 107, 181, 0.14) 25px 26px
+  );
 
   --surface-sunken: #efeade;
   --stage: #f7f4ea;
@@ -346,7 +362,11 @@
 /* クラフト紙＋活版 — 厚紙・沈んだ文字 */
 [data-theme="kraft"] {
   --bg: #d8c8ac;
-  --bg-fx: repeating-linear-gradient(90deg, rgba(58, 47, 34, 0.03) 0 1px, transparent 1px 3px);
+  --bg-fx: repeating-linear-gradient(
+    90deg,
+    rgba(58, 47, 34, 0.03) 0 1px,
+    transparent 1px 3px
+  );
 
   --surface-sunken: #cbbb9c;
   --stage: #e2d5bd;
@@ -381,7 +401,11 @@
 /* トレーシングペーパー — 次のシーンが透ける */
 [data-theme="tracing"] {
   --bg: #e7eae6;
-  --bg-fx: linear-gradient(135deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 60%);
+  --bg-fx: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.55),
+    rgba(255, 255, 255, 0) 60%
+  );
 
   --surface-sunken: rgba(47, 58, 53, 0.08);
   --stage: rgba(255, 255, 255, 0.6);
@@ -527,10 +551,26 @@
    「目盛り」の線を重ねている。名前どおり目盛りが読めるようになる */
 [data-texture="grid"] {
   --bg-texture:
-    linear-gradient(to right, rgb(var(--texture-ink) / calc(var(--texture-strength) * 1.6)) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(var(--texture-ink) / calc(var(--texture-strength) * 1.6)) 1px, transparent 1px),
-    linear-gradient(to right, rgb(var(--texture-ink) / calc(var(--texture-strength) * 0.7)) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(var(--texture-ink) / calc(var(--texture-strength) * 0.7)) 1px, transparent 1px);
+    linear-gradient(
+      to right,
+      rgb(var(--texture-ink) / calc(var(--texture-strength) * 1.6)) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      rgb(var(--texture-ink) / calc(var(--texture-strength) * 1.6)) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to right,
+      rgb(var(--texture-ink) / calc(var(--texture-strength) * 0.7)) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      rgb(var(--texture-ink) / calc(var(--texture-strength) * 0.7)) 1px,
+      transparent 1px
+    );
   --bg-texture-size: 128px 128px, 128px 128px, 32px 32px, 32px 32px;
 }
 

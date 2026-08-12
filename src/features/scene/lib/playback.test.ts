@@ -47,7 +47,9 @@ describe("totalTransitionSeconds", () => {
 
   it("シーンが1つ以下なら0", () => {
     expect(totalTransitionSeconds([])).toBe(0);
-    expect(totalTransitionSeconds([makeScene({ transitionDurationSeconds: 9 })])).toBe(0);
+    expect(
+      totalTransitionSeconds([makeScene({ transitionDurationSeconds: 9 })]),
+    ).toBe(0);
   });
 
   it("小数の誤差を持ち込まない", () => {

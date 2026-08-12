@@ -84,8 +84,7 @@ export function DancerInspector() {
       await persist((supabase) => upsertPosition(supabase, after));
     } catch (error) {
       updateDancerPosition(selectedSceneId, dancer.id, {
-        dancerTransitionDurationSeconds:
-          before.dancerTransitionDurationSeconds,
+        dancerTransitionDurationSeconds: before.dancerTransitionDurationSeconds,
       });
       showToast({
         message: toUserMessage(error, "個別の遷移時間の変更に失敗しました"),
@@ -101,7 +100,9 @@ export function DancerInspector() {
     addDancer({ ...previous, name });
 
     try {
-      await persist((supabase) => updateDancerName(supabase, previous.id, name));
+      await persist((supabase) =>
+        updateDancerName(supabase, previous.id, name),
+      );
     } catch (error) {
       addDancer(previous);
       showToast({
@@ -117,7 +118,9 @@ export function DancerInspector() {
     addDancer({ ...dancer, color });
 
     try {
-      await persist((supabase) => updateDancerColor(supabase, dancer.id, color));
+      await persist((supabase) =>
+        updateDancerColor(supabase, dancer.id, color),
+      );
     } catch (error) {
       addDancer(previous);
       showToast({
@@ -198,7 +201,9 @@ export function DancerInspector() {
               onCommit={handleDurationOverrideCommit}
               min={MIN_DURATION_SECONDS}
               max={MAX_DURATION_SECONDS}
-              placeholder={String(selectedScene?.transitionDurationSeconds ?? 1)}
+              placeholder={String(
+                selectedScene?.transitionDurationSeconds ?? 1,
+              )}
               suffix="秒"
               tone="dancer"
             />

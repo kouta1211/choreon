@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  buildThumbnailDataUrl,
-  buildThumbnailDots,
-} from "./sceneThumbnail";
+import { buildThumbnailDataUrl, buildThumbnailDots } from "./sceneThumbnail";
 import { makeDancer, makePosition } from "@/test/factories";
 
 /** テスト用の色の読み替え。実際の画面ではCSS変数を実測値に直す関数が入る */

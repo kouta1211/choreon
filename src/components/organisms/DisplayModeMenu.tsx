@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  Eclipse,
   Grid3x3,
+  Hand,
   Palette,
   SlidersHorizontal,
   Spline,
@@ -43,11 +43,11 @@ export function DisplayModeMenu() {
   const setGridMode = useUIStore((state) => state.setGridMode);
   const isPathVisible = useUIStore((state) => state.isPathVisible);
   const togglePathVisible = useUIStore((state) => state.togglePathVisible);
-  const isBlindSpotCheckVisible = useUIStore(
-    (state) => state.isBlindSpotCheckVisible,
+  const isSwipeSceneChangeEnabled = useUIStore(
+    (state) => state.isSwipeSceneChangeEnabled,
   );
-  const toggleBlindSpotCheckVisible = useUIStore(
-    (state) => state.toggleBlindSpotCheckVisible,
+  const toggleSwipeSceneChange = useUIStore(
+    (state) => state.toggleSwipeSceneChange,
   );
   const dancerCount = useProjectStore(
     (state) => Object.keys(state.dancers).length,
@@ -98,11 +98,11 @@ export function DisplayModeMenu() {
       onChange: togglePathVisible,
     },
     {
-      label: "顔被りチェック",
-      description: "手前の人に隠れる人を赤くする",
-      icon: Eclipse,
-      checked: isBlindSpotCheckVisible,
-      onChange: toggleBlindSpotCheckVisible,
+      label: "払ってシーンを送る",
+      description: "ステージを横にドラッグして前後のシーンへ",
+      icon: Hand,
+      checked: isSwipeSceneChangeEnabled,
+      onChange: toggleSwipeSceneChange,
     },
   ];
   // 目盛りは「出す/出さない」ではなく3択なので、オンの数には数えない。

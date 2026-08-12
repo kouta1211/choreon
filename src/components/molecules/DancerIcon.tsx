@@ -4,6 +4,7 @@ import { memo } from "react";
 import { motion } from "motion/react";
 import { DancerNameLabel } from "@/components/atoms/DancerNameLabel";
 import { DancerExcessiveMoveBadge } from "@/components/atoms/DancerExcessiveMoveBadge";
+import type { MoveStrain } from "@/features/canvas/lib/physicalLimits";
 import { MARKER_SIZE } from "@/features/dancer/constants";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { resolveTransitionDuration } from "@/features/canvas/constants";
@@ -44,8 +45,7 @@ function DancerMarkerImpl({
   isFocused = false,
   isHovered = false,
   isDragging = false,
-  isBlocked = false,
-  hasExcessiveMove = false,
+  excessiveMove = null,
   hasKeyboardFocus = false,
   transitionDurationSeconds = 0.3,
 }: {
@@ -67,12 +67,10 @@ function DancerMarkerImpl({
   /** いま掴んで動かしている最中かどうか。指やカーソルの下に隠れるので、
    * はみ出す大きさと影で「持ち上がっている」ことを外から分かるようにする */
   isDragging?: boolean;
-  /** 「顔被りチェック」で、手前の他のダンサーに隠れていると判定された場合true。
-   * trueの間は自分の色ではなく警告色で塗る */
-  isBlocked?: boolean;
   /** 次のシーンへの移動距離が現実的な範囲を超えている場合true。
    * 警告バッジを表示する(常時判定、トグルなし) */
-  hasExcessiveMove?: boolean;
+  /** 次のシーンへの移動が速すぎるとき、その数値。問題なければnull */
+  excessiveMove?: MoveStrain | null;
   /** キーボードフォーカスが当たっているかどうか。isSelectedとは別の状態で、
    * 「今ここにフォーカスがある=矢印キーで動かせる」ことを示すだけの見た目上の
    * ヒント。Tabキーでの巡回は無効にしてある(DraggableDancerIconのtabIndex: -1)
@@ -92,9 +90,9 @@ function DancerMarkerImpl({
         : 1;
 
   // 顔被りの警告色だけはテーマに関係なく赤(意味を運ぶ色なので固定)
-  const bodyColor = isBlocked ? "#dc2626" : themedDancerColor(dancer.color);
-  // シーンを切り替えると顔被りの判定がやり直され、この色が入れ替わる。
-  // 移動しながら色が瞬時に変わると点滅して見えるので、色だけ短く送らせる
+  const bodyColor = themedDancerColor(dancer.color);
+  // テーマを切り替えると紙用の色に差し替わる。移動しながら色が瞬時に
+  // 変わると点滅して見えるので、色だけ短く送らせる
   // (Tailwind v4のtransition-colorsはfillとstrokeも対象に含む)
   const bodyColorTransition = "transition-colors";
 
@@ -235,7 +233,12 @@ function DancerMarkerImpl({
         {[...dancer.name][0] ?? ""}
       </span>
       <DancerNameLabel name={dancer.name} />
-      {hasExcessiveMove && <DancerExcessiveMoveBadge />}
+      {excessiveMove && (
+        <DancerExcessiveMoveBadge
+          strain={excessiveMove}
+          dancerName={dancer.name}
+        />
+      )}
     </>
   );
 }

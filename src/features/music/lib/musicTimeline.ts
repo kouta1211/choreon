@@ -46,3 +46,33 @@ export function sceneIndexAtSeconds(scenes: Scene[], seconds: number): number {
 
   return index;
 }
+
+/**
+ * 通し再生の経過秒から「いちばん近いシーン」を引く。
+ *
+ * `sceneIndexAtSeconds` が「まだ着いていないシーンは数えない」のに対し、
+ * こちらは前後の到着時刻を比べて近い方を返す。再生を止めたときに
+ * 区間の途中で取り残されないよう、キーフレームへ寄せるために使う。
+ * ちょうど中間なら、進んだ側(次のシーン)へ寄せる。
+ */
+export function nearestSceneIndexAtSeconds(
+  scenes: Scene[],
+  seconds: number,
+): number {
+  if (scenes.length === 0) return -1;
+
+  const starts = sceneStartSeconds(scenes);
+  let best = 0;
+  let bestDistance = Infinity;
+
+  starts.forEach((start, index) => {
+    const distance = Math.abs(start - seconds);
+    // <= にして、同じ距離なら後ろのシーンを採る
+    if (distance <= bestDistance) {
+      bestDistance = distance;
+      best = index;
+    }
+  });
+
+  return best;
+}

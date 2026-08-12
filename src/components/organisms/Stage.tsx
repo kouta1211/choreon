@@ -56,13 +56,10 @@ type Props = {
     onPointerMove: (event: ReactPointerEvent<HTMLDivElement>) => void;
     onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => void;
   };
-  /** スクラブ中に横へ動かす入れ物。ステージ本体と前後シーンの板を包む。
-   * transformはジェスチャ側がDOMへ直接書く */
-  trackRef?: Ref<HTMLDivElement>;
-  /** ステージの左右に並べる、前後のシーンの板。中央のステージと同じ幅で、
-   * 普段は切り落とされて見えない(引き寄せると入ってくる) */
-  trackBefore?: ReactNode;
-  trackAfter?: ReactNode;
+  /** 払ってシーンを送る操作が有効か。有効なときだけ、横スワイプを
+   * ブラウザに奪われないようにする(切っているのに touch-action を
+   * 潰すと、ページの操作を理由なく制限することになる) */
+  isSwipeEnabled?: boolean;
   /** スクラブの進み具合。トラックと一緒に動いてしまわないよう、
    * 切り落とす層の外側に重ねる */
   scrubIndicator?: ReactNode;
@@ -85,9 +82,7 @@ export function Stage({
   belowStageLeft,
   ref,
   scrubHandlers,
-  trackRef,
-  trackBefore,
-  trackAfter,
+  isSwipeEnabled = false,
   scrubIndicator,
 }: Props) {
   const gridMode = useUIStore((state) => state.gridMode);
@@ -101,83 +96,70 @@ export function Stage({
       </p>
       <div
         className={`relative flex min-h-0 w-full flex-1 items-center justify-center [container-type:size] ${
-          scrubHandlers ? "touch-none" : ""
+          isSwipeEnabled ? "touch-none" : ""
         }`}
         {...scrubHandlers}
       >
-        {/* 前後のシーンの板がパネルの上まではみ出さないよう切り落とす層。
-            ステージ自体が左右に半径ぶん空けてあるので(stageWidthRule)、
-            ここは空き領域の縁で切ってよい */}
-        <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-          {/* スクラブ中だけ横へ動く。ステージ本体は常にこの中央にいる */}
-          <div
-            ref={trackRef}
-            className="flex shrink-0 items-center justify-center gap-8"
-          >
-            {trackBefore}
+        <div
+          ref={ref}
+          className={`relative touch-none rounded-stage border-2 border-accent bg-stage transition-colors ${
+            focusedDancerId ? "bg-surface-sunken" : ""
+          }`}
+          style={{
+            aspectRatio: `${widthUnits} / ${heightUnits}`,
+            width: stageWidthRule(widthUnits, heightUnits),
+          }}
+          data-testid="stage"
+        >
+          {gridMode === "square" && (
             <div
-              ref={ref}
-              className={`relative touch-none rounded-stage border-2 border-accent bg-stage transition-colors ${
-                focusedDancerId ? "bg-surface-sunken" : ""
+              data-testid="stage-grid"
+              className={`pointer-events-none absolute inset-0 rounded-[max(0px,calc(var(--radius)-2px))] bg-[linear-gradient(to_right,var(--stage-grid)_1px,transparent_1px),linear-gradient(to_bottom,var(--stage-grid)_1px,transparent_1px)] transition-opacity ${
+                focusedDancerId ? "opacity-40" : ""
               }`}
               style={{
-                aspectRatio: `${widthUnits} / ${heightUnits}`,
-                width: stageWidthRule(widthUnits, heightUnits),
+                backgroundSize: `${100 / widthUnits}% ${100 / heightUnits}%`,
               }}
-              data-testid="stage"
+            />
+          )}
+          {gridMode === "circle" && (
+            <div
+              className={`pointer-events-none absolute inset-0 transition-opacity ${
+                focusedDancerId ? "opacity-40" : ""
+              }`}
             >
-              {gridMode === "square" && (
-                <div
-                  data-testid="stage-grid"
-                  className={`pointer-events-none absolute inset-0 rounded-[max(0px,calc(var(--radius)-2px))] bg-[linear-gradient(to_right,var(--stage-grid)_1px,transparent_1px),linear-gradient(to_bottom,var(--stage-grid)_1px,transparent_1px)] transition-opacity ${
-                    focusedDancerId ? "opacity-40" : ""
-                  }`}
-                  style={{
-                    backgroundSize: `${100 / widthUnits}% ${100 / heightUnits}%`,
-                  }}
-                />
-              )}
-              {gridMode === "circle" && (
-                <div
-                  className={`pointer-events-none absolute inset-0 transition-opacity ${
-                    focusedDancerId ? "opacity-40" : ""
-                  }`}
-                >
-                  <ConcentricGuides
-                    widthUnits={widthUnits}
-                    heightUnits={heightUnits}
-                  />
-                </div>
-              )}
-              {/* 格子スナップが効いている間、吸着先の格子線をハイライトする。
-              縦横どちらも出ていれば交差点への吸着だと分かる */}
-              {dragSnapLine.x !== null && (
-                <div
-                  data-testid="stage-snap-line-x"
-                  aria-hidden
-                  className="pointer-events-none absolute inset-y-0 w-0.5 -translate-x-1/2 bg-accent-soft shadow-[0_0_6px_1px_color-mix(in_oklab,var(--accent-soft)_90%,transparent)]"
-                  style={{ left: `${(dragSnapLine.x / widthUnits) * 100}%` }}
-                />
-              )}
-              {dragSnapLine.y !== null && (
-                <div
-                  data-testid="stage-snap-line-y"
-                  aria-hidden
-                  className="pointer-events-none absolute inset-x-0 h-0.5 -translate-y-1/2 bg-accent-soft shadow-[0_0_6px_1px_color-mix(in_oklab,var(--accent-soft)_90%,transparent)]"
-                  style={{ top: `${(dragSnapLine.y / heightUnits) * 100}%` }}
-                />
-              )}
-              {focusedDancerId && (
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute inset-0 rounded-[max(0px,calc(var(--radius)-2px))] bg-[var(--veil)]"
-                />
-              )}
-              {children}
-              {overlay}
+              <ConcentricGuides
+                widthUnits={widthUnits}
+                heightUnits={heightUnits}
+              />
             </div>
-            {trackAfter}
-          </div>
+          )}
+          {/* 格子スナップが効いている間、吸着先の格子線をハイライトする。
+              縦横どちらも出ていれば交差点への吸着だと分かる */}
+          {dragSnapLine.x !== null && (
+            <div
+              data-testid="stage-snap-line-x"
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 w-0.5 -translate-x-1/2 bg-accent-soft shadow-[0_0_6px_1px_color-mix(in_oklab,var(--accent-soft)_90%,transparent)]"
+              style={{ left: `${(dragSnapLine.x / widthUnits) * 100}%` }}
+            />
+          )}
+          {dragSnapLine.y !== null && (
+            <div
+              data-testid="stage-snap-line-y"
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 h-0.5 -translate-y-1/2 bg-accent-soft shadow-[0_0_6px_1px_color-mix(in_oklab,var(--accent-soft)_90%,transparent)]"
+              style={{ top: `${(dragSnapLine.y / heightUnits) * 100}%` }}
+            />
+          )}
+          {focusedDancerId && (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 rounded-[max(0px,calc(var(--radius)-2px))] bg-[var(--veil)]"
+            />
+          )}
+          {children}
+          {overlay}
         </div>
         {scrubIndicator}
       </div>

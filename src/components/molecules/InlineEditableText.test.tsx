@@ -6,7 +6,11 @@ import { InlineEditableText } from "./InlineEditableText";
 describe("InlineEditableText", () => {
   it("通常時は値と『変更』の操作を見せる", () => {
     render(
-      <InlineEditableText value="サビ入り" onCommit={vi.fn()} label="シーン名" />,
+      <InlineEditableText
+        value="サビ入り"
+        onCommit={vi.fn()}
+        label="シーン名"
+      />,
     );
 
     expect(screen.getByText("サビ入り")).toBeInTheDocument();
@@ -19,7 +23,11 @@ describe("InlineEditableText", () => {
   it("テキストを押しても編集に入らない(入り口は鉛筆だけ)", async () => {
     const user = userEvent.setup();
     render(
-      <InlineEditableText value="サビ入り" onCommit={vi.fn()} label="シーン名" />,
+      <InlineEditableText
+        value="サビ入り"
+        onCommit={vi.fn()}
+        label="シーン名"
+      />,
     );
 
     await user.click(screen.getByText("サビ入り"));
@@ -31,7 +39,11 @@ describe("InlineEditableText", () => {
     const onCommit = vi.fn();
     const user = userEvent.setup();
     render(
-      <InlineEditableText value="サビ入り" onCommit={onCommit} label="シーン名" />,
+      <InlineEditableText
+        value="サビ入り"
+        onCommit={onCommit}
+        label="シーン名"
+      />,
     );
 
     await user.click(screen.getByLabelText("シーン名を変更"));
@@ -65,7 +77,11 @@ describe("InlineEditableText", () => {
     const onCommit = vi.fn();
     const user = userEvent.setup();
     render(
-      <InlineEditableText value="サビ入り" onCommit={onCommit} label="シーン名" />,
+      <InlineEditableText
+        value="サビ入り"
+        onCommit={onCommit}
+        label="シーン名"
+      />,
     );
 
     await user.click(screen.getByLabelText("シーン名を変更"));
@@ -79,7 +95,11 @@ describe("InlineEditableText", () => {
     const onCommit = vi.fn();
     const user = userEvent.setup();
     render(
-      <InlineEditableText value="サビ入り" onCommit={onCommit} label="シーン名" />,
+      <InlineEditableText
+        value="サビ入り"
+        onCommit={onCommit}
+        label="シーン名"
+      />,
     );
 
     await user.click(screen.getByLabelText("シーン名を変更"));
@@ -93,7 +113,11 @@ describe("InlineEditableText", () => {
     const onCommit = vi.fn();
     const user = userEvent.setup();
     render(
-      <InlineEditableText value="サビ入り" onCommit={onCommit} label="シーン名" />,
+      <InlineEditableText
+        value="サビ入り"
+        onCommit={onCommit}
+        label="シーン名"
+      />,
     );
 
     await user.click(screen.getByLabelText("シーン名を変更"));

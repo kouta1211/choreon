@@ -17,7 +17,11 @@ describe("parsePreference", () => {
   });
 
   it("保存された値を読み戻す", () => {
-    const raw = JSON.stringify({ theme: "paper", texture: "grain", byProject: {} });
+    const raw = JSON.stringify({
+      theme: "paper",
+      texture: "grain",
+      byProject: {},
+    });
     expect(parsePreference(raw)).toEqual({
       theme: "paper",
       texture: "grain",

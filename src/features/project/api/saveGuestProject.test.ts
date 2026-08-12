@@ -17,7 +17,9 @@ function stubAll() {
   const createDancers = vi
     .spyOn(dancersApi, "createDancers")
     .mockResolvedValue([]);
-  const createScenes = vi.spyOn(scenesApi, "createScenes").mockResolvedValue([]);
+  const createScenes = vi
+    .spyOn(scenesApi, "createScenes")
+    .mockResolvedValue([]);
   const upsertPositions = vi
     .spyOn(positionsApi, "upsertPositions")
     .mockResolvedValue(undefined);

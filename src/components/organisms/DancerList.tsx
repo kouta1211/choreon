@@ -54,18 +54,20 @@ export function DancerList() {
                 <li key={dancer.id}>
                   <button
                     type="button"
-                    onClick={() =>
-                      selectDancer(isSelected ? null : dancer.id)
-                    }
+                    onClick={() => selectDancer(isSelected ? null : dancer.id)}
                     aria-pressed={isSelected}
                     className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left ${
-                      isSelected ? "bg-surface-strong" : "hover:bg-surface-strong/60"
+                      isSelected
+                        ? "bg-surface-strong"
+                        : "hover:bg-surface-strong/60"
                     }`}
                   >
                     <span
                       aria-hidden
                       className="block h-3 w-3 shrink-0 rounded-full"
-                      style={{ backgroundColor: themedDancerColor(dancer.color) }}
+                      style={{
+                        backgroundColor: themedDancerColor(dancer.color),
+                      }}
                     />
                     <span className="min-w-0 flex-1 truncate text-[13px] text-fg-strong">
                       {dancer.name}

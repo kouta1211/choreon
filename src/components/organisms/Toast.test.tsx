@@ -18,7 +18,9 @@ describe("Toast", () => {
   });
 
   it("toastがあればメッセージを表示する", () => {
-    useUIStore.setState({ toast: { message: "保存しました", type: "success" } });
+    useUIStore.setState({
+      toast: { message: "保存しました", type: "success" },
+    });
     render(<Toast />);
     expect(screen.getByRole("status")).toHaveTextContent("保存しました");
   });

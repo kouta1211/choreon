@@ -23,6 +23,7 @@ import {
   SCENE_TRANSITION_EASE,
 } from "@/features/canvas/constants";
 import type { Dancer } from "@/features/dancer/types";
+import type { MoveStrain } from "@/features/canvas/lib/physicalLimits";
 
 /** 選択中のダンサーを矢印キーで動かす際の1回あたりの移動量(ステージ座標系のユニット)。
  * Shiftキーを押しながらだとNUDGE_STEP_LARGEを使い、大きく移動できる */
@@ -48,10 +49,8 @@ type Props = {
    * 曲線に沿って移動する(片方でもnull/undefinedなら直線移動) */
   curveControlX?: number | null;
   curveControlY?: number | null;
-  /** 「顔被りチェック」表示中、手前のダンサーに隠れていると判定されたか */
-  isBlocked?: boolean;
-  /** 次のシーンへの移動距離が現実的な範囲を超えているか(常時判定) */
-  hasExcessiveMove?: boolean;
+  /** 次のシーンへの移動が速すぎるとき、その数値(常時判定)。問題なければnull */
+  excessiveMove?: MoveStrain | null;
   /** ステージを横にドラッグしている間の、区間の両端でのこのダンサーの位置
    * (ステージ座標系)。ダンサーは追加したシーンにしか座標を持たないため
    * (AddDancerSheet参照)、途中から出てくる・途中で捌ける人は片側がnullになる。
@@ -123,8 +122,7 @@ function DraggableDancerIconImpl({
   transitionDurationSeconds = DEFAULT_TRANSITION_DURATION_SECONDS,
   curveControlX,
   curveControlY,
-  isBlocked = false,
-  hasExcessiveMove = false,
+  excessiveMove = null,
   scrubFromX = null,
   scrubFromY = null,
   scrubToX = null,
@@ -140,10 +138,17 @@ function DraggableDancerIconImpl({
   // いるので、tabIndex: -1でもプログラムからのフォーカス自体は問題なく機能する
   // (Tabキーによる「巡回」だけを止めており、フォーカスそのものを禁止しては
   // いない)
+  // シーン移動のアニメーションが走っている間は掴ませない。
+  // 動いている最中に掴むと、dnd-kitのtransform(ドラッグ量)と
+  // left/top のアニメーションが同時に効いて、指の位置と本体がずれる。
+  // 離した時点の値も「どこから動かしたのか」が定まらず、保存される座標が
+  // 実際に置いた場所と食い違う
+  const isTransitioning = useUIStore((state) => state.isTransitioning);
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: dancer.id,
     data: { x, y, stageWidthUnits, stageHeightUnits },
     attributes: { tabIndex: -1 },
+    disabled: isTransitioning,
   });
   const isSelected = useUIStore(
     (state) => state.selectedDancerId === dancer.id,
@@ -291,7 +296,12 @@ function DraggableDancerIconImpl({
         ease: SCENE_TRANSITION_EASE,
         onUpdate: (progress) => {
           leftPct.set(
-            quadraticBezierAt(fromLeft, controlLeftPercent, leftPercent, progress),
+            quadraticBezierAt(
+              fromLeft,
+              controlLeftPercent,
+              leftPercent,
+              progress,
+            ),
           );
           topPct.set(
             quadraticBezierAt(fromTop, controlTopPercent, topPercent, progress),
@@ -395,8 +405,8 @@ function DraggableDancerIconImpl({
       // 掴んでいる間だけ手前へ出す。誰にもz順を与えていないので、素のままだと
       // DOMで後ろにいるダンサーの下へ潜り、掴んだ本人が隠れてしまう
       className={`absolute touch-none select-none ${
-        isDragging ? "z-10 cursor-grabbing" : "cursor-grab"
-      }`}
+        isDragging ? "z-10 cursor-grabbing" : ""
+      } ${isTransitioning ? "cursor-default" : "cursor-grab"}`}
       style={{
         left,
         top,
@@ -431,8 +441,7 @@ function DraggableDancerIconImpl({
         isDragging={isDragging}
         isRotating={liveRotation !== null}
         isFocused={isFocused}
-        isBlocked={isBlocked}
-        hasExcessiveMove={hasExcessiveMove}
+        excessiveMove={excessiveMove}
         hasKeyboardFocus={hasKeyboardFocus}
         transitionDurationSeconds={transitionDurationSeconds}
       />

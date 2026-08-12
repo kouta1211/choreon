@@ -14,7 +14,6 @@ import { EmptyStage, Stage } from "@/components/organisms/Stage";
 import { HistoryControls } from "@/components/organisms/HistoryControls";
 import { TemplateButton } from "@/components/organisms/TemplateButton";
 import { DancerLayer } from "@/components/organisms/DancerLayer";
-import { StageSideScene } from "@/components/organisms/StageSideScene";
 import { ScrubProgressBar } from "@/components/molecules/ScrubProgressBar";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
@@ -106,7 +105,6 @@ export function CanvasBoard({
 }: Props) {
   const { addScene, isCreating: isCreatingScene } = useAddScene(project);
   const stageRef = useRef<HTMLDivElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
   // 指が数px動いただけでドラッグ扱いになると、ダンサーをタップして
   // 選択する操作(DancerInspectorを開く)がしづらくなるため、
   // 8px以上動いてから初めてドラッグとみなす
@@ -148,14 +146,17 @@ export function CanvasBoard({
   // 始まった指はこちらでは拾わない(useStageScrubGesture参照)
   const scenes = useProjectStore((state) => state.scenes);
   const scrub = useSceneScrub();
+  const isSwipeSceneChangeEnabled = useUIStore(
+    (state) => state.isSwipeSceneChangeEnabled,
+  );
   const sceneIds = useMemo(() => scenes.map((scene) => scene.id), [scenes]);
   const scrubHandlers = useStageScrubGesture({
     stageRef,
-    trackRef,
     sceneIds,
     selectedSceneId,
     selectScene,
     selectDancer,
+    isSwipeEnabled: isSwipeSceneChangeEnabled,
     scrub,
   });
 
@@ -469,22 +470,8 @@ export function CanvasBoard({
     >
       <Stage
         ref={stageRef}
-        trackRef={trackRef}
         scrubHandlers={scrubHandlers}
-        trackBefore={
-          <StageSideScene
-            side="before"
-            widthUnits={project.stageWidth}
-            heightUnits={project.stageHeight}
-          />
-        }
-        trackAfter={
-          <StageSideScene
-            side="after"
-            widthUnits={project.stageWidth}
-            heightUnits={project.stageHeight}
-          />
-        }
+        isSwipeEnabled={isSwipeSceneChangeEnabled}
         scrubIndicator={<ScrubProgressBar />}
         widthUnits={project.stageWidth}
         heightUnits={project.stageHeight}

@@ -53,9 +53,7 @@ describe("insertProject", () => {
 
     await insertProject(client, makeProject({ musicOffsetSeconds: 0 }));
 
-    expect(insert.mock.calls[0][0]).not.toHaveProperty(
-      "music_offset_seconds",
-    );
+    expect(insert.mock.calls[0][0]).not.toHaveProperty("music_offset_seconds");
   });
 
   // 黙って捨てると、設定したはずの頭出しが次に開いたとき消えている。

@@ -17,7 +17,6 @@ function openDialog(overrides: Partial<ConfirmRequest> = {}) {
   });
 }
 
-
 describe("ConfirmDialog", () => {
   it("確認の要求が無ければ何も表示しない", () => {
     render(<ConfirmDialog />);

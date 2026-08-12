@@ -1,14 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { PathOverlay } from "@/components/molecules/PathOverlay";
 import { PathTrail } from "@/components/molecules/PathTrail";
 import { DraggableDancerIcon } from "@/components/organisms/DraggableDancerIcon";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import { findBlockedDancerIds } from "@/features/canvas/lib/blindSpot";
-import { findExcessiveMoveDancerIds } from "@/features/canvas/lib/physicalLimits";
+import { findExcessiveMoves } from "@/features/canvas/lib/physicalLimits";
 import { getSceneStep } from "@/features/canvas/lib/sceneStep";
 import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
 import {
@@ -37,10 +36,10 @@ type Props = {
 
 /**
  * ステージの上に重ねて描画するもの一式(移動導線・ダンサーアイコン・
- * 顔被り/移動距離の警告判定)をまとめたコンポーネント。導線(PathOverlay)の
+ * 移動距離の警告判定)をまとめたコンポーネント。導線(PathOverlay)の
  * 曲線制御点は、選択中のダンサー(selectedDancerId)だけドラッグ編集できる。
- * dancers/positions/「次のシーン」の位置情報・各種トグル(導線表示・
- * 顔被りチェック)はすべてここで自己完結して読み取る。CanvasBoardは
+ * dancers/positions/「次のシーン」の位置情報・導線表示のトグルは
+ * すべてここで自己完結して読み取る。CanvasBoardは
  * これらを購読しないことで、ダンサーがドラッグで動くたびにCanvasBoard
  * 自体が再レンダーされる(→handleDragEnd等が新しい関数参照になり、
  * DraggableDancerIconのmemoが効かなくなる)のを避けている。
@@ -75,11 +74,9 @@ export function DancerLayer({
   const previousSceneId = useUIStore((state) => state.previousSceneId);
   const selectedDancerId = useUIStore((state) => state.selectedDancerId);
   const isPathVisible = useUIStore((state) => state.isPathVisible);
-  const isBlindSpotCheckVisible = useUIStore(
-    (state) => state.isBlindSpotCheckVisible,
-  );
   const positions = useProjectStore(
-    (state) => state.positionsBySceneId[selectedSceneId ?? ""] ?? EMPTY_POSITIONS,
+    (state) =>
+      state.positionsBySceneId[selectedSceneId ?? ""] ?? EMPTY_POSITIONS,
   );
 
   // 選択中シーンの「次」のシーン。導線表示・移動距離アラートの両方で
@@ -103,7 +100,8 @@ export function DancerLayer({
   const isAdjacentStep = step !== "jump";
 
   const previousPositions = useProjectStore(
-    (state) => state.positionsBySceneId[previousSceneId ?? ""] ?? EMPTY_POSITIONS,
+    (state) =>
+      state.positionsBySceneId[previousSceneId ?? ""] ?? EMPTY_POSITIONS,
   );
 
   // ステージを横にドラッグしている最中の移動先。掴んでいない間はnull
@@ -146,20 +144,34 @@ export function DancerLayer({
   const isTrailAnimating =
     animatingSceneId !== null && animatingSceneId === selectedSceneId;
 
-  // 顔被りは客席から引いた視線で判定するので、基準席の位置を決めるために
-  // ステージの広さが要る(端にいる人ほど視線が斜めに入るため)
-  const blockedDancerIds = useMemo(
-    () =>
-      isBlindSpotCheckVisible
-        ? findBlockedDancerIds(positions, stageWidthUnits, stageHeightUnits)
-        : new Set<string>(),
-    [isBlindSpotCheckVisible, positions, stageWidthUnits, stageHeightUnits],
+  // 次のシーンへの移動が速すぎるダンサー(常時判定、トグルなし)。
+  // 判定には「その区間に何秒あるか」が要るので、次のシーンの遷移時間を渡す
+  const nextSceneSeconds =
+    scenes[selectedSceneIndex + 1]?.transitionDurationSeconds ?? 1;
+  const excessiveMoves = useMemo(
+    () => findExcessiveMoves(positions, nextPositions, nextSceneSeconds),
+    [positions, nextPositions, nextSceneSeconds],
   );
-  // 次のシーンへの移動距離が現実的な範囲を超えているダンサー(常時判定、トグルなし)
-  const excessiveMoveDancerIds = useMemo(
-    () => findExcessiveMoveDancerIds(positions, nextPositions),
-    [positions, nextPositions],
-  );
+
+  // シーン移動のアニメーションが走っている間に印を立てる。掴ませない
+  // ようにするのはDraggableDancerIcon側で、ここは「いま動いているか」を
+  // 知らせるだけ。区間の秒数はここが既に持っている(segmentScene)ので、
+  // 各アイコンに同じ計算をさせずに済む
+  const setIsTransitioning = useUIStore((state) => state.setIsTransitioning);
+  const movingSceneId = isAdjacentStep ? selectedSceneId : null;
+  const movingSeconds = segmentScene?.transitionDurationSeconds ?? 0;
+  useEffect(() => {
+    if (!movingSceneId || movingSeconds <= 0) return;
+    setIsTransitioning(true);
+    const timer = setTimeout(
+      () => setIsTransitioning(false),
+      resolveTransitionDuration(movingSeconds) * 1000,
+    );
+    return () => {
+      clearTimeout(timer);
+      setIsTransitioning(false);
+    };
+  }, [movingSceneId, movingSeconds, setIsTransitioning]);
 
   // 描くダンサー。通常は選択中シーンに座標を持つ人だけだが、スクラブ中は
   // 移動先にしか居ない人も描き始める(そうしないと、指で half まで引いた時点で
@@ -194,7 +206,9 @@ export function DancerLayer({
           key={selectedSceneId}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: resolveTransitionDuration(OVERLAY_FADE_IN_SECONDS) }}
+          transition={{
+            duration: resolveTransitionDuration(OVERLAY_FADE_IN_SECONDS),
+          }}
         >
           <PathOverlay
             currentPositions={positions}
@@ -265,8 +279,7 @@ export function DancerLayer({
             curveControlY={
               isAdjacentStep ? segmentPosition?.curveControlY : null
             }
-            isBlocked={blockedDancerIds.has(dancer.id)}
-            hasExcessiveMove={excessiveMoveDancerIds.has(dancer.id)}
+            excessiveMove={excessiveMoves.get(dancer.id) ?? null}
             scrubFromX={position?.xCoordinate ?? null}
             scrubFromY={position?.yCoordinate ?? null}
             scrubToX={scrubTarget?.xCoordinate ?? null}
