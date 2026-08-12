@@ -23,10 +23,13 @@ type Props = {
  * コマ送りのように飛ぶのではなく、ダンサーの動きと同じ秒数・同じ
  * イージングで進むので、レールを見れば「今どのくらい進んだか」が分かる。
  *
- * 位置はシーンの番号を単位にした値(0〜最後の番号)で持ち、％に直して
- * 描いている。再生中はダンサーが「1つ前のシーンから今のシーンへ」
- * 動いている最中なので、丸もその区間を進む(選択が切り替わった瞬間に
- * 目的地へ飛ばない)。
+ * 目盛りは【時刻に比例して】置く。シーンの番号で等間隔に並べると、
+ * 0秒・5秒・5.1秒・6秒のような配置が均等に見えてしまい、
+ * 「どこが詰まっているか」というレール本来の情報が消える。
+ *
+ * 位置は0〜1の割合で持ち、％に直して描いている。再生中はダンサーが
+ * 「1つ前のシーンから今のシーンへ」動いている最中なので、丸もその区間を
+ * 進む(選択が切り替わった瞬間に目的地へ飛ばない)。
  *
  * 進捗はReactのstateにせずMotionValueで持ち、styleへ直接流している。
  * 毎フレームの再レンダーを避けるためで、ステージ上のダンサーや
@@ -44,10 +47,12 @@ export function SceneDotRail({
   isPlaying,
 }: Props) {
   const lastIndex = scenes.length - 1;
-  const position = useMotionValue(Math.max(0, selectedIndex));
-  const percent = useTransform(position, (value) =>
-    lastIndex > 0 ? `${(value / lastIndex) * 100}%` : "0%",
-  );
+  // 各シーンがレール上のどこに来るか(0〜1)。時刻の差をそのまま比率にする
+  const fractions = sceneTimeFractions(scenes);
+  // 依存配列に配列そのものを置くと毎レンダー別物になる。中身で比べる
+  const fractionsKey = fractions.join();
+  const position = useMotionValue(fractions[Math.max(0, selectedIndex)] ?? 0);
+  const percent = useTransform(position, (value) => `${value * 100}%`);
   // 再生中に進む区間の長さ。「このシーンへ入ってくるのにかかる秒数」なので、
   // 動いているのは1つ前のシーンから今のシーンまで
   const currentDurationSeconds = sceneDurations(scenes)[selectedIndex] ?? 0;
@@ -55,18 +60,28 @@ export function SceneDotRail({
   useEffect(() => {
     if (selectedIndex < 0) return;
 
+    const target = fractions[selectedIndex] ?? 0;
     if (!isPlaying) {
-      position.set(selectedIndex);
+      position.set(target);
       return;
     }
 
-    position.set(Math.max(0, selectedIndex - 1));
-    const animation = animate(position, selectedIndex, {
+    position.set(fractions[Math.max(0, selectedIndex - 1)] ?? 0);
+    const animation = animate(position, target, {
       duration: resolveTransitionDuration(currentDurationSeconds),
       ease: SCENE_TRANSITION_EASE,
     });
     return () => animation.stop();
-  }, [isPlaying, selectedIndex, currentDurationSeconds, position]);
+    // fractions は毎レンダー新しい配列になるが、中身が同じなら
+    // アニメーションを張り直す必要はない。文字列にして比較する
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    isPlaying,
+    selectedIndex,
+    currentDurationSeconds,
+    position,
+    fractionsKey,
+  ]);
 
   if (scenes.length <= 1) return null;
 
@@ -90,7 +105,7 @@ export function SceneDotRail({
             key={scene.id}
             aria-hidden
             className="absolute top-1/2 block h-[3px] w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-fg-muted"
-            style={{ left: `${(index / lastIndex) * 100}%` }}
+            style={{ left: `${fractions[index] * 100}%` }}
           />
         ))}
         {/* 現在地 */}
@@ -117,4 +132,19 @@ export function SceneDotRail({
       </span>
     </div>
   );
+}
+
+/** 各シーンがレール上のどこに来るか(0〜1)。
+ * 先頭を0、最後を1として、間は時刻の差に比例させる。
+ * 全部が同じ時刻(長さ0)のときは等間隔へ落とす — 0除算を避けつつ、
+ * 目盛りが1点に重なって数えられなくなるのも防ぐ */
+function sceneTimeFractions(scenes: Scene[]): number[] {
+  if (scenes.length === 0) return [];
+  const first = scenes[0].timeSeconds;
+  const span = scenes[scenes.length - 1].timeSeconds - first;
+  if (span <= 0) {
+    const last = Math.max(1, scenes.length - 1);
+    return scenes.map((_, index) => index / last);
+  }
+  return scenes.map((scene) => (scene.timeSeconds - first) / span);
 }
