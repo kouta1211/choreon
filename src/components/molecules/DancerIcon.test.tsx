@@ -37,35 +37,42 @@ describe("DancerIcon", () => {
 });
 
 describe("DancerMarker", () => {
-  it("isBlockedのとき、色をダンサー本来の色ではなく警告色にする", () => {
-    render(
-      <DancerMarker dancer={makeDancer()} rotationAngle={0} isBlocked />,
-    );
-    expect(screen.getByTestId("dancer-body")).toHaveAttribute(
-      "fill",
-      "#dc2626",
-    );
-  });
+  const strain = {
+    distanceMeters: 12.6,
+    seconds: 1,
+    speedMetersPerSecond: 12.6,
+    isExcessive: true,
+  };
 
-  it("isBlockedでなければダンサー本来の色のまま", () => {
-    render(<DancerMarker dancer={makeDancer()} rotationAngle={0} />);
-    // パレット1色目は、テーマが差し替えられるよう --dancer-1 を通して塗る
-    expect(screen.getByTestId("dancer-body")).toHaveAttribute(
-      "fill",
-      "var(--dancer-1)",
-    );
-  });
-
-  it("hasExcessiveMoveのとき警告バッジを表示する", () => {
+  it("速すぎる移動には警告バッジを出す", () => {
     render(
-      <DancerMarker dancer={makeDancer()} rotationAngle={0} hasExcessiveMove />,
+      <DancerMarker
+        dancer={makeDancer()}
+        rotationAngle={0}
+        excessiveMove={strain}
+      />,
     );
     expect(
       screen.getByTestId("dancer-excessive-move-badge"),
     ).toBeInTheDocument();
   });
 
-  it("hasExcessiveMoveでなければ警告バッジを表示しない", () => {
+  // 色ではなく形と文で伝えるのが今回の方針。距離と秒数が読めること自体が仕様
+  it("警告には距離・秒数・速さを載せる", () => {
+    render(
+      <DancerMarker
+        dancer={makeDancer({ name: "あいり" })}
+        rotationAngle={0}
+        excessiveMove={strain}
+      />,
+    );
+    const badge = screen.getByTestId("dancer-excessive-move-badge");
+    expect(badge.getAttribute("aria-label")).toContain("あいり");
+    expect(badge.getAttribute("aria-label")).toContain("12.6m");
+    expect(badge.getAttribute("aria-label")).toContain("1秒");
+  });
+
+  it("問題のない移動には出さない", () => {
     render(<DancerMarker dancer={makeDancer()} rotationAngle={0} />);
     expect(
       screen.queryByTestId("dancer-excessive-move-badge"),

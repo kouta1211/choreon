@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
-import { List, Pause, Play, Plus } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { List, Pause, Pencil, Play, Plus } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { SceneTabs } from "@/components/molecules/SceneTabs";
 import { SceneDotRail } from "@/components/molecules/SceneDotRail";
-import { DancerLaneRail } from "@/components/molecules/DancerLaneRail";
-import { buildDancerLanes } from "@/features/scene/lib/dancerLanes";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import {
   seekToSelectedScene,
   useMusicPlayback,
 } from "@/features/music/hooks/useMusicPlayback";
+import {
+  nearestSceneIndexAtSeconds,
+  sceneStartSeconds,
+} from "@/features/music/lib/musicTimeline";
 import { SceneListSheet } from "@/components/organisms/SceneListSheet";
 import { getNextSceneId } from "@/features/scene/lib/playback";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
@@ -58,11 +60,6 @@ export function SceneDock({ project }: Props) {
   const thumbnailBySceneId = useProjectStore(
     (state) => state.thumbnailBySceneId,
   );
-  const dancers = useProjectStore((state) => state.dancers);
-  const positionsBySceneId = useProjectStore(
-    (state) => state.positionsBySceneId,
-  );
-  const railMode = useUIStore((state) => state.railMode);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const selectScene = useUIStore((state) => state.selectScene);
   const isPlaying = useUIStore((state) => state.isPlaying);
@@ -77,16 +74,6 @@ export function SceneDock({ project }: Props) {
 
   const selectedIndex = scenes.findIndex((s) => s.id === selectedSceneId);
   const selectedScene = selectedIndex >= 0 ? scenes[selectedIndex] : null;
-
-  // レーン表示のときだけ組み立てる。ドットレールの間は使わないので、
-  // 人数×シーン数の走査を毎回やる意味がない
-  const lanes = useMemo(
-    () =>
-      railMode === "lanes"
-        ? buildDancerLanes(scenes, dancers, positionsBySceneId)
-        : [],
-    [railMode, scenes, dancers, positionsBySceneId],
-  );
 
   // 再生ボタンを押した直後の1歩目だけは待たずに動き始めるための目印。
   // 押した瞬間(false→trueに切り替える側)でtrueにし、シーケンサー側で
@@ -128,8 +115,29 @@ export function SceneDock({ project }: Props) {
   const handleTogglePlay = () => {
     if (!isPlaying) {
       justStartedPlayingRef.current = true;
+      setIsPlaying(true);
+      return;
     }
-    setIsPlaying(!isPlaying);
+
+    // 止めるときは、いちばん近いシーンへ寄せてから止める。
+    // 曲を鳴らしていると、押した瞬間の再生位置は区間の途中であることが多い。
+    // そこで止めると「シーン2と3のあいだ」という、隊形としては存在しない
+    // 状態で残り、次に押したときにどこから続くのかも分からなくなる
+    const audio = audioRef.current;
+    if (audio && scenes.length > 0) {
+      const offset =
+        useProjectStore.getState().project?.musicOffsetSeconds ?? 0;
+      const index = nearestSceneIndexAtSeconds(
+        scenes,
+        audio.currentTime - offset,
+      );
+      const scene = scenes[index];
+      if (scene) {
+        selectScene(scene.id);
+        audio.currentTime = offset + sceneStartSeconds(scenes)[index];
+      }
+    }
+    setIsPlaying(false);
   };
 
   const selectSceneByIndex = (index: number) => {
@@ -157,8 +165,10 @@ export function SceneDock({ project }: Props) {
               )}
             </button>
 
-            {/* いま何を見ているかの表示。押せる要素にしていないのは、
-                ここが唯一「操作ではないもの」だと形で分かるようにするため */}
+            {/* いま何を見ているかの表示。名前そのものは押せないままにして
+                いる(触ったつもりの無い改名を防ぐ。SceneListのカードと同じ
+                方針)。代わりに鉛筆を隣へ出し、開いているシーンの詳細設定へ
+                一覧を経由せずに入れるようにしている */}
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline gap-1.5">
                 <span className="shrink-0 font-mono text-[11px] font-semibold text-accent-soft">
@@ -167,6 +177,14 @@ export function SceneDock({ project }: Props) {
                 <span className="min-w-0 truncate text-sm font-semibold text-fg-strong">
                   {selectedScene.name}
                 </span>
+                <button
+                  type="button"
+                  onClick={() => setSceneSheetOpen(true)}
+                  aria-label={`「${selectedScene.name}」の設定を開く`}
+                  className="flex h-6 w-6 shrink-0 translate-y-0.5 items-center justify-center rounded-[calc(var(--radius)*0.5)] border border-line-strong text-fg-muted"
+                >
+                  <Pencil size={11} />
+                </button>
               </div>
               <span className="mt-0.5 block truncate font-mono text-[10.5px] text-fg-muted">
                 {selectedIndex === 0
@@ -218,21 +236,12 @@ export function SceneDock({ project }: Props) {
         />
       </div>
 
-      {railMode === "lanes" ? (
-        <DancerLaneRail
-          lanes={lanes}
-          selectedIndex={selectedIndex}
-          sceneCount={scenes.length}
-          onSelectIndex={selectSceneByIndex}
-        />
-      ) : (
-        <SceneDotRail
-          scenes={scenes}
-          selectedIndex={selectedIndex}
-          isPlaying={isPlaying}
-          onSelectIndex={selectSceneByIndex}
-        />
-      )}
+      <SceneDotRail
+        scenes={scenes}
+        selectedIndex={selectedIndex}
+        isPlaying={isPlaying}
+        onSelectIndex={selectSceneByIndex}
+      />
 
       {/* 画面全体に重なるシート(狭い画面用)。DOM上の位置は見た目に
           影響しないのでここから描く。広い画面では一覧ボタンを出さないため

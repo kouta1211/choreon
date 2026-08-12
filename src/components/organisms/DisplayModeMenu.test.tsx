@@ -57,9 +57,9 @@ describe("DisplayModeMenu の見た目の上書き", () => {
     await user.click(screen.getByLabelText("表示とモード"));
     await user.click(screen.getByText(OVERRIDE_LABEL));
 
-    expect(
-      useThemeStore.getState().preference.byProject,
-    ).toHaveProperty("project-1");
+    expect(useThemeStore.getState().preference.byProject).toHaveProperty(
+      "project-1",
+    );
   });
 
   it("オフに戻すと上書きを消し、端末の既定へ戻す", async () => {

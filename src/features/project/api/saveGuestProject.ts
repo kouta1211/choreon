@@ -1,9 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
-import {
-  deleteProject,
-  insertProject,
-} from "@/features/project/api/projects";
+import { deleteProject, insertProject } from "@/features/project/api/projects";
 import { createDancers } from "@/features/dancer/api/dancers";
 import { createScenes } from "@/features/scene/api/scenes";
 import { upsertPositions } from "@/features/scene/api/positions";

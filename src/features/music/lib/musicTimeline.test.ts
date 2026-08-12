@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { sceneIndexAtSeconds, sceneStartSeconds } from "./musicTimeline";
+import {
+  nearestSceneIndexAtSeconds,
+  sceneIndexAtSeconds,
+  sceneStartSeconds,
+} from "./musicTimeline";
 import { makeScene } from "@/test/factories";
 
 /** 1→2へ2秒、2→3へ3秒。到着は 0s / 2s / 5s */
@@ -52,5 +56,27 @@ describe("sceneIndexAtSeconds", () => {
 
   it("シーンが無ければ-1", () => {
     expect(sceneIndexAtSeconds([], 0)).toBe(-1);
+  });
+});
+
+describe("nearestSceneIndexAtSeconds", () => {
+  it("到着時刻に近い方のシーンを返す", () => {
+    // 到着は 0s / 2s / 5s
+    expect(nearestSceneIndexAtSeconds(SCENES, 0.4)).toBe(0);
+    expect(nearestSceneIndexAtSeconds(SCENES, 1.6)).toBe(1);
+    expect(nearestSceneIndexAtSeconds(SCENES, 4.2)).toBe(2);
+  });
+
+  // 区間の途中で止めたとき、どちらつかずの位置に残さないための規則
+  it("ちょうど中間なら進んだ側へ寄せる", () => {
+    expect(nearestSceneIndexAtSeconds(SCENES, 1)).toBe(1);
+  });
+
+  it("行き過ぎても最後のシーンで止まる", () => {
+    expect(nearestSceneIndexAtSeconds(SCENES, 99)).toBe(2);
+  });
+
+  it("シーンが無ければ -1", () => {
+    expect(nearestSceneIndexAtSeconds([], 3)).toBe(-1);
   });
 });

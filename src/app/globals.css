@@ -6,7 +6,6 @@
    要素へ data-theme を付けたときにも、そこだけ別のテーマで描ける */
 @import "./themes.css";
 
-
 /* 上の変数をTailwindの色名に結び付ける。`inline` を付けると
    `bg-surface` が `background-color: var(--surface)` を直接出すので、
    実行時に変数を差し替えるだけで色が追従する(値をコピーしてしまうと

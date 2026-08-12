@@ -46,7 +46,8 @@ export function useApplyTemplate(project: Project) {
     if (!sceneId) return;
 
     setIsApplying(true);
-    const positions = useProjectStore.getState().positionsBySceneId[sceneId] ?? {};
+    const positions =
+      useProjectStore.getState().positionsBySceneId[sceneId] ?? {};
     const dancers = Object.values(positions).map((position) => ({
       dancerId: position.dancerId,
       x: position.xCoordinate,

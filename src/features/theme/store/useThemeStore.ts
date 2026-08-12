@@ -90,7 +90,8 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
 
     // 上書き中のプロジェクトを見ているなら、その1件だけを書き換える。
     // そうでなければ端末の既定を変える
-    const isOverridden = projectId !== null && projectId in preference.byProject;
+    const isOverridden =
+      projectId !== null && projectId in preference.byProject;
     const updated: ThemePreference = isOverridden
       ? {
           ...preference,

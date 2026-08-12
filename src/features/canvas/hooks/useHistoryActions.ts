@@ -37,7 +37,8 @@ export function useHistoryActions() {
       // 消えた対象へ書き戻そうとすると外部キー違反になるため先に除く
       const changes = entry.changes.filter(
         (change) =>
-          sceneIds.has(change.sceneId) && dancers[change.dancerId] !== undefined,
+          sceneIds.has(change.sceneId) &&
+          dancers[change.dancerId] !== undefined,
       );
 
       if (changes.length === 0) {
@@ -63,7 +64,9 @@ export function useHistoryActions() {
       }
 
       try {
-        await persist((supabase) => upsertPositions(supabase, changes.map(pick)));
+        await persist((supabase) =>
+          upsertPositions(supabase, changes.map(pick)),
+        );
         return true;
       } catch (error) {
         for (const change of changes) {

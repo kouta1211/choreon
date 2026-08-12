@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -14,16 +14,14 @@ import { EmptyStage, Stage } from "@/components/organisms/Stage";
 import { HistoryControls } from "@/components/organisms/HistoryControls";
 import { TemplateButton } from "@/components/organisms/TemplateButton";
 import { DancerLayer } from "@/components/organisms/DancerLayer";
+import { ScrubProgressBar } from "@/components/molecules/ScrubProgressBar";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useHistoryStore } from "@/features/canvas/store/useHistoryStore";
 import {
   clamp,
-  findSymmetryPairId,
   isCloseToInteger,
-  mirrorXCoordinate,
   pixelDeltaToUnitDelta,
-  snapToCenterline,
   snapToGrid,
 } from "@/features/canvas/lib/dragMath";
 import {
@@ -32,8 +30,13 @@ import {
 } from "@/features/canvas/lib/gridSnapModifier";
 import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
-import { upsertPosition, upsertPositions } from "@/features/scene/api/positions";
+import {
+  upsertPosition,
+  upsertPositions,
+} from "@/features/scene/api/positions";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
+import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
+import { useStageScrubGesture } from "@/features/canvas/hooks/useStageScrubGesture";
 import type { Project } from "@/features/project/types";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position, Scene } from "@/features/scene/types";
@@ -46,9 +49,6 @@ type Props = {
   /** ゲスト(未ログイン)の下書きとして開くかどうか。storeへそのまま渡す */
   isGuest?: boolean;
 };
-
-/** 中心線からこの距離(ステージ座標系のユニット)以内ならぴったり吸着させる */
-const SYMMETRY_SNAP_TOLERANCE = 0.3;
 
 /** dnd-kitのデフォルトのスクリーンリーダー向け説明・通知は英語かつ
  * 「スペースで掴む/離す」という、このアプリでは使っていない2段階操作を
@@ -137,9 +137,28 @@ export function CanvasBoard({
   );
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const selectScene = useUIStore((state) => state.selectScene);
+  const selectDancer = useUIStore((state) => state.selectDancer);
   const setDragSnapLine = useUIStore((state) => state.setDragSnapLine);
   const showToast = useUIStore((state) => state.showToast);
-  const isSymmetryMode = useUIStore((state) => state.isSymmetryMode);
+
+  // ステージを横に払って前後のシーンへ移るジェスチャ。ダンサーのドラッグ
+  // (dnd-kit)とは掴む対象で住み分けており、ダンサーとボタンの上から
+  // 始まった指はこちらでは拾わない(useStageScrubGesture参照)
+  const scenes = useProjectStore((state) => state.scenes);
+  const scrub = useSceneScrub();
+  const isSwipeSceneChangeEnabled = useUIStore(
+    (state) => state.isSwipeSceneChangeEnabled,
+  );
+  const sceneIds = useMemo(() => scenes.map((scene) => scene.id), [scenes]);
+  const scrubHandlers = useStageScrubGesture({
+    stageRef,
+    sceneIds,
+    selectedSceneId,
+    selectScene,
+    selectDancer,
+    isSwipeEnabled: isSwipeSceneChangeEnabled,
+    scrub,
+  });
 
   // サーバーから取得済みのデータ(props)をZustand storeへ同期する。
   // 「Reactの外にある別のシステム(ここではグローバルなstore)にデータを渡す」
@@ -229,18 +248,8 @@ export function CanvasBoard({
         project.stageHeight,
       );
 
-      let nextX = clamp(before.xCoordinate + deltaX, 0, project.stageWidth);
+      const nextX = clamp(before.xCoordinate + deltaX, 0, project.stageWidth);
       const nextY = clamp(before.yCoordinate + deltaY, 0, project.stageHeight);
-
-      // シンメトリーモード中は、中心線付近でドロップするとぴったり中心に吸着させる
-      // (ペア相手も中心に来るので、左右対称の配置を作りやすくするため)
-      if (isSymmetryMode) {
-        nextX = snapToCenterline(
-          nextX,
-          project.stageWidth,
-          SYMMETRY_SNAP_TOLERANCE,
-        );
-      }
 
       const after = {
         sceneId: selectedSceneId,
@@ -250,46 +259,10 @@ export function CanvasBoard({
         rotationAngle: before.rotationAngle,
       };
 
-      // シンメトリーモード中は、奥行き(Y座標)が最も近い他のダンサーを
-      // ペアとみなし、中心線を挟んだ鏡像の位置へ連動させる
-      const pairId = isSymmetryMode
-        ? findSymmetryPairId(currentPositions, dancerId)
-        : null;
-      const pairBefore = pairId ? currentPositions[pairId] : null;
-      const pairAfter =
-        pairId && pairBefore
-          ? {
-              sceneId: selectedSceneId,
-              dancerId: pairId,
-              xCoordinate: clamp(
-                mirrorXCoordinate(after.xCoordinate, project.stageWidth),
-                0,
-                project.stageWidth,
-              ),
-              yCoordinate: pairBefore.yCoordinate,
-              rotationAngle: pairBefore.rotationAngle,
-            }
-          : null;
-
       // 楽観的更新: 先に見た目を確定させ、保存に失敗したらdrag前の値に戻す
       updateDancerPosition(after.sceneId, after.dancerId, after);
-      if (pairAfter) {
-        updateDancerPosition(pairAfter.sceneId, pairAfter.dancerId, pairAfter);
-      }
 
-      const changes = [
-        { sceneId: selectedSceneId, dancerId, before, after },
-        ...(pairId && pairBefore && pairAfter
-          ? [
-              {
-                sceneId: selectedSceneId,
-                dancerId: pairId,
-                before: pairBefore,
-                after: pairAfter,
-              },
-            ]
-          : []),
-      ];
+      const changes = [{ sceneId: selectedSceneId, dancerId, before, after }];
 
       // 保存だけを切り出しているのは、失敗したときにトーストの「再試行」から
       // もう一度呼べるようにするため。通信が一瞬切れただけのことが多く、
@@ -303,12 +276,15 @@ export function CanvasBoard({
             ),
           );
           // 保存が確定してから履歴に積む(失敗した操作は「元に戻す」対象に
-          // ならない=見た目もロールバック済みなので、積むと辻褄が合わなくなる)。
-          // シンメトリーのペアも同じ1ステップに含め、まとめて元に戻せるようにする
+          // ならない=見た目もロールバック済みなので、積むと辻褄が合わなくなる)
           useHistoryStore.getState().push({ kind: "move", changes });
         } catch (error) {
           for (const change of changes) {
-            updateDancerPosition(change.sceneId, change.dancerId, change.before);
+            updateDancerPosition(
+              change.sceneId,
+              change.dancerId,
+              change.before,
+            );
           }
           showToast({
             message: toUserMessage(error, "位置の保存に失敗しました"),
@@ -335,7 +311,6 @@ export function CanvasBoard({
     },
     [
       selectedSceneId,
-      isSymmetryMode,
       project.stageWidth,
       project.stageHeight,
       setDragSnapLine,
@@ -439,9 +414,8 @@ export function CanvasBoard({
       sceneId: string,
       point: { x: number; y: number } | null,
     ) => {
-      const before = useProjectStore.getState().positionsBySceneId[sceneId]?.[
-        dancerId
-      ];
+      const before =
+        useProjectStore.getState().positionsBySceneId[sceneId]?.[dancerId];
       if (!before) return;
 
       const after = {
@@ -496,9 +470,11 @@ export function CanvasBoard({
     >
       <Stage
         ref={stageRef}
+        scrubHandlers={scrubHandlers}
+        isSwipeEnabled={isSwipeSceneChangeEnabled}
+        scrubIndicator={<ScrubProgressBar />}
         widthUnits={project.stageWidth}
         heightUnits={project.stageHeight}
-        showCenterline={isSymmetryMode}
         overlay={<HistoryControls />}
         belowStageLeft={<TemplateButton />}
       >

@@ -1,13 +1,9 @@
 /**
  * 「表示とモード」で選んだ見え方を端末に覚えておくための入れ物。
  *
- * ここに入れているのは目盛り・導線・顔被りチェックの3つだけ。どれも
+ * ここに入れているのは目盛りと導線の2つだけ。どちらも
  * 「今どう見たいか」であって、作品の中身ではない。だからプロジェクトでも
  * クラウドでもなく端末に持たせている(見た目の設定と同じ考え方)。
- *
- * シンメトリーモードは入れていない。あれは表示ではなく編集の挙動を変える
- * もので、覚えたまま次に開くと「1人動かしたらもう1人も動いた」が
- * 説明なしに起きてしまうため、毎回オフから始める方が安全。
  *
  * ■ なぜ覚える必要があるのか
  * 顔被りチェックは、オンにしても再読み込みやプロジェクトを開き直すたびに
@@ -24,33 +20,48 @@ export function isGridMode(value: unknown): value is GridMode {
   return GRID_MODES.includes(value as GridMode);
 }
 
-/** ドック最下段の見せ方。
- *   dots  … 曲全体のどこにいるかを1本のレールで示す(既定)
- *   lanes … 1人1本の横線で「誰がいつ動くか」を出す */
-export type RailMode = "dots" | "lanes";
-
-const RAIL_MODES: RailMode[] = ["dots", "lanes"];
-
-export function isRailMode(value: unknown): value is RailMode {
-  return RAIL_MODES.includes(value as RailMode);
-}
-
 /** localStorageのキー。値の形を変えるときはここも変えて、古い形を無視させる */
 export const VIEW_STORAGE_KEY = "choreon.view.v1";
 
 export type ViewPreference = {
   gridMode: GridMode;
-  railMode: RailMode;
   isPathVisible: boolean;
+  /** バミリ(全シーンの立ち位置を床に重ねた印)を出すか */
+  isStageMarksVisible: boolean;
+  /** 客席から見えなくなる人(顔被り)を警告するか */
   isBlindSpotCheckVisible: boolean;
+  /** ステージを横に払ってシーンを送る操作を受け付けるか。
+   * マウスでは「掴んで動かす」より場所を取る操作になってしまうので、
+   * 指のある端末だけ既定でオンにする(defaultViewPreference参照) */
+  isSwipeSceneChangeEnabled: boolean;
 };
 
 export const DEFAULT_VIEW_PREFERENCE: ViewPreference = {
   gridMode: "square",
-  railMode: "dots",
   isPathVisible: false,
+  isStageMarksVisible: false,
   isBlindSpotCheckVisible: false,
+  isSwipeSceneChangeEnabled: false,
 };
+
+/**
+ * まだ何も保存されていない端末での初期値。
+ *
+ * スワイプでのシーン送りだけは、端末によって「あると助かる」「邪魔になる」が
+ * はっきり分かれる。指で払うのが自然なタッチ端末では既定でオンにし、
+ * マウスでは既定でオフにする。どちらも設定から変えられる。
+ */
+export function defaultViewPreference(): ViewPreference {
+  const isCoarsePointer =
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(pointer: coarse)").matches;
+
+  return {
+    ...DEFAULT_VIEW_PREFERENCE,
+    isSwipeSceneChangeEnabled: isCoarsePointer,
+  };
+}
 
 /**
  * 保存されている文字列を読む。
@@ -59,33 +70,37 @@ export const DEFAULT_VIEW_PREFERENCE: ViewPreference = {
  * 知っている値だけを通し、それ以外は既定に落とす。
  */
 export function parseViewPreference(raw: string | null): ViewPreference {
-  if (!raw) return DEFAULT_VIEW_PREFERENCE;
+  const fallback = defaultViewPreference();
+  if (!raw) return fallback;
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
   } catch {
-    return DEFAULT_VIEW_PREFERENCE;
+    return fallback;
   }
   if (typeof parsed !== "object" || parsed === null) {
-    return DEFAULT_VIEW_PREFERENCE;
+    return fallback;
   }
 
   const record = parsed as Record<string, unknown>;
   return {
-    gridMode: isGridMode(record.gridMode)
-      ? record.gridMode
-      : DEFAULT_VIEW_PREFERENCE.gridMode,
-    railMode: isRailMode(record.railMode)
-      ? record.railMode
-      : DEFAULT_VIEW_PREFERENCE.railMode,
+    gridMode: isGridMode(record.gridMode) ? record.gridMode : fallback.gridMode,
     isPathVisible:
       typeof record.isPathVisible === "boolean"
         ? record.isPathVisible
-        : DEFAULT_VIEW_PREFERENCE.isPathVisible,
+        : fallback.isPathVisible,
+    isStageMarksVisible:
+      typeof record.isStageMarksVisible === "boolean"
+        ? record.isStageMarksVisible
+        : fallback.isStageMarksVisible,
     isBlindSpotCheckVisible:
       typeof record.isBlindSpotCheckVisible === "boolean"
         ? record.isBlindSpotCheckVisible
-        : DEFAULT_VIEW_PREFERENCE.isBlindSpotCheckVisible,
+        : fallback.isBlindSpotCheckVisible,
+    isSwipeSceneChangeEnabled:
+      typeof record.isSwipeSceneChangeEnabled === "boolean"
+        ? record.isSwipeSceneChangeEnabled
+        : fallback.isSwipeSceneChangeEnabled,
   };
 }

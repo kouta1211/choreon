@@ -28,9 +28,7 @@ function openSheet() {
 
 function mockApis() {
   vi.spyOn(dancersApi, "createDancers").mockResolvedValue([]);
-  return vi
-    .spyOn(positionsApi, "upsertPositions")
-    .mockResolvedValue(undefined);
+  return vi.spyOn(positionsApi, "upsertPositions").mockResolvedValue(undefined);
 }
 
 afterEach(() => {

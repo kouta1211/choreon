@@ -4,7 +4,6 @@ import {
   parseViewPreference,
   VIEW_STORAGE_KEY,
   type GridMode,
-  type RailMode,
   type ViewPreference,
 } from "@/features/canvas/lib/viewPreference";
 
@@ -38,7 +37,7 @@ export type ConfirmRequest = {
 
 /** ステージの目盛りの出し方。円形の隊形は格子より同心円の方が読みやすい。
  * 定義は端末に保存する側(viewPreference)に置いてある */
-export type { GridMode, RailMode };
+export type { GridMode };
 
 type UIState = {
   selectedSceneId: string | null;
@@ -53,19 +52,21 @@ type UIState = {
    * 同じ「どこに立っているか」を別の読み方で示すもので、重ねると
    * どちらも読めなくなるため、並立ではなく1つを選ぶ */
   gridMode: GridMode;
-  /** ドック最下段をドットレールにするかレーン表示にするか */
-  railMode: RailMode;
   toast: Toast | null;
-  /** オンの間、ダンサーをドラッグすると中心線を挟んだペアも連動して動く
-   * (CanvasBoard.handleDragEndが読み取って処理する。ここはトグル状態のみ) */
-  isSymmetryMode: boolean;
   /** 「マイ・フォーカス」で強調表示中のダンサー。シーンをまたいでも
    * 保持したいUI状態なので、シーン選択と同じくここに置く */
   focusedDancerId: string | null;
   /** オンの間、選択中シーン→次のシーンへの移動導線をステージ上に描画する */
   isPathVisible: boolean;
-  /** オンの間、奥のダンサーが手前のダンサーに隠れていないか(顔被り)を判定して警告表示する */
+  /** バミリ(全シーンの立ち位置を床に重ねた印)を出すか */
+  isStageMarksVisible: boolean;
+  /** 客席から見えなくなる人(顔被り)を警告するか。移動中も含めて調べる */
   isBlindSpotCheckVisible: boolean;
+  /** ステージを横に払ってシーンを送る操作を受け付けるか */
+  isSwipeSceneChangeEnabled: boolean;
+  /** シーン移動のアニメーションが進行中か。この間はダンサーを掴ませない
+   * (掴むと、移動アニメーションとドラッグが同じ座標を取り合う) */
+  isTransitioning: boolean;
   /** ドラッグ中の格子スナップ状態(CanvasBoardのonDragMoveが更新し、Stageが
    * 該当する格子線をハイライト表示するために読む) */
   dragSnapLine: DragSnapLine;
@@ -78,10 +79,6 @@ type UIState = {
   isAddDancerSheetOpen: boolean;
   /** フォーメーションのテンプレートシートを開いているか */
   isTemplateSheetOpen: boolean;
-  /** テンプレートのヒントを×で閉じたシーン。同じシーンでは二度と出さない
-   * (「もう分かっている」という意思表示なので、シーンをまたいで覚える
-   * 必要はないが、同じシーンで何度も出るのは煩わしい) */
-  templateHintDismissedSceneIds: string[];
   /** 表示中の確認ダイアログ。nullなら出ていない */
   confirm: ConfirmRequest | null;
   /** 登録/ログインのモーダル。nullなら出ていない。
@@ -92,19 +89,19 @@ type UIState = {
   selectScene: (sceneId: string | null) => void;
   selectDancer: (dancerId: string | null) => void;
   setGridMode: (mode: GridMode) => void;
-  setRailMode: (mode: RailMode) => void;
   showToast: (toast: Toast) => void;
   clearToast: () => void;
-  toggleSymmetryMode: () => void;
   setFocusedDancer: (dancerId: string | null) => void;
   togglePathVisible: () => void;
-  toggleBlindSpotCheckVisible: () => void;
+  toggleStageMarks: () => void;
+  toggleBlindSpotCheck: () => void;
+  toggleSwipeSceneChange: () => void;
+  setIsTransitioning: (isTransitioning: boolean) => void;
   setDragSnapLine: (line: DragSnapLine) => void;
   setIsPlaying: (isPlaying: boolean) => void;
   setSceneSheetOpen: (isOpen: boolean) => void;
   setAddDancerSheetOpen: (isOpen: boolean) => void;
   setTemplateSheetOpen: (isOpen: boolean) => void;
-  dismissTemplateHint: (sceneId: string) => void;
   /** 確認ダイアログを出す。実行された場合の処理はrequest.onConfirmに持たせる */
   requestConfirm: (request: ConfirmRequest) => void;
   closeConfirm: () => void;
@@ -136,9 +133,10 @@ function persistFromState(
 ): void {
   persistViewPreference({
     gridMode: state.gridMode,
-    railMode: state.railMode,
     isPathVisible: state.isPathVisible,
+    isStageMarksVisible: state.isStageMarksVisible,
     isBlindSpotCheckVisible: state.isBlindSpotCheckVisible,
+    isSwipeSceneChangeEnabled: state.isSwipeSceneChangeEnabled,
     ...changed,
   });
 }
@@ -148,21 +146,21 @@ export const useUIStore = create<UIState>((set) => ({
   previousSceneId: null,
   selectedDancerId: null,
   // 3つの既定値は viewPreference が持つ。サーバーで描くHTMLと最初の
-   // ブラウザ描画を一致させるため、ここでは必ず既定から始め、
-   // 読み込みは loadViewPreference に任せる
+  // ブラウザ描画を一致させるため、ここでは必ず既定から始め、
+  // 読み込みは loadViewPreference に任せる
   gridMode: DEFAULT_VIEW_PREFERENCE.gridMode,
-  railMode: DEFAULT_VIEW_PREFERENCE.railMode,
   toast: null,
-  isSymmetryMode: false,
   focusedDancerId: null,
   isPathVisible: DEFAULT_VIEW_PREFERENCE.isPathVisible,
+  isStageMarksVisible: DEFAULT_VIEW_PREFERENCE.isStageMarksVisible,
   isBlindSpotCheckVisible: DEFAULT_VIEW_PREFERENCE.isBlindSpotCheckVisible,
+  isSwipeSceneChangeEnabled: DEFAULT_VIEW_PREFERENCE.isSwipeSceneChangeEnabled,
+  isTransitioning: false,
   dragSnapLine: { x: null, y: null },
   isPlaying: false,
   isSceneSheetOpen: false,
   isAddDancerSheetOpen: false,
   isTemplateSheetOpen: false,
-  templateHintDismissedSceneIds: [],
   confirm: null,
   authDialogMode: null,
 
@@ -180,27 +178,36 @@ export const useUIStore = create<UIState>((set) => ({
       persistFromState(state, { gridMode: mode });
       return { gridMode: mode };
     }),
-  setRailMode: (mode) =>
-    set((state) => {
-      persistFromState(state, { railMode: mode });
-      return { railMode: mode };
-    }),
   showToast: (toast) => set({ toast }),
   clearToast: () => set({ toast: null }),
-  toggleSymmetryMode: () =>
-    set((state) => ({ isSymmetryMode: !state.isSymmetryMode })),
   setFocusedDancer: (dancerId) => set({ focusedDancerId: dancerId }),
+  toggleBlindSpotCheck: () =>
+    set((state) => {
+      const isBlindSpotCheckVisible = !state.isBlindSpotCheckVisible;
+      persistFromState(state, { isBlindSpotCheckVisible });
+      return { isBlindSpotCheckVisible };
+    }),
+  toggleStageMarks: () =>
+    set((state) => {
+      const isStageMarksVisible = !state.isStageMarksVisible;
+      persistFromState(state, { isStageMarksVisible });
+      return { isStageMarksVisible };
+    }),
+  setIsTransitioning: (isTransitioning) =>
+    set((state) =>
+      state.isTransitioning === isTransitioning ? {} : { isTransitioning },
+    ),
+  toggleSwipeSceneChange: () =>
+    set((state) => {
+      const isSwipeSceneChangeEnabled = !state.isSwipeSceneChangeEnabled;
+      persistFromState(state, { isSwipeSceneChangeEnabled });
+      return { isSwipeSceneChangeEnabled };
+    }),
   togglePathVisible: () =>
     set((state) => {
       const isPathVisible = !state.isPathVisible;
       persistFromState(state, { isPathVisible });
       return { isPathVisible };
-    }),
-  toggleBlindSpotCheckVisible: () =>
-    set((state) => {
-      const isBlindSpotCheckVisible = !state.isBlindSpotCheckVisible;
-      persistFromState(state, { isBlindSpotCheckVisible });
-      return { isBlindSpotCheckVisible };
     }),
   loadViewPreference: () => {
     let preference = DEFAULT_VIEW_PREFERENCE;
@@ -226,17 +233,6 @@ export const useUIStore = create<UIState>((set) => ({
   setSceneSheetOpen: (isOpen) => set({ isSceneSheetOpen: isOpen }),
   setAddDancerSheetOpen: (isOpen) => set({ isAddDancerSheetOpen: isOpen }),
   setTemplateSheetOpen: (isOpen) => set({ isTemplateSheetOpen: isOpen }),
-  dismissTemplateHint: (sceneId) =>
-    set((state) =>
-      state.templateHintDismissedSceneIds.includes(sceneId)
-        ? {}
-        : {
-            templateHintDismissedSceneIds: [
-              ...state.templateHintDismissedSceneIds,
-              sceneId,
-            ],
-          },
-    ),
   requestConfirm: (request) => set({ confirm: request }),
   closeConfirm: () => set({ confirm: null }),
   openAuthDialog: (mode) => set({ authDialogMode: mode }),

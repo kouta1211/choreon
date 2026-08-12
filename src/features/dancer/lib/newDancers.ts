@@ -140,7 +140,9 @@ export function findFreePositions(
     if (found.length >= count) break;
     // 行の中は中央から左右へ交互に
     for (let step = 0; step <= stageWidth && found.length < count; step += 1) {
-      for (const x of step === 0 ? [centerX] : [centerX - step, centerX + step]) {
+      for (const x of step === 0
+        ? [centerX]
+        : [centerX - step, centerX + step]) {
         if (x < 0 || x > stageWidth) continue;
         if (found.length >= count) break;
         claim(x, y);

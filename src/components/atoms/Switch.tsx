@@ -45,7 +45,9 @@ export function Switch({
       aria-checked={checked}
       onClick={onChange}
       className={`flex cursor-pointer items-center gap-2.5 text-sm text-fg ${
-        fullWidth ? "w-full justify-between rounded-lg px-2 py-2 text-left" : "w-fit"
+        fullWidth
+          ? "w-full justify-between rounded-lg px-2 py-2 text-left"
+          : "w-fit"
       }`}
     >
       {fullWidth ? (

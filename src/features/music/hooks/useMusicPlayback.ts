@@ -56,7 +56,8 @@ export function useMusicPlayback() {
       frame = requestAnimationFrame(step);
 
       const { scenes } = useProjectStore.getState();
-      const offset = useProjectStore.getState().project?.musicOffsetSeconds ?? 0;
+      const offset =
+        useProjectStore.getState().project?.musicOffsetSeconds ?? 0;
       const elapsed = audio.currentTime - offset;
       const index = sceneIndexAtSeconds(scenes, elapsed);
       if (index === -1) return;

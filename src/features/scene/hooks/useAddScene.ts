@@ -8,6 +8,7 @@ import { toUserMessage } from "@/lib/supabase/errors";
 import { createScene } from "@/features/scene/api/scenes";
 import { upsertPositions } from "@/features/scene/api/positions";
 import type { Project } from "@/features/project/types";
+import { randomId } from "@/lib/randomId";
 
 /**
  * 「いまの配置をコピーして新しいシーンを末尾に追加する」処理。
@@ -35,7 +36,7 @@ export function useAddScene(project: Project) {
     setIsCreating(true);
     const previousSelectedSceneId = useUIStore.getState().selectedSceneId;
     const scene = {
-      id: crypto.randomUUID(),
+      id: randomId(),
       projectId: project.id,
       name: `シーン${scenes.length + 1}`,
       orderIndex: scenes.length,

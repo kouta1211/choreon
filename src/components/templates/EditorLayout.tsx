@@ -1,10 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
+
 import { CanvasBoard } from "@/components/organisms/CanvasBoard";
 import { EditorHeader } from "@/components/organisms/EditorHeader";
 import { AddDancerSheet } from "@/components/organisms/AddDancerSheet";
 import { TemplateSheet } from "@/components/organisms/TemplateSheet";
-import { TemplateHint } from "@/components/organisms/TemplateHint";
 import { DancerInspector } from "@/components/organisms/DancerInspector";
 import { SceneDock } from "@/components/organisms/SceneDock";
 import { SceneSidebar } from "@/components/organisms/SceneSidebar";
@@ -12,6 +13,8 @@ import { EditorSidePanel } from "@/components/organisms/EditorSidePanel";
 import { EditorShortcuts } from "@/components/organisms/EditorShortcuts";
 import { UnsavedChangesGuard } from "@/components/organisms/UnsavedChangesGuard";
 import { useSceneThumbnails } from "@/features/scene/hooks/useSceneThumbnails";
+import { SceneScrubProvider } from "@/features/canvas/hooks/useSceneScrub";
+import { useMusicStore } from "@/features/music/store/useMusicStore";
 import type { Project } from "@/features/project/types";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position, Scene } from "@/features/scene/types";
@@ -65,55 +68,64 @@ export function EditorLayout({
   // それら全部を含むこの層になる
   useSceneThumbnails(project);
 
+  // この端末に控えてある曲を戻す。作品ごとに1曲なので、別の作品を開いたら
+  // 入れ替わる(useMusicStore.restore)。音源はサーバーへ上げていないので、
+  // 共有された相手の端末では何も戻らない
+  const restoreMusic = useMusicStore((state) => state.restore);
+  useEffect(() => {
+    void restoreMusic(project.id);
+  }, [restoreMusic, project.id]);
+
   return (
-    <div className="flex h-dvh flex-col overflow-clip pb-[max(24px,env(safe-area-inset-bottom))]">
-      <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col overflow-clip md:max-[1199px]:max-w-3xl min-[1200px]:max-w-[1400px]">
-        <EditorHeader project={project} />
+    <SceneScrubProvider>
+      <div className="flex h-dvh flex-col overflow-clip pb-[max(24px,env(safe-area-inset-bottom))]">
+        <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col overflow-clip md:max-[1199px]:max-w-3xl min-[1200px]:max-w-[1400px]">
+          <EditorHeader project={project} />
 
-        <div className="flex min-h-0 flex-1 gap-3 px-3.5 pb-1 md:gap-4 md:px-4">
-          {/* 3ペインのときだけ、シーンを左のレールに出す */}
-          <div className="hidden min-[1200px]:flex min-[1200px]:min-h-0">
-            <SceneSidebar project={project} />
-          </div>
+          <div className="flex min-h-0 flex-1 gap-3 px-3.5 pb-1 md:gap-4 md:px-4">
+            {/* 3ペインのときだけ、シーンを左のレールに出す */}
+            <div className="hidden min-[1200px]:flex min-[1200px]:min-h-0">
+              <SceneSidebar project={project} />
+            </div>
 
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-            <CanvasBoard
-              project={project}
-              initialDancers={initialDancers}
-              initialScenes={initialScenes}
-              initialPositions={initialPositions}
-              isGuest={isGuest}
-            />
-          </div>
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+              <CanvasBoard
+                project={project}
+                initialDancers={initialDancers}
+                initialScenes={initialScenes}
+                initialPositions={initialPositions}
+                isGuest={isGuest}
+              />
+            </div>
 
-          {/* 2ペインはシーン/ダンサーをタブで、3ペインはダンサー専用。
+            {/* 2ペインはシーン/ダンサーをタブで、3ペインはダンサー専用。
               どちらを出すかはCSSでしか判定できないため両方描いて切り替える
               「768以上かつ1199以下」を範囲で指定している。
               `md:flex` と `min-[1200px]:hidden` を並べる書き方では、
               どちらが後にCSSへ出るかに結果が左右されてしまう
               (テーマに足したブレークポイントは md より前に出た) */}
-          <div className="hidden md:max-[1199px]:flex md:max-[1199px]:min-h-0">
-            <EditorSidePanel project={project} showScenes />
+            <div className="hidden md:max-[1199px]:flex md:max-[1199px]:min-h-0">
+              <EditorSidePanel project={project} showScenes />
+            </div>
+            <div className="hidden min-[1200px]:flex min-[1200px]:min-h-0">
+              <EditorSidePanel project={project} showScenes={false} />
+            </div>
           </div>
-          <div className="hidden min-[1200px]:flex min-[1200px]:min-h-0">
-            <EditorSidePanel project={project} showScenes={false} />
-          </div>
-        </div>
 
-        {/* インスペクターとヒントはドックの直上に浮かせる(absolute)ため、
+          {/* インスペクターとヒントはドックの直上に浮かせる(absolute)ため、
             位置の基準としてこのラッパーが要る。ダンサーを選んでいる間は
             インスペクターが同じ場所を使うので、ヒントは出さない */}
-        <div className="relative shrink-0">
-          <TemplateHint />
-          <DancerInspector />
-          <SceneDock project={project} />
-        </div>
+          <div className="relative shrink-0">
+            <DancerInspector />
+            <SceneDock project={project} />
+          </div>
 
-        <AddDancerSheet project={project} />
-        <TemplateSheet project={project} />
-        <EditorShortcuts />
-        <UnsavedChangesGuard />
+          <AddDancerSheet project={project} />
+          <TemplateSheet project={project} />
+          <EditorShortcuts />
+          <UnsavedChangesGuard />
+        </div>
       </div>
-    </div>
+    </SceneScrubProvider>
   );
 }

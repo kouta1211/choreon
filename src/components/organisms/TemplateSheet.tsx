@@ -64,8 +64,8 @@ export function TemplateSheet({ project }: Props) {
   const shownCount = pickedCount ?? dancerCount;
   const templates = templatesForCount(shownCount);
   const picked = pickedIndex === null ? null : (templates[pickedIndex] ?? null);
-  const dancerColors = onStage.map(
-    (position) => themedDancerColor(dancers[position.dancerId]?.color ?? ""),
+  const dancerColors = onStage.map((position) =>
+    themedDancerColor(dancers[position.dancerId]?.color ?? ""),
   );
 
   // 開き直したときに前回の選択が残っていると、意図しない形を当ててしまう
@@ -292,7 +292,9 @@ function TransformControls({
           type="button"
           role="switch"
           aria-checked={transform[item.key]}
-          onClick={() => onChange({ ...transform, [item.key]: !transform[item.key] })}
+          onClick={() =>
+            onChange({ ...transform, [item.key]: !transform[item.key] })
+          }
           className={`flex h-8 items-center gap-1.5 rounded-full border px-3 text-[11px] font-medium whitespace-nowrap ${
             transform[item.key]
               ? "border-accent bg-accent/12 text-accent-soft"

@@ -1,6 +1,11 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import {
+  useState,
+  useSyncExternalStore,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import { Mail } from "lucide-react";
 import {
   signInWithPassword,
@@ -44,10 +49,32 @@ export function AuthForm({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEmailSent, setIsEmailSent] = useState(false);
+  // Supabaseの既定の認証フロー(PKCE)は、鍵の作成に crypto.subtle を使う。
+  // このAPIは【セキュアコンテキスト限定】で、ブラウザは localhost と https
+  // だけをセキュアとみなす。同じLANのスマートフォンから http://192.168.x.x で
+  // 開くとここから外れ、認証だけが黙って失敗していた。
+  //
+  // 画面には「メールアドレスまたはパスワードが正しくありません」としか
+  // 出ていなかったため、正しく入力しているのに入れない、という見え方をする。
+  // 原因と対処をその場に出す。
+  //
+  // useSyncExternalStore を使うのは、サーバーには window が無く、
+  // 「サーバーでは false・ブラウザでは実際の値」を宣言的に書ける唯一の形
+  // だから。値は途中で変わらないので購読はしない
+  const isInsecureOrigin = useSyncExternalStore(
+    subscribeToNothing,
+    () => !window.isSecureContext,
+    () => false,
+  );
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+
+    // ここで止めないと、Supabase側の内部エラーが
+    // 「パスワードが違う」として表示されてしまう
+    if (isInsecureOrigin) return;
+
     setIsSubmitting(true);
 
     if (mode === "login") {
@@ -127,6 +154,23 @@ export function AuthForm({
     <form onSubmit={handleSubmit} className="space-y-3.5">
       {intro}
 
+      {isInsecureOrigin && (
+        <p
+          role="status"
+          className="rounded-[calc(var(--radius)*0.6667)] border border-amber-500/40 bg-amber-500/10 px-3 py-2.5 text-[12px] leading-relaxed text-amber-200"
+        >
+          この画面は暗号化されていない接続で開かれているため、ログインできません。
+          <span className="mt-1 block text-amber-200/80">
+            ブラウザは <code className="font-mono">https</code> と{" "}
+            <code className="font-mono">localhost</code> だけを安全とみなし、
+            認証に必要な機能をそれ以外で無効にします。実機で試すときは
+            <code className="font-mono"> npm run dev:https </code>
+            で立ち上げ、<code className="font-mono">https://</code>{" "}
+            で開いてください。
+          </span>
+        </p>
+      )}
+
       <AuthField
         label="メールアドレス"
         id={`${mode}-email`}
@@ -160,7 +204,9 @@ export function AuthForm({
       </AuthSubmitButton>
 
       <p className="text-center text-xs text-fg-muted">
-        {mode === "signup" ? "既にアカウントをお持ちの方は " : "アカウントをお持ちでない方は "}
+        {mode === "signup"
+          ? "既にアカウントをお持ちの方は "
+          : "アカウントをお持ちでない方は "}
         <button
           type="button"
           onClick={() => {
@@ -174,4 +220,9 @@ export function AuthForm({
       </p>
     </form>
   );
+}
+
+/** isSecureContext は読み込み後に変わらないので、購読は何もしない */
+function subscribeToNothing() {
+  return () => {};
 }

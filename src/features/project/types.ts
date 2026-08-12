@@ -26,5 +26,9 @@ export type ProjectSummary = Project & {
   /** ダンサーの色。カードのドット列に使う(登録順) */
   dancerColors: string[];
   /** 先頭シーンの配置。カードのサムネイルに描く */
-  firstScenePositions: { xCoordinate: number; yCoordinate: number; color: string }[];
+  firstScenePositions: {
+    xCoordinate: number;
+    yCoordinate: number;
+    color: string;
+  }[];
 };

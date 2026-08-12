@@ -4,7 +4,11 @@ import { CanvasBoard } from "./CanvasBoard";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import type { Project } from "@/features/project/types";
 
-import { makeDancer, makeProject as makeBaseProject, makeScene } from "@/test/factories";
+import {
+  makeDancer,
+  makeProject as makeBaseProject,
+  makeScene,
+} from "@/test/factories";
 
 // このファイルは8×8のステージ前提で座標を数えている
 function makeProject(overrides: Partial<Project> = {}): Project {

@@ -23,10 +23,7 @@ export type FormationTemplate = {
 const BASE_WIDTH = 8;
 const BASE_HEIGHT = 6;
 
-function template(
-  name: string,
-  points: [number, number][],
-): FormationTemplate {
+function template(name: string, points: [number, number][]): FormationTemplate {
   return {
     name,
     count: points.length,
@@ -656,9 +653,7 @@ export function selectPointsForDancers(
 ): FormationPoint[] {
   if (points.length <= dancerCount) return points;
 
-  return [...points]
-    .sort((a, b) => b.y - a.y)
-    .slice(0, dancerCount);
+  return [...points].sort((a, b) => b.y - a.y).slice(0, dancerCount);
 }
 
 type Placed = { dancerId: string; x: number; y: number };
@@ -685,8 +680,8 @@ export function assignDancersToPoints(
   const order = [...dancers].sort((a, b) => {
     const nearest = (dancer: (typeof dancers)[number]) =>
       Math.min(
-        ...points.map((point) =>
-          (point.x - dancer.x) ** 2 + (point.y - dancer.y) ** 2,
+        ...points.map(
+          (point) => (point.x - dancer.x) ** 2 + (point.y - dancer.y) ** 2,
         ),
       );
     return nearest(a) - nearest(b);

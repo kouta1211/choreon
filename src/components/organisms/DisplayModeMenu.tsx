@@ -2,19 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  Eclipse,
-  FlipHorizontal2,
   Grid3x3,
+  Hand,
   Palette,
-  Rows3,
   SlidersHorizontal,
+  EyeOff,
   Spline,
+  Target,
 } from "lucide-react";
-import {
-  useUIStore,
-  type GridMode,
-  type RailMode,
-} from "@/features/canvas/store/useUIStore";
+import { useUIStore, type GridMode } from "@/features/canvas/store/useUIStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useThemeStore } from "@/features/theme/store/useThemeStore";
 import { projectIdFromPath } from "@/features/theme/lib/themePreference";
@@ -35,46 +31,33 @@ import { Switch } from "@/components/atoms/Switch";
  * 唯一「顔被りチェックがオンだが誰も被っていない」状態だけは
  * 見分けが付かないため、オンの数をボタンにバッジで出している。
  */
-const GRID_MODES: {
-  value: GridMode;
-  label: string;
-  description: string;
-}[] = [
-  { value: "square", label: "格子", description: "1マス=約90cm" },
-  { value: "circle", label: "同心円", description: "中心からの距離と角度で読む。円や弧の隊形向け" },
-  { value: "none", label: "なし", description: "目盛りを敷かない" },
-];
-
-const RAIL_MODES: {
-  value: RailMode;
-  label: string;
-  description: string;
-}[] = [
-  { value: "dots", label: "現在地", description: "曲全体のどこにいるかを1本で示す" },
-  {
-    value: "lanes",
-    label: "レーン",
-    description: "1人1本の線。太い線=動く区間、丸=止まる位置",
-  },
+const GRID_MODES: { value: GridMode; label: string }[] = [
+  { value: "square", label: "格子" },
+  { value: "circle", label: "同心円" },
+  { value: "none", label: "なし" },
 ];
 
 export function DisplayModeMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const isSymmetryMode = useUIStore((state) => state.isSymmetryMode);
-  const toggleSymmetryMode = useUIStore((state) => state.toggleSymmetryMode);
   const gridMode = useUIStore((state) => state.gridMode);
   const setGridMode = useUIStore((state) => state.setGridMode);
-  const railMode = useUIStore((state) => state.railMode);
-  const setRailMode = useUIStore((state) => state.setRailMode);
   const isPathVisible = useUIStore((state) => state.isPathVisible);
   const togglePathVisible = useUIStore((state) => state.togglePathVisible);
+  const isStageMarksVisible = useUIStore((state) => state.isStageMarksVisible);
+  const toggleStageMarks = useUIStore((state) => state.toggleStageMarks);
   const isBlindSpotCheckVisible = useUIStore(
     (state) => state.isBlindSpotCheckVisible,
   );
-  const toggleBlindSpotCheckVisible = useUIStore(
-    (state) => state.toggleBlindSpotCheckVisible,
+  const toggleBlindSpotCheck = useUIStore(
+    (state) => state.toggleBlindSpotCheck,
+  );
+  const isSwipeSceneChangeEnabled = useUIStore(
+    (state) => state.isSwipeSceneChangeEnabled,
+  );
+  const toggleSwipeSceneChange = useUIStore(
+    (state) => state.toggleSwipeSceneChange,
   );
   const dancerCount = useProjectStore(
     (state) => Object.keys(state.dancers).length,
@@ -96,8 +79,9 @@ export function DisplayModeMenu() {
   const setThemeProjectId = useThemeStore((state) => state.setProjectId);
   const isThemeLoaded = useThemeStore((state) => state.isLoaded);
   const themeProjectId = useThemeStore((state) => state.projectId);
-  const hasProjectOverride = useThemeStore((state) =>
-    state.projectId !== null && state.projectId in state.preference.byProject,
+  const hasProjectOverride = useThemeStore(
+    (state) =>
+      state.projectId !== null && state.projectId in state.preference.byProject,
   );
   const setProjectOverride = useThemeStore((state) => state.setProjectOverride);
 
@@ -117,13 +101,6 @@ export function DisplayModeMenu() {
 
   const modes = [
     {
-      label: "シンメトリーモード",
-      description: "動かすと左右の相手も連動する",
-      icon: FlipHorizontal2,
-      checked: isSymmetryMode,
-      onChange: toggleSymmetryMode,
-    },
-    {
       label: "導線を表示",
       description: "次のシーンへの動きを線で描く",
       icon: Spline,
@@ -132,10 +109,24 @@ export function DisplayModeMenu() {
     },
     {
       label: "顔被りチェック",
-      description: "手前の人に隠れる人を赤くする",
-      icon: Eclipse,
+      description: "手前の人の真後ろに入っている人に印を出す",
+      icon: EyeOff,
       checked: isBlindSpotCheckVisible,
-      onChange: toggleBlindSpotCheckVisible,
+      onChange: toggleBlindSpotCheck,
+    },
+    {
+      label: "バミリ",
+      description: "全シーンの立ち位置を床に重ねて出す",
+      icon: Target,
+      checked: isStageMarksVisible,
+      onChange: toggleStageMarks,
+    },
+    {
+      label: "払ってシーンを送る",
+      description: "ステージを横にドラッグして前後のシーンへ",
+      icon: Hand,
+      checked: isSwipeSceneChangeEnabled,
+      onChange: toggleSwipeSceneChange,
     },
   ];
   // 目盛りは「出す/出さない」ではなく3択なので、オンの数には数えない。
@@ -211,36 +202,7 @@ export function DisplayModeMenu() {
                 ))}
               </span>
             </div>
-            <p className="px-2 pb-2 text-[10.5px] text-fg-muted">
-              {GRID_MODES.find((option) => option.value === gridMode)?.description}
-            </p>
 
-            {/* 下端のレール。空間(ステージ)では読めない「誰がいつ動くか」を
-                時間の軸で出すかどうか。目盛りと同じ形の切り替えにしている */}
-            <div className="flex items-center gap-2 px-2 py-1.5">
-              <Rows3 size={15} className="shrink-0 text-fg-muted" />
-              <span className="flex-1 text-[12.5px] text-fg">下のレール</span>
-              <span className="flex shrink-0 overflow-hidden rounded-full border border-line-strong">
-                {RAIL_MODES.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    aria-pressed={railMode === option.value}
-                    onClick={() => setRailMode(option.value)}
-                    className={`h-7 px-2.5 text-[11px] font-medium whitespace-nowrap ${
-                      railMode === option.value
-                        ? "bg-accent/12 text-accent-soft"
-                        : "text-fg-sub"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </span>
-            </div>
-            <p className="px-2 pb-2 text-[10.5px] text-fg-muted">
-              {RAIL_MODES.find((option) => option.value === railMode)?.description}
-            </p>
             {modes.map((mode) => (
               <Switch
                 key={mode.label}
@@ -258,10 +220,7 @@ export function DisplayModeMenu() {
                 対象のプロジェクトが必要なので、下書き(ゲスト)では出せない */}
             {isThemeLoaded && themeProjectId !== null && (
               <>
-                <span
-                  aria-hidden
-                  className="my-1 block h-px bg-line"
-                />
+                <span aria-hidden className="my-1 block h-px bg-line" />
                 <Switch
                   checked={hasProjectOverride}
                   onChange={() => setProjectOverride(!hasProjectOverride)}

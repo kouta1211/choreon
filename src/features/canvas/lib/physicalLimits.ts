@@ -1,34 +1,80 @@
 /**
- * シーン間の移動距離が、人間が現実的に移動できる範囲を超えていないかを判定する。
- * ステージ座標系のユニット距離を実寸(メートル)に換算し、閾値と比較する。
+ * シーン間の移動が、人間に可能な速さを超えていないかを判定する。
+ * ステージ座標系のユニット距離を実寸(メートル)に換算し、
+ * その区間に与えられた秒数で割って速さを出す。
+ *
+ * 以前は距離だけを見ていた(8mを超えたら警告)。しかし同じ8mでも、
+ * 0.5秒で行けと言われれば不可能で、6秒あれば歩いて間に合う。
+ * 距離だけの判定は、ゆっくりの場面で出しすぎ・速い場面で見逃す、
+ * という両方向に外れていた。
  */
 
 /** ステージの1ユニットあたりの実寸(メートル)。schema.sqlのコメント通り、
  * 1マス=約90cmという想定に合わせている */
 const METERS_PER_STAGE_UNIT = 0.9;
 
-/** これを超える移動は、シーン間の短い時間では現実的に不可能とみなす目安 */
-const MAX_REALISTIC_DISTANCE_METERS = 8;
+/**
+ * 舞台上で出せる速さの目安(m/s)。
+ *
+ * 早歩きが約2m/s、全力疾走が7m/s前後。踊りながらの移動で、隊形として
+ * 成立する範囲の上限として 3.5m/s を採っている(小走りに相当)。
+ * これを超える指示は「間に合わない」というより「走ることになる」に近く、
+ * 振付として気づけることに意味がある。
+ */
+const MAX_REALISTIC_SPEED_METERS_PER_SECOND = 3.5;
 
-export function findExcessiveMoveDancerIds(
-  currentPositions: Record<string, { xCoordinate: number; yCoordinate: number }>,
-  nextPositions: Record<string, { xCoordinate: number; yCoordinate: number }>,
+/** そのダンサーの移動が速すぎるかどうかと、実際の数値 */
+export type MoveStrain = {
+  distanceMeters: number;
+  seconds: number;
+  speedMetersPerSecond: number;
+  isExcessive: boolean;
+};
+
+export function measureMove(
+  from: { xCoordinate: number; yCoordinate: number },
+  to: { xCoordinate: number; yCoordinate: number },
+  seconds: number,
   metersPerUnit: number = METERS_PER_STAGE_UNIT,
-  maxRealisticDistanceMeters: number = MAX_REALISTIC_DISTANCE_METERS,
-): Set<string> {
-  const flagged = new Set<string>();
+  maxSpeed: number = MAX_REALISTIC_SPEED_METERS_PER_SECOND,
+): MoveStrain {
+  const dx = to.xCoordinate - from.xCoordinate;
+  const dy = to.yCoordinate - from.yCoordinate;
+  const distanceMeters = Math.hypot(dx, dy) * metersPerUnit;
+  // 秒数はDB側で0より大きいことが保証されているが、念のため0除算を避ける
+  const safeSeconds = seconds > 0 ? seconds : 0.1;
+  const speed = distanceMeters / safeSeconds;
+
+  return {
+    distanceMeters,
+    seconds: safeSeconds,
+    speedMetersPerSecond: speed,
+    isExcessive: speed > maxSpeed,
+  };
+}
+
+/**
+ * 次のシーンへの移動が速すぎるダンサーを、その数値ごと返す。
+ * 警告の文面に距離と速さを出すため、IDの集合ではなくMapにしている。
+ */
+export function findExcessiveMoves(
+  currentPositions: Record<
+    string,
+    { xCoordinate: number; yCoordinate: number }
+  >,
+  nextPositions: Record<string, { xCoordinate: number; yCoordinate: number }>,
+  seconds: number,
+  metersPerUnit: number = METERS_PER_STAGE_UNIT,
+  maxSpeed: number = MAX_REALISTIC_SPEED_METERS_PER_SECOND,
+): Map<string, MoveStrain> {
+  const flagged = new Map<string, MoveStrain>();
 
   for (const [id, from] of Object.entries(currentPositions)) {
     const to = nextPositions[id];
     if (!to) continue;
 
-    const dx = to.xCoordinate - from.xCoordinate;
-    const dy = to.yCoordinate - from.yCoordinate;
-    const distanceMeters = Math.sqrt(dx * dx + dy * dy) * metersPerUnit;
-
-    if (distanceMeters > maxRealisticDistanceMeters) {
-      flagged.add(id);
-    }
+    const strain = measureMove(from, to, seconds, metersPerUnit, maxSpeed);
+    if (strain.isExcessive) flagged.set(id, strain);
   }
 
   return flagged;

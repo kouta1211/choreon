@@ -1,8 +1,9 @@
 "use client";
 
-import type { ReactNode, Ref } from "react";
+import type { PointerEvent as ReactPointerEvent, ReactNode, Ref } from "react";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { ConcentricGuides } from "@/components/molecules/ConcentricGuides";
+import { MARKER_SIZE } from "@/features/dancer/constants";
 
 /**
  * 「空いている領域に、縦横比を保ったまま目一杯収まる幅」を返す。
@@ -14,9 +15,19 @@ import { ConcentricGuides } from "@/components/molecules/ConcentricGuides";
  *
  * そこで「入る方の小さい側」をmin()で直接指定する。親に
  * container-type:size を付けてあるので、cqw/cqhで空き領域の縦横を参照できる。
+ *
+ * ■ 縁に立つ人のぶんを空けてある
+ * ダンサーの丸は座標を中心に描くので、ステージの縁ぴったりに立つと
+ * 半分(MARKER_SIZE / 2)が外へはみ出す。ステージを空き領域いっぱいに
+ * 広げると、そのはみ出したぶんが画面の外に出て丸が欠けて見えた
+ * (スマートフォンでは横幅で決まるため必ずこうなる)。
+ * 左右に半径ぶんずつ空けておけば、縁に立っても丸が最後まで見える。
  */
-function stageWidthRule(widthUnits: number, heightUnits: number): string {
-  return `min(100cqw, calc(100cqh * ${widthUnits} / ${heightUnits}))`;
+export function stageWidthRule(
+  widthUnits: number,
+  heightUnits: number,
+): string {
+  return `min(calc(100cqw - ${MARKER_SIZE}px), calc((100cqh - ${MARKER_SIZE}px) * ${widthUnits} / ${heightUnits}))`;
 }
 
 type Props = {
@@ -34,12 +45,24 @@ type Props = {
    * ステージの中には重ねない — 常設のボタンをステージ面に置くと、
    * その下にダンサーが来たときに隠れてしまうため */
   belowStageLeft?: ReactNode;
-  /** シンメトリーモード中、中心(左右対称の軸)に薄い縦線を表示する */
-  showCenterline?: boolean;
   /** ドラッグ量(px)をステージ座標系に換算する際、実際の描画サイズを
    * 読み取れるためのための参照(React 19からforwardRef不要でrefを
    * 通常のpropsとして受け取れる) */
   ref?: Ref<HTMLDivElement>;
+  /** ステージを横に払って前後のシーンへ移るジェスチャの受け口。
+   * 渡された場合だけ、ブラウザに横スワイプを奪われないようにする */
+  scrubHandlers?: {
+    onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void;
+    onPointerMove: (event: ReactPointerEvent<HTMLDivElement>) => void;
+    onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => void;
+  };
+  /** 払ってシーンを送る操作が有効か。有効なときだけ、横スワイプを
+   * ブラウザに奪われないようにする(切っているのに touch-action を
+   * 潰すと、ページの操作を理由なく制限することになる) */
+  isSwipeEnabled?: boolean;
+  /** スクラブの進み具合。トラックと一緒に動いてしまわないよう、
+   * 切り落とす層の外側に重ねる */
+  scrubIndicator?: ReactNode;
 };
 
 /**
@@ -57,8 +80,10 @@ export function Stage({
   children,
   overlay,
   belowStageLeft,
-  showCenterline = false,
   ref,
+  scrubHandlers,
+  isSwipeEnabled = false,
+  scrubIndicator,
 }: Props) {
   const gridMode = useUIStore((state) => state.gridMode);
   const focusedDancerId = useUIStore((state) => state.focusedDancerId);
@@ -69,7 +94,12 @@ export function Stage({
       <p className="text-center text-[10px] font-semibold tracking-[0.16em] text-fg-muted">
         バックステージ
       </p>
-      <div className="flex min-h-0 w-full flex-1 items-center justify-center [container-type:size]">
+      <div
+        className={`relative flex min-h-0 w-full flex-1 items-center justify-center [container-type:size] ${
+          isSwipeEnabled ? "touch-none" : ""
+        }`}
+        {...scrubHandlers}
+      >
         <div
           ref={ref}
           className={`relative touch-none rounded-stage border-2 border-accent bg-stage transition-colors ${
@@ -104,13 +134,6 @@ export function Stage({
               />
             </div>
           )}
-          {showCenterline && (
-            <div
-              data-testid="stage-centerline"
-              aria-hidden
-              className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-accent/50"
-            />
-          )}
           {/* 格子スナップが効いている間、吸着先の格子線をハイライトする。
               縦横どちらも出ていれば交差点への吸着だと分かる */}
           {dragSnapLine.x !== null && (
@@ -137,12 +160,22 @@ export function Stage({
           )}
           {children}
           {overlay}
+          {/* ステージの左下の角に、外側から寄せて置く(top-full = 枠のすぐ下)。
+              ステージ【面】には重ねない — 常設のボタンを面に置くと、その下に
+              ダンサーが来たときに隠れてしまうため。
+              以前は「客席側」の行に置いていたが、あの行は空き領域の最下端に
+              あり、ステージは空き領域の中央に置かれる。縦に余る画面ほど
+              ステージから遠くへ離れてしまい、スマートフォンでは何十pxも下に
+              取り残されていた。枠に付ければ、どの画面幅でも同じ距離に付く */}
+          {belowStageLeft && (
+            <span className="absolute top-full left-0 mt-1.5">
+              {belowStageLeft}
+            </span>
+          )}
         </div>
+        {scrubIndicator}
       </div>
-      <div className="relative flex w-full items-center justify-center">
-        {belowStageLeft && (
-          <span className="absolute left-0">{belowStageLeft}</span>
-        )}
+      <div className="flex w-full items-center justify-center">
         <p className="text-center text-[10px] font-semibold tracking-[0.16em] text-fg-muted">
           客席側
         </p>

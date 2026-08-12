@@ -10,9 +10,7 @@ export function getNextSceneId(
   scenes: Scene[],
   currentSceneId: string | null,
 ): string | null {
-  const currentIndex = scenes.findIndex(
-    (scene) => scene.id === currentSceneId,
-  );
+  const currentIndex = scenes.findIndex((scene) => scene.id === currentSceneId);
   if (currentIndex === -1 || currentIndex === scenes.length - 1) {
     return null;
   }

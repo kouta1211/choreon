@@ -4,6 +4,7 @@ import { LayoutGrid } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { Tooltip } from "@/components/atoms/Tooltip";
+import { useTemplateSuggestion } from "@/features/canvas/hooks/useTemplateSuggestion";
 
 /**
  * フォーメーションのテンプレートを開く入口。ステージ【直下】の行の左端。
@@ -26,6 +27,9 @@ export function TemplateButton() {
       Object.keys(state.positionsBySceneId[selectedSceneId ?? ""] ?? {}).length,
   );
   const isAvailable = dancerCount >= 2;
+  // 「前のシーンと同じ配置のまま」のときだけ、押す価値があることを点で示す。
+  // 以前は同じことを横幅いっぱいのバナーでやっていた(useTemplateSuggestion参照)
+  const isSuggested = useTemplateSuggestion();
 
   return (
     <Tooltip label="フォーメーションから選ぶ" placement="top" align="left">
@@ -33,7 +37,11 @@ export function TemplateButton() {
         type="button"
         onClick={() => setTemplateSheetOpen(true)}
         disabled={!isAvailable}
-        aria-label="フォーメーションから選ぶ"
+        aria-label={
+          isSuggested
+            ? "フォーメーションから選ぶ(前のシーンと同じ配置のままです)"
+            : "フォーメーションから選ぶ"
+        }
         className="relative flex h-11 w-11 items-center justify-center rounded-[calc(var(--radius)*1.0833)] border border-line-strong bg-surface/90 text-fg disabled:pointer-events-none disabled:opacity-30"
       >
         <LayoutGrid size={18} />
@@ -44,6 +52,12 @@ export function TemplateButton() {
           >
             {dancerCount}
           </span>
+        )}
+        {isSuggested && (
+          <span
+            aria-hidden
+            className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-surface bg-accent"
+          />
         )}
       </button>
     </Tooltip>

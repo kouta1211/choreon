@@ -34,12 +34,10 @@ export function EditorSidePanel({ project, showScenes }: Props) {
     <aside className="flex w-[288px] shrink-0 flex-col overflow-hidden rounded-xl border border-line bg-surface/60 xl:w-[300px]">
       {showScenes ? (
         <div className="flex shrink-0 gap-1 border-b border-line p-2">
-          {(
-            [
-              { value: "scenes" as const, label: "シーン", count: scenes.length },
-              { value: "dancers" as const, label: "ダンサー" },
-            ]
-          ).map((item) => (
+          {[
+            { value: "scenes" as const, label: "シーン", count: scenes.length },
+            { value: "dancers" as const, label: "ダンサー" },
+          ].map((item) => (
             <button
               key={item.value}
               type="button"

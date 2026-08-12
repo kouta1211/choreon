@@ -113,7 +113,9 @@ describe("DancerInspector", () => {
     await user.type(screen.getByLabelText("ダンサー名"), "みゆ{Enter}");
 
     await waitFor(() => {
-      expect(useProjectStore.getState().dancers["dancer-1"].name).toBe("あいり");
+      expect(useProjectStore.getState().dancers["dancer-1"].name).toBe(
+        "あいり",
+      );
     });
     expect(useUIStore.getState().toast?.type).toBe("error");
   });
@@ -189,7 +191,10 @@ describe("DancerInspector", () => {
 
   it("フォーカス中のダンサーを削除するとフォーカスも解除される", async () => {
     useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
-    useUIStore.setState({ selectedDancerId: "dancer-1", focusedDancerId: "dancer-1" });
+    useUIStore.setState({
+      selectedDancerId: "dancer-1",
+      focusedDancerId: "dancer-1",
+    });
     vi.spyOn(dancersApi, "deleteDancer").mockResolvedValue(undefined);
     const user = userEvent.setup();
     renderInspector();

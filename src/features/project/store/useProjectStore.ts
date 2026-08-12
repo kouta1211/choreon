@@ -74,7 +74,10 @@ type ProjectState = {
   removeScene: (sceneId: string) => void;
   renameScene: (sceneId: string, name: string) => void;
   reorderScenes: (orderedSceneIds: string[]) => void;
-  updateSceneDuration: (sceneId: string, transitionDurationSeconds: number) => void;
+  updateSceneDuration: (
+    sceneId: string,
+    transitionDurationSeconds: number,
+  ) => void;
 
   // --- Position ---
   // ドラッグ操作の確定時(dnd-kitのonDragEnd)に1回だけ呼ばれる想定。
@@ -139,13 +142,17 @@ export const useProjectStore = create<ProjectState>((set) => ({
 
   setMusicOffset: (musicOffsetSeconds) =>
     set((state) =>
-      state.project ? { project: { ...state.project, musicOffsetSeconds } } : {},
+      state.project
+        ? { project: { ...state.project, musicOffsetSeconds } }
+        : {},
     ),
 
   // 既にtrueなら書き換えない。この関数は編集のたびに呼ばれるので、毎回
   // set()すると購読しているコンポーネント(離脱ガード)が無駄に再レンダーされる
   markUnsaved: () =>
-    set((state) => (state.hasUnsavedChanges ? {} : { hasUnsavedChanges: true })),
+    set((state) =>
+      state.hasUnsavedChanges ? {} : { hasUnsavedChanges: true },
+    ),
 
   markSaved: () => set({ isGuest: false, hasUnsavedChanges: false }),
 
@@ -198,9 +205,7 @@ export const useProjectStore = create<ProjectState>((set) => ({
   updateSceneDuration: (sceneId, transitionDurationSeconds) =>
     set((state) => ({
       scenes: state.scenes.map((scene) =>
-        scene.id === sceneId
-          ? { ...scene, transitionDurationSeconds }
-          : scene,
+        scene.id === sceneId ? { ...scene, transitionDurationSeconds } : scene,
       ),
     })),
 

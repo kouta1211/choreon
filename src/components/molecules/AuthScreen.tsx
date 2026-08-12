@@ -37,10 +37,7 @@ export function AuthScreen({ children }: Props) {
 
       <div className="relative w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center">
-          <span
-            aria-hidden
-            className="relative mb-4 block h-[31px] w-[97px]"
-          >
+          <span aria-hidden className="relative mb-4 block h-[31px] w-[97px]">
             {BRAND_DOTS.map((dot) => (
               <span
                 key={dot.left}
@@ -84,9 +81,7 @@ export function AuthField({
       <input
         {...props}
         className={`h-[46px] rounded-[calc(var(--radius)*0.9167)] border bg-surface-strong px-3.5 text-sm text-fg-strong focus:ring-[3px] focus:ring-accent/16 focus:outline-none ${
-          hasError
-            ? "border-red-600"
-            : "border-line-strong focus:border-accent"
+          hasError ? "border-red-600" : "border-line-strong focus:border-accent"
         }`}
       />
     </label>

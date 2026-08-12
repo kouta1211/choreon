@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   clamp,
-  findSymmetryPairId,
   isCloseToInteger,
-  mirrorXCoordinate,
   pixelDeltaToUnitDelta,
-  snapToCenterline,
   snapToGrid,
+  snapRotation,
   unitDeltaToPixelDelta,
 } from "./dragMath";
 
@@ -74,43 +72,32 @@ describe("isCloseToInteger", () => {
   });
 });
 
-describe("mirrorXCoordinate", () => {
-  it("ステージ幅を軸に左右反転した座標を返す", () => {
-    expect(mirrorXCoordinate(2, 8)).toBe(6);
-    expect(mirrorXCoordinate(6, 8)).toBe(2);
+describe("snapRotation", () => {
+  it("刻みのすぐ近くなら、ちょうどの角度に吸着する", () => {
+    expect(snapRotation(3)).toBe(0);
+    expect(snapRotation(88)).toBe(90);
+    expect(snapRotation(48)).toBe(45);
+    expect(snapRotation(272)).toBe(270);
   });
 
-  it("中心にいる場合はそのまま中心を返す", () => {
-    expect(mirrorXCoordinate(4, 8)).toBe(4);
-  });
-});
-
-describe("snapToCenterline", () => {
-  it("中心線からtolerance以内なら中心線ぴったりに吸着する", () => {
-    expect(snapToCenterline(4.2, 8, 0.3)).toBe(4);
-    expect(snapToCenterline(3.8, 8, 0.3)).toBe(4);
+  it("離れていれば指の角度をそのまま返す", () => {
+    expect(snapRotation(20)).toBe(20);
+    expect(snapRotation(60)).toBe(60);
   });
 
-  it("tolerance範囲外ならそのままの値を返す", () => {
-    expect(snapToCenterline(3, 8, 0.3)).toBe(3);
-  });
-});
-
-describe("findSymmetryPairId", () => {
-  it("Y座標が最も近い他のダンサーをペアとして返す", () => {
-    const positions = {
-      a: { yCoordinate: 2 },
-      b: { yCoordinate: 2.1 },
-      c: { yCoordinate: 6 },
-    };
-    expect(findSymmetryPairId(positions, "a")).toBe("b");
+  // 一周をまたぐ側。359度は0度の「すぐ手前」であって、遠い角度ではない
+  it("0度をまたいでも吸着する", () => {
+    expect(snapRotation(357)).toBe(0);
+    expect(snapRotation(2)).toBe(0);
   });
 
-  it("他にダンサーがいない場合はnullを返す", () => {
-    expect(findSymmetryPairId({ a: { yCoordinate: 2 } }, "a")).toBeNull();
+  it("しきい値ちょうどは吸着させる", () => {
+    expect(snapRotation(10)).toBe(0);
+    expect(snapRotation(11)).toBe(11);
   });
 
-  it("対象のダンサー自身の位置情報が無ければnullを返す", () => {
-    expect(findSymmetryPairId({ b: { yCoordinate: 2 } }, "a")).toBeNull();
+  it("刻みと許容範囲は差し替えられる", () => {
+    expect(snapRotation(80, 90, 15)).toBe(90);
+    expect(snapRotation(80, 90, 5)).toBe(80);
   });
 });

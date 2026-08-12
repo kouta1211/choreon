@@ -14,7 +14,6 @@ function loadStore(isGuest: boolean) {
   useProjectStore.getState().hydrate({ ...snapshot, isGuest });
 }
 
-
 describe("persist", () => {
   it("通常のプロジェクトではSupabaseへ渡して実行する", async () => {
     loadStore(false);

@@ -2,7 +2,12 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import { DraggableDancerIcon } from "./DraggableDancerIcon";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 
