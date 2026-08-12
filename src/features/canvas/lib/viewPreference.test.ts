@@ -14,12 +14,16 @@ describe("parseViewPreference", () => {
     const raw = JSON.stringify({
       gridMode: "circle",
       isPathVisible: true,
+      isStageMarksVisible: true,
+      isBlindSpotCheckVisible: true,
       isSwipeSceneChangeEnabled: true,
     });
 
     expect(parseViewPreference(raw)).toEqual({
       gridMode: "circle",
       isPathVisible: true,
+      isStageMarksVisible: true,
+      isBlindSpotCheckVisible: true,
       isSwipeSceneChangeEnabled: true,
     });
   });

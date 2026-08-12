@@ -24,6 +24,7 @@ import {
 } from "@/features/canvas/constants";
 import type { Dancer } from "@/features/dancer/types";
 import type { MoveStrain } from "@/features/canvas/lib/physicalLimits";
+import type { BlindSpotSpan } from "@/features/canvas/lib/blindSpot";
 
 /** 選択中のダンサーを矢印キーで動かす際の1回あたりの移動量(ステージ座標系のユニット)。
  * Shiftキーを押しながらだとNUDGE_STEP_LARGEを使い、大きく移動できる */
@@ -51,6 +52,10 @@ type Props = {
   curveControlY?: number | null;
   /** 次のシーンへの移動が速すぎるとき、その数値(常時判定)。問題なければnull */
   excessiveMove?: MoveStrain | null;
+  /** 客席から見えなくなる区間。見えているならnull */
+  blindSpot?: BlindSpotSpan | null;
+  /** 区間の秒数(顔被りの警告文で使う) */
+  segmentSeconds?: number;
   /** ステージを横にドラッグしている間の、区間の両端でのこのダンサーの位置
    * (ステージ座標系)。ダンサーは追加したシーンにしか座標を持たないため
    * (AddDancerSheet参照)、途中から出てくる・途中で捌ける人は片側がnullになる。
@@ -123,6 +128,8 @@ function DraggableDancerIconImpl({
   curveControlX,
   curveControlY,
   excessiveMove = null,
+  blindSpot = null,
+  segmentSeconds = 1,
   scrubFromX = null,
   scrubFromY = null,
   scrubToX = null,
@@ -442,6 +449,8 @@ function DraggableDancerIconImpl({
         isRotating={liveRotation !== null}
         isFocused={isFocused}
         excessiveMove={excessiveMove}
+        blindSpot={blindSpot}
+        segmentSeconds={segmentSeconds}
         hasKeyboardFocus={hasKeyboardFocus}
         transitionDurationSeconds={transitionDurationSeconds}
       />

@@ -4,6 +4,8 @@ import { memo } from "react";
 import { motion } from "motion/react";
 import { DancerNameLabel } from "@/components/atoms/DancerNameLabel";
 import { DancerExcessiveMoveBadge } from "@/components/atoms/DancerExcessiveMoveBadge";
+import { DancerBlindSpotBadge } from "@/components/atoms/DancerBlindSpotBadge";
+import type { BlindSpotSpan } from "@/features/canvas/lib/blindSpot";
 import type { MoveStrain } from "@/features/canvas/lib/physicalLimits";
 import { MARKER_SIZE } from "@/features/dancer/constants";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
@@ -46,6 +48,8 @@ function DancerMarkerImpl({
   isHovered = false,
   isDragging = false,
   excessiveMove = null,
+  blindSpot = null,
+  segmentSeconds = 1,
   hasKeyboardFocus = false,
   transitionDurationSeconds = 0.3,
 }: {
@@ -71,6 +75,10 @@ function DancerMarkerImpl({
    * 警告バッジを表示する(常時判定、トグルなし) */
   /** 次のシーンへの移動が速すぎるとき、その数値。問題なければnull */
   excessiveMove?: MoveStrain | null;
+  /** 客席から見えなくなる区間。見えているならnull */
+  blindSpot?: BlindSpotSpan | null;
+  /** 区間の秒数(顔被りの警告文で「何秒目に隠れるか」を出すのに使う) */
+  segmentSeconds?: number;
   /** キーボードフォーカスが当たっているかどうか。isSelectedとは別の状態で、
    * 「今ここにフォーカスがある=矢印キーで動かせる」ことを示すだけの見た目上の
    * ヒント。Tabキーでの巡回は無効にしてある(DraggableDancerIconのtabIndex: -1)
@@ -233,6 +241,13 @@ function DancerMarkerImpl({
         {[...dancer.name][0] ?? ""}
       </span>
       <DancerNameLabel name={dancer.name} />
+      {blindSpot && (
+        <DancerBlindSpotBadge
+          span={blindSpot}
+          dancerName={dancer.name}
+          segmentSeconds={segmentSeconds}
+        />
+      )}
       {excessiveMove && (
         <DancerExcessiveMoveBadge
           strain={excessiveMove}

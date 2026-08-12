@@ -58,6 +58,10 @@ type UIState = {
   focusedDancerId: string | null;
   /** オンの間、選択中シーン→次のシーンへの移動導線をステージ上に描画する */
   isPathVisible: boolean;
+  /** バミリ(全シーンの立ち位置を床に重ねた印)を出すか */
+  isStageMarksVisible: boolean;
+  /** 客席から見えなくなる人(顔被り)を警告するか。移動中も含めて調べる */
+  isBlindSpotCheckVisible: boolean;
   /** ステージを横に払ってシーンを送る操作を受け付けるか */
   isSwipeSceneChangeEnabled: boolean;
   /** シーン移動のアニメーションが進行中か。この間はダンサーを掴ませない
@@ -75,10 +79,6 @@ type UIState = {
   isAddDancerSheetOpen: boolean;
   /** フォーメーションのテンプレートシートを開いているか */
   isTemplateSheetOpen: boolean;
-  /** テンプレートのヒントを×で閉じたシーン。同じシーンでは二度と出さない
-   * (「もう分かっている」という意思表示なので、シーンをまたいで覚える
-   * 必要はないが、同じシーンで何度も出るのは煩わしい) */
-  templateHintDismissedSceneIds: string[];
   /** 表示中の確認ダイアログ。nullなら出ていない */
   confirm: ConfirmRequest | null;
   /** 登録/ログインのモーダル。nullなら出ていない。
@@ -93,6 +93,8 @@ type UIState = {
   clearToast: () => void;
   setFocusedDancer: (dancerId: string | null) => void;
   togglePathVisible: () => void;
+  toggleStageMarks: () => void;
+  toggleBlindSpotCheck: () => void;
   toggleSwipeSceneChange: () => void;
   setIsTransitioning: (isTransitioning: boolean) => void;
   setDragSnapLine: (line: DragSnapLine) => void;
@@ -100,7 +102,6 @@ type UIState = {
   setSceneSheetOpen: (isOpen: boolean) => void;
   setAddDancerSheetOpen: (isOpen: boolean) => void;
   setTemplateSheetOpen: (isOpen: boolean) => void;
-  dismissTemplateHint: (sceneId: string) => void;
   /** 確認ダイアログを出す。実行された場合の処理はrequest.onConfirmに持たせる */
   requestConfirm: (request: ConfirmRequest) => void;
   closeConfirm: () => void;
@@ -133,6 +134,8 @@ function persistFromState(
   persistViewPreference({
     gridMode: state.gridMode,
     isPathVisible: state.isPathVisible,
+    isStageMarksVisible: state.isStageMarksVisible,
+    isBlindSpotCheckVisible: state.isBlindSpotCheckVisible,
     isSwipeSceneChangeEnabled: state.isSwipeSceneChangeEnabled,
     ...changed,
   });
@@ -149,6 +152,8 @@ export const useUIStore = create<UIState>((set) => ({
   toast: null,
   focusedDancerId: null,
   isPathVisible: DEFAULT_VIEW_PREFERENCE.isPathVisible,
+  isStageMarksVisible: DEFAULT_VIEW_PREFERENCE.isStageMarksVisible,
+  isBlindSpotCheckVisible: DEFAULT_VIEW_PREFERENCE.isBlindSpotCheckVisible,
   isSwipeSceneChangeEnabled: DEFAULT_VIEW_PREFERENCE.isSwipeSceneChangeEnabled,
   isTransitioning: false,
   dragSnapLine: { x: null, y: null },
@@ -156,7 +161,6 @@ export const useUIStore = create<UIState>((set) => ({
   isSceneSheetOpen: false,
   isAddDancerSheetOpen: false,
   isTemplateSheetOpen: false,
-  templateHintDismissedSceneIds: [],
   confirm: null,
   authDialogMode: null,
 
@@ -177,6 +181,18 @@ export const useUIStore = create<UIState>((set) => ({
   showToast: (toast) => set({ toast }),
   clearToast: () => set({ toast: null }),
   setFocusedDancer: (dancerId) => set({ focusedDancerId: dancerId }),
+  toggleBlindSpotCheck: () =>
+    set((state) => {
+      const isBlindSpotCheckVisible = !state.isBlindSpotCheckVisible;
+      persistFromState(state, { isBlindSpotCheckVisible });
+      return { isBlindSpotCheckVisible };
+    }),
+  toggleStageMarks: () =>
+    set((state) => {
+      const isStageMarksVisible = !state.isStageMarksVisible;
+      persistFromState(state, { isStageMarksVisible });
+      return { isStageMarksVisible };
+    }),
   setIsTransitioning: (isTransitioning) =>
     set((state) =>
       state.isTransitioning === isTransitioning ? {} : { isTransitioning },
@@ -217,17 +233,6 @@ export const useUIStore = create<UIState>((set) => ({
   setSceneSheetOpen: (isOpen) => set({ isSceneSheetOpen: isOpen }),
   setAddDancerSheetOpen: (isOpen) => set({ isAddDancerSheetOpen: isOpen }),
   setTemplateSheetOpen: (isOpen) => set({ isTemplateSheetOpen: isOpen }),
-  dismissTemplateHint: (sceneId) =>
-    set((state) =>
-      state.templateHintDismissedSceneIds.includes(sceneId)
-        ? {}
-        : {
-            templateHintDismissedSceneIds: [
-              ...state.templateHintDismissedSceneIds,
-              sceneId,
-            ],
-          },
-    ),
   requestConfirm: (request) => set({ confirm: request }),
   closeConfirm: () => set({ confirm: null }),
   openAuthDialog: (mode) => set({ authDialogMode: mode }),

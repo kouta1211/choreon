@@ -26,6 +26,10 @@ export const VIEW_STORAGE_KEY = "choreon.view.v1";
 export type ViewPreference = {
   gridMode: GridMode;
   isPathVisible: boolean;
+  /** バミリ(全シーンの立ち位置を床に重ねた印)を出すか */
+  isStageMarksVisible: boolean;
+  /** 客席から見えなくなる人(顔被り)を警告するか */
+  isBlindSpotCheckVisible: boolean;
   /** ステージを横に払ってシーンを送る操作を受け付けるか。
    * マウスでは「掴んで動かす」より場所を取る操作になってしまうので、
    * 指のある端末だけ既定でオンにする(defaultViewPreference参照) */
@@ -35,6 +39,8 @@ export type ViewPreference = {
 export const DEFAULT_VIEW_PREFERENCE: ViewPreference = {
   gridMode: "square",
   isPathVisible: false,
+  isStageMarksVisible: false,
+  isBlindSpotCheckVisible: false,
   isSwipeSceneChangeEnabled: false,
 };
 
@@ -84,6 +90,14 @@ export function parseViewPreference(raw: string | null): ViewPreference {
       typeof record.isPathVisible === "boolean"
         ? record.isPathVisible
         : fallback.isPathVisible,
+    isStageMarksVisible:
+      typeof record.isStageMarksVisible === "boolean"
+        ? record.isStageMarksVisible
+        : fallback.isStageMarksVisible,
+    isBlindSpotCheckVisible:
+      typeof record.isBlindSpotCheckVisible === "boolean"
+        ? record.isBlindSpotCheckVisible
+        : fallback.isBlindSpotCheckVisible,
     isSwipeSceneChangeEnabled:
       typeof record.isSwipeSceneChangeEnabled === "boolean"
         ? record.isSwipeSceneChangeEnabled

@@ -6,7 +6,9 @@ import {
   Hand,
   Palette,
   SlidersHorizontal,
+  EyeOff,
   Spline,
+  Target,
 } from "lucide-react";
 import { useUIStore, type GridMode } from "@/features/canvas/store/useUIStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
@@ -43,6 +45,14 @@ export function DisplayModeMenu() {
   const setGridMode = useUIStore((state) => state.setGridMode);
   const isPathVisible = useUIStore((state) => state.isPathVisible);
   const togglePathVisible = useUIStore((state) => state.togglePathVisible);
+  const isStageMarksVisible = useUIStore((state) => state.isStageMarksVisible);
+  const toggleStageMarks = useUIStore((state) => state.toggleStageMarks);
+  const isBlindSpotCheckVisible = useUIStore(
+    (state) => state.isBlindSpotCheckVisible,
+  );
+  const toggleBlindSpotCheck = useUIStore(
+    (state) => state.toggleBlindSpotCheck,
+  );
   const isSwipeSceneChangeEnabled = useUIStore(
     (state) => state.isSwipeSceneChangeEnabled,
   );
@@ -96,6 +106,20 @@ export function DisplayModeMenu() {
       icon: Spline,
       checked: isPathVisible,
       onChange: togglePathVisible,
+    },
+    {
+      label: "顔被りチェック",
+      description: "客席から見えなくなる人に印を出す(移動中も見る)",
+      icon: EyeOff,
+      checked: isBlindSpotCheckVisible,
+      onChange: toggleBlindSpotCheck,
+    },
+    {
+      label: "バミリ",
+      description: "全シーンの立ち位置を床に重ねて出す",
+      icon: Target,
+      checked: isStageMarksVisible,
+      onChange: toggleStageMarks,
     },
     {
       label: "払ってシーンを送る",

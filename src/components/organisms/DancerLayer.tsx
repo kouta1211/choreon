@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { PathOverlay } from "@/components/molecules/PathOverlay";
+import { StageMarks } from "@/components/molecules/StageMarks";
 import { PathTrail } from "@/components/molecules/PathTrail";
 import { DraggableDancerIcon } from "@/components/organisms/DraggableDancerIcon";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { findExcessiveMoves } from "@/features/canvas/lib/physicalLimits";
+import { findBlindSpotSpans } from "@/features/canvas/lib/blindSpot";
 import { getSceneStep } from "@/features/canvas/lib/sceneStep";
 import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
 import {
@@ -74,6 +76,13 @@ export function DancerLayer({
   const previousSceneId = useUIStore((state) => state.previousSceneId);
   const selectedDancerId = useUIStore((state) => state.selectedDancerId);
   const isPathVisible = useUIStore((state) => state.isPathVisible);
+  const isStageMarksVisible = useUIStore((state) => state.isStageMarksVisible);
+  const isBlindSpotCheckVisible = useUIStore(
+    (state) => state.isBlindSpotCheckVisible,
+  );
+  const positionsBySceneId = useProjectStore(
+    (state) => state.positionsBySceneId,
+  );
   const positions = useProjectStore(
     (state) =>
       state.positionsBySceneId[selectedSceneId ?? ""] ?? EMPTY_POSITIONS,
@@ -153,6 +162,29 @@ export function DancerLayer({
     [positions, nextPositions, nextSceneSeconds],
   );
 
+  // 客席から見えなくなる人。静止した隊形だけでなく、次のシーンへ移動する
+  // 【途中】も調べる(すれ違いざまに一瞬だけ消える並びを拾うため)。
+  // 次のシーンが無い最後のシーンでは、その場の隊形だけを見る
+  const blindSpots = useMemo(
+    () =>
+      isBlindSpotCheckVisible
+        ? findBlindSpotSpans(
+            positions,
+            nextSceneId ? nextPositions : positions,
+            stageWidthUnits,
+            stageHeightUnits,
+          )
+        : new Map(),
+    [
+      isBlindSpotCheckVisible,
+      positions,
+      nextPositions,
+      nextSceneId,
+      stageWidthUnits,
+      stageHeightUnits,
+    ],
+  );
+
   // シーン移動のアニメーションが走っている間に印を立てる。掴ませない
   // ようにするのはDraggableDancerIcon側で、ここは「いま動いているか」を
   // 知らせるだけ。区間の秒数はここが既に持っている(segmentScene)ので、
@@ -188,6 +220,17 @@ export function DancerLayer({
 
   return (
     <>
+      {/* バミリは配置を読むための下敷きなので、導線やダンサーより先に敷く */}
+      {isStageMarksVisible && (
+        <StageMarks
+          scenes={scenes}
+          positionsBySceneId={positionsBySceneId}
+          dancers={dancers}
+          selectedSceneId={selectedSceneId}
+          stageWidthUnits={stageWidthUnits}
+          stageHeightUnits={stageHeightUnits}
+        />
+      )}
       {/* 移動の最中は出さない。描き終わった合図(onComplete)を受けてから
           通常の導線表示へ引き継ぐ。
           以前は戻る移動のときだけ隠していたが、進む移動でも同じ問題が
@@ -280,6 +323,8 @@ export function DancerLayer({
               isAdjacentStep ? segmentPosition?.curveControlY : null
             }
             excessiveMove={excessiveMoves.get(dancer.id) ?? null}
+            blindSpot={blindSpots.get(dancer.id) ?? null}
+            segmentSeconds={nextSceneSeconds}
             scrubFromX={position?.xCoordinate ?? null}
             scrubFromY={position?.yCoordinate ?? null}
             scrubToX={scrubTarget?.xCoordinate ?? null}

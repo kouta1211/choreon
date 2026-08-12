@@ -6,7 +6,6 @@ import { CanvasBoard } from "@/components/organisms/CanvasBoard";
 import { EditorHeader } from "@/components/organisms/EditorHeader";
 import { AddDancerSheet } from "@/components/organisms/AddDancerSheet";
 import { TemplateSheet } from "@/components/organisms/TemplateSheet";
-import { TemplateHint } from "@/components/organisms/TemplateHint";
 import { DancerInspector } from "@/components/organisms/DancerInspector";
 import { SceneDock } from "@/components/organisms/SceneDock";
 import { SceneSidebar } from "@/components/organisms/SceneSidebar";
@@ -117,7 +116,6 @@ export function EditorLayout({
             位置の基準としてこのラッパーが要る。ダンサーを選んでいる間は
             インスペクターが同じ場所を使うので、ヒントは出さない */}
           <div className="relative shrink-0">
-            <TemplateHint />
             <DancerInspector />
             <SceneDock project={project} />
           </div>
