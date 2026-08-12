@@ -52,6 +52,7 @@ export const THEMES: ThemeInfo[] = [
 
 export const TEXTURE_IDS = [
   "flat",
+  "nebula",
   "horizon",
   "spot",
   "grid",
@@ -67,6 +68,7 @@ export type TextureInfo = { id: TextureId; name: string };
 
 export const TEXTURES: TextureInfo[] = [
   { id: "flat", name: "フラット" },
+  { id: "nebula", name: "ネビュラ" },
   { id: "horizon", name: "ホリゾント幕" },
   { id: "spot", name: "スポットの円光" },
   { id: "grid", name: "方眼と目盛り" },

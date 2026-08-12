@@ -534,6 +534,36 @@
   --bg-texture-size: 128px 128px, 128px 128px, 32px 32px, 32px 32px;
 }
 
+/* ネビュラ — 手元の機材のような、色を持った光。
+   他の質感が「稽古場の何か」を写しているのに対し、これだけは道具側の顔をしている。
+
+   斜め45度の細線にしているのは、ステージが持っている格子と喧嘩させないため。
+   「方眼と目盛り」は同じ向き・近い間隔の線がステージの格子と重なり、
+   どちらの線を見ているのか分からなくなる。角度をずらせば両方が別の層として読める。
+
+   色をテーマのアクセントから取っているので、ミッドナイトでは桃、ネオンでは
+   シアンというように、テーマを変えると光の色も一緒に動く。
+   線だけ --texture-ink を使うのは、明るい紙のテーマで白い線が消えないようにするため */
+[data-texture="nebula"] {
+  --bg-texture:
+    repeating-linear-gradient(
+      45deg,
+      rgb(var(--texture-ink) / calc(var(--texture-strength) * 0.38)) 0 1px,
+      transparent 1px 10px
+    ),
+    radial-gradient(
+      68% 52% at 6% 104%,
+      color-mix(in oklab, var(--accent) 17%, transparent),
+      transparent 66%
+    ),
+    radial-gradient(
+      64% 50% at 98% -6%,
+      color-mix(in oklab, var(--accent-soft) 13%, transparent),
+      transparent 64%
+    );
+  --bg-texture-size: auto;
+}
+
 /* グレイン — フィルムの粒子。SVGのfeTurbulenceをそのまま敷いている
    (画像ファイルを増やさずに済み、拡大しても粗くならない)。
    feColorMatrix で彩度を落として中間色の粒にしてあるので、
