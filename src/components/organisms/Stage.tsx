@@ -160,13 +160,22 @@ export function Stage({
           )}
           {children}
           {overlay}
+          {/* ステージの左下の角に、外側から寄せて置く(top-full = 枠のすぐ下)。
+              ステージ【面】には重ねない — 常設のボタンを面に置くと、その下に
+              ダンサーが来たときに隠れてしまうため。
+              以前は「客席側」の行に置いていたが、あの行は空き領域の最下端に
+              あり、ステージは空き領域の中央に置かれる。縦に余る画面ほど
+              ステージから遠くへ離れてしまい、スマートフォンでは何十pxも下に
+              取り残されていた。枠に付ければ、どの画面幅でも同じ距離に付く */}
+          {belowStageLeft && (
+            <span className="absolute top-full left-0 mt-1.5">
+              {belowStageLeft}
+            </span>
+          )}
         </div>
         {scrubIndicator}
       </div>
-      <div className="relative flex w-full items-center justify-center">
-        {belowStageLeft && (
-          <span className="absolute left-0">{belowStageLeft}</span>
-        )}
+      <div className="flex w-full items-center justify-center">
         <p className="text-center text-[10px] font-semibold tracking-[0.16em] text-fg-muted">
           客席側
         </p>
