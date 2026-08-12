@@ -6,6 +6,12 @@ import {
   TimelineSceneCluster,
 } from "./TimelineSceneCard";
 import { makeScene } from "@/test/factories";
+import {
+  maxCardHeight,
+  TIMELINE_LAYOUT,
+} from "@/features/music/lib/timelineLayout";
+
+const PHONE = TIMELINE_LAYOUT.phone;
 
 function renderCard(
   onSelect = vi.fn(),
@@ -24,6 +30,7 @@ function renderCard(
       onSelect={onSelect}
       onMoveSeconds={onMoveSeconds}
       pxPerSecond={26}
+      layout={PHONE}
     />,
   );
   return { card: screen.getByRole("button", { name: "2. サビ" }), onSelect, onMoveSeconds };
@@ -120,6 +127,7 @@ describe("TimelineSceneCard", () => {
           onSelect={vi.fn()}
           onMoveSeconds={vi.fn()}
           pxPerSecond={26}
+          layout={PHONE}
         />
       </div>,
     );
@@ -133,18 +141,27 @@ describe("TimelineSceneCard", () => {
 });
 
 describe("cardHeight", () => {
+  const scrimHeight = maxCardHeight(PHONE);
+
   it("ステージの縦横比に合わせる", () => {
     // 8:6 のステージなら仕様どおり 46×34 / 56×42
-    expect(cardHeight(46, 8, 6)).toBe(35);
-    expect(cardHeight(56, 8, 6)).toBe(42);
+    expect(cardHeight(46, 8, 6, scrimHeight)).toBe(35);
+    expect(cardHeight(56, 8, 6, scrimHeight)).toBe(42);
+  });
+
+  // PC はコマも幕も大きいので、同じ比でそのまま伸びる
+  it("PCでは72×54 / 84×62になる", () => {
+    const pc = TIMELINE_LAYOUT.desktop;
+    expect(cardHeight(pc.cardWidth, 8, 6, maxCardHeight(pc))).toBe(54);
+    expect(cardHeight(pc.selectedCardWidth, 8, 6, maxCardHeight(pc))).toBe(63);
   });
 
   it("縦長のステージでも幕からはみ出さない", () => {
-    expect(cardHeight(46, 6, 12)).toBe(42);
+    expect(cardHeight(46, 6, 12, scrimHeight)).toBe(scrimHeight);
   });
 
   it("横長すぎても潰れない", () => {
-    expect(cardHeight(46, 40, 2)).toBe(24);
+    expect(cardHeight(46, 40, 2, scrimHeight)).toBe(24);
   });
 });
 

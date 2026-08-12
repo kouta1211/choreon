@@ -16,9 +16,11 @@ import { useWaveformPeaks } from "@/features/music/hooks/useWaveformPeaks";
 import { useSceneActions } from "@/features/scene/hooks/useSceneActions";
 import { sceneIndexAtSeconds } from "@/features/music/lib/musicTimeline";
 import {
-  CARD_MIN_GAP_PX,
   clampPxPerSecond,
   clampScrollX,
+  defaultPxPerSecond,
+  MAX_PX_PER_SECOND,
+  MIN_PX_PER_SECOND,
   axisSecondsAt,
   axisX,
   contentWidth,
@@ -35,13 +37,17 @@ import {
 } from "@/components/molecules/TimelineSceneCard";
 import { TimelineMinimap } from "@/components/molecules/TimelineMinimap";
 import { capturePointer, releasePointer } from "@/lib/pointerCapture";
+import { useScreenKind } from "@/components/hooks/useIsWideScreen";
+import {
+  cardMinGapPx,
+  TIMELINE_LAYOUT,
+} from "@/features/music/lib/timelineLayout";
+import { Minus, Plus } from "lucide-react";
 import { snapSeconds } from "@/features/scene/lib/sceneTiming";
 import type { Project } from "@/features/project/types";
 
-/** 帯の高さ。上下20pxずつが波形の見える部分で、中央40pxが幕とコマ */
-const BAND_HEIGHT = 80;
-/** 中央の幕(コマの通り道)の高さ */
-const SCRIM_HEIGHT = 40;
+/** ＋ − ボタン1回ぶんの倍率。段(ZOOM_STEPS)より細かく刻む */
+const ZOOM_BUTTON_FACTOR = 1.5;
 /** これ未満の移動はタップ。それ以上は軸を引っ張る操作 */
 const PAN_THRESHOLD_PX = 6;
 /** 触るのをやめてから、再生ヘッドの追従が戻るまでの時間 */
@@ -91,14 +97,21 @@ export function MusicTimeline({ project, audioRef }: Props) {
   const hasMusic = useMusicStore((state) => state.objectUrl !== null);
   const bpm = useMusicStore((state) => state.bpm);
   // 倍率は作品ごとに端末へ覚える。0.5秒刻みで組む作品と、8秒ごとに
-  // 大きく変わる作品とでは、見たい細かさが違う(読み込みは restore が行う)
-  const pxPerSecond = useMusicStore((state) => state.pxPerSecond);
+  // 大きく変わる作品とでは、見たい細かさが違う(読み込みは restore が行う)。
+  // 一度も触っていなければ、帯の実幅から決める(§3-1)
+  const storedPxPerSecond = useMusicStore((state) => state.pxPerSecond);
   const setPxPerSecond = useMusicStore((state) => state.setPxPerSecond);
+
   const { changeSceneTime, selectSceneManually } = useSceneActions();
   const waveform = useWaveformPeaks();
+  // 寸法は画面の段ごとに1つのオブジェクトから引く。ここを唯一の
+  // 出どころにしておかないと、コマの幅・帯の高さ・縮退の閾値が
+  // 別々の場所に散って必ずずれる
+  const layout = TIMELINE_LAYOUT[useScreenKind()];
 
   const bandRef = useRef<HTMLDivElement | null>(null);
   const [viewport, setViewport] = useState(0);
+  const pxPerSecond = storedPxPerSecond ?? defaultPxPerSecond(viewport);
 
   const scrollX = useMotionValue(0);
   const playheadSeconds = useMotionValue(0);
@@ -173,7 +186,8 @@ export function MusicTimeline({ project, audioRef }: Props) {
    */
   const changeZoom = useCallback(
     (factor: number, anchorX: number, multiply = true) => {
-      const current = useMusicStore.getState().pxPerSecond;
+      const current =
+        useMusicStore.getState().pxPerSecond ?? defaultPxPerSecond(viewport);
       const clamped = clampPxPerSecond(multiply ? current * factor : factor);
       if (clamped === current) return;
       // 指の下の時刻が動かないようにしてから倍率を変える。
@@ -181,7 +195,7 @@ export function MusicTimeline({ project, audioRef }: Props) {
       scrollX.set(scrollAfterZoom(scrollX.get(), anchorX, current, clamped));
       setPxPerSecond(clamped);
     },
-    [setPxPerSecond, scrollX],
+    [setPxPerSecond, scrollX, viewport],
   );
 
   /** その位置の時刻へ飛ぶ。再生中なら鳴らしたまま飛ぶ */
@@ -363,7 +377,9 @@ export function MusicTimeline({ project, audioRef }: Props) {
       2;
 
     const next = clampPxPerSecond(
-      narrowest === Infinity ? pxPerSecond * 2 : CARD_MIN_GAP_PX / narrowest,
+      narrowest === Infinity
+        ? pxPerSecond * 2
+        : cardMinGapPx(layout) / narrowest,
     );
     setPxPerSecond(next);
     scrollX.set(
@@ -379,6 +395,7 @@ export function MusicTimeline({ project, audioRef }: Props) {
   const items = degradeScenes(
     scenes.map((scene) => scene.timeSeconds),
     pxPerSecond,
+    cardMinGapPx(layout),
   );
   const selectedIndex = scenes.findIndex((s) => s.id === selectedSceneId);
 
@@ -396,7 +413,7 @@ export function MusicTimeline({ project, audioRef }: Props) {
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerCancel}
-        style={{ height: BAND_HEIGHT }}
+        style={{ height: layout.bandHeight }}
         className="relative touch-none overflow-hidden rounded-lg bg-surface-sunken"
       >
         <TimelineWaveform
@@ -405,7 +422,7 @@ export function MusicTimeline({ project, audioRef }: Props) {
           originPx={LEAD_IN_PX}
           pxPerSecond={pxPerSecond}
           width={viewport}
-          height={BAND_HEIGHT}
+          height={layout.bandHeight}
           playheadSeconds={playheadSeconds}
           bpm={hasMusic ? null : bpm}
           originSeconds={0}
@@ -417,8 +434,8 @@ export function MusicTimeline({ project, audioRef }: Props) {
         <span
           aria-hidden
           style={{
-            top: (BAND_HEIGHT - SCRIM_HEIGHT) / 2,
-            height: SCRIM_HEIGHT,
+            top: (layout.bandHeight - layout.scrimHeight) / 2,
+            height: layout.scrimHeight,
             background:
               "linear-gradient(to bottom, transparent, color-mix(in oklab, var(--scrim) 72%, transparent) 28%, color-mix(in oklab, var(--scrim) 72%, transparent) 72%, transparent)",
           }}
@@ -469,6 +486,7 @@ export function MusicTimeline({ project, audioRef }: Props) {
                 isSelected={index === selectedIndex}
                 leftPx={leftPx}
                 pxPerSecond={pxPerSecond}
+                layout={layout}
                 onSelect={() => selectSceneManually(scene.id)}
                 onMoveSeconds={(delta) =>
                   void changeSceneTime(
@@ -490,7 +508,37 @@ export function MusicTimeline({ project, audioRef }: Props) {
         />
       </div>
 
-      {viewport > 0 && (
+      {/* 倍率の操作。マウスしかない環境ではピンチが使えず、倍率は
+          作品ごとに覚えるので、一度寄せたら二度と引けなくなる。
+          Ctrl＋ホイールも効くが、知らないと辿り着けない */}
+      {layout.showZoomButtons && (
+        <div className="flex items-center justify-end gap-1.5">
+          <span className="font-mono text-[10.5px] tabular-nums text-fg-muted">
+            {Math.round(pxPerSecond)}
+            <span className="ml-0.5">px/秒</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => changeZoom(1 / ZOOM_BUTTON_FACTOR, viewport / 2)}
+            disabled={pxPerSecond <= MIN_PX_PER_SECOND}
+            aria-label="時間軸を引く"
+            className="flex h-7 w-7 items-center justify-center rounded-[calc(var(--radius)*0.5)] border border-line-strong text-fg-sub disabled:opacity-40"
+          >
+            <Minus size={13} />
+          </button>
+          <button
+            type="button"
+            onClick={() => changeZoom(ZOOM_BUTTON_FACTOR, viewport / 2)}
+            disabled={pxPerSecond >= MAX_PX_PER_SECOND}
+            aria-label="時間軸を寄せる"
+            className="flex h-7 w-7 items-center justify-center rounded-[calc(var(--radius)*0.5)] border border-line-strong text-fg-sub disabled:opacity-40"
+          >
+            <Plus size={13} />
+          </button>
+        </div>
+      )}
+
+      {layout.showMinimap && viewport > 0 && (
         <TimelineMinimap
           waveform={waveform}
           contentPx={contentPx}

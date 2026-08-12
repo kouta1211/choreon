@@ -15,15 +15,39 @@
 export const MIN_PX_PER_SECOND = 8;
 /** 寄りの限界。1画面に3秒。0.1秒(最小の間隔)が12px */
 export const MAX_PX_PER_SECOND = 120;
+/** 帯の幅が測れないうちに使う値(サーバー描画の1フレーム目など) */
+export const DEFAULT_PX_PER_SECOND = 24;
+
 /**
- * 既定。390pxの画面でちょうど15秒ぶんが見える。
+ * 既定倍率が取りうる段。中途半端な倍率にしないための丸め先。
  *
- * 24px/秒 だと窓が16.3秒になり、さらに「新しいシーンの既定の間隔」である
- * 2秒が 48px にしかならず、コマ(50px以上)に1歩届かずに旗へ落ちる。
- * 何も設定していない作品で隊形の絵が出ないのは、この画面の値打ちを
- * いちばん損なう。
+ * 段にするのは、画面幅が数px違うだけで倍率が変わると、同じ作品を
+ * 別の端末で開いたときに「同じところを見ているのに縮尺が違う」状態が
+ * 際限なく生まれるため。
  */
-export const DEFAULT_PX_PER_SECOND = 26;
+export const ZOOM_STEPS = [12, 24, 36, 48, 72, 96] as const;
+
+/**
+ * 帯の実幅から既定倍率を決める。
+ *
+ * ■ 画面幅ではなく【帯の実幅】で決める理由
+ * 3ペインのPCでは、左268px・右300pxのパネルが両側を食う。
+ * その結果 1200px のPCの帯(563px)は、900px のタブレットの帯(627px)
+ * より狭い。「画面が広いから倍率を上げる」という素直な規則だと、
+ * PC でだけ引きすぎになる。
+ *
+ * 狙いは【窓に入る秒数を 15〜18秒に揃える】こと。どの画面でも
+ * 「ひと払いぶん ≒ 4秒」の感覚が変わらないようにする。
+ */
+export function defaultPxPerSecond(bandWidth: number): number {
+  if (!Number.isFinite(bandWidth) || bandWidth <= 0) {
+    return DEFAULT_PX_PER_SECOND;
+  }
+  const target = bandWidth / 16;
+  return ZOOM_STEPS.reduce((best, step) =>
+    Math.abs(step - target) < Math.abs(best - target) ? step : best,
+  );
+}
 
 /**
  * 再生中、再生ヘッドを窓のどこに置くか。
@@ -55,9 +79,8 @@ export function axisSecondsAt(x: number, pxPerSecond: number): number {
   return (x - LEAD_IN_PX) / pxPerSecond;
 }
 
-/** これ以上あればコマ(ミニステージの絵)のまま置ける */
-export const CARD_MIN_GAP_PX = 50;
-/** これ以上あれば旗(番号だけ)にできる。下回ると束ねる */
+/** これ以上あれば旗(番号だけ)にできる。下回ると束ねる。
+ * コマと違って中身が番号だけなので、画面の段によらず同じ */
 export const FLAG_MIN_GAP_PX = 26;
 
 export function clampPxPerSecond(value: number): number {
@@ -151,6 +174,7 @@ export type TimelineItem = {
 export function degradeScenes(
   times: number[],
   pxPerSecond: number,
+  cardMinGapPx: number,
 ): TimelineItem[] {
   const items: TimelineItem[] = [];
 
@@ -159,7 +183,7 @@ export function degradeScenes(
     const gapPx =
       index === 0 ? Infinity : (seconds - times[index - 1]) * pxPerSecond;
 
-    if (gapPx >= CARD_MIN_GAP_PX) {
+    if (gapPx >= cardMinGapPx) {
       items.push({ kind: "card", indexes: [index], seconds });
       return;
     }

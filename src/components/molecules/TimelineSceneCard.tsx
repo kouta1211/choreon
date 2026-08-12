@@ -2,35 +2,37 @@
 
 import { useRef, useState, type PointerEvent } from "react";
 import { capturePointer, releasePointer } from "@/lib/pointerCapture";
+import {
+  CARD_NAME_BAR_HEIGHT,
+  maxCardHeight,
+  type TimelineLayout,
+} from "@/features/music/lib/timelineLayout";
 import type { Scene } from "@/features/scene/types";
-
-/** 通常のコマの幅。44px の当たり判定をほぼ満たす大きさ */
-export const CARD_WIDTH = 46;
-/** 選択中は一回り大きく。色の差だけでは横目で追えない */
-export const SELECTED_CARD_WIDTH = 56;
-/** 帯(80px)の中央に敷いた幕は40px。コマがそこからはみ出すと、
- * 波形の上に直接載って読めなくなる */
-const MAX_CARD_HEIGHT = 42;
-const MIN_CARD_HEIGHT = 24;
 
 /** これ以上動いたらドラッグ(時刻を動かす)、それ未満はタップ(選択) */
 const DRAG_THRESHOLD_PX = 4;
 
+const MIN_CARD_HEIGHT = 24;
+
 /**
  * コマの高さ。ステージの縦横比に合わせる。
  *
- * 8:6 のステージなら 46×34 / 56×42 になり、仕様書の実測値と一致する。
- * 幅を固定して高さを比から出しているのは、横長のステージでも
- * 正方形に潰れて見えないようにするため。
+ * 8:6 のステージなら 46×34 / 56×42(スマホ)、72×54 / 84×62(PC)になり、
+ * 仕様書の実測値と一致する。幅を固定して高さを比から出しているのは、
+ * 横長のステージでも正方形に潰れて見えないようにするため。
+ *
+ * 上限は中央の幕の高さ。そこからはみ出すと、コマが波形の上に直接
+ * 載って読めなくなる。
  */
 export function cardHeight(
   width: number,
   stageWidthUnits: number,
   stageHeightUnits: number,
+  maxHeight: number,
 ): number {
   const ratio = stageHeightUnits / Math.max(1, stageWidthUnits);
   return Math.round(
-    Math.min(MAX_CARD_HEIGHT, Math.max(MIN_CARD_HEIGHT, width * ratio)),
+    Math.min(maxHeight, Math.max(MIN_CARD_HEIGHT, width * ratio)),
   );
 }
 
@@ -49,6 +51,8 @@ type Props = {
   /** 指を離したときに呼ぶ。動かした秒数(正なら後ろへ) */
   onMoveSeconds: (deltaSeconds: number) => void;
   pxPerSecond: number;
+  /** この画面の段での寸法 */
+  layout: TimelineLayout;
 };
 
 /**
@@ -83,23 +87,32 @@ export function TimelineSceneCard({
   onSelect,
   onMoveSeconds,
   pxPerSecond,
+  layout,
 }: Props) {
   // 動かした量は ref を正とし、state は見た目のためだけに持つ。
   // 指を離した瞬間の処理が state を読むと、直前の pointermove の更新が
   // まだ反映されておらず、動かした量を 0 として保存することがある
   const dragPxRef = useRef(0);
   const [dragPx, setDragPx] = useState(0);
+  const [isPressed, setIsPressed] = useState(false);
   const startXRef = useRef<number | null>(null);
   const movedRef = useRef(false);
 
-  const width = isSelected ? SELECTED_CARD_WIDTH : CARD_WIDTH;
-  const height = cardHeight(width, stageWidthUnits, stageHeightUnits);
+  const width = isSelected ? layout.selectedCardWidth : layout.cardWidth;
+  const height = cardHeight(
+    width,
+    stageWidthUnits,
+    stageHeightUnits,
+    maxCardHeight(layout),
+  );
+
 
   const handlePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
     // 帯側のスクロールやシークに持って行かれないようにする
     event.stopPropagation();
     startXRef.current = event.clientX;
     movedRef.current = false;
+    setIsPressed(true);
     capturePointer(event.currentTarget, event.pointerId);
   };
 
@@ -117,6 +130,7 @@ export function TimelineSceneCard({
   const handlePointerUp = (event: PointerEvent<HTMLButtonElement>) => {
     const startX = startXRef.current;
     startXRef.current = null;
+    setIsPressed(false);
     if (startX === null) return;
     releasePointer(event.currentTarget, event.pointerId);
 
@@ -138,6 +152,7 @@ export function TimelineSceneCard({
 
   const handlePointerCancel = () => {
     startXRef.current = null;
+    setIsPressed(false);
     dragPxRef.current = 0;
     setDragPx(0);
   };
@@ -157,48 +172,72 @@ export function TimelineSceneCard({
         height,
         left: leftPx,
         marginLeft: -width / 2,
-        transform: dragPx === 0 ? undefined : `translateX(${dragPx}px)`,
+        // 掴んで動かすものなので、押しても沈めずに持ち上げる
+        // (オーバーレイ仕様 §1-4。ダンサーのマーカーと同じ扱い)
+        transform: `translateX(${dragPx}px) scale(${isPressed ? 1.08 : 1})`,
       }}
       className={`absolute top-1/2 -translate-y-1/2 touch-none overflow-hidden bg-stage ${
         dragPx === 0
-          ? "transition-[width,height,border-color] duration-[180ms] ease-[cubic-bezier(.2,.7,.2,1)]"
-          : ""
+          ? "transition-[width,height,border-color,transform,box-shadow] duration-[180ms] ease-[cubic-bezier(.2,.7,.2,1)] motion-reduce:transition-none"
+          : "transition-[transform] duration-0"
       } ${
         isSelected
           ? "z-20 rounded-md border-2 border-accent shadow-[0_2px_12px_color-mix(in_oklab,var(--scrim)_80%,transparent)]"
           : "z-10 rounded-[5px] border border-line-strong"
-      }`}
+      } ${isPressed ? "z-30 shadow-[0_4px_12px_-4px_color-mix(in_oklab,var(--scrim)_60%,transparent)]" : ""}`}
     >
-      {/* 格子。ステージの升目と同じ数だけ引く。何列目に居るかが
-          小さいコマでも読める */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,var(--stage-grid-soft)_1px,transparent_1px),linear-gradient(to_bottom,var(--stage-grid-soft)_1px,transparent_1px)]"
-        style={{
-          backgroundSize: `${100 / stageWidthUnits}% ${100 / stageHeightUnits}%`,
-        }}
-      />
-      {thumbnail && (
-        /* next/imageは使わない。中身はメモリ上のdataURLで、最適化サーバーを
-           通す先のURLが無く、リサイズも遅延読み込みも働かないため */
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={thumbnail}
-          alt=""
-          aria-hidden
-          className="absolute inset-0 h-full w-full"
+      <span aria-hidden className="absolute inset-0 block overflow-hidden">
+        {/* 格子。ステージの升目と同じ数だけ引く。何列目に居るかが
+            小さいコマでも読める */}
+        <span
+          className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,var(--stage-grid-soft)_1px,transparent_1px),linear-gradient(to_bottom,var(--stage-grid-soft)_1px,transparent_1px)]"
+          style={{
+            backgroundSize: `${100 / stageWidthUnits}% ${100 / stageHeightUnits}%`,
+          }}
         />
-      )}
-      <span
-        aria-hidden
-        className={`absolute bottom-0 left-[2px] font-mono leading-none ${
-          isSelected
-            ? "text-[8px] font-semibold text-accent-bright"
-            : "text-[7px] text-fg-muted"
-        }`}
-      >
-        {number}
+        {thumbnail && (
+          /* next/imageは使わない。中身はメモリ上のdataURLで、最適化サーバーを
+             通す先のURLが無く、リサイズも遅延読み込みも働かないため */
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={thumbnail}
+            alt=""
+            className="absolute inset-0 h-full w-full"
+          />
+        )}
       </span>
+
+      {layout.showCardName ? (
+        /* 番号と名前の帯。選択中はアクセントで塗る。曲の中では時刻より
+           番号で呼ぶことが多いので、番号を先に置く */
+        <span
+          aria-hidden
+          style={{ height: CARD_NAME_BAR_HEIGHT }}
+          className={`absolute inset-x-0 bottom-0 flex items-center gap-1 px-1 ${
+            isSelected
+              ? "bg-accent text-accent-fg"
+              : "bg-surface-raised text-fg-sub"
+          }`}
+        >
+          <span className="shrink-0 font-mono text-[9px] leading-none">
+            {number}
+          </span>
+          <span className="min-w-0 truncate text-[9px] leading-none">
+            {scene.name}
+          </span>
+        </span>
+      ) : (
+        <span
+          aria-hidden
+          className={`absolute bottom-0 left-[2px] font-mono leading-none ${
+            isSelected
+              ? "text-[8px] font-semibold text-accent-bright"
+              : "text-[7px] text-fg-muted"
+          }`}
+        >
+          {number}
+        </span>
+      )}
     </button>
   );
 }

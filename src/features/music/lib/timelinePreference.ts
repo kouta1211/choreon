@@ -11,7 +11,6 @@
 
 import {
   clampPxPerSecond,
-  DEFAULT_PX_PER_SECOND,
   MAX_PX_PER_SECOND,
   MIN_PX_PER_SECOND,
 } from "@/features/music/lib/timelineScale";
@@ -48,13 +47,18 @@ function parseAll(raw: string | null): Stored {
   return result;
 }
 
-export function loadPxPerSecond(projectId: string): number {
+/**
+ * 覚えている倍率。一度も触っていなければ null。
+ *
+ * 既定値を返さないのは、既定が【帯の実幅から決まる】ため。
+ * ここで数を返してしまうと、画面の広さに関わらず同じ倍率で始まる。
+ */
+export function loadPxPerSecond(projectId: string): number | null {
   try {
-    return parseAll(localStorage.getItem(TIMELINE_STORAGE_KEY))[projectId] ??
-      DEFAULT_PX_PER_SECOND;
+    return parseAll(localStorage.getItem(TIMELINE_STORAGE_KEY))[projectId] ?? null;
   } catch {
-    // プライベートモード等でlocalStorage自体が触れない。既定のまま動かす
-    return DEFAULT_PX_PER_SECOND;
+    // プライベートモード等でlocalStorage自体が触れない
+    return null;
   }
 }
 

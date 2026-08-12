@@ -16,10 +16,7 @@ import {
   loadPxPerSecond,
   savePxPerSecond,
 } from "@/features/music/lib/timelinePreference";
-import {
-  clampPxPerSecond,
-  DEFAULT_PX_PER_SECOND,
-} from "@/features/music/lib/timelineScale";
+import { clampPxPerSecond } from "@/features/music/lib/timelineScale";
 
 type MusicStore = {
   /** 再生に使うURL。端末のファイルから作った一時的なもの */
@@ -40,8 +37,9 @@ type MusicStore = {
   bpm: number;
   /** メトロノームを鳴らすか。曲が入っている間は使わない */
   isMetronomeEnabled: boolean;
-  /** 時間軸の倍率(1秒を何pxで描くか)。BPMと同じく作品ごとに端末へ覚える */
-  pxPerSecond: number;
+  /** 時間軸の倍率(1秒を何pxで描くか)。BPMと同じく作品ごとに端末へ覚える。
+   * 一度も触っていなければ null で、そのときは帯の実幅から決める */
+  pxPerSecond: number | null;
 
   load: (file: File, projectId: string) => void;
   clear: (projectId: string) => void;
@@ -78,7 +76,7 @@ export const useMusicStore = create<MusicStore>((set, get) => ({
   currentTime: 0,
   bpm: DEFAULT_METRONOME_SETTING.bpm,
   isMetronomeEnabled: DEFAULT_METRONOME_SETTING.isEnabled,
-  pxPerSecond: DEFAULT_PX_PER_SECOND,
+  pxPerSecond: null,
 
   load: (file, projectId) => {
     // 選び直すたびに前のURLを解放する。放っておくと、選んだ曲の数だけ

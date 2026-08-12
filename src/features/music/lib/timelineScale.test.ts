@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   axisSecondsAt,
   axisX,
-  CARD_MIN_GAP_PX,
+  defaultPxPerSecond,
   clampPxPerSecond,
   clampScrollX,
   contentWidth,
@@ -15,6 +15,33 @@ import {
   scrollAfterZoom,
   scrollForSeconds,
 } from "./timelineScale";
+import { DEFAULT_SEGMENT_SECONDS } from "@/features/scene/lib/sceneTiming";
+
+describe("defaultPxPerSecond", () => {
+  // 狙いは「窓に入る秒数を15〜18秒に揃える」こと。
+  // 画面幅ではなく帯の実幅から決めるので、パネルに挟まれたPCでも
+  // タブレットより引きすぎにならない
+  it.each([
+    ["スマホ", 362, 24, 15.1],
+    ["タブレット", 627, 36, 17.4],
+    ["PC(3ペインの中央)", 563, 36, 15.6],
+  ])("%s の帯 %ipx なら %ipx/秒", (_name, width, expected) => {
+    expect(defaultPxPerSecond(width)).toBe(expected);
+  });
+
+  it("どの段でも窓に入るのは15〜18秒に収まる", () => {
+    for (const width of [362, 563, 627, 900, 1200]) {
+      const seconds = width / defaultPxPerSecond(width);
+      expect(seconds).toBeGreaterThanOrEqual(14);
+      expect(seconds).toBeLessThanOrEqual(19);
+    }
+  });
+
+  it("まだ測れていなければ既定に落とす", () => {
+    expect(defaultPxPerSecond(0)).toBe(DEFAULT_PX_PER_SECOND);
+    expect(defaultPxPerSecond(Number.NaN)).toBe(DEFAULT_PX_PER_SECOND);
+  });
+});
 
 describe("clampPxPerSecond", () => {
   it("範囲の外は端で止める", () => {
@@ -96,33 +123,39 @@ describe("scrollAfterZoom", () => {
 
 describe("degradeScenes", () => {
   const at = (...times: number[]) => times;
+  /** スマホのコマ(46px)＋4px */
+  const PHONE_CARD_GAP = 50;
 
   it("十分に離れていれば全部コマ", () => {
-    const items = degradeScenes(at(0, 3, 6), DEFAULT_PX_PER_SECOND);
+    const items = degradeScenes(at(0, 3, 6), DEFAULT_PX_PER_SECOND, PHONE_CARD_GAP);
     expect(items.map((item) => item.kind)).toEqual(["card", "card", "card"]);
   });
 
   it("先頭は左隣が無いので必ずコマ", () => {
-    const items = degradeScenes(at(0, 0.2), DEFAULT_PX_PER_SECOND);
+    const items = degradeScenes(at(0, 0.2), DEFAULT_PX_PER_SECOND, PHONE_CARD_GAP);
     expect(items[0].kind).toBe("cluster");
     // 先頭も束ねの中に数えられる(巻き込まれる側)
     expect(items[0].indexes).toEqual([0, 1]);
   });
 
   it("少し詰まると旗になる", () => {
-    // 26px/秒 で 1.5秒 = 39px。26以上50未満
-    const items = degradeScenes(at(0, 1.5), DEFAULT_PX_PER_SECOND);
+    // 24px/秒 で 1.5秒 = 36px。26以上50未満
+    const items = degradeScenes(at(0, 1.5), DEFAULT_PX_PER_SECOND, PHONE_CARD_GAP);
     expect(items.map((item) => item.kind)).toEqual(["card", "flag"]);
   });
 
   // 何も設定していない作品でも、コマ(隊形の絵)のまま並ぶこと
-  it("新しいシーンの既定の間隔(2秒)はコマのまま", () => {
-    const items = degradeScenes(at(0, 2, 4), DEFAULT_PX_PER_SECOND);
+  it("新しいシーンの既定の間隔(1つの8カウント)はコマのまま", () => {
+    const items = degradeScenes(
+      at(0, DEFAULT_SEGMENT_SECONDS, DEFAULT_SEGMENT_SECONDS * 2),
+      DEFAULT_PX_PER_SECOND,
+      PHONE_CARD_GAP,
+    );
     expect(items.map((item) => item.kind)).toEqual(["card", "card", "card"]);
   });
 
   it("さらに詰まると束ねになり、数が積み上がる", () => {
-    const items = degradeScenes(at(0, 5, 5.2, 5.4, 5.6), DEFAULT_PX_PER_SECOND);
+    const items = degradeScenes(at(0, 5, 5.2, 5.4, 5.6), DEFAULT_PX_PER_SECOND, PHONE_CARD_GAP);
     expect(items).toHaveLength(2);
     expect(items[0]).toEqual({ kind: "card", indexes: [0], seconds: 0 });
     expect(items[1].kind).toBe("cluster");
@@ -133,23 +166,23 @@ describe("degradeScenes", () => {
 
   it("拡大すれば同じ配置がコマに戻る", () => {
     const times = at(0, 5, 5.2, 5.4, 5.6);
-    const items = degradeScenes(times, MAX_PX_PER_SECOND);
+    const items = degradeScenes(times, MAX_PX_PER_SECOND, PHONE_CARD_GAP);
     // 0.2秒 × 120px = 24px … まだ束ね。0.5秒あれば 60px でコマ
     expect(items.some((item) => item.kind === "cluster")).toBe(true);
     expect(
-      degradeScenes(at(0, 5, 5.5, 6), MAX_PX_PER_SECOND).every(
+      degradeScenes(at(0, 5, 5.5, 6), MAX_PX_PER_SECOND, PHONE_CARD_GAP).every(
         (item) => item.kind === "card",
       ),
     ).toBe(true);
   });
 
   it("境目ちょうどはコマ側に入る", () => {
-    const seconds = CARD_MIN_GAP_PX / DEFAULT_PX_PER_SECOND;
-    const items = degradeScenes(at(0, seconds), DEFAULT_PX_PER_SECOND);
+    const seconds = PHONE_CARD_GAP / DEFAULT_PX_PER_SECOND;
+    const items = degradeScenes(at(0, seconds), DEFAULT_PX_PER_SECOND, PHONE_CARD_GAP);
     expect(items[1].kind).toBe("card");
   });
 
   it("シーンが無ければ空", () => {
-    expect(degradeScenes([], DEFAULT_PX_PER_SECOND)).toEqual([]);
+    expect(degradeScenes([], DEFAULT_PX_PER_SECOND, PHONE_CARD_GAP)).toEqual([]);
   });
 });
