@@ -60,8 +60,14 @@ export function SceneThumbnail({
   showLabel = false,
   onDelete,
 }: Props) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: scene.id });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: scene.id });
 
   return (
     <div
@@ -81,54 +87,59 @@ export function SceneThumbnail({
         {...attributes}
         {...listeners}
       >
-      <div
-        className={`relative w-full overflow-hidden rounded-md bg-surface-sunken transition-colors ${
-          isSelected ? "border-2 border-accent" : "border border-line-strong"
-        }`}
-        style={{ aspectRatio: `${stageWidthUnits} / ${stageHeightUnits}` }}
-      >
-        {showGrid && (
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,var(--stage-grid-soft)_1px,transparent_1px),linear-gradient(to_bottom,var(--stage-grid-soft)_1px,transparent_1px)]"
-            style={{
-              backgroundSize: `${100 / stageWidthUnits}% ${100 / stageHeightUnits}%`,
-            }}
-          />
-        )}
-        {/* 点は1枚の画像に焼いてある(useSceneThumbnails)。
+        {/* 選択中は縁の色だけでなく、一回り持ち上げて手前に出す。
+          コマが小さく密に並ぶので、色の差だけでは横目で追えない。
+          並び替えドラッグ中は拡大しない(掴んでいるコマが隣に重なるため) */}
+        <div
+          className={`relative w-full overflow-hidden rounded-md bg-surface-sunken transition-[transform,box-shadow,border-color] duration-200 ease-[cubic-bezier(.2,.7,.2,1)] ${
+            isSelected
+              ? "border-2 border-accent shadow-[0_14px_34px_-18px_color-mix(in_oklab,var(--accent)_80%,transparent)]"
+              : "border border-line-strong"
+          } ${isSelected && !isDragging ? "scale-105" : ""}`}
+          style={{ aspectRatio: `${stageWidthUnits} / ${stageHeightUnits}` }}
+        >
+          {showGrid && (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,var(--stage-grid-soft)_1px,transparent_1px),linear-gradient(to_bottom,var(--stage-grid-soft)_1px,transparent_1px)]"
+              style={{
+                backgroundSize: `${100 / stageWidthUnits}% ${100 / stageHeightUnits}%`,
+              }}
+            />
+          )}
+          {/* 点は1枚の画像に焼いてある(useSceneThumbnails)。
             人数×シーン数だけの要素を並べる代わりに、シーンごとに1枚で済む。
             まだ焼けていない一瞬(初回描画)は、格子だけの空の枠を出す */}
-        {thumbnail && (
-          /* next/imageは使わない。中身はメモリ上のdataURLで、最適化サーバーを
+          {thumbnail && (
+            /* next/imageは使わない。中身はメモリ上のdataURLで、最適化サーバーを
              通す先のURLが無く、リサイズも遅延読み込みも働かないため */
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={thumbnail}
-            alt=""
-            aria-hidden
-            className="absolute inset-0 h-full w-full"
-          />
-        )}
-      </div>
-      {showLabel && (
-        <div className="mt-1 flex w-full items-baseline justify-between gap-1">
-          <span
-            className={`min-w-0 truncate text-[11px] ${
-              isSelected ? "font-semibold text-accent-soft" : "text-fg-sub"
-            }`}
-          >
-            {scene.name}
-          </span>
-          <span
-            className={`shrink-0 font-mono text-[9px] ${
-              isSelected ? "font-semibold text-accent-soft" : "text-fg-muted"
-            }`}
-          >
-            {String(index ?? 0).padStart(2, "0")}
-          </span>
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={thumbnail}
+              alt=""
+              aria-hidden
+              className="absolute inset-0 h-full w-full"
+            />
+          )}
         </div>
-      )}
+        {showLabel && (
+          <div className="mt-1 flex w-full items-baseline justify-between gap-1">
+            <span
+              className={`min-w-0 truncate text-[11px] ${
+                isSelected ? "font-semibold text-accent-soft" : "text-fg-sub"
+              }`}
+            >
+              {scene.name}
+            </span>
+            <span
+              className={`shrink-0 font-mono text-[9px] ${
+                isSelected ? "font-semibold text-accent-soft" : "text-fg-muted"
+              }`}
+            >
+              {String(index ?? 0).padStart(2, "0")}
+            </span>
+          </div>
+        )}
       </button>
 
       {onDelete && (

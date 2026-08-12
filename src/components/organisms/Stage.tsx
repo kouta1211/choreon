@@ -54,6 +54,9 @@ type Props = {
    * 普段は切り落とされて見えない(引き寄せると入ってくる) */
   trackBefore?: ReactNode;
   trackAfter?: ReactNode;
+  /** スクラブの進み具合。トラックと一緒に動いてしまわないよう、
+   * 切り落とす層の外側に重ねる */
+  scrubIndicator?: ReactNode;
 };
 
 /**
@@ -77,6 +80,7 @@ export function Stage({
   trackRef,
   trackBefore,
   trackAfter,
+  scrubIndicator,
 }: Props) {
   const gridMode = useUIStore((state) => state.gridMode);
   const focusedDancerId = useUIStore((state) => state.focusedDancerId);
@@ -176,6 +180,7 @@ export function Stage({
             {trackAfter}
           </div>
         </div>
+        {scrubIndicator}
       </div>
       <div className="relative flex w-full items-center justify-center">
         {belowStageLeft && (

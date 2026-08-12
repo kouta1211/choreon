@@ -15,6 +15,7 @@ import { HistoryControls } from "@/components/organisms/HistoryControls";
 import { TemplateButton } from "@/components/organisms/TemplateButton";
 import { DancerLayer } from "@/components/organisms/DancerLayer";
 import { StageSideScene } from "@/components/organisms/StageSideScene";
+import { ScrubProgressBar } from "@/components/molecules/ScrubProgressBar";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useHistoryStore } from "@/features/canvas/store/useHistoryStore";
@@ -537,6 +538,7 @@ export function CanvasBoard({
             heightUnits={project.stageHeight}
           />
         }
+        scrubIndicator={<ScrubProgressBar />}
         widthUnits={project.stageWidth}
         heightUnits={project.stageHeight}
         showCenterline={isSymmetryMode}
