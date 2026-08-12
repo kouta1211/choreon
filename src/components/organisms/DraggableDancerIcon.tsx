@@ -17,6 +17,7 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { quadraticBezierAt } from "@/features/canvas/lib/curvePath";
 import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
 import { interpolateDancerPoint } from "@/features/canvas/lib/sceneScrub";
+import type { Collision } from "@/features/canvas/lib/collision";
 import {
   DEFAULT_TRANSITION_DURATION_SECONDS,
   resolveTransitionDuration,
@@ -53,6 +54,10 @@ type Props = {
   excessiveMove?: MoveStrain | null;
   /** 手前の人の真後ろに入っていて、客席から見えないか */
   isBlocked?: boolean;
+  /** 次のシーンへ移動する途中でぶつかる相手。ぶつからないならnull */
+  collision?: Collision | null;
+  /** ぶつかる相手の名前(警告文で使う) */
+  collisionWithName?: string;
   /** ステージを横にドラッグしている間の、区間の両端でのこのダンサーの位置
    * (ステージ座標系)。ダンサーは追加したシーンにしか座標を持たないため
    * (AddDancerSheet参照)、途中から出てくる・途中で捌ける人は片側がnullになる。
@@ -126,6 +131,8 @@ function DraggableDancerIconImpl({
   curveControlY,
   excessiveMove = null,
   isBlocked = false,
+  collision = null,
+  collisionWithName = "",
   scrubFromX = null,
   scrubFromY = null,
   scrubToX = null,
@@ -446,6 +453,8 @@ function DraggableDancerIconImpl({
         isFocused={isFocused}
         excessiveMove={excessiveMove}
         isBlocked={isBlocked}
+        collision={collision}
+        collisionWithName={collisionWithName}
         hasKeyboardFocus={hasKeyboardFocus}
         transitionDurationSeconds={transitionDurationSeconds}
       />

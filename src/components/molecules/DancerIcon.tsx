@@ -5,6 +5,8 @@ import { motion } from "motion/react";
 import { DancerNameLabel } from "@/components/atoms/DancerNameLabel";
 import { DancerExcessiveMoveBadge } from "@/components/atoms/DancerExcessiveMoveBadge";
 import { DancerBlindSpotBadge } from "@/components/atoms/DancerBlindSpotBadge";
+import { DancerCollisionBadge } from "@/components/atoms/DancerCollisionBadge";
+import type { Collision } from "@/features/canvas/lib/collision";
 import type { MoveStrain } from "@/features/canvas/lib/physicalLimits";
 import { MARKER_SIZE } from "@/features/dancer/constants";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
@@ -51,6 +53,8 @@ function DancerMarkerImpl({
   isDragging = false,
   excessiveMove = null,
   isBlocked = false,
+  collision = null,
+  collisionWithName = "",
   hasKeyboardFocus = false,
   transitionDurationSeconds = 0.3,
 }: {
@@ -78,6 +82,10 @@ function DancerMarkerImpl({
   excessiveMove?: MoveStrain | null;
   /** 手前の人の真後ろに入っていて、客席から見えないか */
   isBlocked?: boolean;
+  /** 次のシーンへ移動する途中でぶつかる相手。ぶつからないならnull */
+  collision?: Collision | null;
+  /** ぶつかる相手の名前(警告文で使う) */
+  collisionWithName?: string;
   /** キーボードフォーカスが当たっているかどうか。isSelectedとは別の状態で、
    * 「今ここにフォーカスがある=矢印キーで動かせる」ことを示すだけの見た目上の
    * ヒント。Tabキーでの巡回は無効にしてある(DraggableDancerIconのtabIndex: -1)
@@ -242,6 +250,13 @@ function DancerMarkerImpl({
       </span>
       <DancerNameLabel name={dancer.name} />
       {isBlocked && <DancerBlindSpotBadge dancerName={dancer.name} />}
+      {collision && (
+        <DancerCollisionBadge
+          collision={collision}
+          dancerName={dancer.name}
+          withDancerName={collisionWithName}
+        />
+      )}
       {excessiveMove && (
         <DancerExcessiveMoveBadge
           strain={excessiveMove}
