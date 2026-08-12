@@ -243,6 +243,7 @@ export function SceneDock({ project }: Props) {
           type="button"
           onClick={handleAddScene}
           disabled={isCreating}
+          data-tour="add-scene"
           aria-label="シーンを追加"
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[calc(var(--radius)*0.75)] border border-line-strong text-fg-sub disabled:opacity-50"
         >

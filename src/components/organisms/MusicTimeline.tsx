@@ -505,6 +505,7 @@ export function MusicTimeline({ project, audioRef }: Props) {
     <div className="flex flex-col gap-1.5 px-3.5">
       <div
         ref={bandRef}
+        data-tour="timeline"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}

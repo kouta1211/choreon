@@ -77,6 +77,8 @@ type UIState = {
   isPlaying: boolean;
   /** シーン一覧シート(並び替え・複製・削除)を開いているか */
   isSceneSheetOpen: boolean;
+  /** 使い方の案内を頼まれた時刻。まだなら null */
+  tourRequestedAt: number | null;
   /** ダンサー追加シートを開いているか */
   isAddDancerSheetOpen: boolean;
   /** フォーメーションのテンプレートシートを開いているか */
@@ -102,6 +104,9 @@ type UIState = {
   setDragSnapLine: (line: DragSnapLine) => void;
   setIsPlaying: (isPlaying: boolean) => void;
   setSceneSheetOpen: (isOpen: boolean) => void;
+  /** 使い方の案内を出し直す。押した時刻を入れるだけの合図で、
+   * 同じ操作を繰り返しても値が変わるので毎回反応する */
+  requestTour: () => void;
   setAddDancerSheetOpen: (isOpen: boolean) => void;
   setTemplateSheetOpen: (isOpen: boolean) => void;
   /** 確認ダイアログを出す。実行された場合の処理はrequest.onConfirmに持たせる */
@@ -161,6 +166,7 @@ export const useUIStore = create<UIState>((set) => ({
   dragSnapLine: { x: null, y: null },
   isPlaying: false,
   isSceneSheetOpen: false,
+  tourRequestedAt: null,
   isAddDancerSheetOpen: false,
   isTemplateSheetOpen: false,
   confirm: null,
@@ -233,6 +239,8 @@ export const useUIStore = create<UIState>((set) => ({
     ),
   setIsPlaying: (isPlaying) => set({ isPlaying }),
   setSceneSheetOpen: (isOpen) => set({ isSceneSheetOpen: isOpen }),
+
+  requestTour: () => set({ tourRequestedAt: Date.now() }),
   setAddDancerSheetOpen: (isOpen) => set({ isAddDancerSheetOpen: isOpen }),
   setTemplateSheetOpen: (isOpen) => set({ isTemplateSheetOpen: isOpen }),
   requestConfirm: (request) => set({ confirm: request }),

@@ -11,6 +11,7 @@ import { SceneDock } from "@/components/organisms/SceneDock";
 import { SceneSidebar } from "@/components/organisms/SceneSidebar";
 import { EditorSidePanel } from "@/components/organisms/EditorSidePanel";
 import { EditorShortcuts } from "@/components/organisms/EditorShortcuts";
+import { EditorTour } from "@/components/organisms/EditorTour";
 import { UnsavedChangesGuard } from "@/components/organisms/UnsavedChangesGuard";
 import { useSceneThumbnails } from "@/features/scene/hooks/useSceneThumbnails";
 import { SceneScrubProvider } from "@/features/canvas/hooks/useSceneScrub";
@@ -124,6 +125,7 @@ export function EditorLayout({
           <TemplateSheet project={project} />
           <EditorShortcuts />
           <UnsavedChangesGuard />
+          <EditorTour />
         </div>
       </div>
     </SceneScrubProvider>

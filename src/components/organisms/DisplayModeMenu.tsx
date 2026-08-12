@@ -8,8 +8,7 @@ import {
   SlidersHorizontal,
   EyeOff,
   Spline,
-  Target,
-} from "lucide-react";
+  Target, HelpCircle } from "lucide-react";
 import { useUIStore, type GridMode } from "@/features/canvas/store/useUIStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useThemeStore } from "@/features/theme/store/useThemeStore";
@@ -39,6 +38,7 @@ const GRID_MODES: { value: GridMode; label: string }[] = [
 
 export function DisplayModeMenu() {
   const [isOpen, setIsOpen] = useState(false);
+  const requestTour = useUIStore((state) => state.requestTour);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const gridMode = useUIStore((state) => state.gridMode);
@@ -140,6 +140,7 @@ export function DisplayModeMenu() {
         onClick={() => setIsOpen((open) => !open)}
         aria-expanded={isOpen}
         aria-haspopup="menu"
+        data-tour="display-menu"
         aria-label="表示とモード"
         className={`relative flex h-9 w-9 items-center justify-center rounded-[calc(var(--radius)*0.8333)] border transition-colors ${
           isOpen
@@ -214,6 +215,21 @@ export function DisplayModeMenu() {
                 fullWidth
               />
             ))}
+
+            {/* 使い方の案内をもう一度。初回に飛ばした人と、
+                しばらく空けて戻ってきた人のための入口 */}
+            <span aria-hidden className="my-1 block h-px bg-line" />
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                requestTour();
+              }}
+              className="flex w-full items-center gap-2.5 rounded-[calc(var(--radius)*0.6667)] px-2 py-2 text-left text-[13px] text-fg-sub"
+            >
+              <HelpCircle size={15} className="shrink-0 text-fg-muted" />
+              使い方をもう一度見る
+            </button>
 
             {/* 見た目(テーマ)の選択そのものはホームにある。ここに置くのは
                 「この1件だけ端末の既定から外す」というスイッチだけ。

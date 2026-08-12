@@ -95,6 +95,7 @@ export function Stage({
         バックステージ
       </p>
       <div
+        data-tour="stage"
         className={`relative flex min-h-0 w-full flex-1 items-center justify-center [container-type:size] ${
           isSwipeEnabled ? "touch-none" : ""
         }`}
