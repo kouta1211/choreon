@@ -55,13 +55,21 @@ export function createGridSnapModifier(
 
     const rawX = clamp(
       data.x +
-        pixelDeltaToUnitDelta(transform.x, stageRect.width, data.stageWidthUnits),
+        pixelDeltaToUnitDelta(
+          transform.x,
+          stageRect.width,
+          data.stageWidthUnits,
+        ),
       0,
       data.stageWidthUnits,
     );
     const rawY = clamp(
       data.y +
-        pixelDeltaToUnitDelta(transform.y, stageRect.height, data.stageHeightUnits),
+        pixelDeltaToUnitDelta(
+          transform.y,
+          stageRect.height,
+          data.stageHeightUnits,
+        ),
       0,
       data.stageHeightUnits,
     );

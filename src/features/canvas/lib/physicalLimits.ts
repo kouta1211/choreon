@@ -11,7 +11,10 @@ const METERS_PER_STAGE_UNIT = 0.9;
 const MAX_REALISTIC_DISTANCE_METERS = 8;
 
 export function findExcessiveMoveDancerIds(
-  currentPositions: Record<string, { xCoordinate: number; yCoordinate: number }>,
+  currentPositions: Record<
+    string,
+    { xCoordinate: number; yCoordinate: number }
+  >,
   nextPositions: Record<string, { xCoordinate: number; yCoordinate: number }>,
   metersPerUnit: number = METERS_PER_STAGE_UNIT,
   maxRealisticDistanceMeters: number = MAX_REALISTIC_DISTANCE_METERS,

@@ -140,9 +140,7 @@ describe("resolveFormationPoints", () => {
       for (const transform of combos) {
         const result = resolveFormationPoints(item.points, transform, 14, 10);
         expect(
-          result.every(
-            (p) => p.x >= 0 && p.x <= 14 && p.y >= 0 && p.y <= 10,
-          ),
+          result.every((p) => p.x >= 0 && p.x <= 14 && p.y >= 0 && p.y <= 10),
         ).toBe(true);
       }
     }

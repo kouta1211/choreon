@@ -26,8 +26,6 @@ describe("findExcessiveMoveDancerIds", () => {
     expect(findExcessiveMoveDancerIds(current, next, 1, 2)).toEqual(
       new Set(["a"]),
     );
-    expect(findExcessiveMoveDancerIds(current, next, 1, 5)).toEqual(
-      new Set(),
-    );
+    expect(findExcessiveMoveDancerIds(current, next, 1, 5)).toEqual(new Set());
   });
 });

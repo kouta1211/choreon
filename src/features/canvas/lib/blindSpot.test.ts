@@ -5,7 +5,9 @@ import { findBlockedDancerIds } from "./blindSpot";
 const STAGE_WIDTH = 14;
 const STAGE_HEIGHT = 10;
 
-function find(positions: Record<string, { xCoordinate: number; yCoordinate: number }>) {
+function find(
+  positions: Record<string, { xCoordinate: number; yCoordinate: number }>,
+) {
   return findBlockedDancerIds(positions, STAGE_WIDTH, STAGE_HEIGHT);
 }
 

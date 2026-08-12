@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { List, Pause, Play, Plus } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { SceneTabs } from "@/components/molecules/SceneTabs";
 import { SceneDotRail } from "@/components/molecules/SceneDotRail";
-import { DancerLaneRail } from "@/components/molecules/DancerLaneRail";
-import { buildDancerLanes } from "@/features/scene/lib/dancerLanes";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import {
   seekToSelectedScene,
@@ -58,11 +56,6 @@ export function SceneDock({ project }: Props) {
   const thumbnailBySceneId = useProjectStore(
     (state) => state.thumbnailBySceneId,
   );
-  const dancers = useProjectStore((state) => state.dancers);
-  const positionsBySceneId = useProjectStore(
-    (state) => state.positionsBySceneId,
-  );
-  const railMode = useUIStore((state) => state.railMode);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const selectScene = useUIStore((state) => state.selectScene);
   const isPlaying = useUIStore((state) => state.isPlaying);
@@ -77,16 +70,6 @@ export function SceneDock({ project }: Props) {
 
   const selectedIndex = scenes.findIndex((s) => s.id === selectedSceneId);
   const selectedScene = selectedIndex >= 0 ? scenes[selectedIndex] : null;
-
-  // レーン表示のときだけ組み立てる。ドットレールの間は使わないので、
-  // 人数×シーン数の走査を毎回やる意味がない
-  const lanes = useMemo(
-    () =>
-      railMode === "lanes"
-        ? buildDancerLanes(scenes, dancers, positionsBySceneId)
-        : [],
-    [railMode, scenes, dancers, positionsBySceneId],
-  );
 
   // 再生ボタンを押した直後の1歩目だけは待たずに動き始めるための目印。
   // 押した瞬間(false→trueに切り替える側)でtrueにし、シーケンサー側で
@@ -218,21 +201,12 @@ export function SceneDock({ project }: Props) {
         />
       </div>
 
-      {railMode === "lanes" ? (
-        <DancerLaneRail
-          lanes={lanes}
-          selectedIndex={selectedIndex}
-          sceneCount={scenes.length}
-          onSelectIndex={selectSceneByIndex}
-        />
-      ) : (
-        <SceneDotRail
-          scenes={scenes}
-          selectedIndex={selectedIndex}
-          isPlaying={isPlaying}
-          onSelectIndex={selectSceneByIndex}
-        />
-      )}
+      <SceneDotRail
+        scenes={scenes}
+        selectedIndex={selectedIndex}
+        isPlaying={isPlaying}
+        onSelectIndex={selectSceneByIndex}
+      />
 
       {/* 画面全体に重なるシート(狭い画面用)。DOM上の位置は見た目に
           影響しないのでここから描く。広い画面では一覧ボタンを出さないため

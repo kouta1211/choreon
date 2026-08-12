@@ -76,9 +76,9 @@ describe("shouldCommitScrub", () => {
 
   // 速く短く払う操作。距離だけで判定すると毎回戻ってしまう
   it("距離が足りなくても、速く払えば確定する", () => {
-    expect(
-      shouldCommitScrub({ ...base, deltaPx: 40, elapsedMs: 50 }),
-    ).toBe(true);
+    expect(shouldCommitScrub({ ...base, deltaPx: 40, elapsedMs: 50 })).toBe(
+      true,
+    );
   });
 
   it("速くても、動きが小さすぎるものはタップの震えとして無視する", () => {

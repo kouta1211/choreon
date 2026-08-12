@@ -5,10 +5,6 @@
  * 「今どう見たいか」であって、作品の中身ではない。だからプロジェクトでも
  * クラウドでもなく端末に持たせている(見た目の設定と同じ考え方)。
  *
- * シンメトリーモードは入れていない。あれは表示ではなく編集の挙動を変える
- * もので、覚えたまま次に開くと「1人動かしたらもう1人も動いた」が
- * 説明なしに起きてしまうため、毎回オフから始める方が安全。
- *
  * ■ なぜ覚える必要があるのか
  * 顔被りチェックは、オンにしても再読み込みやプロジェクトを開き直すたびに
  * オフへ戻っていた。判定そのものは動いていても、確かめようとした時には
@@ -24,30 +20,17 @@ export function isGridMode(value: unknown): value is GridMode {
   return GRID_MODES.includes(value as GridMode);
 }
 
-/** ドック最下段の見せ方。
- *   dots  … 曲全体のどこにいるかを1本のレールで示す(既定)
- *   lanes … 1人1本の横線で「誰がいつ動くか」を出す */
-export type RailMode = "dots" | "lanes";
-
-const RAIL_MODES: RailMode[] = ["dots", "lanes"];
-
-export function isRailMode(value: unknown): value is RailMode {
-  return RAIL_MODES.includes(value as RailMode);
-}
-
 /** localStorageのキー。値の形を変えるときはここも変えて、古い形を無視させる */
 export const VIEW_STORAGE_KEY = "choreon.view.v1";
 
 export type ViewPreference = {
   gridMode: GridMode;
-  railMode: RailMode;
   isPathVisible: boolean;
   isBlindSpotCheckVisible: boolean;
 };
 
 export const DEFAULT_VIEW_PREFERENCE: ViewPreference = {
   gridMode: "square",
-  railMode: "dots",
   isPathVisible: false,
   isBlindSpotCheckVisible: false,
 };
@@ -76,9 +59,6 @@ export function parseViewPreference(raw: string | null): ViewPreference {
     gridMode: isGridMode(record.gridMode)
       ? record.gridMode
       : DEFAULT_VIEW_PREFERENCE.gridMode,
-    railMode: isRailMode(record.railMode)
-      ? record.railMode
-      : DEFAULT_VIEW_PREFERENCE.railMode,
     isPathVisible:
       typeof record.isPathVisible === "boolean"
         ? record.isPathVisible

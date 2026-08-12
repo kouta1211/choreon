@@ -60,9 +60,9 @@ describe("splitQuadraticAfter", () => {
     // 残り(0→1)の進捗sは、元の曲線の t + s(1-t) にあたる。
     // ここがずれると、消え際の線がダンサーの通り道から外れる
     for (const s of [0, 0.25, 0.5, 0.75, 1]) {
-      expect(quadraticBezierAt(remaining.from, remaining.control, to, s)).toBeCloseTo(
-        quadraticBezierAt(from, control, to, t + s * (1 - t)),
-      );
+      expect(
+        quadraticBezierAt(remaining.from, remaining.control, to, s),
+      ).toBeCloseTo(quadraticBezierAt(from, control, to, t + s * (1 - t)));
     }
   });
 

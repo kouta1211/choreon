@@ -21,11 +21,8 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useHistoryStore } from "@/features/canvas/store/useHistoryStore";
 import {
   clamp,
-  findSymmetryPairId,
   isCloseToInteger,
-  mirrorXCoordinate,
   pixelDeltaToUnitDelta,
-  snapToCenterline,
   snapToGrid,
 } from "@/features/canvas/lib/dragMath";
 import {
@@ -53,9 +50,6 @@ type Props = {
   /** ゲスト(未ログイン)の下書きとして開くかどうか。storeへそのまま渡す */
   isGuest?: boolean;
 };
-
-/** 中心線からこの距離(ステージ座標系のユニット)以内ならぴったり吸着させる */
-const SYMMETRY_SNAP_TOLERANCE = 0.3;
 
 /** dnd-kitのデフォルトのスクリーンリーダー向け説明・通知は英語かつ
  * 「スペースで掴む/離す」という、このアプリでは使っていない2段階操作を
@@ -147,7 +141,6 @@ export function CanvasBoard({
   const selectScene = useUIStore((state) => state.selectScene);
   const setDragSnapLine = useUIStore((state) => state.setDragSnapLine);
   const showToast = useUIStore((state) => state.showToast);
-  const isSymmetryMode = useUIStore((state) => state.isSymmetryMode);
 
   // ステージを横に払って前後のシーンへ移るジェスチャ。ダンサーのドラッグ
   // (dnd-kit)とは掴む対象で住み分けており、ダンサーとボタンの上から
@@ -252,18 +245,8 @@ export function CanvasBoard({
         project.stageHeight,
       );
 
-      let nextX = clamp(before.xCoordinate + deltaX, 0, project.stageWidth);
+      const nextX = clamp(before.xCoordinate + deltaX, 0, project.stageWidth);
       const nextY = clamp(before.yCoordinate + deltaY, 0, project.stageHeight);
-
-      // シンメトリーモード中は、中心線付近でドロップするとぴったり中心に吸着させる
-      // (ペア相手も中心に来るので、左右対称の配置を作りやすくするため)
-      if (isSymmetryMode) {
-        nextX = snapToCenterline(
-          nextX,
-          project.stageWidth,
-          SYMMETRY_SNAP_TOLERANCE,
-        );
-      }
 
       const after = {
         sceneId: selectedSceneId,
@@ -273,46 +256,10 @@ export function CanvasBoard({
         rotationAngle: before.rotationAngle,
       };
 
-      // シンメトリーモード中は、奥行き(Y座標)が最も近い他のダンサーを
-      // ペアとみなし、中心線を挟んだ鏡像の位置へ連動させる
-      const pairId = isSymmetryMode
-        ? findSymmetryPairId(currentPositions, dancerId)
-        : null;
-      const pairBefore = pairId ? currentPositions[pairId] : null;
-      const pairAfter =
-        pairId && pairBefore
-          ? {
-              sceneId: selectedSceneId,
-              dancerId: pairId,
-              xCoordinate: clamp(
-                mirrorXCoordinate(after.xCoordinate, project.stageWidth),
-                0,
-                project.stageWidth,
-              ),
-              yCoordinate: pairBefore.yCoordinate,
-              rotationAngle: pairBefore.rotationAngle,
-            }
-          : null;
-
       // 楽観的更新: 先に見た目を確定させ、保存に失敗したらdrag前の値に戻す
       updateDancerPosition(after.sceneId, after.dancerId, after);
-      if (pairAfter) {
-        updateDancerPosition(pairAfter.sceneId, pairAfter.dancerId, pairAfter);
-      }
 
-      const changes = [
-        { sceneId: selectedSceneId, dancerId, before, after },
-        ...(pairId && pairBefore && pairAfter
-          ? [
-              {
-                sceneId: selectedSceneId,
-                dancerId: pairId,
-                before: pairBefore,
-                after: pairAfter,
-              },
-            ]
-          : []),
-      ];
+      const changes = [{ sceneId: selectedSceneId, dancerId, before, after }];
 
       // 保存だけを切り出しているのは、失敗したときにトーストの「再試行」から
       // もう一度呼べるようにするため。通信が一瞬切れただけのことが多く、
@@ -326,8 +273,7 @@ export function CanvasBoard({
             ),
           );
           // 保存が確定してから履歴に積む(失敗した操作は「元に戻す」対象に
-          // ならない=見た目もロールバック済みなので、積むと辻褄が合わなくなる)。
-          // シンメトリーのペアも同じ1ステップに含め、まとめて元に戻せるようにする
+          // ならない=見た目もロールバック済みなので、積むと辻褄が合わなくなる)
           useHistoryStore.getState().push({ kind: "move", changes });
         } catch (error) {
           for (const change of changes) {
@@ -362,7 +308,6 @@ export function CanvasBoard({
     },
     [
       selectedSceneId,
-      isSymmetryMode,
       project.stageWidth,
       project.stageHeight,
       setDragSnapLine,
@@ -541,7 +486,6 @@ export function CanvasBoard({
         scrubIndicator={<ScrubProgressBar />}
         widthUnits={project.stageWidth}
         heightUnits={project.stageHeight}
-        showCenterline={isSymmetryMode}
         overlay={<HistoryControls />}
         belowStageLeft={<TemplateButton />}
       >

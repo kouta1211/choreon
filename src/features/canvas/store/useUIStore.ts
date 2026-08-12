@@ -4,7 +4,6 @@ import {
   parseViewPreference,
   VIEW_STORAGE_KEY,
   type GridMode,
-  type RailMode,
   type ViewPreference,
 } from "@/features/canvas/lib/viewPreference";
 
@@ -38,7 +37,7 @@ export type ConfirmRequest = {
 
 /** ステージの目盛りの出し方。円形の隊形は格子より同心円の方が読みやすい。
  * 定義は端末に保存する側(viewPreference)に置いてある */
-export type { GridMode, RailMode };
+export type { GridMode };
 
 type UIState = {
   selectedSceneId: string | null;
@@ -53,12 +52,7 @@ type UIState = {
    * 同じ「どこに立っているか」を別の読み方で示すもので、重ねると
    * どちらも読めなくなるため、並立ではなく1つを選ぶ */
   gridMode: GridMode;
-  /** ドック最下段をドットレールにするかレーン表示にするか */
-  railMode: RailMode;
   toast: Toast | null;
-  /** オンの間、ダンサーをドラッグすると中心線を挟んだペアも連動して動く
-   * (CanvasBoard.handleDragEndが読み取って処理する。ここはトグル状態のみ) */
-  isSymmetryMode: boolean;
   /** 「マイ・フォーカス」で強調表示中のダンサー。シーンをまたいでも
    * 保持したいUI状態なので、シーン選択と同じくここに置く */
   focusedDancerId: string | null;
@@ -92,10 +86,8 @@ type UIState = {
   selectScene: (sceneId: string | null) => void;
   selectDancer: (dancerId: string | null) => void;
   setGridMode: (mode: GridMode) => void;
-  setRailMode: (mode: RailMode) => void;
   showToast: (toast: Toast) => void;
   clearToast: () => void;
-  toggleSymmetryMode: () => void;
   setFocusedDancer: (dancerId: string | null) => void;
   togglePathVisible: () => void;
   toggleBlindSpotCheckVisible: () => void;
@@ -136,7 +128,6 @@ function persistFromState(
 ): void {
   persistViewPreference({
     gridMode: state.gridMode,
-    railMode: state.railMode,
     isPathVisible: state.isPathVisible,
     isBlindSpotCheckVisible: state.isBlindSpotCheckVisible,
     ...changed,
@@ -148,12 +139,10 @@ export const useUIStore = create<UIState>((set) => ({
   previousSceneId: null,
   selectedDancerId: null,
   // 3つの既定値は viewPreference が持つ。サーバーで描くHTMLと最初の
-   // ブラウザ描画を一致させるため、ここでは必ず既定から始め、
-   // 読み込みは loadViewPreference に任せる
+  // ブラウザ描画を一致させるため、ここでは必ず既定から始め、
+  // 読み込みは loadViewPreference に任せる
   gridMode: DEFAULT_VIEW_PREFERENCE.gridMode,
-  railMode: DEFAULT_VIEW_PREFERENCE.railMode,
   toast: null,
-  isSymmetryMode: false,
   focusedDancerId: null,
   isPathVisible: DEFAULT_VIEW_PREFERENCE.isPathVisible,
   isBlindSpotCheckVisible: DEFAULT_VIEW_PREFERENCE.isBlindSpotCheckVisible,
@@ -180,15 +169,8 @@ export const useUIStore = create<UIState>((set) => ({
       persistFromState(state, { gridMode: mode });
       return { gridMode: mode };
     }),
-  setRailMode: (mode) =>
-    set((state) => {
-      persistFromState(state, { railMode: mode });
-      return { railMode: mode };
-    }),
   showToast: (toast) => set({ toast }),
   clearToast: () => set({ toast: null }),
-  toggleSymmetryMode: () =>
-    set((state) => ({ isSymmetryMode: !state.isSymmetryMode })),
   setFocusedDancer: (dancerId) => set({ focusedDancerId: dancerId }),
   togglePathVisible: () =>
     set((state) => {

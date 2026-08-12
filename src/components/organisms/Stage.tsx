@@ -34,8 +34,6 @@ type Props = {
    * ステージの中には重ねない — 常設のボタンをステージ面に置くと、
    * その下にダンサーが来たときに隠れてしまうため */
   belowStageLeft?: ReactNode;
-  /** シンメトリーモード中、中心(左右対称の軸)に薄い縦線を表示する */
-  showCenterline?: boolean;
   /** ドラッグ量(px)をステージ座標系に換算する際、実際の描画サイズを
    * 読み取れるためのための参照(React 19からforwardRef不要でrefを
    * 通常のpropsとして受け取れる) */
@@ -74,7 +72,6 @@ export function Stage({
   children,
   overlay,
   belowStageLeft,
-  showCenterline = false,
   ref,
   scrubHandlers,
   trackRef,
@@ -142,13 +139,6 @@ export function Stage({
                     heightUnits={heightUnits}
                   />
                 </div>
-              )}
-              {showCenterline && (
-                <div
-                  data-testid="stage-centerline"
-                  aria-hidden
-                  className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-accent/50"
-                />
               )}
               {/* 格子スナップが効いている間、吸着先の格子線をハイライトする。
               縦横どちらも出ていれば交差点への吸着だと分かる */}
