@@ -3,34 +3,11 @@
 import type { PointerEvent as ReactPointerEvent, ReactNode, Ref } from "react";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { ConcentricGuides } from "@/components/molecules/ConcentricGuides";
-import { MARKER_SIZE } from "@/features/dancer/constants";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
-
-/**
- * 「空いている領域に、縦横比を保ったまま目一杯収まる幅」を返す。
- *
- * aspect-ratioと max-width/max-height の組み合わせでは表現できない。
- * 片方の軸が確定していると、もう片方が上限で詰められても再計算されず、
- * 比率が崩れるため(実測で 8x8 のステージが 420x441 になった)。
- * 比率が崩れると、％で置いているダンサーの位置がまとめてずれる。
- *
- * そこで「入る方の小さい側」をmin()で直接指定する。親に
- * container-type:size を付けてあるので、cqw/cqhで空き領域の縦横を参照できる。
- *
- * ■ 縁に立つ人のぶんを空けてある
- * ダンサーの丸は座標を中心に描くので、ステージの縁ぴったりに立つと
- * 半分(MARKER_SIZE / 2)が外へはみ出す。ステージを空き領域いっぱいに
- * 広げると、そのはみ出したぶんが画面の外に出て丸が欠けて見えた
- * (スマートフォンでは横幅で決まるため必ずこうなる)。
- * 左右に半径ぶんずつ空けておけば、縁に立っても丸が最後まで見える。
- */
-export function stageWidthRule(
-  widthUnits: number,
-  heightUnits: number,
-): string {
-  return `min(calc(100cqw - ${MARKER_SIZE}px), calc((100cqh - ${MARKER_SIZE}px) * ${widthUnits} / ${heightUnits}))`;
-}
+// 読み込み中の骨格(loading.tsx)も同じ大きさで描くので、この式は
+// client/server のどちらからも読める場所に置いてある
+import { stageWidthRule } from "@/features/canvas/lib/stageSize";
 
 type Props = {
   /** ステージの横幅(projects.stage_widthのユニット数。1マス=1ユニット) */

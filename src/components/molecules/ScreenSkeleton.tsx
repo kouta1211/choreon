@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 /**
  * 読み込み中に出す骨格。
@@ -27,10 +27,21 @@ export function ScreenSkeleton({ children }: { children: ReactNode }) {
   );
 }
 
-/** 骨格の面。角丸と明滅だけを持つ */
-export function SkeletonBox({ className = "" }: { className?: string }) {
+/** 骨格の面。角丸と明滅だけを持つ。
+ *
+ * styleを受けるのはステージの骨格のためだけ。あの大きさは
+ * container query の式(stageWidthRule)で決まるので、Tailwindのクラスでは
+ * 書けない。本物と同じ式を使わないと、届いた瞬間に枠が動く */
+export function SkeletonBox({
+  className = "",
+  style,
+}: {
+  className?: string;
+  style?: CSSProperties;
+}) {
   return (
     <span
+      style={style}
       className={`block animate-pulse rounded-lg bg-fg/8 motion-reduce:animate-none ${className}`}
     />
   );

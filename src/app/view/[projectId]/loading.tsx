@@ -2,6 +2,12 @@ import {
   ScreenSkeleton,
   SkeletonBox,
 } from "@/components/molecules/ScreenSkeleton";
+import { stageWidthRule } from "@/features/canvas/lib/stageSize";
+import { DEFAULT_SETTINGS } from "@/features/settings/lib/settings";
+
+// 作品ごとの縦横はまだ届いていないので、既定(14×10)を仮に置く
+const { defaultStageWidth: WIDTH_UNITS, defaultStageHeight: HEIGHT_UNITS } =
+  DEFAULT_SETTINGS;
 
 /**
  * 閲覧専用ビューアを開いている間に出す骨格。
@@ -25,7 +31,17 @@ export default function ViewerLoading() {
         <div className="flex min-h-0 flex-1 flex-col gap-2 px-3.5 landscape:flex-row md:flex-row">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-1.5">
             <SkeletonBox className="h-2.5 w-24 rounded-full" />
-            <SkeletonBox className="aspect-[14/10] w-full rounded-stage" />
+            {/* 大きさは本物と同じ式で。w-full にすると、横向きや広い画面で
+                横いっぱいの板になり、届いた瞬間に縮んで画面が跳ねる */}
+            <div className="flex min-h-0 w-full flex-1 items-center justify-center [container-type:size]">
+              <SkeletonBox
+                className="rounded-stage"
+                style={{
+                  aspectRatio: `${WIDTH_UNITS} / ${HEIGHT_UNITS}`,
+                  width: stageWidthRule(WIDTH_UNITS, HEIGHT_UNITS),
+                }}
+              />
+            </div>
             <SkeletonBox className="h-2.5 w-14 rounded-full" />
           </div>
         </div>
