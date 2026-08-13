@@ -8,6 +8,7 @@ import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { flushPendingWrites } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
  * 自動保存を切っているときだけ出る「保存」。
@@ -20,6 +21,7 @@ import { PressableButton } from "@/components/atoms/PressableButton";
  * 点で添えるのも、ゲストの保存ボタンと揃えてある。
  */
 export function SaveChangesButton() {
+  const t = useT();
   const isGuest = useProjectStore((state) => state.isGuest);
   const hasUnsavedChanges = useProjectStore((state) => state.hasUnsavedChanges);
   const isAutoSaveEnabled = useSettingsStore(
@@ -38,9 +40,9 @@ export function SaveChangesButton() {
       await flushPendingWrites();
     } catch (error) {
       showToast({
-        message: toUserMessage(error, "保存に失敗しました"),
+        message: toUserMessage(error, t.editor.save.failed),
         type: "error",
-        action: { label: "再試行", onAction: () => void handleSave() },
+        action: { label: t.editor.save.retry, onAction: () => void handleSave() },
       });
     } finally {
       setIsSaving(false);
@@ -55,7 +57,7 @@ export function SaveChangesButton() {
       className="flex h-8 shrink-0 items-center gap-1.5 rounded-2xl bg-accent pr-3 pl-2.5 text-label font-semibold text-accent-fg disabled:opacity-50"
     >
       {hasUnsavedChanges ? <CloudUpload size={15} /> : <Check size={15} />}
-      {hasUnsavedChanges ? "保存" : "保存済み"}
+      {hasUnsavedChanges ? t.editor.save.save : t.editor.save.saved}
     </PressableButton>
   );
 }

@@ -8,6 +8,7 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { InlineEditableText } from "@/components/molecules/InlineEditableText";
 import type { Project } from "@/features/project/types";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   project: Project;
@@ -25,6 +26,7 @@ type Props = {
  * 取得した値)を使う。更新は楽観的更新(先に反映し、保存に失敗したら戻す)。
  */
 export function ProjectTitle({ project }: Props) {
+  const t = useT();
   // 別プロジェクトのstoreが残っている一瞬に他人の名前を出さないよう、
   // idが一致するときだけstoreの値を使う。storeが未読込のあいだ(初回描画や、
   // この部品だけを単体で置いたとき)は手元のstateで表示を成立させる
@@ -49,7 +51,7 @@ export function ProjectTitle({ project }: Props) {
       setLocalTitle(previous);
       renameProject(previous);
       showToast({
-        message: toUserMessage(error, "プロジェクト名の変更に失敗しました"),
+        message: toUserMessage(error, t.editor.projectNameFailed),
         type: "error",
       });
     }
@@ -59,7 +61,7 @@ export function ProjectTitle({ project }: Props) {
     <InlineEditableText
       value={title}
       onCommit={commit}
-      label="プロジェクト名"
+      label={t.editor.projectName}
       textClassName="text-body font-semibold"
       fullWidth
     />

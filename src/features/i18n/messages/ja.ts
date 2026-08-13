@@ -132,6 +132,120 @@ export const ja = {
     curtain: "暗幕",
   },
 
+  editor: {
+    backToProjects: "プロジェクト一覧に戻る",
+    addDancer: "ダンサーを追加",
+    projectName: "プロジェクト名",
+    projectNameFailed: "プロジェクト名の変更に失敗しました",
+    upstage: "バックステージ",
+    downstage: "客席側",
+    noScenes: "シーンがありません",
+    noScenesYet: "まだシーンがありません",
+    createFirstScene: "最初のシーンを作る",
+    copyCurrent: "いまの配置をコピーして追加",
+
+    view: {
+      title: "表示とモード",
+      counts: (dancers: number, scenes: number) =>
+        `${dancers}人 · ${scenes}シーン`,
+      gridLabel: "目盛り",
+      gridSquare: "格子",
+      gridCircle: "同心円",
+      gridNone: "なし",
+      path: {
+        label: "導線を表示",
+        description: "次のシーンへの動きを線で描く",
+      },
+      blindSpot: {
+        label: "顔被りチェック",
+        description: "手前の人の真後ろに入っている人に印を出す",
+      },
+      stageMarks: {
+        label: "バミリ",
+        description: "全シーンの立ち位置を床に重ねて出す",
+      },
+      swipe: {
+        label: "払ってシーンを送る",
+        description: "ステージを横にドラッグして前後のシーンへ",
+      },
+      thisProject: "この作品",
+      music: "曲",
+      share: "共有",
+      review: "隊形を見てもらう",
+      exportVideo: "動画にする",
+      tour: "使い方をもう一度見る",
+      settings: "設定",
+      override: {
+        label: "このプロジェクトだけ別の見た目",
+        on: "ホームでテーマを変えても、ここは変わりません",
+        off: "オンにすると、いまの見た目をこのプロジェクトに固定します",
+      },
+    },
+
+    dock: {
+      openScenes: "シーン一覧を開く",
+      cancelCountIn: "カウントインを取り消す",
+      pause: "再生を停止",
+      play: "最後のシーンまで再生",
+      sceneSettings: (name: string) => `「${name}」の設定を開く`,
+      moveSeconds: (seconds: number) => ` · ${seconds}秒で移動`,
+      addScene: "シーンを追加",
+    },
+
+    scenes: {
+      timeInSong: "曲のこの位置",
+      ripple: "以降のシーンも一緒にずらす",
+      rippleNote:
+        "切っていると、動くのはこのシーンだけです（隣を追い越すと順番も入れ替わります）",
+      seconds: "秒",
+      title: "シーン",
+      dancers: "ダンサー",
+      sceneName: "シーン名",
+      summary: (count: number, seconds: number) =>
+        `${count}件 · 合計 ${seconds}s`,
+      moveIn: (seconds: number) => ` · ${seconds}s で移動`,
+      showing: " · 表示中",
+      duplicate: "複製",
+      delete: "削除",
+    },
+
+    save: {
+      save: "保存",
+      saved: "保存済み",
+      failed: "保存に失敗しました",
+      retry: "再試行",
+      unsaved: "未保存の変更があります",
+    },
+
+    history: {
+      undo: "元に戻す",
+      undoHint: "元に戻す (Ctrl+Z)",
+      redo: "やり直す",
+      redoHint: "やり直す (Ctrl+Shift+Z)",
+    },
+
+    template: {
+      open: "フォーメーションから選ぶ",
+      openSame: "フォーメーションから選ぶ(前のシーンと同じ配置のままです)",
+    },
+
+    /** 画面には出ず、読み上げにだけ流れる案内 */
+    a11y: {
+      dragHelp:
+        "ダンサーをドラッグして移動できます。選択した状態で矢印キーを押しても移動できます(Shiftキーを押しながらだとより大きく移動します)。",
+      dragStart: "ダンサーの移動を開始しました。",
+      dragEnd: "ダンサーの位置を確定しました。",
+      dragCancel: "ダンサーの移動をキャンセルしました。",
+    },
+
+    errors: {
+      position: "位置の保存に失敗しました",
+      rotation: "向きの保存に失敗しました",
+      curve: "曲線の変更に失敗しました",
+      retry: "再試行",
+    },
+  },
+
   settings: {
     title: "設定",
 

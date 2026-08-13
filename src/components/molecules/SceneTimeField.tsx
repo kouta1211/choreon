@@ -3,6 +3,7 @@
 import { useId, useState, type FocusEvent } from "react";
 import { Clock, MoveRight } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   /** このシーンが曲の何秒目か */
@@ -40,6 +41,7 @@ export function SceneTimeField({
   onCommit,
   fieldKey,
 }: Props) {
+  const t = useT();
   const inputId = useId();
   const [ripple, setRipple] = useState(false);
 
@@ -56,7 +58,9 @@ export function SceneTimeField({
     <div className="flex flex-col gap-2 rounded-[calc(var(--radius)*0.75)] border border-line bg-surface-sunken p-2.5">
       <label htmlFor={inputId} className="flex items-center gap-2">
         <Clock size={13} className="shrink-0 text-fg-muted" />
-        <span className="flex-1 text-label text-fg">曲のこの位置</span>
+        <span className="flex-1 text-label text-fg">
+          {t.editor.scenes.timeInSong}
+        </span>
         <span className="flex shrink-0 items-center rounded-[calc(var(--radius)*0.5833)] border border-line-strong bg-surface-strong px-2 py-1 font-mono text-label text-fg focus-within:border-accent">
           <input
             id={inputId}
@@ -91,14 +95,14 @@ export function SceneTimeField({
         <Checkbox
           checked={ripple}
           onCheckedChange={(checked) => setRipple(checked === true)}
-          aria-label="以降のシーンも一緒にずらす"
+          aria-label={t.editor.scenes.ripple}
           className="mt-0.5"
         />
         <span>
-          以降のシーンも一緒にずらす
+          {t.editor.scenes.ripple}
           <span className="mt-0.5 block text-fg-muted/80">
-            切っていると、動くのはこのシーンだけです（隣を追い越すと
-            順番も入れ替わります）
+            {t.editor.scenes.rippleNote}
+
           </span>
         </span>
       </label>

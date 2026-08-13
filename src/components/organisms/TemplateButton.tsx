@@ -6,6 +6,7 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { Tooltip } from "@/components/atoms/Tooltip";
 import { useTemplateSuggestion } from "@/features/canvas/hooks/useTemplateSuggestion";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
  * フォーメーションのテンプレートを開く入口。ステージ【直下】の行の左端。
@@ -19,6 +20,7 @@ import { PressableButton } from "@/components/atoms/PressableButton";
  * 探してもらえなくなるため。
  */
 export function TemplateButton() {
+  const t = useT();
   const setTemplateSheetOpen = useUIStore(
     (state) => state.setTemplateSheetOpen,
   );
@@ -33,14 +35,14 @@ export function TemplateButton() {
   const isSuggested = useTemplateSuggestion();
 
   return (
-    <Tooltip label="フォーメーションから選ぶ" placement="top" align="left">
+    <Tooltip label={t.editor.template.open} placement="top" align="left">
       <PressableButton
         onClick={() => setTemplateSheetOpen(true)}
         disabled={!isAvailable}
         aria-label={
           isSuggested
-            ? "フォーメーションから選ぶ(前のシーンと同じ配置のままです)"
-            : "フォーメーションから選ぶ"
+            ? t.editor.template.openSame
+            : t.editor.template.open
         }
         className="relative flex h-11 w-11 items-center justify-center rounded-[calc(var(--radius)*1.0833)] border border-line-strong bg-surface/90 text-fg disabled:pointer-events-none disabled:opacity-30"
       >

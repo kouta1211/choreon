@@ -8,6 +8,7 @@ import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 // 読み込み中の骨格(loading.tsx)も同じ大きさで描くので、この式は
 // client/server のどちらからも読める場所に置いてある
 import { stageWidthRule } from "@/features/canvas/lib/stageSize";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   /** ステージの横幅(projects.stage_widthのユニット数。1マス=1ユニット) */
@@ -64,6 +65,7 @@ export function Stage({
   isSwipeEnabled = false,
   scrubIndicator,
 }: Props) {
+  const t = useT();
   const gridMode = useUIStore((state) => state.gridMode);
   const focusedDancerId = useUIStore((state) => state.focusedDancerId);
   const dragSnapLine = useUIStore((state) => state.dragSnapLine);
@@ -78,7 +80,7 @@ export function Stage({
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-unit">
       <p className="text-center text-caption tracking-[0.16em] text-fg-muted uppercase">
-        {isAudienceOnTop ? "客席側" : "バックステージ"}
+        {isAudienceOnTop ? t.editor.downstage : t.editor.upstage}
       </p>
       <div
         data-tour="stage"
@@ -184,7 +186,7 @@ export function Stage({
       </div>
       <div className="flex w-full items-center justify-center">
         <p className="text-center text-caption tracking-[0.16em] text-fg-muted uppercase">
-          {isAudienceOnTop ? "バックステージ" : "客席側"}
+          {isAudienceOnTop ? t.editor.upstage : t.editor.downstage}
         </p>
       </div>
     </div>
@@ -211,6 +213,7 @@ export function EmptyStage({
   onCreateScene,
   isCreating,
 }: EmptyStageProps) {
+  const t = useT();
   return (
     <div className="flex min-h-0 flex-1 items-center justify-center [container-type:size]">
       <div
@@ -229,7 +232,7 @@ export function EmptyStage({
           }}
         />
         <p className="relative text-label font-medium text-fg">
-          まだシーンがありません
+          {t.editor.noScenesYet}
         </p>
         <PressableButton
           kind="primary"
@@ -237,7 +240,7 @@ export function EmptyStage({
           disabled={isCreating}
           className="relative flex h-10 items-center gap-1.5 rounded-[calc(var(--radius)*0.8333)] bg-accent px-4 text-label font-semibold whitespace-nowrap text-accent-fg disabled:opacity-50"
         >
-          最初のシーンを作る
+          {t.editor.createFirstScene}
         </PressableButton>
       </div>
     </div>

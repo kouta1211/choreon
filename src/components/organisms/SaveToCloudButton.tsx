@@ -4,6 +4,7 @@ import { CloudUpload } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
  * ゲストモードのときだけヘッダーに出る「保存」。
@@ -16,6 +17,7 @@ import { PressableButton } from "@/components/atoms/PressableButton";
  * 逆に不安にさせるため。
  */
 export function SaveToCloudButton() {
+  const t = useT();
   const isGuest = useProjectStore((state) => state.isGuest);
   const hasUnsavedChanges = useProjectStore((state) => state.hasUnsavedChanges);
   const openAuthDialog = useUIStore((state) => state.openAuthDialog);
@@ -34,7 +36,7 @@ export function SaveToCloudButton() {
           「保存」の隣に長い注意書きを置くと、狭い画面で名前を押し出す */}
       {hasUnsavedChanges && (
         <span
-          aria-label="未保存の変更があります"
+          aria-label={t.editor.save.unsaved}
           role="status"
           className="block h-1.5 w-1.5 rounded-full bg-white/90"
         />

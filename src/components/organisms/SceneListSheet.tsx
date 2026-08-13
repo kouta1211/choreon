@@ -6,6 +6,7 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { totalTransitionSeconds } from "@/features/scene/lib/playback";
 import type { Project } from "@/features/project/types";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   project: Project;
@@ -19,6 +20,7 @@ type Props = {
  * サイドバーに常時出す。開く手間が無いぶん、そちらの方が扱いやすい。
  */
 export function SceneListSheet({ project }: Props) {
+  const t = useT();
   const isOpen = useUIStore((state) => state.isSceneSheetOpen);
   const setSceneSheetOpen = useUIStore((state) => state.setSceneSheetOpen);
   const scenes = useProjectStore((state) => state.scenes);
@@ -27,8 +29,11 @@ export function SceneListSheet({ project }: Props) {
     <BottomSheet
       isOpen={isOpen}
       onClose={() => setSceneSheetOpen(false)}
-      title="シーン"
-      titleRight={`${scenes.length}件 · 合計 ${totalTransitionSeconds(scenes)}s`}
+      title={t.editor.scenes.title}
+      titleRight={t.editor.scenes.summary(
+        scenes.length,
+        totalTransitionSeconds(scenes),
+      )}
       isTall
     >
       <div className="px-3.5 py-3">

@@ -17,6 +17,7 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { Tooltip } from "@/components/atoms/Tooltip";
 import type { Project } from "@/features/project/types";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   project: Project;
@@ -36,6 +37,7 @@ type Props = {
  * 開閉の状態を持つ場所と、描く場所を離すと、どちらが持ち主か分からなくなる。
  */
 export function EditorHeader({ project }: Props) {
+  const t = useT();
   const setAddDancerSheetOpen = useUIStore(
     (state) => state.setAddDancerSheetOpen,
   );
@@ -61,7 +63,7 @@ export function EditorHeader({ project }: Props) {
       ) : (
         <Link
           href="/"
-          aria-label="プロジェクト一覧に戻る"
+          aria-label={t.editor.backToProjects}
           className="flex h-target w-target shrink-0 items-center justify-center rounded-full text-fg-sub transition-colors hover:bg-surface hover:text-fg"
         >
           <ChevronLeft size={22} />
@@ -76,11 +78,11 @@ export function EditorHeader({ project }: Props) {
       {/* 自動保存を切っている人にだけ出る。どちらも出ない状態が既定 */}
       <SaveChangesButton />
 
-      <Tooltip label="ダンサーを追加" align="right">
+      <Tooltip label={t.editor.addDancer} align="right">
         <PressableButton
           kind="icon"
           onClick={() => setAddDancerSheetOpen(true)}
-          aria-label="ダンサーを追加"
+          aria-label={t.editor.addDancer}
           className="flex h-target w-target shrink-0 items-center justify-center rounded-full text-fg-sub transition-colors hover:bg-surface hover:text-fg"
         >
           <UserPlus size={20} />

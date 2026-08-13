@@ -27,6 +27,7 @@ import { useDuplicateScene } from "@/features/scene/hooks/useDuplicateScene";
 import { useSceneActions } from "@/features/scene/hooks/useSceneActions";
 import type { Project } from "@/features/project/types";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   project: Project;
@@ -49,6 +50,7 @@ type Props = {
  * 一覧として読めなくなるため。
  */
 export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
+  const t = useT();
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const scenes = useProjectStore((state) => state.scenes);
   const thumbnailBySceneId = useProjectStore(
@@ -136,7 +138,7 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
                       key={scene.id}
                       value={scene.name}
                       onCommit={(name) => renameSceneTo(scene, name)}
-                      label="シーン名"
+                      label={t.editor.scenes.sceneName}
                       textClassName={
                         isSelected
                           ? "text-sm font-semibold"
@@ -159,8 +161,8 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
                       }`}
                     >
                       {formatClock(scene.timeSeconds)}
-                      {index > 0 && ` · ${durations[index]}s で移動`}
-                      {isSelected && " · 表示中"}
+                      {index > 0 && t.editor.scenes.moveIn(durations[index])}
+                      {isSelected && t.editor.scenes.showing}
                     </span>
                   </div>
                 </div>
@@ -181,13 +183,13 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
                     <div className="flex gap-1.5">
                       <SheetAction
                         icon={Copy}
-                        label="複製"
+                        label={t.editor.scenes.duplicate}
                         disabled={isDuplicating}
                         onClick={() => duplicateScene(scene)}
                       />
                       <SheetAction
                         icon={Trash2}
-                        label="削除"
+                        label={t.editor.scenes.delete}
                         tone="danger"
                         onClick={() => confirmDelete(scene)}
                       />
@@ -206,7 +208,7 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
         className="flex h-13 items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong text-label font-medium whitespace-nowrap text-fg-sub disabled:opacity-50"
       >
         <Plus size={15} className="shrink-0" />
-        いまの配置をコピーして追加
+        {t.editor.copyCurrent}
       </PressableButton>
     </div>
   );

@@ -45,6 +45,8 @@ import { useStageScrubGesture } from "@/features/canvas/hooks/useStageScrubGestu
 import type { Project } from "@/features/project/types";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position, Scene } from "@/features/scene/types";
+import { useT } from "@/features/i18n/LocaleProvider";
+import type { Messages } from "@/features/i18n/messages";
 
 type Props = {
   project: Project;
@@ -62,20 +64,19 @@ type Props = {
  * コンポーネント外に置いているのは、レンダーのたびに新しいオブジェクトを
  * 作ってDndContextへ渡すと(useEffect等の依存配列越しに)無駄な再計算を
  * 招きかねないため(このオブジェクト自体は常に同じ内容なので問題ない) */
-const DND_ACCESSIBILITY = {
-  screenReaderInstructions: {
-    draggable:
-      "ダンサーをドラッグして移動できます。選択した状態で矢印キーを押しても移動できます(Shiftキーを押しながらだとより大きく移動します)。",
-  },
-  announcements: {
-    onDragStart: () => "ダンサーの移動を開始しました。",
-    // ドロップ可能な領域(droppable)は使っていないアプリなので、over絡みの
-    // 通知は常に無し(undefined)でよい
-    onDragOver: () => undefined,
-    onDragEnd: () => "ダンサーの位置を確定しました。",
-    onDragCancel: () => "ダンサーの移動をキャンセルしました。",
-  },
-};
+function dndAccessibility(t: Messages) {
+  return {
+    screenReaderInstructions: { draggable: t.editor.a11y.dragHelp },
+    announcements: {
+      onDragStart: () => t.editor.a11y.dragStart,
+      // ドロップ可能な領域(droppable)は使っていないアプリなので、over絡みの
+      // 通知は常に無し(undefined)でよい
+      onDragOver: () => undefined,
+      onDragEnd: () => t.editor.a11y.dragEnd,
+      onDragCancel: () => t.editor.a11y.dragCancel,
+    },
+  };
+}
 
 /**
  * Stage + トグル行 + dnd-kitのDndContextをまとめたClient Component。
@@ -108,7 +109,9 @@ export function CanvasBoard({
   initialPositions,
   isGuest = false,
 }: Props) {
+  const t = useT();
   const { addScene, isCreating: isCreatingScene } = useAddScene(project);
+  const accessibility = useMemo(() => dndAccessibility(t), [t]);
   const stageRef = useRef<HTMLDivElement>(null);
   // 指が数px動いただけでドラッグ扱いになると、ダンサーをタップして
   // 選択する操作(DancerInspectorを開く)がしづらくなるため、
@@ -307,10 +310,10 @@ export function CanvasBoard({
             );
           }
           showToast({
-            message: toUserMessage(error, "位置の保存に失敗しました"),
+            message: toUserMessage(error, t.editor.errors.position),
             type: "error",
             action: {
-              label: "再試行",
+              label: t.editor.errors.retry,
               onAction: () => {
                 // 見た目を動かし直してから、もう一度保存する
                 for (const change of changes) {
@@ -337,6 +340,7 @@ export function CanvasBoard({
       updateDancerPosition,
       showToast,
       isAudienceOnTop,
+      t,
     ],
   );
 
@@ -364,12 +368,12 @@ export function CanvasBoard({
       } catch (error) {
         updateDancerPosition(selectedSceneId, dancerId, before);
         showToast({
-          message: toUserMessage(error, "向きの保存に失敗しました"),
+          message: toUserMessage(error, t.editor.errors.rotation),
           type: "error",
         });
       }
     },
-    [selectedSceneId, updateDancerPosition, showToast],
+    [selectedSceneId, updateDancerPosition, showToast, t],
   );
 
   // フォーカス中のダンサーを矢印キーで動かした時に呼ばれる。dx/dyは呼び出し側
@@ -407,7 +411,7 @@ export function CanvasBoard({
       } catch (error) {
         updateDancerPosition(selectedSceneId, dancerId, before);
         showToast({
-          message: toUserMessage(error, "位置の保存に失敗しました"),
+          message: toUserMessage(error, t.editor.errors.position),
           type: "error",
         });
       }
@@ -419,6 +423,7 @@ export function CanvasBoard({
       updateDancerPosition,
       showToast,
       isSnapEnabled,
+      t,
     ],
   );
 
@@ -458,12 +463,12 @@ export function CanvasBoard({
           curveControlY: before.curveControlY,
         });
         showToast({
-          message: toUserMessage(error, "曲線の変更に失敗しました"),
+          message: toUserMessage(error, t.editor.errors.curve),
           type: "error",
         });
       }
     },
-    [updateDancerPosition, showToast],
+    [updateDancerPosition, showToast, t],
   );
 
   if (!selectedSceneId) {
@@ -483,7 +488,7 @@ export function CanvasBoard({
       modifiers={
         isSnapEnabled && gridSnapModifier ? [gridSnapModifier] : undefined
       }
-      accessibility={DND_ACCESSIBILITY}
+      accessibility={accessibility}
       onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}

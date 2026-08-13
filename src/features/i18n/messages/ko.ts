@@ -120,6 +120,119 @@ export const ko = {
     curtain: "암막",
   },
 
+  editor: {
+    backToProjects: "작품 목록으로",
+    addDancer: "댄서 추가",
+    projectName: "작품 이름",
+    projectNameFailed: "작품 이름을 바꾸지 못했습니다",
+    upstage: "무대 뒤",
+    downstage: "객석 쪽",
+    noScenes: "장면이 없습니다",
+    noScenesYet: "아직 장면이 없습니다",
+    createFirstScene: "첫 장면 만들기",
+    copyCurrent: "지금 배치를 복사해서 추가",
+
+    view: {
+      title: "표시와 모드",
+      counts: (dancers: number, scenes: number) =>
+        `${dancers}명 · ${scenes}장면`,
+      gridLabel: "눈금",
+      gridSquare: "격자",
+      gridCircle: "동심원",
+      gridNone: "없음",
+      path: {
+        label: "동선 표시",
+        description: "다음 장면으로 가는 움직임을 선으로 그립니다",
+      },
+      blindSpot: {
+        label: "가림 확인",
+        description: "앞사람 바로 뒤에 선 사람을 표시합니다",
+      },
+      stageMarks: {
+        label: "바닥 표시",
+        description: "모든 장면의 위치를 바닥에 겹쳐 보여 줍니다",
+      },
+      swipe: {
+        label: "밀어서 장면 넘기기",
+        description: "무대를 옆으로 끌면 앞뒤 장면으로",
+      },
+      thisProject: "이 작품",
+      music: "음악",
+      share: "공유",
+      review: "대형 봐 달라고 하기",
+      exportVideo: "영상으로 만들기",
+      tour: "사용법 다시 보기",
+      settings: "설정",
+      override: {
+        label: "이 작품만 다른 화면 모양",
+        on: "홈에서 테마를 바꿔도 여기는 바뀌지 않습니다",
+        off: "켜면 지금 화면 모양을 이 작품에 고정합니다",
+      },
+    },
+
+    dock: {
+      openScenes: "장면 목록 열기",
+      cancelCountIn: "카운트인 취소",
+      pause: "정지",
+      play: "마지막 장면까지 재생",
+      sceneSettings: (name: string) => `'${name}' 설정 열기`,
+      moveSeconds: (seconds: number) => ` · ${seconds}초 동안 이동`,
+      addScene: "장면 추가",
+    },
+
+    scenes: {
+      timeInSong: "음악에서의 위치",
+      ripple: "이후 장면도 함께 옮기기",
+      rippleNote:
+        "끄면 이 장면만 움직입니다(옆 장면을 넘어서면 순서도 바뀝니다).",
+      seconds: "초",
+      title: "장면",
+      dancers: "댄서",
+      sceneName: "장면 이름",
+      summary: (count: number, seconds: number) =>
+        `${count}개 · 합계 ${seconds}s`,
+      moveIn: (seconds: number) => ` · ${seconds}s 동안 이동`,
+      showing: " · 보는 중",
+      duplicate: "복제",
+      delete: "삭제",
+    },
+
+    save: {
+      save: "저장",
+      saved: "저장됨",
+      failed: "저장하지 못했습니다",
+      retry: "다시 시도",
+      unsaved: "저장하지 않은 변경이 있습니다",
+    },
+
+    history: {
+      undo: "실행 취소",
+      undoHint: "실행 취소 (Ctrl+Z)",
+      redo: "다시 실행",
+      redoHint: "다시 실행 (Ctrl+Shift+Z)",
+    },
+
+    template: {
+      open: "포메이션에서 고르기",
+      openSame: "포메이션에서 고르기(앞 장면과 같은 배치 그대로입니다)",
+    },
+
+    a11y: {
+      dragHelp:
+        "댄서를 끌어서 옮길 수 있습니다. 선택한 상태에서 화살표 키로도 옮길 수 있고, Shift를 누르면 더 크게 움직입니다.",
+      dragStart: "댄서 이동을 시작했습니다.",
+      dragEnd: "댄서 위치를 확정했습니다.",
+      dragCancel: "댄서 이동을 취소했습니다.",
+    },
+
+    errors: {
+      position: "위치를 저장하지 못했습니다",
+      rotation: "방향을 저장하지 못했습니다",
+      curve: "곡선을 바꾸지 못했습니다",
+      retry: "다시 시도",
+    },
+  },
+
   settings: {
     title: "설정",
 

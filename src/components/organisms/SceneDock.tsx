@@ -26,6 +26,7 @@ import { useAddScene } from "@/features/scene/hooks/useAddScene";
 import type { Project } from "@/features/project/types";
 import { sceneDurations } from "@/features/scene/lib/sceneTiming";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   project: Project;
@@ -63,6 +64,7 @@ type Props = {
  * まだ動き始めてすらいないのに無意味な間が空いてしまう)。
  */
 export function SceneDock({ project }: Props) {
+  const t = useT();
   const { addScene: handleAddScene, isCreating } = useAddScene(project);
   const scenes = useProjectStore((state) => state.scenes);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
@@ -232,7 +234,7 @@ export function SceneDock({ project }: Props) {
           (広い画面では一覧が横に常時出ていて、開く相手が無い) */}
       <PressableButton
         onClick={() => setSceneSheetOpen(true)}
-        aria-label="シーン一覧を開く"
+        aria-label={t.editor.dock.openScenes}
         className="mx-auto mb-unit block h-1 w-9 rounded-full bg-line-strong md:hidden"
       />
 
@@ -248,10 +250,10 @@ export function SceneDock({ project }: Props) {
               onClick={handleTogglePlay}
               aria-label={
                 isCountingIn
-                  ? "カウントインを取り消す"
+                  ? t.editor.dock.cancelCountIn
                   : isPlaying
-                    ? "再生を停止"
-                    : "最後のシーンまで再生"
+                    ? t.editor.dock.pause
+                    : t.editor.dock.play
               }
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-accent-fg"
             >
@@ -285,7 +287,7 @@ export function SceneDock({ project }: Props) {
                 </span>
                 <PressableButton
                   onClick={() => setSceneSheetOpen(true)}
-                  aria-label={`「${selectedScene.name}」の設定を開く`}
+                  aria-label={t.editor.dock.sceneSettings(selectedScene.name)}
                   className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-surface-raised hover:text-fg"
                 >
                   <Pencil size={14} />
@@ -299,14 +301,15 @@ export function SceneDock({ project }: Props) {
                   totalSeconds={totalSeconds > 0 ? totalSeconds : null}
                   counts={countSetting}
                 />
-                {selectedIndex > 0 && ` · ${durations[selectedIndex]}秒で移動`}
+                {selectedIndex > 0 &&
+                  t.editor.dock.moveSeconds(durations[selectedIndex])}
                 {musicFileName && ` · ♪ ${musicFileName}`}
               </span>
             </div>
           </>
         ) : (
           <span className="min-w-0 flex-1 text-label text-fg-muted">
-            シーンがありません
+            {t.editor.noScenes}
           </span>
         )}
 
@@ -318,7 +321,7 @@ export function SceneDock({ project }: Props) {
             onClick={handleAddScene}
             disabled={isCreating}
             data-tour="add-scene"
-            aria-label="シーンを追加"
+            aria-label={t.editor.dock.addScene}
             className="flex h-10 w-10 items-center justify-center rounded-md text-fg-sub transition-colors hover:bg-surface-strong hover:text-fg disabled:opacity-50"
           >
             <Plus size={20} />
@@ -327,7 +330,7 @@ export function SceneDock({ project }: Props) {
           <PressableButton
             kind="icon"
             onClick={() => setSceneSheetOpen(true)}
-            aria-label="シーン一覧を開く"
+            aria-label={t.editor.dock.openScenes}
             className="flex h-10 w-10 items-center justify-center rounded-md text-fg-sub transition-colors hover:bg-surface-strong hover:text-fg md:hidden"
           >
             <List size={20} />

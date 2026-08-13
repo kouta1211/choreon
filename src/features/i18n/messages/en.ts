@@ -121,6 +121,119 @@ export const en = {
     curtain: "Blackout curtain",
   },
 
+  editor: {
+    backToProjects: "Back to your pieces",
+    addDancer: "Add a dancer",
+    projectName: "Piece name",
+    projectNameFailed: "Could not rename the piece",
+    upstage: "Upstage",
+    downstage: "Downstage",
+    noScenes: "No scenes yet",
+    noScenesYet: "No scenes yet",
+    createFirstScene: "Make the first scene",
+    copyCurrent: "Copy this formation into a new scene",
+
+    view: {
+      title: "View and modes",
+      counts: (dancers: number, scenes: number) =>
+        `${dancers} dancers · ${scenes} scenes`,
+      gridLabel: "Grid",
+      gridSquare: "Squares",
+      gridCircle: "Rings",
+      gridNone: "None",
+      path: {
+        label: "Show paths",
+        description: "Draws the move to the next scene as a line",
+      },
+      blindSpot: {
+        label: "Blocked-view check",
+        description: "Marks anyone standing directly behind someone",
+      },
+      stageMarks: {
+        label: "Spike marks",
+        description: "Lays every scene's positions on the floor",
+      },
+      swipe: {
+        label: "Swipe to change scene",
+        description: "Drag across the stage for the next or previous scene",
+      },
+      thisProject: "This piece",
+      music: "Music",
+      share: "Share",
+      review: "Ask for notes",
+      exportVideo: "Make a video",
+      tour: "Show me around again",
+      settings: "Settings",
+      override: {
+        label: "A different look for this piece only",
+        on: "Changing the theme on the home screen will not change this one",
+        off: "Turn on to pin the current look to this piece",
+      },
+    },
+
+    dock: {
+      openScenes: "Open the scene list",
+      cancelCountIn: "Cancel the count-in",
+      pause: "Stop",
+      play: "Play to the last scene",
+      sceneSettings: (name: string) => `Open the settings for “${name}”`,
+      moveSeconds: (seconds: number) => ` · ${seconds}s to get there`,
+      addScene: "Add a scene",
+    },
+
+    scenes: {
+      timeInSong: "Position in the music",
+      ripple: "Move the later scenes too",
+      rippleNote:
+        "With this off, only this scene moves (passing a neighbour swaps their order).",
+      seconds: "s",
+      title: "Scenes",
+      dancers: "Dancers",
+      sceneName: "Scene name",
+      summary: (count: number, seconds: number) =>
+        `${count} scenes · ${seconds}s in total`,
+      moveIn: (seconds: number) => ` · ${seconds}s to get there`,
+      showing: " · showing",
+      duplicate: "Duplicate",
+      delete: "Delete",
+    },
+
+    save: {
+      save: "Save",
+      saved: "Saved",
+      failed: "Could not save",
+      retry: "Try again",
+      unsaved: "You have unsaved changes",
+    },
+
+    history: {
+      undo: "Undo",
+      undoHint: "Undo (Ctrl+Z)",
+      redo: "Redo",
+      redoHint: "Redo (Ctrl+Shift+Z)",
+    },
+
+    template: {
+      open: "Pick a formation",
+      openSame: "Pick a formation (still the same as the previous scene)",
+    },
+
+    a11y: {
+      dragHelp:
+        "Drag a dancer to move them. With one selected you can also use the arrow keys, and hold Shift to move further.",
+      dragStart: "Started moving the dancer.",
+      dragEnd: "Placed the dancer.",
+      dragCancel: "Cancelled moving the dancer.",
+    },
+
+    errors: {
+      position: "Could not save the position",
+      rotation: "Could not save the facing",
+      curve: "Could not change the curve",
+      retry: "Try again",
+    },
+  },
+
   settings: {
     title: "Settings",
 

@@ -33,6 +33,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
  * ステージの見え方とモードをまとめて切り替えるメニュー。ヘッダー右端の
@@ -49,11 +50,14 @@ import {
  * 唯一「顔被りチェックがオンだが誰も被っていない」状態だけは
  * 見分けが付かないため、オンの数をボタンにバッジで出している。
  */
-const GRID_MODES: { value: GridMode; label: string }[] = [
-  { value: "square", label: "格子" },
-  { value: "circle", label: "同心円" },
-  { value: "none", label: "なし" },
-];
+const GRID_MODES: GridMode[] = ["square", "circle", "none"];
+
+/** 目盛りの3択の呼び名。辞書のキーが value と1対1なので表引きで済む */
+const GRID_LABEL_KEYS = {
+  square: "gridSquare",
+  circle: "gridCircle",
+  none: "gridNone",
+} as const;
 
 type Props = {
   /** ヘッダーから畳んだ入口。下書き(ゲスト)には共有が無いので任意 */
@@ -69,6 +73,7 @@ export function DisplayModeMenu({
   onOpenReview,
   onOpenSettings,
 }: Props) {
+  const t = useT();
   const [isOpen, setIsOpen] = useState(false);
   const requestTour = useUIStore((state) => state.requestTour);
   const setExportSheetOpen = useUIStore((state) => state.setExportSheetOpen);
@@ -125,29 +130,29 @@ export function DisplayModeMenu({
 
   const modes = [
     {
-      label: "導線を表示",
-      description: "次のシーンへの動きを線で描く",
+      label: t.editor.view.path.label,
+      description: t.editor.view.path.description,
       icon: Spline,
       checked: isPathVisible,
       onChange: togglePathVisible,
     },
     {
-      label: "顔被りチェック",
-      description: "手前の人の真後ろに入っている人に印を出す",
+      label: t.editor.view.blindSpot.label,
+      description: t.editor.view.blindSpot.description,
       icon: EyeOff,
       checked: isBlindSpotCheckVisible,
       onChange: toggleBlindSpotCheck,
     },
     {
-      label: "バミリ",
-      description: "全シーンの立ち位置を床に重ねて出す",
+      label: t.editor.view.stageMarks.label,
+      description: t.editor.view.stageMarks.description,
       icon: Target,
       checked: isStageMarksVisible,
       onChange: toggleStageMarks,
     },
     {
-      label: "払ってシーンを送る",
-      description: "ステージを横にドラッグして前後のシーンへ",
+      label: t.editor.view.swipe.label,
+      description: t.editor.view.swipe.description,
       icon: Hand,
       checked: isSwipeSceneChangeEnabled,
       onChange: toggleSwipeSceneChange,
@@ -163,7 +168,7 @@ export function DisplayModeMenu({
         <PressableButton
           kind="icon"
           data-tour="display-menu"
-          aria-label="表示とモード"
+          aria-label={t.editor.view.title}
           className={`relative flex h-target w-target shrink-0 items-center justify-center rounded-full transition-colors ${
             isOpen
               ? "bg-surface-strong text-fg-strong"
@@ -180,9 +185,9 @@ export function DisplayModeMenu({
         </PressableButton>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" aria-label="表示とモード">
+      <DropdownMenuContent align="end" aria-label={t.editor.view.title}>
         <DropdownMenuLabel>
-          表示とモード
+          {t.editor.view.title}
           <span className="font-mono text-mono-s font-normal tracking-normal">
             {dancerCount}人 · {sceneCount}シーン
           </span>
@@ -192,7 +197,9 @@ export function DisplayModeMenu({
             矢印キーで選び替えられ、いまどれかも読み上げられる */}
         <div className="flex items-center gap-unit px-2 py-1.5">
           <Grid3x3 size={16} className="shrink-0 text-fg-muted" />
-          <span className="flex-1 text-label text-fg">目盛り</span>
+          <span className="flex-1 text-label text-fg">
+            {t.editor.view.gridLabel}
+          </span>
           <DropdownMenuRadioGroup
             value={gridMode}
             onValueChange={(value) => setGridMode(value as GridMode)}
@@ -200,12 +207,12 @@ export function DisplayModeMenu({
           >
             {GRID_MODES.map((option) => (
               <DropdownMenuRadioItem
-                key={option.value}
-                value={option.value}
+                key={option}
+                value={option}
                 // 選んでも閉じない。続けて見比べたい場所なので
                 onSelect={(event) => event.preventDefault()}
               >
-                {option.label}
+                {t.editor.view[GRID_LABEL_KEYS[option]]}
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>
@@ -237,36 +244,36 @@ export function DisplayModeMenu({
             性質が違うので、区切って見出しを立てる
             (ヘッダーに並んでいたアイコンをここへ畳んだ) */}
         <DropdownMenuSeparator />
-        <DropdownMenuLabel>この作品</DropdownMenuLabel>
+        <DropdownMenuLabel>{t.editor.view.thisProject}</DropdownMenuLabel>
         <DropdownMenuItem onSelect={() => onOpenMusic?.()}>
           <Music4 size={16} className="shrink-0 text-fg-muted" />
-          曲
+          {t.editor.view.music}
         </DropdownMenuItem>
         {onOpenShare && (
           <DropdownMenuItem onSelect={() => onOpenShare()}>
             <Share2 size={16} className="shrink-0 text-fg-muted" />
-            共有
+            {t.editor.view.share}
           </DropdownMenuItem>
         )}
         <DropdownMenuItem onSelect={() => onOpenReview?.()}>
           <Sparkles size={16} className="shrink-0 text-fg-muted" />
-          隊形を見てもらう
+          {t.editor.view.review}
         </DropdownMenuItem>
         {/* 動画は「アプリを開かない人にも渡せる」形。リンクとは
             届く相手が違うので、共有とは別の項目にしてある */}
         <DropdownMenuItem onSelect={() => setExportSheetOpen(true)}>
           <Film size={16} className="shrink-0 text-fg-muted" />
-          動画にする
+          {t.editor.view.exportVideo}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => requestTour()}>
           <HelpCircle size={16} className="shrink-0 text-fg-muted" />
-          使い方をもう一度見る
+          {t.editor.view.tour}
         </DropdownMenuItem>
         {/* 設定はアプリ全体のものだが、書き出し・取り込み・初期化だけは
             開いている作品が要る。だからホームだけでなくここにも入口を置く */}
         <DropdownMenuItem onSelect={() => onOpenSettings?.()}>
           <Settings size={16} className="shrink-0 text-fg-muted" />
-          設定
+          {t.editor.view.settings}
         </DropdownMenuItem>
 
         {/* 見た目(テーマ)の選択そのものはホームにある。ここに置くのは
@@ -287,12 +294,12 @@ export function DisplayModeMenu({
               />
               <span className="min-w-0 flex-1">
                 <span className="block truncate">
-                  このプロジェクトだけ別の見た目
+                  {t.editor.view.override.label}
                 </span>
                 <span className="mt-0.5 block text-caption leading-snug text-fg-muted">
                   {hasProjectOverride
-                    ? "ホームでテーマを変えても、ここは変わりません"
-                    : "オンにすると、いまの見た目をこのプロジェクトに固定します"}
+                    ? t.editor.view.override.on
+                    : t.editor.view.override.off}
                 </span>
               </span>
               <SwitchTrack checked={hasProjectOverride} />

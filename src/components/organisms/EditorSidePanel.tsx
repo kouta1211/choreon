@@ -7,6 +7,7 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { totalTransitionSeconds } from "@/features/scene/lib/playback";
 import type { Project } from "@/features/project/types";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   project: Project;
@@ -27,6 +28,7 @@ type Tab = "scenes" | "dancers";
  * スマホでは出さない(シーンはドックのシート、ダンサーはステージ上で選ぶ)。
  */
 export function EditorSidePanel({ project, showScenes }: Props) {
+  const t = useT();
   const [tab, setTab] = useState<Tab>("scenes");
   const scenes = useProjectStore((state) => state.scenes);
   const activeTab: Tab = showScenes ? tab : "dancers";
@@ -36,8 +38,8 @@ export function EditorSidePanel({ project, showScenes }: Props) {
       {showScenes ? (
         <div className="flex shrink-0 gap-1 border-b border-line p-2">
           {[
-            { value: "scenes" as const, label: "シーン", count: scenes.length },
-            { value: "dancers" as const, label: "ダンサー" },
+            { value: "scenes" as const, label: t.editor.scenes.title, count: scenes.length },
+            { value: "dancers" as const, label: t.editor.scenes.dancers },
           ].map((item) => (
             <PressableButton
               key={item.value}
