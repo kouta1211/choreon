@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import type { Project, ProjectSummary } from "@/features/project/types";
 import { listPositionsByScenes } from "@/features/scene/api/positions";
+import { totalSeconds } from "@/features/scene/lib/sceneTiming";
 import { DEFAULT_BPM } from "@/features/music/lib/metronomePreference";
 
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
@@ -79,7 +80,7 @@ export async function listProjectSummaries(
   const { data, error } = await supabase
     .from("projects")
     .select(
-      "*, scenes(id, order_index, transition_duration_seconds), dancers(id, color, created_at)",
+      "*, scenes(id, order_index, time_seconds), dancers(id, color, created_at)",
     )
     .order("updated_at", { ascending: false });
 
@@ -89,16 +90,18 @@ export async function listProjectSummaries(
     scenes: {
       id: string;
       order_index: number;
-      transition_duration_seconds: number;
+      time_seconds: number;
     }[];
     dancers: { id: string; color: string; created_at: string }[];
   };
   const rows = (data ?? []) as Row[];
 
+  // 並び順の正は時刻。エディタ側(sortScenes)と同じ規則で並べないと、
+  // カードのサムネイルが「先頭のシーン」ではなくなる
   const scenesByProject = rows.map((row) => ({
     projectId: row.id,
     scenes: [...(row.scenes ?? [])].sort(
-      (a, b) => a.order_index - b.order_index,
+      (a, b) => a.time_seconds - b.time_seconds || a.order_index - b.order_index,
     ),
   }));
   const firstSceneIds = scenesByProject
@@ -136,9 +139,14 @@ export async function listProjectSummaries(
       ];
     });
 
-    const total = scenes
-      .slice(1)
-      .reduce((sum, scene) => sum + scene.transition_duration_seconds, 0);
+    // 作品の長さは【先頭から最後のシーンまで】。
+    // 以前は transition_duration_seconds(前のシーンから来るのに何秒か)を
+    // 足し上げていたが、時刻が正になった今この列はもう更新されない。
+    // 足し上げたままだと、追加したシーンがすべて既定値(1秒)で数えられ、
+    // 一覧のカードだけが実際と違う長さを出すことになる
+    const total = totalSeconds(
+      scenes.map((scene) => ({ id: scene.id, timeSeconds: scene.time_seconds })),
+    );
 
     return {
       ...toProject(row),

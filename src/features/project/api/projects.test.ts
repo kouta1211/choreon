@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
-import { getProject, insertProject } from "./projects";
+import { getProject, insertProject, listProjectSummaries } from "./projects";
 import { makeProject } from "@/test/factories";
 
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
@@ -66,6 +66,62 @@ describe("insertProject", () => {
     expect(insert.mock.calls[0][0]).toMatchObject({
       music_offset_seconds: 12.5,
     });
+  });
+});
+
+/**
+ * 一覧のカードに出す長さは、シーンの【時刻】から出す。
+ * 以前は transition_duration_seconds を足し上げていたが、その列は
+ * 時刻が正になってから更新されていない
+ */
+function fakeSummaryClient(
+  scenes: { id: string; order_index: number; time_seconds: number }[],
+) {
+  const client = {
+    from: (table: string) => {
+      if (table === "positions") {
+        return {
+          select: () => ({ in: async () => ({ data: [], error: null }) }),
+        };
+      }
+      return {
+        select: () => ({
+          order: async () => ({
+            data: [{ ...ROW, scenes, dancers: [] }],
+            error: null,
+          }),
+        }),
+      };
+    },
+  };
+  return client as unknown as SupabaseClient<Database>;
+}
+
+describe("listProjectSummaries", () => {
+  it("作品の長さは、先頭から最後のシーンまでの時刻の差", async () => {
+    const summaries = await listProjectSummaries(
+      fakeSummaryClient([
+        { id: "s1", order_index: 0, time_seconds: 0 },
+        { id: "s2", order_index: 1, time_seconds: 4 },
+        { id: "s3", order_index: 2, time_seconds: 10.5 },
+      ]),
+    );
+
+    expect(summaries[0].totalSeconds).toBe(10.5);
+    expect(summaries[0].sceneCount).toBe(3);
+  });
+
+  // タイムライン上でコマを追い越させると、order_index と時刻の並びは食い違う。
+  // 正は時刻なので、長さもサムネイルもそちらに従う
+  it("order_index の並びが時刻と食い違っていても、時刻で数える", async () => {
+    const summaries = await listProjectSummaries(
+      fakeSummaryClient([
+        { id: "s1", order_index: 0, time_seconds: 8 },
+        { id: "s2", order_index: 1, time_seconds: 2 },
+      ]),
+    );
+
+    expect(summaries[0].totalSeconds).toBe(6);
   });
 });
 

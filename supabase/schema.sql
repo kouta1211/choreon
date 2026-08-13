@@ -24,6 +24,15 @@ create table public.projects (
   -- 音源そのものは持たない(端末のファイルを選ぶ方式でStorageは使わない)
   music_offset_seconds numeric not null default 0
     check (music_offset_seconds::float8 >= 0),
+  -- 曲の速さと拍子。曲を入れずにカウントで組むとき、時間軸の地は波形ではなく
+  -- 8カウントの縞になる。その縞を引くにはBPMが要る。音源は共有しない方針
+  -- なので、共有された相手の画面に出せる手がかりは「シーンの時刻」とこれだけ
+  bpm numeric not null default 120
+    check (bpm::float8 >= 40 and bpm::float8 <= 240),
+  -- 稽古場で数える単位は小節ではなく8カウントで、それは拍子とは別。
+  -- ただし4拍子以外の曲もあるため、メトロノームの強拍だけはこの値で決める
+  beats_per_bar integer not null default 4
+    check (beats_per_bar >= 2 and beats_per_bar <= 12),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -69,19 +78,24 @@ create index dancers_project_id_idx on public.dancers (project_id);
 -- =========================================
 -- 3. scenes
 -- =========================================
--- transition_duration_secondsは「このシーンへ遷移してくるまでの所要時間」
--- (先頭のシーンの値は使われない)。秒単位で持つのは、再生アニメーションに
--- 使うframer motionのdurationが秒指定のため、変換をあちこちに持たずに済むから
+-- time_secondsは「この隊形は曲の何秒目か」。これが時間の正で、並び順も
+-- この昇順で決まる。移動にかかる時間は「次のシーンの時刻 − このシーンの時刻」
+-- として毎回求める(sceneTiming.ts)。
+--
+-- 以前は逆に「前のシーンからここへ来るのに何秒か」(transition_duration_seconds)
+-- を持ち、時刻を足し算で出していた。その持ち方だと途中の1つを変えるだけで
+-- 以降が全部後ろへずれ、曲のサビに合わせて置いた隊形がサビから外れた。
+-- 旧列は migration 0006 で落としてある。
+--
+-- order_indexは時刻が同じときの並びを決めるためだけに残している
+-- (アプリは0.1秒以上空けるので、通常は出番が無い)
 create table public.scenes (
   id uuid primary key default gen_random_uuid(),
   project_id uuid not null references public.projects (id) on delete cascade,
   name text not null,
   order_index integer not null,
-  transition_duration_seconds numeric not null default 1
-    check (
-      transition_duration_seconds::float8 > 0
-      and transition_duration_seconds::float8 <= 30
-    ),
+  time_seconds numeric not null default 0
+    check (time_seconds::float8 >= 0),
   created_at timestamptz not null default now()
 );
 
@@ -234,6 +248,11 @@ where tablename in ('projects', 'dancers', 'scenes', 'positions');
 --
 --   supabase/migrations/0000_bounds_and_stage_defaults.sql
 --   supabase/migrations/0001_transition_and_curve.sql
+--   supabase/migrations/0002_stage_width_14.sql
+--   supabase/migrations/0003_music_offset.sql
+--   supabase/migrations/0004_scene_time_seconds.sql
+--   supabase/migrations/0005_project_bpm.sql
+--   supabase/migrations/0006_drop_scene_transition_duration.sql
 --
 -- どのファイルも「何度実行しても安全」に書いてあるため、適用済みかどうか
 -- 分からない場合はとりあえず流してよい。各ファイル末尾には、意図した列が
