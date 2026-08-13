@@ -27,6 +27,8 @@ function makeProject(overrides: Partial<ProjectSummary> = {}): ProjectSummary {
     musicOffsetSeconds: 0,
     bpm: 120,
     beatsPerBar: 4,
+    shareToken: null,
+    isShared: false,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
     sceneCount: 3,

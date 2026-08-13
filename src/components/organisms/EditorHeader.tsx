@@ -7,6 +7,7 @@ import { DisplayModeMenu } from "@/components/organisms/DisplayModeMenu";
 import { SaveToCloudButton } from "@/components/organisms/SaveToCloudButton";
 import { MusicButton } from "@/components/organisms/MusicButton";
 import { ReviewButton } from "@/components/organisms/ReviewButton";
+import { ShareButton } from "@/components/organisms/ShareButton";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { Tooltip } from "@/components/atoms/Tooltip";
@@ -55,6 +56,7 @@ export function EditorHeader({ project }: Props) {
       </div>
       <SaveToCloudButton />
       <MusicButton project={project} />
+      <ShareButton project={project} />
       <ReviewButton project={project} />
       <Tooltip label="ダンサーを追加" align="right">
         <PressableButton

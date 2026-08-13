@@ -13,6 +13,10 @@ const ROW: ProjectRow = {
   stage_width: 14,
   stage_height: 10,
   music_offset_seconds: 0,
+  bpm: 120,
+  beats_per_bar: 4,
+  share_token: "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+  is_shared: false,
   created_at: "2026-01-01T00:00:00.000Z",
   updated_at: "2026-01-01T00:00:00.000Z",
 };

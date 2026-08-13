@@ -14,6 +14,11 @@ export type Database = {
           stage_width: number;
           stage_height: number;
           music_offset_seconds: number;
+          bpm: number;
+          beats_per_bar: number;
+          /** 共有リンクの合鍵。持ち主だけが読める(RLSで自分の行しか見えない) */
+          share_token: string;
+          is_shared: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -24,6 +29,10 @@ export type Database = {
           stage_width?: number;
           stage_height?: number;
           music_offset_seconds?: number;
+          bpm?: number;
+          beats_per_bar?: number;
+          share_token?: string;
+          is_shared?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -34,6 +43,10 @@ export type Database = {
           stage_width?: number;
           stage_height?: number;
           music_offset_seconds?: number;
+          bpm?: number;
+          beats_per_bar?: number;
+          share_token?: string;
+          is_shared?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -158,7 +171,17 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      /**
+       * 共有リンクで開いたときの読み取り口(migration 0007)。
+       * テーブルは持ち主にしか開いていないので、リンクで来た人は
+       * この関数だけを通る。トークンが合わない・共有がオフなら null。
+       */
+      shared_project: {
+        Args: { token: string };
+        Returns: unknown;
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

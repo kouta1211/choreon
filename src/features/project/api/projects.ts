@@ -20,11 +20,59 @@ function toProject(row: ProjectRow): Project {
     musicOffsetSeconds: row.music_offset_seconds ?? 0,
     // migration 0005 を当てる前のDBには、この2つの列がまだ無い。
     // 既定値はDB側のdefaultと同じ
-    bpm: (row as { bpm?: number }).bpm ?? DEFAULT_BPM,
-    beatsPerBar: (row as { beats_per_bar?: number }).beats_per_bar ?? 4,
+    bpm: row.bpm ?? DEFAULT_BPM,
+    beatsPerBar: row.beats_per_bar ?? 4,
+    // migration 0007 を当てる前のDBには、この2つの列がまだ無い。
+    // トークンが無ければ共有の口は出せないので null / false に落とす
+    shareToken: row.share_token ?? null,
+    isShared: row.is_shared ?? false,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+/**
+ * 共有のオン/オフ。
+ *
+ * トークンは作品を作った時点から持っているので、ここで作りはしない。
+ * オフに戻すと、配ってあるリンクは【全部その場で開けなくなる】
+ * (トークンは残っているので、オンに戻せば同じリンクがまた通る)。
+ */
+export async function updateProjectSharing(
+  supabase: SupabaseClient<Database>,
+  projectId: string,
+  isShared: boolean,
+): Promise<void> {
+  const { error } = await supabase
+    .from("projects")
+    .update({ is_shared: isShared })
+    .eq("id", projectId);
+
+  if (error) throw error;
+}
+
+/**
+ * リンクを作り直す。前のリンクはその瞬間から開けなくなる。
+ *
+ * 配った相手を個別に外す仕組みは持たない。リンクを知っている人が見られる、
+ * という以上の細かさは、稽古の連絡手段(グループの共有)と釣り合わないため。
+ * 「もう見せたくない」ときは作り直すか、共有そのものをオフにする。
+ *
+ * 新しいトークンをアプリ側で作っているのは、DBの gen_random_uuid() を
+ * update から呼べないため。uuid の作り方としては同じ強さ(乱数)。
+ */
+export async function rotateShareToken(
+  supabase: SupabaseClient<Database>,
+  projectId: string,
+): Promise<string> {
+  const shareToken = crypto.randomUUID();
+  const { error } = await supabase
+    .from("projects")
+    .update({ share_token: shareToken })
+    .eq("id", projectId);
+
+  if (error) throw error;
+  return shareToken;
 }
 
 /**
@@ -42,8 +90,7 @@ export async function updateProjectBpm(
 ): Promise<void> {
   const { error } = await supabase
     .from("projects")
-    // 列がまだ無いDBがあるため、型定義から外れる書き込みになる
-    .update({ bpm } as never)
+    .update({ bpm })
     .eq("id", projectId);
 
   if (error && error.code !== "PGRST204") throw error;
@@ -64,8 +111,7 @@ export async function updateProjectBeatsPerBar(
 ): Promise<void> {
   const { error } = await supabase
     .from("projects")
-    // 列がまだ無いDBがあるため、型定義から外れる書き込みになる
-    .update({ beats_per_bar: beatsPerBar } as never)
+    .update({ beats_per_bar: beatsPerBar })
     .eq("id", projectId);
 
   if (error && error.code !== "PGRST204") throw error;

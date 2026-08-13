@@ -61,6 +61,9 @@ type ProjectState = {
   /** 拍子。稽古場で数える単位は8カウントだが、それは拍子とは別の話で、
    * メトロノームの強拍と拍線の太さだけがこの値で決まる */
   setBeatsPerBar: (beatsPerBar: number) => void;
+  /** 共有のオン/オフと、リンクの合鍵。どちらも作品が持つ */
+  setSharing: (isShared: boolean) => void;
+  setShareToken: (shareToken: string) => void;
 
   /** ゲストの編集が1つでも起きたことを記録する(persist()から呼ばれる) */
   markUnsaved: () => void;
@@ -150,6 +153,16 @@ export const useProjectStore = create<ProjectState>((set) => ({
   setBeatsPerBar: (beatsPerBar: number) =>
     set((state) =>
       state.project ? { project: { ...state.project, beatsPerBar } } : {},
+    ),
+
+  setSharing: (isShared: boolean) =>
+    set((state) =>
+      state.project ? { project: { ...state.project, isShared } } : {},
+    ),
+
+  setShareToken: (shareToken: string) =>
+    set((state) =>
+      state.project ? { project: { ...state.project, shareToken } } : {},
     ),
 
   setMusicOffset: (musicOffsetSeconds) =>

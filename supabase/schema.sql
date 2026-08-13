@@ -33,6 +33,12 @@ create table public.projects (
   -- ただし4拍子以外の曲もあるため、メトロノームの強拍だけはこの値で決める
   beats_per_bar integer not null default 4
     check (beats_per_bar >= 2 and beats_per_bar <= 12),
+  -- 「リンクを知っている人だけ」に見せるための合鍵と、そのオン/オフ。
+  -- トークンは常に持っているが、is_shared が false の間はどのリンクでも
+  -- 開けない。閲覧は public.shared_project(token) 経由で、テーブルそのものは
+  -- 持ち主にしか開いていない(migration 0007 の説明を参照)
+  share_token uuid not null default gen_random_uuid() unique,
+  is_shared boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -221,6 +227,58 @@ with check (
       and projects.user_id = auth.uid()
   )
 );
+
+-- =========================================
+-- 共有リンク: テーブルは閉じたまま、関数だけを開ける
+-- =========================================
+-- anon にテーブルの権限は渡さない。トークンを受け取る関数を1つだけ
+-- 開放し、その中で「共有がオンで、トークンが一致する作品」に絞る。
+-- security definer は「関数を作った人の権限で動く」指定で、これが無いと
+-- 関数の中でも RLS に弾かれる。危ないのは引数の検査を忘れたときなので、
+-- where 句で share_token と is_shared を必ず見ること
+create or replace function public.shared_project(token uuid)
+returns jsonb
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select jsonb_build_object(
+    -- 合鍵そのもの(share_token)と、持ち主が誰か(user_id)は返さない
+    'project', to_jsonb(p) - 'share_token' - 'user_id',
+    'dancers', coalesce(
+      (
+        select jsonb_agg(to_jsonb(d) order by d.created_at)
+        from public.dancers d
+        where d.project_id = p.id
+      ),
+      '[]'::jsonb
+    ),
+    'scenes', coalesce(
+      (
+        select jsonb_agg(to_jsonb(s) order by s.time_seconds, s.order_index)
+        from public.scenes s
+        where s.project_id = p.id
+      ),
+      '[]'::jsonb
+    ),
+    'positions', coalesce(
+      (
+        select jsonb_agg(to_jsonb(pos))
+        from public.positions pos
+        join public.scenes s2 on s2.id = pos.scene_id
+        where s2.project_id = p.id
+      ),
+      '[]'::jsonb
+    )
+  )
+  from public.projects p
+  where p.share_token = token
+    and p.is_shared;
+$$;
+
+revoke all on function public.shared_project(uuid) from public;
+grant execute on function public.shared_project(uuid) to anon, authenticated;
 
 -- =========================================
 -- 適用後の確認クエリ(個人ルール: 必ず実行して確認する)
