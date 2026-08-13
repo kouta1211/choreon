@@ -28,7 +28,12 @@ import {
   createGridSnapModifier,
   GRID_SNAP_TOLERANCE,
 } from "@/features/canvas/lib/gridSnapModifier";
-import { persist } from "@/features/project/lib/persistence";
+import {
+  discardPendingWrites,
+  persist,
+} from "@/features/project/lib/persistence";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
+import { stageYSign, toScreenY } from "@/features/canvas/lib/stageFlip";
 import { toUserMessage } from "@/lib/supabase/errors";
 import {
   upsertPosition,
@@ -131,6 +136,10 @@ export function CanvasBoard({
   useEffect(() => {
     setGridSnapModifier(() => createGridSnapModifier(stageRef));
   }, []);
+  // 格子への吸着を使うか(設定)。切ると、どこにでも置ける
+  const isSnapEnabled = useSettingsStore((state) => state.isSnapEnabled);
+  // ステージ面を上下の鏡にして描いているか。指の動きの向きだけを揃える
+  const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
   const hydrate = useProjectStore((state) => state.hydrate);
   const updateDancerPosition = useProjectStore(
     (state) => state.updateDancerPosition,
@@ -176,8 +185,10 @@ export function CanvasBoard({
       selectScene(initialScenes[0].id);
     }
     // 別プロジェクトの編集履歴を持ち越すと、存在しないシーン・ダンサーへ
-    // 書き戻そうとすることになるため捨てる
+    // 書き戻そうとすることになるため捨てる。自動保存を切っている間に
+    // 貯めた書き込みも同じ理由で捨てる
     useHistoryStore.getState().clear();
+    discardPendingWrites();
     // 別プロジェクトに切り替わったときだけ入れ直せば十分なため、project.idのみを依存にする
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.id]);
@@ -205,19 +216,29 @@ export function CanvasBoard({
         0,
         project.stageWidth,
       );
+      // 吸着線は【画面】に引くものなので、画面の向きのまま数える
       const liveY = clamp(
-        before.yCoordinate +
+        toScreenY(before.yCoordinate, project.stageHeight, isAudienceOnTop) +
           pixelDeltaToUnitDelta(event.delta.y, height, project.stageHeight),
         0,
         project.stageHeight,
       );
 
+      // 吸着を切っているときは格子線を光らせない。吸わないのに光ると、
+      // 「そこへ着く」という嘘の予告になる
       setDragSnapLine({
-        x: isCloseToInteger(liveX) ? Math.round(liveX) : null,
-        y: isCloseToInteger(liveY) ? Math.round(liveY) : null,
+        x: isSnapEnabled && isCloseToInteger(liveX) ? Math.round(liveX) : null,
+        y: isSnapEnabled && isCloseToInteger(liveY) ? Math.round(liveY) : null,
       });
     },
-    [selectedSceneId, project.stageWidth, project.stageHeight, setDragSnapLine],
+    [
+      selectedSceneId,
+      project.stageWidth,
+      project.stageHeight,
+      setDragSnapLine,
+      isSnapEnabled,
+      isAudienceOnTop,
+    ],
   );
 
   const handleDragCancel = useCallback(() => {
@@ -242,11 +263,10 @@ export function CanvasBoard({
         width,
         project.stageWidth,
       );
-      const deltaY = pixelDeltaToUnitDelta(
-        event.delta.y,
-        height,
-        project.stageHeight,
-      );
+      // 上下を鏡にして描いているときは、指を下へ動かすとステージでは奥へ進む
+      const deltaY =
+        stageYSign(isAudienceOnTop) *
+        pixelDeltaToUnitDelta(event.delta.y, height, project.stageHeight);
 
       const nextX = clamp(before.xCoordinate + deltaX, 0, project.stageWidth);
       const nextY = clamp(before.yCoordinate + deltaY, 0, project.stageHeight);
@@ -316,6 +336,7 @@ export function CanvasBoard({
       setDragSnapLine,
       updateDancerPosition,
       showToast,
+      isAudienceOnTop,
     ],
   );
 
@@ -367,14 +388,10 @@ export function CanvasBoard({
         ];
       if (!before) return;
 
-      const nextX = snapToGrid(
-        clamp(before.xCoordinate + dx, 0, project.stageWidth),
-        GRID_SNAP_TOLERANCE,
-      );
-      const nextY = snapToGrid(
-        clamp(before.yCoordinate + dy, 0, project.stageHeight),
-        GRID_SNAP_TOLERANCE,
-      );
+      const snap = (value: number) =>
+        isSnapEnabled ? snapToGrid(value, GRID_SNAP_TOLERANCE) : value;
+      const nextX = snap(clamp(before.xCoordinate + dx, 0, project.stageWidth));
+      const nextY = snap(clamp(before.yCoordinate + dy, 0, project.stageHeight));
 
       const after = { ...before, xCoordinate: nextX, yCoordinate: nextY };
       updateDancerPosition(selectedSceneId, dancerId, after);
@@ -401,6 +418,7 @@ export function CanvasBoard({
       project.stageHeight,
       updateDancerPosition,
       showToast,
+      isSnapEnabled,
     ],
   );
 
@@ -462,7 +480,9 @@ export function CanvasBoard({
   return (
     <DndContext
       sensors={sensors}
-      modifiers={gridSnapModifier ? [gridSnapModifier] : undefined}
+      modifiers={
+        isSnapEnabled && gridSnapModifier ? [gridSnapModifier] : undefined
+      }
       accessibility={DND_ACCESSIBILITY}
       onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}

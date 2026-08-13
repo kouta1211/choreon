@@ -5,6 +5,7 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useThemeStore } from "@/features/theme/store/useThemeStore";
 import { resolveAppearance } from "@/features/theme/lib/themePreference";
 import { DANCER_COLOR_PALETTE } from "@/features/dancer/constants";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import {
   buildThumbnailDataUrl,
   buildThumbnailDots,
@@ -50,6 +51,9 @@ export function useSceneThumbnails(project: Project) {
     (state) => resolveAppearance(state.preference, state.projectId).theme,
   );
 
+  // ミニチュアはステージと見比べるためのものなので、同じ向きで焼く
+  const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
+
   const { stageWidth, stageHeight } = project;
 
   useEffect(() => {
@@ -63,6 +67,7 @@ export function useSceneThumbnails(project: Project) {
         stageWidth,
         stageHeight,
         resolveColor,
+        isAudienceOnTop,
       );
       next[scene.id] = buildThumbnailDataUrl(dots, stageWidth, stageHeight);
     }
@@ -78,6 +83,7 @@ export function useSceneThumbnails(project: Project) {
     stageHeight,
     setThumbnails,
     themeId,
+    isAudienceOnTop,
   ]);
 }
 

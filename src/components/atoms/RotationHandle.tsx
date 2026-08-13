@@ -4,6 +4,7 @@ import { memo, type PointerEvent as ReactPointerEvent } from "react";
 import { useState } from "react";
 import { RotateCw } from "lucide-react";
 import { snapRotation } from "@/features/canvas/lib/dragMath";
+import { mirrorAngle } from "@/features/canvas/lib/stageFlip";
 
 type Props = {
   /** 表示に使う現在の角度(度)。ライブドラッグ中は呼び出し側のローカルstateを渡す */
@@ -14,6 +15,9 @@ type Props = {
   onRotateEnd: (angle: number) => void;
   /** ダンサー本体(回転の中心)の画面上の座標を取得する */
   getCenter: () => { x: number; y: number } | null;
+  /** 客席を上にして描いているか。上下が逆なので、描く角度と
+   * 指の位置から求める角度の両方を写す(mirrorAngle) */
+  isMirrored?: boolean;
 };
 
 /** ダンサー本体の中心からハンドルまでの距離(px) */
@@ -68,10 +72,18 @@ function RotationHandleImpl({
   onRotateChange,
   onRotateEnd,
   getCenter,
+  isMirrored = false,
 }: Props) {
   // 8方向へ吸着している最中かどうか。効いていることが指先では分からないので、
   // 格子スナップが吸着先の格子線を光らせるのと同じように、ガイド線を光らせる
   const [isSnapped, setIsSnapped] = useState(false);
+
+  /** 画面で指している向きを、保存する向き(0度=客席側)へ戻す。
+   * 客席を上にしていなければ何もしない */
+  const toStageAngle = (screenAngle: number) =>
+    isMirrored ? mirrorAngle(screenAngle) : screenAngle;
+  /** 画面に描く向き。ガイド線とハンドルはダンサーの鼻先と揃っている必要がある */
+  const displayAngle = isMirrored ? mirrorAngle(angle) : angle;
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     event.stopPropagation();
@@ -88,7 +100,9 @@ function RotationHandleImpl({
     event.stopPropagation();
     const center = getCenter();
     if (!center) return;
-    const raw = rawAngleFromPointer(center, event.clientX, event.clientY);
+    const raw = toStageAngle(
+      rawAngleFromPointer(center, event.clientX, event.clientY),
+    );
     const snapped = snapRotation(raw);
     setIsSnapped(snapped !== raw);
     onRotateChange(snapped);
@@ -99,14 +113,16 @@ function RotationHandleImpl({
     setIsSnapped(false);
     const center = getCenter();
     onRotateEnd(
-      center ? angleFromPointer(center, event.clientX, event.clientY) : angle,
+      center
+        ? toStageAngle(angleFromPointer(center, event.clientX, event.clientY))
+        : angle,
     );
   };
 
   return (
     <div
       className="absolute left-0 top-0"
-      style={{ transform: `translate(-50%, -50%) rotate(${angle}deg)` }}
+      style={{ transform: `translate(-50%, -50%) rotate(${displayAngle}deg)` }}
     >
       {/* 本体中心からハンドルへのガイド線(装飾のみ)。
           角度0度は客席側(下)なので、線もハンドルも下へ伸ばす */}
@@ -139,7 +155,7 @@ function RotationHandleImpl({
               ? "border-accent-soft shadow-[0_0_6px_1px_color-mix(in_oklab,var(--accent-soft)_90%,transparent)]"
               : "border-accent shadow-sm"
           }`}
-          style={{ transform: `rotate(${-angle}deg)` }}
+          style={{ transform: `rotate(${-displayAngle}deg)` }}
         >
           <RotateCw size={13} />
         </div>

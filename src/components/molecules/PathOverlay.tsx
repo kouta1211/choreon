@@ -9,6 +9,8 @@ import { clamp } from "@/features/canvas/lib/dragMath";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position } from "@/features/scene/types";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
+import { toScreenY } from "@/features/canvas/lib/stageFlip";
 
 type StagePoint = { x: number; y: number };
 
@@ -81,6 +83,11 @@ export function PathOverlay({
   onCurveControlPointChange,
 }: Props) {
   const svgRef = useRef<SVGSVGElement | null>(null);
+  // 客席を上にして描くか。線を引くときはステージ座標を画面の向きへ写し、
+  // 指から制御点を拾うときは逆へ戻す(stageFlip.ts)
+  const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
+  const screenY = (value: number) =>
+    toScreenY(value, stageHeightUnits, isAudienceOnTop);
   const [liveControlPoint, setLiveControlPoint] = useState<StagePoint | null>(
     null,
   );
@@ -129,11 +136,11 @@ export function PathOverlay({
         color: themedDancerColor(dancers[id]?.color ?? ""),
         name: dancers[id]?.name ?? "",
         x1: (from.xCoordinate / stageWidthUnits) * 100,
-        y1: (from.yCoordinate / stageHeightUnits) * 100,
+        y1: (screenY(from.yCoordinate) / stageHeightUnits) * 100,
         x2: (to.xCoordinate / stageWidthUnits) * 100,
-        y2: (to.yCoordinate / stageHeightUnits) * 100,
+        y2: (screenY(to.yCoordinate) / stageHeightUnits) * 100,
         handleLeftPercent: (handlePoint.x / stageWidthUnits) * 100,
-        handleTopPercent: (handlePoint.y / stageHeightUnits) * 100,
+        handleTopPercent: (screenY(handlePoint.y) / stageHeightUnits) * 100,
       },
     ];
   });
@@ -150,17 +157,15 @@ export function PathOverlay({
   ): StagePoint | null => {
     const rect = svgRef.current?.getBoundingClientRect();
     if (!rect || rect.width === 0 || rect.height === 0) return null;
+    // 指の位置は【画面】のもの。保存するのはステージ座標なので写して戻す
+    const rawY = ((clientY - rect.top) / rect.height) * stageHeightUnits;
     return {
       x: clamp(
         ((clientX - rect.left) / rect.width) * stageWidthUnits,
         0,
         stageWidthUnits,
       ),
-      y: clamp(
-        ((clientY - rect.top) / rect.height) * stageHeightUnits,
-        0,
-        stageHeightUnits,
-      ),
+      y: clamp(screenY(rawY), 0, stageHeightUnits),
     };
   };
 

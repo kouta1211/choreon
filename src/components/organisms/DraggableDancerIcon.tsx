@@ -25,6 +25,12 @@ import {
 } from "@/features/canvas/constants";
 import type { Dancer } from "@/features/dancer/types";
 import type { MoveStrain } from "@/features/canvas/lib/physicalLimits";
+import {
+  mirrorAngle,
+  stageYSign,
+  toScreenY,
+} from "@/features/canvas/lib/stageFlip";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 
 /** 選択中のダンサーを矢印キーで動かす際の1回あたりの移動量(ステージ座標系のユニット)。
  * Shiftキーを押しながらだとNUDGE_STEP_LARGEを使い、大きく移動できる */
@@ -120,7 +126,7 @@ type Props = {
 function DraggableDancerIconImpl({
   dancer,
   x,
-  y,
+  y: stageY,
   rotationAngle,
   stageWidthUnits,
   stageHeightUnits,
@@ -128,17 +134,30 @@ function DraggableDancerIconImpl({
   onNudge,
   transitionDurationSeconds = DEFAULT_TRANSITION_DURATION_SECONDS,
   curveControlX,
-  curveControlY,
+  curveControlY: stageCurveControlY,
   excessiveMove = null,
   isBlocked = false,
   collision = null,
   collisionWithName = "",
   scrubFromX = null,
-  scrubFromY = null,
+  scrubFromY: stageScrubFromY = null,
   scrubToX = null,
-  scrubToY = null,
+  scrubToY: stageScrubToY = null,
 }: Props) {
   const rootRef = useRef<HTMLDivElement | null>(null);
+  // 客席を上にして描くか。ここから下は【画面の向き】で考える。
+  // 受け取ったYを1回だけ写し、以降(位置・曲線・スクラブ・掴む・向き)は
+  // すべて写した値で通す。ステージ座標へ戻すのは、置いた位置を確定する
+  // ときだけ(CanvasBoard の handleDragEnd / handleNudge)
+  const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
+  const flipY = (value: number) =>
+    toScreenY(value, stageHeightUnits, isAudienceOnTop);
+
+  const y = flipY(stageY);
+  const curveControlY =
+    stageCurveControlY == null ? stageCurveControlY : flipY(stageCurveControlY);
+  const scrubFromY = stageScrubFromY == null ? null : flipY(stageScrubFromY);
+  const scrubToY = stageScrubToY == null ? null : flipY(stageScrubToY);
   // dataは格子スナップ用のModifier(gridSnapModifier)がactive.data.current経由で
   // 読み取る。ドラッグ開始時点の座標とステージサイズが分からないと、px単位の
   // transformをステージ座標系に変換できないため
@@ -156,6 +175,7 @@ function DraggableDancerIconImpl({
   const isTransitioning = useUIStore((state) => state.isTransitioning);
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: dancer.id,
+    // yは画面の向きに写した値。dnd-kitと格子スナップは画面の中だけで完結する
     data: { x, y, stageWidthUnits, stageHeightUnits },
     attributes: { tabIndex: -1 },
     disabled: isTransitioning,
@@ -232,12 +252,18 @@ function DraggableDancerIconImpl({
         return;
     }
     event.preventDefault();
-    onNudge?.(dancer.id, dx, dy);
+    // 上下を鏡にしているときは、上キーが画面の上=ステージでは客席側になる
+    onNudge?.(dancer.id, dx, stageYSign(isAudienceOnTop) * dy);
   };
 
   const leftPercent = (x / stageWidthUnits) * 100;
   const topPercent = (y / stageHeightUnits) * 100;
   const displayRotation = liveRotation ?? rotationAngle;
+  // 画面に描く向き。上下が逆なら鼻先も逆を向いていなければならない
+  // (＝既定の0度「客席を向く」が、客席のある側を向いたままになる)
+  const screenRotation = isAudienceOnTop
+    ? mirrorAngle(displayRotation)
+    : displayRotation;
 
   // 位置は「%の数値」としてMotionValueに保持し、CSSへ渡す直前にuseTransformで
   // 単位付きの文字列("54.9%")へ変換する。CSSのleft/topは単位付きでないと
@@ -445,7 +471,7 @@ function DraggableDancerIconImpl({
     >
       <DancerMarker
         dancer={dancer}
-        rotationAngle={displayRotation}
+        rotationAngle={screenRotation}
         isSelected={isSelected}
         isHovered={isHovered}
         isDragging={isDragging}
@@ -464,6 +490,7 @@ function DraggableDancerIconImpl({
           onRotateChange={setLiveRotation}
           onRotateEnd={handleRotateHandleEnd}
           getCenter={getCenter}
+          isMirrored={isAudienceOnTop}
         />
       )}
     </motion.div>

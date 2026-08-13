@@ -14,6 +14,9 @@ export const GRID_SNAP_TOLERANCE = 0.1;
 
 type DancerDragData = {
   x: number;
+  /** 【画面に描いている】Y。客席を上にしているときは上下が写った値が入る
+   * (DraggableDancerIcon が写して渡す)。ここは画面の中だけで完結させ、
+   * ステージ座標へ戻すのは確定するとき(CanvasBoard)に1回だけ行う */
   y: number;
   stageWidthUnits: number;
   stageHeightUnits: number;

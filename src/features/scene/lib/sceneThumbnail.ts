@@ -1,5 +1,6 @@
 import type { Dancer } from "@/features/dancer/types";
 import type { Position } from "@/features/scene/types";
+import { toScreenY } from "@/features/canvas/lib/stageFlip";
 
 /** ミニチュアの中の点1つ。位置は0〜1の割合で持つ(実際の表示px数は
  * 置き場所によって64〜78pxと違うため、ここでは決めない) */
@@ -35,6 +36,9 @@ export function buildThumbnailDots(
   stageWidthUnits: number,
   stageHeightUnits: number,
   resolveColor: (dancerColor: string) => string,
+  /** 客席を上にして描くか。ステージと向きが違うミニチュアは、
+   * 見比べるためのものなのに見比べられない */
+  isAudienceOnTop = false,
 ): ThumbnailDot[] {
   const dots: ThumbnailDot[] = [];
 
@@ -45,7 +49,9 @@ export function buildThumbnailDots(
 
     dots.push({
       x: position.xCoordinate / stageWidthUnits,
-      y: position.yCoordinate / stageHeightUnits,
+      y:
+        toScreenY(position.yCoordinate, stageHeightUnits, isAudienceOnTop) /
+        stageHeightUnits,
       color: resolveColor(dancer.color),
     });
   }

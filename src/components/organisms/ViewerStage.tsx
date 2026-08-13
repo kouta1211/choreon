@@ -8,6 +8,8 @@ import {
   positionsAtSeconds,
   sceneSpanAt,
 } from "@/features/viewer/lib/interpolate";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
+import { toScreenY } from "@/features/canvas/lib/stageFlip";
 
 /** 自分のマーカー。他の人より一回り大きい */
 const OWN_SIZE = 36;
@@ -36,6 +38,7 @@ export function ViewerStage() {
   const focusedDancerId = useViewerStore((state) => state.focusedDancerId);
   const currentSeconds = useViewerStore((state) => state.currentSeconds);
   const isPathVisible = useViewerStore((state) => state.isPathVisible);
+  const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
 
   if (!project) return null;
 
@@ -53,6 +56,10 @@ export function ViewerStage() {
       ? positionsBySceneId[span.from.id]?.[focusedDancerId]
       : undefined;
   const own = positions.find((p) => p.dancerId === focusedDancerId);
+  // 見る側の端末でも「客席を上にする」は効く。踊る人が稽古場で鏡を
+  // 見ながら確かめるための設定なので、見る画面でこそ要る(stageFlip.ts)
+  const screenY = (value: number) =>
+    toScreenY(value, project.stageHeight, isAudienceOnTop);
 
   return (
     <Stage widthUnits={project.stageWidth} heightUnits={project.stageHeight}>
@@ -71,9 +78,9 @@ export function ViewerStage() {
         >
           <line
             x1={cameFrom.xCoordinate}
-            y1={cameFrom.yCoordinate}
+            y1={screenY(cameFrom.yCoordinate)}
             x2={own.x}
-            y2={own.y}
+            y2={screenY(own.y)}
             stroke={themedDancerColor(
               dancerById.get(own.dancerId)?.color ?? "#888",
             )}
@@ -83,7 +90,7 @@ export function ViewerStage() {
           />
           <circle
             cx={cameFrom.xCoordinate}
-            cy={cameFrom.yCoordinate}
+            cy={screenY(cameFrom.yCoordinate)}
             r={0.36}
             fill="none"
             stroke={themedDancerColor(
@@ -113,7 +120,7 @@ export function ViewerStage() {
             className="pointer-events-none absolute"
             style={{
               left: `${(position.x / project.stageWidth) * 100}%`,
-              top: `${(position.y / project.stageHeight) * 100}%`,
+              top: `${(screenY(position.y) / project.stageHeight) * 100}%`,
               transform: "translate(-50%, -50%)",
             }}
           >

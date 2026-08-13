@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
@@ -10,6 +10,7 @@ import {
 } from "@dnd-kit/core";
 import { DraggableDancerIcon } from "./DraggableDancerIcon";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 
 import { makeDancer } from "@/test/factories";
 
@@ -22,6 +23,49 @@ function DndTestWrapper({ children }: { children: ReactNode }) {
   );
   return <DndContext sensors={sensors}>{children}</DndContext>;
 }
+
+describe("客席を上にする設定", () => {
+  afterEach(() => {
+    useSettingsStore.setState({ isAudienceOnTop: false });
+  });
+
+  it("既定では、奥(y=2)は画面の上に置かれる", () => {
+    render(
+      <DndContext>
+        <DraggableDancerIcon
+          dancer={makeDancer()}
+          x={4}
+          y={2}
+          rotationAngle={0}
+          stageWidthUnits={8}
+          stageHeightUnits={8}
+        />
+      </DndContext>,
+    );
+    expect(screen.getByTestId("dancer-icon")).toHaveStyle({ top: "25%" });
+  });
+
+  it("客席を上にすると、同じ立ち位置が画面の下へ回る(保存する値は変えない)", () => {
+    useSettingsStore.setState({ isAudienceOnTop: true });
+    render(
+      <DndContext>
+        <DraggableDancerIcon
+          dancer={makeDancer()}
+          x={4}
+          y={2}
+          rotationAngle={0}
+          stageWidthUnits={8}
+          stageHeightUnits={8}
+        />
+      </DndContext>,
+    );
+    // y=2 は上下を写して 8-2=6 → 75%
+    expect(screen.getByTestId("dancer-icon")).toHaveStyle({ top: "75%" });
+  });
+
+  // 向き(鼻先)の写しは mirrorAngle が受け持っていて、そちらで
+  // 単体テストしてある(features/canvas/lib/stageFlip.test.ts)
+});
 
 describe("DraggableDancerIcon", () => {
   it("DancerIconと同じ見た目(名前)を表示する", () => {

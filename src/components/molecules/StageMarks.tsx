@@ -1,5 +1,7 @@
 "use client";
 
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
+
 type Props = {
   stageWidthUnits: number;
   stageHeightUnits: number;
@@ -25,6 +27,9 @@ const MAX_MARK = 6;
  * どちら側かは、その人がステージのどちら半分に居るかで分かる。
  */
 export function StageMarks({ stageWidthUnits, stageHeightUnits }: Props) {
+  // 客席がどちらの縁にあるか。バミリは客席側の縁に貼るものなので、
+  // 前後を入れ替えて見ているときは反対の縁へ回る
+  const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
   const center = stageWidthUnits / 2;
   // 中央(0)から両側へ1ユニット刻み。ただし端までは振らない。
   // いちばん外の目盛りはステージの角に重なって読みづらいうえ、
@@ -50,7 +55,11 @@ export function StageMarks({ stageWidthUnits, stageHeightUnits }: Props) {
         return (
           <span
             key={mark.key}
-            className="absolute bottom-0 flex flex-col items-center"
+            /* 貼るのは客席側の縁。客席を上にしているときは上端へ回り、
+               目盛りの線と数字の上下も入れ替える(縁から内側へ伸びる) */
+            className={`absolute flex items-center ${
+              isAudienceOnTop ? "top-0 flex-col-reverse" : "bottom-0 flex-col"
+            }`}
             style={{
               left: `${(mark.xUnits / stageWidthUnits) * 100}%`,
               translate: "-50% 0",
@@ -68,9 +77,9 @@ export function StageMarks({ stageWidthUnits, stageHeightUnits }: Props) {
               }}
             />
             <span
-              className={`pb-1 font-mono text-label leading-none ${
-                isCenter ? "font-bold text-accent-soft" : "text-fg-sub"
-              }`}
+              className={`font-mono text-label leading-none ${
+                isAudienceOnTop ? "pt-1" : "pb-1"
+              } ${isCenter ? "font-bold text-accent-soft" : "text-fg-sub"}`}
             >
               {mark.label}
             </span>

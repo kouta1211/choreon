@@ -11,6 +11,8 @@ import {
 import type { Dancer } from "@/features/dancer/types";
 import type { Position } from "@/features/scene/types";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
+import { toScreenY } from "@/features/canvas/lib/stageFlip";
 
 /**
  * 進むときは通ってきたぶんを消し(erase)、戻るときは通ってきたぶんを
@@ -99,6 +101,12 @@ export function PathTrail({
   stageHeightUnits,
   onComplete,
 }: Props) {
+  // 客席を上にして描くときは、線もその向きで引く(stageFlip.ts)。
+  // 組み立てはマウント時の1回だけなので、この値もその時点のものでよい
+  const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
+  const screenY = (value: number) =>
+    toScreenY(value, stageHeightUnits, isAudienceOnTop);
+
   // マウント時に1回だけ組み立てる。以後propsが変わっても作り直さない
   const [segments] = useState<TrailSegment[]>(() =>
     Object.keys(fromPositions).flatMap((dancerId) => {
@@ -119,9 +127,9 @@ export function PathTrail({
       const end = mode === "draw" ? from : to;
 
       const x1 = (start.xCoordinate / stageWidthUnits) * 100;
-      const y1 = (start.yCoordinate / stageHeightUnits) * 100;
+      const y1 = (screenY(start.yCoordinate) / stageHeightUnits) * 100;
       const x2 = (end.xCoordinate / stageWidthUnits) * 100;
-      const y2 = (end.yCoordinate / stageHeightUnits) * 100;
+      const y2 = (screenY(end.yCoordinate) / stageHeightUnits) * 100;
 
       const segment = segmentPositions[dancerId];
       const curveControlX = segment?.curveControlX;
@@ -134,7 +142,7 @@ export function PathTrail({
         ? (curveControlX / stageWidthUnits) * 100
         : (x1 + x2) / 2;
       const controlY = hasCurve
-        ? (curveControlY / stageHeightUnits) * 100
+        ? (screenY(curveControlY) / stageHeightUnits) * 100
         : (y1 + y2) / 2;
 
       return [
