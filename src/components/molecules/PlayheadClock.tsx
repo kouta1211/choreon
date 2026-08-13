@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { countAt, formatCount } from "@/features/music/lib/counts";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   /** 曲(または最後のシーン)の長さ。分からなければ null */
@@ -25,9 +26,13 @@ type Props = {
  * currentTime を読むと、0.01秒の変化でも再描画が起きてしまう。
  */
 export function PlayheadClock({ totalSeconds, counts }: Props) {
+  const t = useT();
   const format = (seconds: number) =>
     counts
-      ? formatCount(countAt(seconds, counts.bpm, counts.originSeconds))
+      ? formatCount(
+          countAt(seconds, counts.bpm, counts.originSeconds),
+          t.music.counts,
+        )
       : formatClock(seconds);
 
   const [text, setText] = useState(() =>
@@ -37,14 +42,18 @@ export function PlayheadClock({ totalSeconds, counts }: Props) {
   useEffect(() => {
     const update = (seconds: number) => {
       const next = counts
-        ? formatCount(countAt(seconds, counts.bpm, counts.originSeconds))
+        ? formatCount(
+          countAt(seconds, counts.bpm, counts.originSeconds),
+          t.music.counts,
+        )
         : formatClock(seconds);
       setText((previous) => (previous === next ? previous : next));
     };
     update(useMusicStore.getState().currentTime);
     return useMusicStore.subscribe((state) => update(state.currentTime));
-    // counts は { bpm, originSeconds } の入れ物なので、中身で比べる
-  }, [counts?.bpm, counts?.originSeconds, counts]);
+    // counts は { bpm, originSeconds } の入れ物なので、中身で比べる。
+    // t.music.counts は言語ごとの定数なので、入れても張り直しは増えない
+  }, [counts?.bpm, counts?.originSeconds, counts, t.music.counts]);
 
   return (
     <>

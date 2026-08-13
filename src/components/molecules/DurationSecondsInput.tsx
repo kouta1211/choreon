@@ -50,7 +50,7 @@ export function DurationSecondsInput({
   max,
   allowEmpty = true,
   placeholder,
-  suffix = "秒",
+  suffix,
   tone = "scene",
 }: Props) {
   const inputId = useId();

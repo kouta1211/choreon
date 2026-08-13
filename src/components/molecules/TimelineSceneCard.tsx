@@ -9,6 +9,7 @@ import {
 } from "@/features/music/lib/timelineLayout";
 import type { Scene } from "@/features/scene/types";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /** これ以上動いたらドラッグ(時刻を動かす)、それ未満はタップ(選択) */
 const DRAG_THRESHOLD_PX = 4;
@@ -303,11 +304,12 @@ export function TimelineSceneCluster({
   leftPx: number;
   onZoom: () => void;
 }) {
+  const t = useT();
   const count = numbers.length;
   return (
     <PressableButton
       kind="icon"
-      aria-label={`シーン${numbers[0]}〜${numbers[count - 1]}が重なっています。押すと広げて、1つずつ選びます`}
+      aria-label={t.music.stacked(numbers[0], numbers[count - 1])}
       onPointerDown={(event) => event.stopPropagation()}
       onClick={onZoom}
       style={{ left: leftPx, marginLeft: -23 }}
@@ -318,7 +320,7 @@ export function TimelineSceneCluster({
       }`}
     >
       <span className="font-mono">{count}</span>
-      シーン
+      {t.music.scenesShort}
     </PressableButton>
   );
 }

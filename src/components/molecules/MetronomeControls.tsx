@@ -6,6 +6,7 @@ import { useBpm } from "@/features/music/hooks/useBpm";
 import { MAX_BPM, MIN_BPM } from "@/features/music/lib/metronomePreference";
 import { Slider } from "@/components/ui/slider";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /** 押すだけで置ける速さ。バラード〜アップテンポの目安 */
 const PRESETS = [90, 110, 128, 140];
@@ -22,6 +23,7 @@ const PRESETS = [90, 110, 128, 140];
  * 合わせればよいのか分からなくなる。
  */
 export function MetronomeControls() {
+  const t = useT();
   const { bpm, setBpm } = useBpm();
   const isEnabled = useMusicStore((state) => state.isMetronomeEnabled);
   const toggleMetronome = useMusicStore((state) => state.toggleMetronome);
@@ -40,7 +42,7 @@ export function MetronomeControls() {
           }`}
         >
           <Music4 size={14} className="shrink-0" />
-          メトロノーム
+          {t.music.metronome}
         </PressableButton>
 
         <div className="flex min-w-0 flex-1 items-center gap-2">

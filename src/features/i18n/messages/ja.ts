@@ -246,6 +246,40 @@ export const ja = {
     },
   },
 
+  music: {
+    title: "曲",
+    pick: "端末から曲を選ぶ",
+    pickAnother: "別の曲を選ぶ",
+    file: "曲のファイル",
+    remove: "曲を外す",
+    keptOnDevice: "この端末に控えてあります。開き直しても入ったままです。",
+    notShared:
+      "音源はこの端末から出ません。作品を共有しても曲は付いていかないので、相手には同じ曲を選んでもらってください(開始位置は共有されます)。",
+    metronomeTitle: "曲がないときの拍",
+    metronomeNote:
+      "曲を用意する前でも、振付の速さを耳で確かめられます。再生ボタンを押している間だけ鳴ります。",
+    metronome: "メトロノーム",
+    click: "クリックを鳴らす",
+    bpm: "速さ(BPM)",
+    beatsPerBar: "拍子",
+    beatsPerBarNote:
+      "数える単位(8カウント)は拍子では変わりません。ここで変わるのは、メトロノームで強く鳴る拍と、時間軸で太く引く線だけです。",
+    offset: "曲の開始位置",
+    seconds: "秒",
+    offsetNote:
+      "振付が曲の途中から始まるときに使います。イントロが12.5秒あるなら12.5と入れると、再生ボタンでそこから鳴ります。",
+    offsetFailed: "曲の開始位置の保存に失敗しました",
+    span: (total: number, from: string, to: string) =>
+      `通しで ${total}秒 · ${from} 〜 ${to}`,
+    counts: (set: number, count: number) => `${set}セット ${count}カウント`,
+    zoomIn: "時間軸を寄せる",
+    zoomOut: "時間軸を引く",
+    pxPerSecond: "px/秒",
+    stacked: (from: number, to: number) =>
+      `シーン${from}〜${to}が重なっています。押すと広げて、1つずつ選びます`,
+    scenesShort: "シーン",
+  },
+
   dancer: {
     add: {
       title: "ダンサーを追加",

@@ -7,6 +7,7 @@ import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { Tooltip } from "@/components/atoms/Tooltip";
 import type { Project } from "@/features/project/types";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   project: Project;
@@ -23,15 +24,16 @@ type Props = {
  * 開かずに分かるようにする。
  */
 export function MusicButton({ project }: Props) {
+  const t = useT();
   const [isOpen, setIsOpen] = useState(false);
   const hasMusic = useMusicStore((state) => state.objectUrl !== null);
 
   return (
     <>
-      <Tooltip label="曲">
+      <Tooltip label={t.music.title}>
         <PressableButton
           kind="icon"
-          aria-label="曲"
+          aria-label={t.music.title}
           aria-pressed={hasMusic}
           onClick={() => setIsOpen(true)}
           className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[calc(var(--radius)*0.8333)] ${

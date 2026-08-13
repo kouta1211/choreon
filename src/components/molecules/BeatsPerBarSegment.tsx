@@ -2,6 +2,7 @@
 
 import { useBpm } from "@/features/music/hooks/useBpm";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
  * 選べる拍子。3つに絞ってある(オーバーレイ仕様§6: セグメントは3つ以下)。
@@ -26,12 +27,13 @@ const CHOICES = [4, 3, 6] as const;
  * 時間の手がかりは「シーンの時刻」と「BPM・拍子」しか無い。
  */
 export function BeatsPerBarSegment() {
+  const t = useT();
   const { beatsPerBar, setBeatsPerBar } = useBpm();
 
   return (
     <div
       role="group"
-      aria-label="拍子"
+      aria-label={t.music.beatsPerBar}
       className="flex shrink-0 overflow-hidden rounded-[calc(var(--radius)*0.8333)] border border-line-strong"
     >
       {CHOICES.map((choice, index) => {

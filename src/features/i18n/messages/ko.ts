@@ -233,6 +233,40 @@ export const ko = {
     },
   },
 
+  music: {
+    title: "음악",
+    pick: "기기에서 곡 고르기",
+    pickAnother: "다른 곡 고르기",
+    file: "음악 파일",
+    remove: "곡 빼기",
+    keptOnDevice: "이 기기에 보관해 둡니다. 다시 열어도 그대로 있습니다.",
+    notShared:
+      "음원은 이 기기 밖으로 나가지 않습니다. 작품을 공유해도 곡은 따라가지 않으니 상대에게 같은 곡을 고르라고 알려 주세요(시작 위치는 공유됩니다).",
+    metronomeTitle: "곡이 없을 때의 박",
+    metronomeNote:
+      "곡을 준비하기 전에도 안무의 속도를 귀로 확인할 수 있습니다. 재생 중에만 소리가 납니다.",
+    metronome: "메트로놈",
+    click: "클릭음 켜기",
+    bpm: "속도(BPM)",
+    beatsPerBar: "박자",
+    beatsPerBarNote:
+      "세는 단위(여덟 박)는 박자로 바뀌지 않습니다. 여기서 바뀌는 것은 메트로놈에서 세게 울리는 박과 타임라인에 굵게 그리는 선뿐입니다.",
+    offset: "곡의 시작 위치",
+    seconds: "초",
+    offsetNote:
+      "안무가 곡 중간부터 시작할 때 사용합니다. 인트로가 12.5초라면 12.5를 넣으면 재생 버튼으로 거기서부터 나옵니다.",
+    offsetFailed: "곡의 시작 위치를 저장하지 못했습니다",
+    span: (total: number, from: string, to: string) =>
+      `전체 ${total}초 · ${from} ~ ${to}`,
+    counts: (set: number, count: number) => `${set}세트 ${count}카운트`,
+    zoomIn: "타임라인 확대",
+    zoomOut: "타임라인 축소",
+    pxPerSecond: "px/초",
+    stacked: (from: number, to: number) =>
+      `장면 ${from}~${to}이(가) 겹쳐 있습니다. 누르면 펼쳐서 하나씩 고를 수 있습니다`,
+    scenesShort: "장면",
+  },
+
   dancer: {
     add: {
       title: "댄서 추가",

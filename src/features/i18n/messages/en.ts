@@ -234,6 +234,40 @@ export const en = {
     },
   },
 
+  music: {
+    title: "Music",
+    pick: "Choose a track from this device",
+    pickAnother: "Choose a different track",
+    file: "Music file",
+    remove: "Remove the track",
+    keptOnDevice: "Kept on this device. It is still here when you come back.",
+    notShared:
+      "The audio never leaves this device. Sharing a piece does not carry the track, so ask the other person to pick the same one (the start position is shared).",
+    metronomeTitle: "A beat when there is no music",
+    metronomeNote:
+      "Hear the tempo of the choreography before you have a track. It only sounds while playback is running.",
+    metronome: "Metronome",
+    click: "Sound the click",
+    bpm: "Tempo (BPM)",
+    beatsPerBar: "Time signature",
+    beatsPerBarNote:
+      "It does not change the eight-count you count in. It only changes which beat the metronome accents, and which lines are drawn thick on the timeline.",
+    offset: "Start position in the track",
+    seconds: "s",
+    offsetNote:
+      "Use this when the choreography starts partway into the track. If the intro is 12.5 seconds, enter 12.5 and playback starts there.",
+    offsetFailed: "Could not save the start position",
+    span: (total: number, from: string, to: string) =>
+      `${total}s end to end · ${from} – ${to}`,
+    counts: (set: number, count: number) => `set ${set}, count ${count}`,
+    zoomIn: "Zoom in on the timeline",
+    zoomOut: "Zoom out on the timeline",
+    pxPerSecond: "px/s",
+    stacked: (from: number, to: number) =>
+      `Scenes ${from}–${to} sit on top of each other. Tap to spread them out and pick one.`,
+    scenesShort: "scenes",
+  },
+
   dancer: {
     add: {
       title: "Add dancers",

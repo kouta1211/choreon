@@ -6,6 +6,7 @@ import { useBpm } from "@/features/music/hooks/useBpm";
 import { MAX_BPM, MIN_BPM } from "@/features/music/lib/metronomePreference";
 import { Slider } from "@/components/ui/slider";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /** ミニマップと同じ段。倍率が変わっても段の高さが動かないようにする */
 export const COUNT_CONTROLS_HEIGHT = 34;
@@ -29,6 +30,7 @@ export const COUNT_CONTROLS_HEIGHT = 34;
  * (counts.ts)。
  */
 export function CountControls() {
+  const t = useT();
   const { bpm, setBpm } = useBpm();
   const isEnabled = useMusicStore((state) => state.isMetronomeEnabled);
   const toggleMetronome = useMusicStore((state) => state.toggleMetronome);
@@ -42,7 +44,7 @@ export function CountControls() {
         role="switch"
         aria-checked={isEnabled}
         onClick={toggleMetronome}
-        aria-label="クリックを鳴らす"
+        aria-label={t.music.click}
         className={`flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[calc(var(--radius)*0.5)] border transition-colors ${
           isEnabled
             ? "border-accent bg-accent/16 text-accent-soft"
@@ -53,7 +55,7 @@ export function CountControls() {
       </PressableButton>
 
       <Slider
-        aria-label="速さ(BPM)"
+        aria-label={t.music.bpm}
         min={MIN_BPM}
         max={MAX_BPM}
         step={1}

@@ -51,6 +51,7 @@ import { Minus, Plus } from "lucide-react";
 import { snapSeconds } from "@/features/scene/lib/sceneTiming";
 import { DEFAULT_BPM } from "@/features/music/lib/metronomePreference";
 import type { Project } from "@/features/project/types";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /** ＋ − ボタン1回ぶんの倍率。段(ZOOM_STEPS)より細かく刻む */
 const ZOOM_BUTTON_FACTOR = 1.5;
@@ -93,6 +94,7 @@ type Props = {
  * 動かすのは1枚のtransformと、Canvasの描き直しだけにしている。
  */
 export function MusicTimeline({ project, audioRef }: Props) {
+  const t = useT();
   const scenes = useProjectStore((state) => state.scenes);
   const thumbnailBySceneId = useProjectStore(
     (state) => state.thumbnailBySceneId,
@@ -625,13 +627,13 @@ export function MusicTimeline({ project, audioRef }: Props) {
         <div className="flex items-center justify-end gap-1.5">
           <span className="font-mono text-caption tabular-nums text-fg-muted">
             {Math.round(pxPerSecond)}
-            <span className="ml-0.5">px/秒</span>
+            <span className="ml-0.5">{t.music.pxPerSecond}</span>
           </span>
           <PressableButton
             kind="icon"
             onClick={() => changeZoom(1 / ZOOM_BUTTON_FACTOR, viewport / 2)}
             disabled={pxPerSecond <= MIN_PX_PER_SECOND}
-            aria-label="時間軸を引く"
+            aria-label={t.music.zoomOut}
             className="flex h-7 w-7 items-center justify-center rounded-[calc(var(--radius)*0.5)] border border-line-strong text-fg-sub disabled:opacity-40"
           >
             <Minus size={13} />
@@ -640,7 +642,7 @@ export function MusicTimeline({ project, audioRef }: Props) {
             kind="icon"
             onClick={() => changeZoom(ZOOM_BUTTON_FACTOR, viewport / 2)}
             disabled={pxPerSecond >= MAX_PX_PER_SECOND}
-            aria-label="時間軸を寄せる"
+            aria-label={t.music.zoomIn}
             className="flex h-7 w-7 items-center justify-center rounded-[calc(var(--radius)*0.5)] border border-line-strong text-fg-sub disabled:opacity-40"
           >
             <Plus size={13} />

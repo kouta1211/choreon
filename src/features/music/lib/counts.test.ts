@@ -39,7 +39,9 @@ describe("countAt", () => {
   });
 
   it("読める形にする", () => {
-    expect(formatCount(countAt(13, BPM))).toBe("4セット 3カウント");
+    expect(
+      formatCount(countAt(13, BPM), (set, count) => `${set}セット ${count}カウント`),
+    ).toBe("4セット 3カウント");
   });
 });
 

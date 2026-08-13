@@ -42,9 +42,13 @@ export function countAt(
   };
 }
 
-/** 「4セット 2カウント」の形。操作行に出す */
-export function formatCount(position: CountPosition): string {
-  return `${position.set}セット ${position.count}カウント`;
+/** 「4セット 2カウント」の形。操作行に出す。
+ * 文そのものは辞書が持つ — セットとカウントの並び順は言語で変わる */
+export function formatCount(
+  position: CountPosition,
+  format: (set: number, count: number) => string,
+): string {
+  return format(position.set, position.count);
 }
 
 /** いちばん近い拍へ寄せる。コマを置く位置に使う */
