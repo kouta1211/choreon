@@ -1,0 +1,1666 @@
+<title>Choreon 動作確認台本</title>
+<style>
+  /* ── 暗い地が主。Choreon 本体と同じ世界にする（dark-first） ── */
+  :root {
+    --ground: #131017;
+    --surface: #1b1722;
+    --raised: #241f2e;
+    --line: #332c40;
+    --line-soft: #2a2434;
+    --fg: #efebf3;
+    --fg-sub: #a8a0b4;
+    --fg-mute: #7b7387;
+    --accent: #f0559b;
+    --accent-dim: #7d2a51;
+    --ok: #63d6a6;
+    --ok-dim: #1e4c3c;
+    --warn: #e9b45f;
+    --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --ground: #f6f3f8;
+      --surface: #ffffff;
+      --raised: #f0eaf3;
+      --line: #ded5e4;
+      --line-soft: #eae3ee;
+      --fg: #201a27;
+      --fg-sub: #635a6f;
+      --fg-mute: #8d8499;
+      --accent: #c2246c;
+      --accent-dim: #f3d3e3;
+      --ok: #10775a;
+      --ok-dim: #d3ece2;
+      --warn: #8a5a11;
+      --shadow: none;
+    }
+  }
+  :root[data-theme="light"] {
+    --ground: #f6f3f8;
+    --surface: #ffffff;
+    --raised: #f0eaf3;
+    --line: #ded5e4;
+    --line-soft: #eae3ee;
+    --fg: #201a27;
+    --fg-sub: #635a6f;
+    --fg-mute: #8d8499;
+    --accent: #c2246c;
+    --accent-dim: #f3d3e3;
+    --ok: #10775a;
+    --ok-dim: #d3ece2;
+    --warn: #8a5a11;
+    --shadow: none;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--fg);
+    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic",
+      "Noto Sans JP", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .mono {
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+      monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .wrap {
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: 0 1.25rem;
+  }
+  .wrap.tail { padding-bottom: 5rem; }
+
+  /* ── ヘッダー ── */
+  header.masthead { padding: 3rem 0 2rem; }
+  .eyebrow {
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--fg-mute);
+    margin: 0 0 0.75rem;
+  }
+  h1 {
+    font-size: clamp(1.85rem, 6vw, 2.6rem);
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    margin: 0 0 0.85rem;
+    text-wrap: balance;
+  }
+  .lede { color: var(--fg-sub); margin: 0; max-width: 34em; }
+
+  /* ── 端末切替＋進捗（貼り付く） ── */
+  .bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: color-mix(in oklab, var(--ground) 90%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line-soft);
+    padding: 0.6rem 1.25rem 0.55rem;
+  }
+  .bar-inner {
+    max-width: 44rem;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .bar-row { display: flex; align-items: center; gap: 0.75rem; }
+
+  .seg {
+    display: flex;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .seg button {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--fg-sub);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.4rem 1rem;
+    min-height: 38px;
+    cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #ffffff; }
+  .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+
+  .progress { flex: 1; min-width: 3rem; display: flex; align-items: center; gap: 0.6rem; }
+  .track {
+    flex: 1;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--line);
+    overflow: hidden;
+  }
+  .fill { height: 100%; width: 0; background: var(--ok); transition: width 0.25s ease; }
+  .count { font-size: 0.8rem; color: var(--fg-sub); flex-shrink: 0; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .chips button {
+    appearance: none;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--fg-sub);
+    font: inherit;
+    font-size: 0.78rem;
+    border-radius: 999px;
+    padding: 0.2rem 0.75rem;
+    min-height: 32px;
+    cursor: pointer;
+  }
+  .chips button[aria-pressed="true"] {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--fg);
+    font-weight: 700;
+  }
+  .chips .reset { margin-left: auto; border-color: transparent; color: var(--fg-mute); }
+
+  /* ── 準備の枠 ── */
+  .prep {
+    margin-top: 2rem;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+    padding: 1.15rem 1.25rem;
+    box-shadow: var(--shadow);
+  }
+  .prep h2 {
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--fg-mute);
+    margin: 0 0 0.75rem;
+    font-weight: 700;
+  }
+  .prep dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 0.4rem 1rem; }
+  .prep dt { color: var(--fg-mute); font-size: 0.85rem; white-space: nowrap; }
+  .prep dd { margin: 0; font-size: 0.9rem; overflow-wrap: anywhere; }
+  .prep a { color: var(--accent); }
+
+  /* ── 場面の見出し（ステージの縁の札と同じ体裁） ── */
+  section.act { margin-top: 2.75rem; scroll-margin-top: 6.5rem; }
+  section.act[hidden] { display: none; }
+  .act-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.7rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 1rem;
+  }
+  .act-no { font-size: 0.78rem; color: var(--accent); font-weight: 700; flex-shrink: 0; }
+  .act-title {
+    font-size: 1.12rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0;
+    flex: 1;
+  }
+  .act-tally { font-size: 0.75rem; color: var(--fg-mute); flex-shrink: 0; }
+  .act-note { font-size: 0.85rem; color: var(--fg-sub); margin: -0.4rem 0 1rem; }
+
+  /* ── 1項目 ── */
+  .items { display: flex; flex-direction: column; gap: 0.6rem; }
+  .item {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: opacity 0.2s ease, border-color 0.2s ease;
+  }
+  .item.done { opacity: 0.5; border-color: var(--ok-dim); }
+  .item[hidden] { display: none; }
+
+  .head {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8rem;
+    width: 100%;
+    padding: 0.95rem 1rem;
+    background: transparent;
+    border: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    min-height: 56px;
+  }
+  .head:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+  .box {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    margin-top: 2px;
+    border-radius: 7px;
+    border: 1.5px solid var(--line);
+    background: var(--raised);
+    display: grid;
+    place-items: center;
+    color: transparent;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .item.done .box { background: var(--ok); border-color: var(--ok); color: var(--ground); }
+  .do { flex: 1; min-width: 0; font-weight: 600; letter-spacing: -0.005em; }
+  .do em {
+    font-style: normal;
+    background: var(--accent-dim);
+    color: var(--fg);
+    border-radius: 5px;
+    padding: 0.05em 0.35em;
+    font-weight: 700;
+  }
+  .new {
+    display: inline-block;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 0 0.35em;
+    margin-right: 0.4em;
+    vertical-align: 0.12em;
+  }
+
+  .body { padding: 0 1rem 1rem 3.05rem; display: flex; flex-direction: column; gap: 0.5rem; }
+  .line { display: flex; gap: 0.65rem; font-size: 0.9rem; line-height: 1.7; }
+  .tag {
+    flex-shrink: 0;
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    padding: 0.28em 0.5em;
+    border-radius: 5px;
+    height: fit-content;
+    margin-top: 0.25em;
+    white-space: nowrap;
+  }
+  .tag.ok { background: var(--ok-dim); color: var(--ok); }
+  .tag.ng { background: color-mix(in oklab, var(--warn) 20%, transparent); color: var(--warn); }
+  .line p { margin: 0; color: var(--fg-sub); }
+  .line.okline p { color: var(--fg); }
+  /* 日本語に斜体は効かないので、強調は太さで持つ */
+  .body em { font-style: normal; font-weight: 700; color: var(--fg); }
+  code {
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    font-size: 0.86em;
+    background: var(--raised);
+    border-radius: 5px;
+    padding: 0.12em 0.4em;
+  }
+
+  /* ── メモ ── */
+  .memo-open {
+    appearance: none;
+    align-self: flex-start;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--fg-mute);
+    font: inherit;
+    font-size: 0.78rem;
+    border-radius: 999px;
+    padding: 0.2rem 0.75rem;
+    min-height: 34px;
+    cursor: pointer;
+  }
+  .memo-open:hover { color: var(--fg); border-color: var(--fg-mute); }
+  .item.has-memo .memo-open {
+    border-color: var(--warn);
+    color: var(--warn);
+    font-weight: 700;
+  }
+  textarea.memo {
+    width: 100%;
+    min-height: 4.5rem;
+    resize: vertical;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--raised);
+    color: var(--fg);
+    font: inherit;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    padding: 0.6rem 0.7rem;
+  }
+  textarea.memo::placeholder { color: var(--fg-mute); }
+  textarea.memo:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  [hidden] { display: none !important; }
+
+  /* ── 報告 ── */
+  .report {
+    margin-top: 3rem;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+    padding: 1.15rem 1.25rem;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+  .report h2 {
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--fg-mute);
+    margin: 0;
+    font-weight: 700;
+  }
+  .report p.why { margin: 0; font-size: 0.88rem; color: var(--fg-sub); }
+  .report .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .report button {
+    appearance: none;
+    border: 0;
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 0.55rem 1.1rem;
+    min-height: 44px;
+    cursor: pointer;
+    background: var(--accent);
+    color: #ffffff;
+  }
+  .report button.ghost {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--fg-sub);
+    font-weight: 600;
+  }
+  .report .said { font-size: 0.82rem; color: var(--ok); }
+  textarea.out {
+    width: 100%;
+    min-height: 14rem;
+    resize: vertical;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--raised);
+    color: var(--fg);
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    font-size: 0.8rem;
+    line-height: 1.65;
+    padding: 0.7rem;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  .empty {
+    margin-top: 2.5rem;
+    padding: 2rem 1rem;
+    text-align: center;
+    color: var(--fg-mute);
+    font-size: 0.9rem;
+    border: 1px dashed var(--line);
+    border-radius: 14px;
+  }
+  .empty[hidden] { display: none; }
+
+  footer.end {
+    margin-top: 3.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    color: var(--fg-mute);
+    font-size: 0.85rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <p class="eyebrow mono">Choreon / manual QA</p>
+    <h1>ぜんぶ通しの動作確認台本</h1>
+    <p class="lede">
+      上から順に、書いてある場所を触って、書いてある挙動になるかを見るだけの台本です。
+      今日の設定機能だけでなく、前回まだ確認できていなかったぶんも入れてあります。
+      チェックはこの端末に残るので、途中で閉じても続きから再開できます。
+    </p>
+  </header>
+</div>
+
+<div class="bar">
+  <div class="bar-inner">
+    <div class="bar-row">
+      <div class="seg" role="group" aria-label="確認する端末">
+        <button type="button" data-device="phone" aria-pressed="true">スマホ</button>
+        <button type="button" data-device="pc" aria-pressed="false">PC</button>
+      </div>
+      <div class="progress">
+        <div class="track"><div class="fill" id="fill"></div></div>
+        <span class="count mono" id="count">0 / 0</span>
+      </div>
+    </div>
+    <div class="chips" role="group" aria-label="絞り込み">
+      <button type="button" data-filter="all" aria-pressed="true">すべて</button>
+      <button type="button" data-filter="new" aria-pressed="false">今日の分</button>
+      <button type="button" data-filter="rest" aria-pressed="false">未チェック</button>
+      <button type="button" class="reset" id="reset">チェックを消す</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap tail">
+  <div class="prep">
+    <h2>はじめる前に</h2>
+    <dl id="prep"></dl>
+  </div>
+  <main id="acts"></main>
+  <p class="empty" id="empty" hidden>この絞り込みに当てはまる項目はありません。</p>
+
+  <section class="report">
+    <h2>気づいたことを渡す</h2>
+    <p class="why">
+      各項目の「メモ」に、おかしかったこと・直したいことを書いておいてください。
+      ここに書いたものと、チェックの付いていない項目をまとめて、
+      そのまま Claude Code に貼れる文章にします。
+    </p>
+    <label for="global-memo" class="why">
+      <b>項目に紐づかない気づき</b>（全体を通して思ったこと、やりたいこと）
+    </label>
+    <textarea
+      id="global-memo"
+      class="memo"
+      rows="4"
+      placeholder="例：スマホだと下のバーが厚くてステージが狭い。シーンを複製したあと名前を自動で「〜のコピー」にしたい。"
+    ></textarea>
+    <div class="actions">
+      <button type="button" id="make-report">報告の文章を作る</button>
+      <button type="button" class="ghost" id="copy-report" hidden>コピーする</button>
+      <span class="said" id="copied" hidden>コピーしました</span>
+    </div>
+    <textarea id="report-out" class="out" readonly hidden></textarea>
+  </section>
+
+  <footer class="end">
+    <p>
+      ちがう挙動になった項目は、チェックを付けずに残しておいてください。
+      「どの項目が」「どうなったか」が分かれば、そこから直せます。
+      <b>今日</b>の印が付いているのが今日実装したぶん、印の無いものは前回までの積み残しです。
+    </p>
+  </footer>
+</div>
+
+<script>
+  // ── 台本の中身 ──
+  // do = 触る場所（<em> が実際に押すもの） / ok = 正しい挙動 / ng = 補足
+  // n: true = 今日（2026-08-13）実装したぶん
+  const PREP = {
+    phone: [
+      ["開く場所", '<a href="https://choreon-koutas-projects-47ffa293.vercel.app" target="_blank" rel="noopener">choreon-koutas-projects-47ffa293.vercel.app</a>'],
+      ["ブラウザ", "ふだん使っているもので。ホーム画面に追加したアイコンからではなく、まずブラウザから開いてください"],
+      ["最初にすること", "ページを開いたら一度タブを閉じて、開き直す。今日の変更が入っていない古い画面のまま確認してしまうのを防ぎます"],
+      ["ログイン", "自分のアカウントでログインした状態にする"],
+      ["注意", "設定は端末ごとに覚えます。PCで変えた設定はスマホには来ません（それが正しい動作です）"],
+    ],
+    pc: [
+      ["開く場所", '<a href="https://choreon-koutas-projects-47ffa293.vercel.app" target="_blank" rel="noopener">choreon-koutas-projects-47ffa293.vercel.app</a>　または <code>npm run dev</code> → <code>localhost:3000</code>'],
+      ["最初にすること", "<code>Ctrl</code> + <code>Shift</code> + <code>R</code> で強制リロード。今日の変更が入っていない古い画面のまま確認してしまうのを防ぎます"],
+      ["ログイン", "自分のアカウントでログインした状態にする"],
+      ["窓の幅", "最大化して始めてください。狭いとスマホ用の見た目に切り替わります"],
+      ["ついでに", "ブラウザのコンソール（F12）を開いたまま一巡すると、赤いエラーが出たとき拾えます"],
+    ],
+  };
+
+  const SHARED = (isPhone) => {
+    const tap = isPhone ? "触る" : "押す";
+    const drag = isPhone ? "指でドラッグ" : "マウスでドラッグ";
+    const finger = isPhone ? "指" : "カーソル";
+    return [
+      {
+        title: "ゲストの下書きと、登録の壁",
+        note: "未ログインで作ったものが、登録したときに消えずにクラウドへ移るか。",
+        items: [
+          {
+            do: "ログアウトした状態で <em>トップページ</em> を開く",
+            ok: "ログインを求められず、いきなりステージが出て編集できる",
+          },
+          {
+            do: "ダンサーを2〜3人足して、シーンも2つ作る",
+            ok: "ふつうに編集できる。ヘッダーに <em>保存</em> ボタンが出ている",
+          },
+          {
+            do: "<em>保存</em> を押す",
+            ok: "登録／ログインのモーダルが開く（画面は移らず、作りかけがそのまま見えている）",
+          },
+          {
+            do: "モーダルを閉じて、ふだんのアカウントでログインし直す",
+            ok: "ログインできる。下書きの扱いはここで確認済みなので、以降は自分の作品で進めます",
+            ng: "下書きをそのままクラウドへ移したい場合は、モーダルからそのまま新規登録すると内容ごと移ります",
+          },
+        ],
+      },
+      {
+        title: "設定を開く",
+        note: "今日ふえた画面です。入口が2つあります。",
+        items: [
+          {
+            n: true,
+            do: `ホーム（作品の一覧）の右上にある<em>歯車</em>を${tap}`,
+            ok: "下から「設定」が出てくる。中は 舞台 / 目盛り / 再生 / 表示 / アプリ / アカウント という見出しで、角丸のカードに分かれている",
+            ng: "「データ」の見出しが無いのは正しい。書き出し・取り込みは作品を開いているときだけ出ます",
+          },
+          {
+            n: true,
+            do: "設定を閉じ、どれか作品を開いて、右上の<em>つまみのアイコン（表示とモード）</em>から <em>設定</em>",
+            ok: "ホームと同じ設定が出る。今度は「データ」の見出しも増えていて、書き出し・取り込み・この作品を空にする が並ぶ",
+          },
+        ],
+      },
+      {
+        title: "新しく作る作品の初期値",
+        note: "ここは既にある作品には効きません。作った後は作品側の値が正になります。",
+        items: [
+          {
+            n: true,
+            do: "設定 → 舞台 → <em>ステージの幅</em> を 10、<em>ステージの奥行き</em> を 8 に",
+            ok: "数字が変わる。いま開いている作品のステージは変わらない（これが正しい）",
+          },
+          {
+            n: true,
+            do: "設定 → 再生 → <em>既定の速さ</em> を 100 BPM に",
+            ok: "数字が変わる",
+          },
+          {
+            n: true,
+            do: "ホームに戻り、名前を入れて <em>+ で新しい作品を作る</em>",
+            ok: "開いたステージが、いつもより四角い形になっている（10 × 8 の比率）",
+          },
+          {
+            n: true,
+            do: "その作品で 表示とモード → <em>曲</em> を開く",
+            ok: "BPM が 100 になっている",
+          },
+          {
+            n: true,
+            do: "元からある作品を開き直す",
+            ok: "前のままの広さと速さ。設定を変えても、既にある作品は動きません",
+          },
+        ],
+      },
+      {
+        title: "ダンサーを置く",
+        note: "以降ずっと使うので、ここで人を用意します。",
+        items: [
+          {
+            do: "ヘッダーの<em>人を追加するアイコン</em>を押し、人数を3人にして追加",
+            ok: "3人がステージの空いているところに出て、一覧にも増える",
+          },
+          {
+            do: `ダンサーを1人つかんで、ステージの端まで${drag}`,
+            ok: `${finger}にぴったり付いてくる。離した場所にそのまま残る`,
+          },
+          {
+            do: "ダンサーを<em>ステージの外へ</em>引っぱってみる",
+            ok: "外へは出ず、縁で止まる",
+          },
+          {
+            do: `ダンサーを1人${tap}して選ぶ`,
+            ok: "画面の下にインスペクター（名前・色・向き・削除）が出る",
+          },
+          {
+            do: "インスペクターで<em>色</em>を変える",
+            ok: "ステージの丸の色がすぐ変わる",
+          },
+          {
+            do: "選んだまま、ステージの<em>何も無いところ</em>を触る",
+            ok: "選択が外れて、インスペクターが閉じる",
+          },
+          {
+            do: "シーンを2つ作り、2つ目で1人だけ<em>ステージの端から端まで</em>動かす",
+            ok: "「歩いて間に合わない速さです」という警告が出る",
+            ng: "移動時間が長い（何秒もある）と警告は出ません。シーンの間隔が短いときに出ます",
+          },
+          {
+            do: "ダンサーを1人追加してから、<em>別のシーンへ移る</em>",
+            ok: "追加した人が、どのシーンでも消えずに居る",
+          },
+        ],
+      },
+      {
+        title: "客席を上にする",
+        note: "今日いちばん大きい変更です。「保存されている立ち位置は動かさず、描く向きだけを入れ替える」のが正解。",
+        items: [
+          {
+            n: true,
+            do: "ダンサーを<em>前後にばらけて</em>置いた状態にしておく（準備）",
+            ok: "ステージの上の札が「バックステージ」、下が「客席側」",
+          },
+          {
+            n: true,
+            do: "設定 → 舞台 → <em>客席を上にする</em> をオン",
+            ok: "上の札が「客席側」、下が「バックステージ」に入れ替わる。同時に全員が上下にひっくり返る（左右の位置は変わらない）",
+            ng: "左右も動いてしまったら不具合です",
+          },
+          {
+            n: true,
+            do: "ダンサーの<em>向き（鼻先の三角）</em>を見る",
+            ok: "さっきまで下を向いていた人が上を向いている。どちらの状態でも「客席側の札がある方」を向いている",
+          },
+          {
+            n: true,
+            do: "ヘッダーの<em>人を追加するアイコン</em>から、新しくダンサーを1人足す",
+            ok: "新しい人も上（客席側）を向いて出てくる。ここが連動していないと、客席を上にした人だけ全員の向きを手で直すことになります",
+          },
+          {
+            n: true,
+            do: `ダンサーを1人つかんで、ステージの端まで${drag}`,
+            ok: `${finger}にぴったり付いてくる。離した場所にそのまま残る`,
+            ng: "少し動かしただけで反対の端へ飛ぶ、離すと別の場所へワープする — どちらも不具合です",
+          },
+          {
+            n: true,
+            do: `ダンサーを1人${tap}して選び、まわりに出る<em>回転ハンドル</em>を回す`,
+            ok: "つまんでいる位置と鼻先の向きが一致したまま回る。手を離した向きで止まる",
+          },
+          {
+            n: true,
+            do: "表示とモードで<em>導線</em>をオンにして、シーンを行き来する",
+            ok: "次のシーンへ向かう線が、画面に見えているダンサーとダンサーを正しく結んでいる（線だけ上下が逆、ということが無い）",
+          },
+          {
+            n: true,
+            do: "画面の下（PCでは横）に並ぶ<em>シーンのミニチュア</em>を見る",
+            ok: "ミニチュアの中の点の並びが、いま見えているステージと同じ向き",
+          },
+          {
+            n: true,
+            do: "設定に戻って <em>客席を上にする</em> をオフ",
+            ok: "すべて元通りになり、立ち位置そのものは1ミリも動いていない（人の並びが最初と同じ）",
+          },
+        ],
+      },
+      {
+        title: "目盛りとステージ",
+        items: [
+          {
+            n: true,
+            do: "設定 → 目盛り → <em>格子の間隔</em> を「4マス」に",
+            ok: "ステージの格子が粗くなる。人数が多いときに点が線に沈まなくなる",
+            ng: "表示とモードで目盛りを「なし」にしていると、そもそも格子が出ません。「格子」に戻してから見てください",
+          },
+          {
+            n: true,
+            do: "<em>格子に吸着させる</em> をオフにして、ダンサーを動かす",
+            ok: "線と関係ない中途半端な場所にも置ける",
+          },
+          {
+            n: true,
+            do: "<em>格子に吸着させる</em> をオンに戻して、ダンサーを動かす",
+            ok: "格子の線の近くまで来ると吸い付き、吸い付く先の線が光って出る",
+          },
+          {
+            n: true,
+            do: "<em>センターラインを強調</em> をオフ",
+            ok: "ステージの真ん中を縦に走る線が消える。もう一度オンで戻る",
+          },
+          {
+            do: "表示とモード → <em>目盛り</em> を 格子 / 同心円 / なし と切り替える",
+            ok: "ステージの下敷きが3通りに変わる",
+          },
+        ],
+      },
+      {
+        title: "シーンとタイムライン",
+        note: "下のバーは「見る場所」、一覧のカードは「書き換える場所」。役割が分かれているのが意図どおりか。",
+        items: [
+          {
+            do: "下のバーの <em>+</em> でシーンを足す",
+            ok: "いま再生している位置に新しいシーンができて、直前の配置がそのままコピーされている",
+            ng: "末尾に足される作りは以前のものです。いまは「聞いている位置に置く」に変わっています",
+          },
+          {
+            do: "下の<em>時間軸（コマが並んでいる帯）</em>でコマを横につまんで動かす",
+            ok: "そのシーンの時刻が変わり、前後との間隔（＝移動にかかる秒数）も変わる",
+          },
+          {
+            do: `<em>シーン一覧</em>を開く（${isPhone ? "下のバーの取っ手を上に引く、または一覧アイコン" : "ステージの横のサイドバー"}）`,
+            ok: "シーンがカードで縦に並ぶ",
+          },
+          {
+            do: "カードの<em>名前の文字そのもの</em>を触る",
+            ok: "編集が始まらない（触ったつもりの無い改名が起きない）",
+          },
+          {
+            do: "同じカードの<em>鉛筆アイコン</em>を押す",
+            ok: "そこで初めて名前の編集が始まる。打ち直すと保存される",
+          },
+          {
+            do: "カードの<em>複製</em>を押す",
+            ok: "同じ配置のシーンが、元のすぐ後ろに増える",
+          },
+          {
+            do: "カードを<em>つまんで並び替える</em>",
+            ok: "順番が入れ替わり、下の時間軸の並びも追従する",
+          },
+          {
+            do: "増やしたシーンを<em>削除</em>する",
+            ok: "消えて、選択が隣のシーンへ移る",
+          },
+          {
+            do: "下のバーに、名前を書き換える入口が無いことを確かめる",
+            ok: "下のバーからは改名できない（見る場所に徹している）",
+          },
+        ],
+      },
+      {
+        title: "払ってシーンを送る",
+        note: "指の移動量がそのまま隊形の進み具合になる操作。まず 表示とモード で「払ってシーンを送る」をオンに。",
+        items: [
+          {
+            do: "ステージの<em>何も無いところ</em>を横にゆっくりドラッグする",
+            ok: `ダンサーが${finger}の量に比例して、次のシーンの位置へ動く`,
+          },
+          {
+            do: "半分ほど引いたところで<em>止めたまま</em>数秒おく",
+            ok: "隊形が途中のまま止まっている（勝手に進んだり戻ったりしない）",
+          },
+          {
+            do: "離さずに<em>左右へ往復</em>させる",
+            ok: "隊形も往復する。すれ違う2人を行ったり来たりさせて観察できる",
+          },
+          {
+            do: "引いている間、ステージの<em>上端</em>を見る",
+            ok: "移動先のシーン名と、進み具合のバー・％が出ている",
+          },
+          {
+            do: "ほんの少し（1割ほど）引いて離す",
+            ok: "元のシーンへ戻る（移動しない）",
+          },
+          {
+            do: "3割ほど引いて離す",
+            ok: "隣のシーンへ移動し、そのまま繋がって見える（一瞬跳ね返ったりしない）",
+            ng: "確定するかどうかの境目は約22%です。半分まで引かなくても移ります",
+          },
+          {
+            do: "短い距離を<em>速く払う</em>（フリック）",
+            ok: "距離が足りなくても隣のシーンへ移動する",
+          },
+          {
+            do: "先頭のシーンでさらに<em>逆方向</em>へ引く",
+            ok: "少しだけ動いて手応えが重くなり、離すと戻る（シーンは変わらない）",
+          },
+          {
+            do: "最後のシーンでも同じように、先へ行く向きに引く",
+            ok: "同じく、少しだけ動いて戻る",
+          },
+          {
+            do: "<em>ダンサーの上</em>から始めて横へドラッグする",
+            ok: "シーンは変わらず、そのダンサーだけが動く",
+          },
+          {
+            do: "<em>元に戻す／やり直す</em>のボタンの上から指を始める",
+            ok: "ボタンとして働き、払う操作が始まらない",
+          },
+          {
+            do: "後から追加したダンサーが居るシーンへ払う",
+            ok: "その人は位置が動かず、濃さだけで現れる（隅から滑ってこない）",
+          },
+          {
+            do: "表示とモードで <em>払ってシーンを送る</em> をオフにして、同じようにドラッグ",
+            ok: "シーンは変わらない",
+          },
+        ],
+      },
+      {
+        title: "再生とカウントイン",
+        items: [
+          {
+            n: true,
+            do: "設定 → 再生 → <em>カウントイン</em> を「4拍」にして閉じ、<em>再生ボタン</em>",
+            ok: "再生ボタンの中に 4 → 3 → 2 → 1 と数字が出て、拍の音が鳴る。0になってから隊形が動き出す",
+            ng: "音が鳴らないときは端末が消音になっていないか確認を。数字だけでも出ていれば動作としては正しいです",
+          },
+          {
+            n: true,
+            do: "もう一度 <em>再生ボタン</em> を押して、<em>数えている最中に</em>また押す",
+            ok: "動き出す前に取り消されて、止まる",
+          },
+          {
+            n: true,
+            do: "<em>カウントイン</em> を「なし」に戻して再生",
+            ok: "待ち時間なく、その場で動き出す",
+          },
+          {
+            do: "そのまま最後のシーンまで進める",
+            ok: "終端で止まり、再生ボタンの見た目が「再生」に戻る",
+          },
+          {
+            do: "再生中に<em>もう一度</em>再生ボタンを押す",
+            ok: "その場で止まり、いちばん近いシーンへ寄る（シーンとシーンの間で止まったままにならない）",
+          },
+          {
+            do: "曲を入れていない作品で、表示とモード → 曲 の中の<em>メトロノーム</em>を入れて再生",
+            ok: "拍の音が鳴りながら進む",
+          },
+        ],
+      },
+      {
+        title: "シーンの間隔",
+        note: "シーンを足したとき、いまの位置から何秒後に置くかの設定です。",
+        items: [
+          {
+            n: true,
+            do: "設定 → 再生 → <em>シーンの間隔</em> を「2秒」にする",
+            ok: "数字が 2 になる",
+          },
+          {
+            n: true,
+            do: "設定を閉じ、<em>+（シーンを追加）</em> を2回押す",
+            ok: "追加されたシーンの下に「2秒で移動」と出る",
+            ng: "曲を入れている作品だと再生位置によって変わります。曲を入れていない作品で試してください",
+          },
+        ],
+      },
+      {
+        title: "曲",
+        note: "リロードしても曲が残るようになった箇所と、頭出しがDBへ保存される箇所（migration 0003）の確認。",
+        items: [
+          {
+            do: "表示とモード → <em>曲</em> を開いて、端末から音源を選ぶ",
+            ok: "ファイル名と曲の長さ（0:00 形式）が出る",
+          },
+          {
+            do: "<em>曲の開始位置</em> に <code>12.5</code> と入れて、入力欄の外を触る",
+            ok: "エラーのトーストが出ずに保存される",
+          },
+          {
+            do: "そのまま<em>ページをリロード</em>する",
+            ok: "開始位置が 12.5 のまま残っている",
+          },
+          {
+            do: "リロード後に<em>曲そのもの</em>を見る",
+            ok: "曲も選び直さずに残っている（端末の中に控えてあります）",
+            ng: "以前は選び直しが必要でしたが、いまは残るのが正しい動作です",
+          },
+          {
+            do: "<em>開始位置</em> に <code>-3</code> や <code>abc</code> を入れて外を触る",
+            ok: "前の値に戻るだけで、エラーにはならない",
+          },
+          {
+            do: "<em>再生ボタン</em>を押す",
+            ok: "曲の頭ではなく、指定した開始位置から鳴る",
+          },
+          {
+            do: "曲のシートで<em>拍子</em>や<em>BPM</em>を変える",
+            ok: "下のバーの時刻表示（カウント）の刻み方が変わる",
+          },
+          {
+            do: "曲のシートの <em>×（曲を外す）</em> を押す",
+            ok: "ファイル名の行が消え、再生しても鳴らない",
+          },
+          {
+            do: "別の作品を開く",
+            ok: "そちらでは曲が鳴らない（曲は作品ごとに1つ）",
+          },
+        ],
+      },
+      {
+        title: "表示とモード",
+        note: "スイッチが端末に覚えられるか。今日、設定画面からも同じものを触れるようになりました。",
+        items: [
+          {
+            n: true,
+            do: "設定 → 表示 → <em>ダンサー名</em> を「出さない」に",
+            ok: "ステージから名前が消えて、色の丸だけになる",
+          },
+          {
+            n: true,
+            do: "<em>ダンサー名</em> を「選択時」にして、誰か1人を選ぶ",
+            ok: "選んだ人にだけ名前が出る。他の人には出ない",
+          },
+          {
+            n: true,
+            do: "設定の中の <em>導線</em> をオフにして、設定を閉じ、<em>表示とモード</em> を開く",
+            ok: "表示とモードの「導線を表示」も同じくオフになっている。どちらから変えても同じ状態を指します",
+            ng: "片方だけ変わっているなら、設定が二重に持たれてしまっています",
+          },
+          {
+            n: true,
+            do: "同じことを <em>バミリ</em> / <em>顔被りチェック</em> / <em>払ってシーンを送る</em> でも確かめる",
+            ok: "4つとも両方の画面で一致している",
+          },
+          {
+            do: "<em>バミリ</em> をオンにする",
+            ok: "全シーンの立ち位置が、床の印としてうっすら重なって出る",
+          },
+          {
+            do: "<em>顔被りチェック</em> をオンにして、1人を別の1人の<em>真後ろ（客席から見て奥）</em>に重ねる",
+            ok: "後ろに入った人に赤い印が付く",
+            ng: "誰も赤くならなかった場合は、そのプロジェクト名とシーン番号を控えてください。前回から持ち越している唯一の未解決項目です",
+          },
+          {
+            do: "スイッチをいくつかオンにしてメニューを閉じ、<em>ボタン</em>を見る",
+            ok: "オンの数を示す点がボタンに付いている",
+          },
+          {
+            do: "スイッチを何個か変えて<em>ページをリロード</em>する",
+            ok: "変えた状態のまま残っている（オフに戻らない）",
+          },
+          {
+            do: "一覧へ戻って<em>同じ作品を開き直す</em>",
+            ok: "これも変えた状態のまま残っている",
+          },
+        ],
+      },
+      {
+        title: "テーマと見た目",
+        items: [
+          {
+            do: "ホームの<em>パレットのアイコン</em>からテーマシートを開く",
+            ok: "10種類が出て、すべて／暗い系／素材系で絞り込める",
+          },
+          {
+            do: "ミッドナイト・ピンク（既定）のまま、一覧の<em>ミニチュアを全部</em>見る",
+            ok: "どのミニチュアも「そのテーマ自身の見た目」で描かれている（全部が今のテーマの色にならない）",
+          },
+          {
+            do: "ネオン・シアンなど別のテーマに変えて、もう一度ミニチュアを全部見る",
+            ok: "同じく各テーマ自身の見た目のまま。今のテーマに引きずられない",
+          },
+          {
+            do: "<em>紙の隊形図 / 方眼ノート / クラフト紙 / トレーシングペーパー / ホワイトボード</em> を順に選ぶ",
+            ok: "色だけでなく、紙の質感の出方が5種で違って見える",
+          },
+          {
+            do: "<em>背景</em>を フラット / ネビュラ / ホリゾント幕 / スポットの円光 / 方眼と目盛り / グレイン / 暗幕 と変える",
+            ok: "ステージの奥の見え方が変わる",
+          },
+          {
+            do: "作品を開いて 表示とモード → <em>このプロジェクトだけ別の見た目</em> をオンにし、別のテーマにする",
+            ok: "その作品だけ違う見た目になる",
+          },
+          {
+            do: "<em>別の作品</em>を開く",
+            ok: "そちらは端末の既定テーマのまま",
+          },
+          {
+            n: true,
+            do: "設定 → アプリ → <em>見た目</em> を「明るい」に",
+            ok: "紙の隊形図のような明るい配色に変わる",
+          },
+          {
+            n: true,
+            do: "ホームのパレットから<em>暗いテーマ</em>を選んでから、設定を開き直す",
+            ok: "「見た目」の選択が、いま画面に出ている明るさと合っている（「暗い」が選ばれている）",
+            ng: "画面は暗いのに設定は「明るい」のまま、という食い違いが出たら不具合です",
+          },
+          {
+            n: true,
+            do: `<em>見た目</em> を「端末」にして、${isPhone ? "端末の設定でダークモードを切り替える" : "OSの設定でダークモードを切り替える"}`,
+            ok: "アプリの明るさが端末に合わせて変わる",
+          },
+          {
+            do: "<em>リロード</em>する",
+            ok: "テーマと背景が保たれている",
+          },
+        ],
+      },
+      {
+        title: "自動保存と、保存されること",
+        items: [
+          {
+            do: "作品でダンサーを動かし、何もせずに<em>リロード</em>する",
+            ok: "動かした位置が残っている（自動保存されている）",
+          },
+          {
+            do: "作品の一覧へ戻る",
+            ok: "カードのミニチュアが、いまの内容に更新されている",
+          },
+          {
+            do: "一覧から作品の<em>タイトルを変更</em>する",
+            ok: "変更が残る",
+          },
+          {
+            n: true,
+            do: "設定 → アプリ → <em>自動保存</em> をオフ",
+            ok: "設定を閉じると、ヘッダーに「保存済み」というボタンが増えている（自動保存が入っている間は出ません）",
+          },
+          {
+            n: true,
+            do: "ダンサーを1人動かす",
+            ok: "ボタンの文字が「保存」に変わり、アイコンが雲のマークになる",
+          },
+          {
+            n: true,
+            do: "<em>保存</em> を押す",
+            ok: "「保存済み」（チェックマーク）に戻る",
+          },
+          {
+            n: true,
+            do: "もう1人動かして、<em>保存を押さずに</em>ページを再読み込みする",
+            ok: "ブラウザ標準の「このページを離れますか」という確認が出る。そのまま読み込むと、その1人ぶんの移動だけが元に戻っている",
+            ng: "移動が消えるのは仕様どおりです（保存を押していないので送られていません）。なお確認の文面はブラウザが決めるもので、スマホのブラウザでは出ないことがあります",
+          },
+          {
+            n: true,
+            do: "設定 → <em>自動保存</em> をオンに戻す",
+            ok: "「保存」ボタンが消える。オフの間に貯まっていた未送信の変更があれば、この瞬間にまとめて送られる",
+          },
+        ],
+      },
+      {
+        title: "テンプレート・動画・診断・使い方",
+        note: "前回までに入れたまま、まだ通しで見ていない機能です。",
+        items: [
+          {
+            do: "ステージの左下あたりの<em>テンプレートの入口</em>を開く",
+            ok: "フォーメーションの形が並ぶ。広い／標準／狭い、左右反転・前後反転・90°回転が選べる",
+          },
+          {
+            do: "どれか選んで <em>この形に置き換える</em>",
+            ok: "いま見ているシーンの配置が、その形に置き換わる",
+          },
+          {
+            do: "そのまま <em>元に戻す</em>（PCなら <code>Ctrl</code>+<code>Z</code>）",
+            ok: "置き換える前の配置に戻る",
+          },
+          {
+            do: "表示とモード → <em>隊形を見てもらう</em>",
+            ok: "しばらく待つと、いまの隊形についての指摘が文章で出る",
+            ng: "「通信できませんでした」が出る場合は、その旨を控えてください（APIキーの設定に関わります）",
+          },
+          {
+            do: "表示とモード → <em>動画にする</em>",
+            ok: "大きさと「名前を出す」を選べるシートが出る。書き出すと動画ファイルが保存される",
+            ng: "iPhone では mp4、環境によっては webm になります。保存されれば正常です",
+          },
+          {
+            do: "表示とモード → <em>使い方をもう一度見る</em>",
+            ok: "画面の要素を順に指しながらの案内が始まり、最後まで／飛ばす のどちらでも終われる",
+          },
+        ],
+      },
+      {
+        title: "共有とビューア",
+        note: "作った人ではなく、踊る人が見る画面。前回入れたまま、まだ通しで見ていない機能です。",
+        items: [
+          {
+            do: "作品を開いて 表示とモード → <em>共有</em>",
+            ok: "共有のシートが開く",
+            ng: "「まだ共有用の鍵がありません」と出る場合は、DBのマイグレーション 0007 が未適用です。その旨を控えてください",
+          },
+          {
+            do: "<em>共有をオン</em>にする",
+            ok: "「リンクを知っている人が見られる」状態になり、みんなに配るリンクが出る",
+          },
+          {
+            do: "<em>リンクをコピー</em>して、ログアウトした別のブラウザ（またはプライベートウィンドウ）で開く",
+            ok: "見るだけの画面が開く。編集の操作は一つも出ていない",
+          },
+          {
+            do: "その画面で<em>自分（ダンサー）を選ぶ</em>",
+            ok: "選んだ人だけが塗られ、他の人は輪郭だけになる。自分の名前も出る",
+          },
+          {
+            do: "ビューアで<em>再生</em>する、または横に払う",
+            ok: "自分がどこから来てどこへ行くかが、破線と線で分かる",
+          },
+          {
+            do: "エディタに戻って <em>リンクを作り直す</em>",
+            ok: "確認が出たうえで新しいリンクになり、さっき開いていた古いリンクは開けなくなる",
+          },
+          {
+            do: "<em>共有をオフ</em>にして、リンクを開き直す",
+            ok: "開けなくなる",
+          },
+        ],
+      },
+    ];
+  };
+
+  const DATA = {
+    phone: {
+      acts: [
+        ...SHARED(true),
+        {
+          title: "スマホでしか確かめられないこと",
+          items: [
+            {
+              do: "実機でエディタを開いて、<em>画面全体</em>を見る",
+              ok: "1カラム。ページ自体が縦にスクロールせず、ステージと下のバーが同時に見えている",
+            },
+            {
+              do: "下端の<em>再生ボタン</em>の位置を見る",
+              ok: "ホームバーやブラウザのバーと重なっていない",
+            },
+            {
+              do: "ダンサーを1人<em>触って指を離し</em>、別の場所を触る",
+              ok: "触ったダンサーにリングが残り続けない（指を離した時点で消える）",
+            },
+            {
+              do: "ステージを<em>縦に</em>払う",
+              ok: "シーンが変わらない。横に払ったのと取り違えられない",
+            },
+            {
+              do: "ステージを<em>横に</em>払う（画面の端の近くから）",
+              ok: "ブラウザの「戻る」ジェスチャやページのスクロールに奪われない",
+            },
+            {
+              do: "ステージの<em>左端ぴったり</em>に立つダンサーを作って、横に払う",
+              ok: "丸が半分に切られない",
+            },
+            {
+              do: "曲のシートから<em>端末の音楽ファイル</em>を選ぶ",
+              ok: "選択でき、選んだ後にシートが崩れない",
+            },
+            {
+              do: "ブラウザのメニューから<em>ホーム画面に追加</em>して、そのアイコンから開く",
+              ok: "アドレスバーの無い状態でアプリが立ち上がる",
+            },
+            {
+              do: "<em>機内モード</em>にして、ホーム画面のアイコンから開く",
+              ok: "オフライン用の画面が出る。作品の中身が古いまま「いまの隊形」として出ることはない",
+            },
+            {
+              do: "機内モードのまま、開いていた作品でダンサーを動かす",
+              ok: "保存に失敗した旨のトーストが出る。黙って消えたりはしない",
+            },
+            {
+              do: "オンラインに戻して、もう一度動かす",
+              ok: "以降の操作がふつうに保存される",
+            },
+            {
+              n: true,
+              do: "客席を上にした状態で、<em>画面を横向き</em>にしてみる",
+              ok: "向きが変わっても、上の札と人の並びの関係は保たれている",
+            },
+          ],
+        },
+        {
+          title: "最後にやること",
+          note: "ここから先は状態を消す操作です。捨ててよい作品で試してください。",
+          items: [
+            {
+              n: true,
+              do: "設定 → データ → <em>この作品を書き出す</em>",
+              ok: "JSONファイルの保存先を聞かれる、またはダウンロードに保存される",
+              ng: "iPhoneのSafariでは「ダウンロード」に入ります。ファイルアプリから確認できます",
+            },
+            {
+              n: true,
+              do: "設定 → データ → <em>ファイルから取り込む</em> で、いま書き出したファイルを選ぶ",
+              ok: "いまの作品は上書きされず、別の作品として増える。開くと同じ内容が入っている",
+            },
+            {
+              n: true,
+              do: "捨ててよい作品を開いて、設定 → データ → <em>この作品を空にする</em>",
+              ok: "先に確認が出る。実行するとシーンとダンサーが全部消えて、まっさらなステージになる",
+            },
+            {
+              n: true,
+              do: "設定 → アカウント → <em>設定を既定に戻す</em>",
+              ok: "この画面で変えた選択だけが初期状態に戻る。作品の中身は消えない",
+            },
+            {
+              n: true,
+              do: "設定 → アカウント → <em>ログアウト</em>",
+              ok: "ログアウトして、ログインしていない状態のトップ画面（そのまま触れるお試しのエディタ）に移る",
+            },
+          ],
+        },
+      ],
+    },
+    pc: {
+      acts: [
+        ...SHARED(false),
+        {
+          title: "PCでしか確かめられないこと",
+          items: [
+            {
+              do: "ダンサーを1人クリックして選び、<em>← →</em> キーを押す",
+              ok: "1マスずつ左右に動く",
+            },
+            {
+              n: true,
+              do: "<em>客席を上にする</em> がオフの状態で、<em>↑</em> キーを押す",
+              ok: "奥（バックステージ側＝画面の上）へ動く",
+            },
+            {
+              n: true,
+              do: "<em>客席を上にする</em> をオンにして、もう一度 <em>↑</em> キー",
+              ok: "やはり画面の上へ動く。見えている通りに動くのが正しい（保存される数値は逆向きに増減します）",
+              ng: "キーを押した向きと逆に動いたら不具合です",
+            },
+            {
+              do: "ダンサーを<em>選んでいない</em>状態で <em>← →</em> キーを押す",
+              ok: "前後のシーンへ移る（ダンサーを選んでいる間はそちらの微調整が優先されます）",
+            },
+            {
+              do: "<em>スペースキー</em>を押す",
+              ok: "再生／停止が切り替わる。カウントインを設定していれば、キーボードからでも数えてから始まる",
+            },
+            {
+              do: "ダンサーを選んだ状態で <em>Esc</em>",
+              ok: "選択が外れ、インスペクターが閉じる",
+            },
+            {
+              do: "シーン名の<em>入力中</em>にスペースや矢印キーを打つ",
+              ok: "ショートカットが発動せず、文字として入る",
+            },
+            {
+              do: "何か操作してから <code>Ctrl</code>+<code>Z</code> / <code>Ctrl</code>+<code>Shift</code>+<code>Z</code>",
+              ok: "元に戻る／やり直せる。ヘッダーのボタンでも同じことができる",
+            },
+            {
+              do: "ヘッダーの各アイコンに<em>マウスを乗せる</em>",
+              ok: "「ダンサーを追加」「表示とモード」などの名前が出る",
+            },
+            {
+              do: "ダンサーに<em>マウスを乗せる／外す</em>",
+              ok: "乗せている間だけ薄いリングが出て、外すと消える",
+            },
+            {
+              do: "窓の幅を <em>1200px 以上</em>にする",
+              ok: "左にシーン、右にダンサーの3ペインになる",
+            },
+            {
+              do: "窓の幅を <em>768〜1199px</em> にする",
+              ok: "右のパネルでシーンとダンサーがタブで切り替わる",
+            },
+            {
+              do: "窓の幅を <em>767px 以下</em>まで狭める",
+              ok: "スマホと同じ下のバーの形になり、シーン一覧のボタンが出る",
+            },
+            {
+              do: "幅を跨いで<em>行き来</em>する",
+              ok: "選択中のシーンとダンサーが保たれたまま、並びだけが変わる",
+            },
+          ],
+        },
+        {
+          title: "最後にやること",
+          note: "ここから先は状態を消す操作です。捨ててよい作品で試してください。",
+          items: [
+            {
+              n: true,
+              do: "設定 → データ → <em>この作品を書き出す</em>",
+              ok: "JSONファイルがダウンロードされる。開くとシーンとダンサーが入っている（曲そのものは入りません）",
+            },
+            {
+              n: true,
+              do: "設定 → データ → <em>ファイルから取り込む</em> で、いま書き出したファイルを選ぶ",
+              ok: "いまの作品は上書きされず、別の作品として増える",
+            },
+            {
+              n: true,
+              do: "捨ててよい作品を開いて、設定 → データ → <em>この作品を空にする</em>",
+              ok: "先に確認が出る。実行するとシーンとダンサーが全部消えて、まっさらなステージになる",
+            },
+            {
+              do: "一巡を振り返って、<em>DB関連のトースト</em>が出なかったか思い返す",
+              ok: "「DBのマイグレーションが未適用です」が一度も出ていない",
+              ng: "出ていた場合は、どの操作で出たかを控えてください",
+            },
+            {
+              n: true,
+              do: "設定 → アカウント → <em>別のアカウントでログイン</em>",
+              ok: "確認が出たうえで、ログアウトしてログイン画面へ移る",
+            },
+            {
+              n: true,
+              do: "設定 → アカウント → <em>設定を既定に戻す</em>",
+              ok: "この画面で変えた選択だけが初期状態に戻る。作品の中身は消えない",
+            },
+          ],
+        },
+      ],
+    },
+  };
+
+  // ── 描く ──
+  const KEY = (device) => "choreon.checklist.v2." + device;
+  const MEMO_KEY = (device) => "choreon.checklist.v2.memo." + device;
+  let device = "phone";
+  let filter = "all";
+  let state = {};
+  /** { items: { "3-2": "…" }, global: "…" } */
+  let memos = { items: {}, global: "" };
+
+  /** 項目文から見出し用の素の文を作る（<em> や <code> を落とす） */
+  function plain(html) {
+    return html
+      .replace(/<[^>]+>/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  const $acts = document.getElementById("acts");
+  const $prep = document.getElementById("prep");
+  const $fill = document.getElementById("fill");
+  const $count = document.getElementById("count");
+  const $empty = document.getElementById("empty");
+
+  function load() {
+    try {
+      state = JSON.parse(localStorage.getItem(KEY(device)) || "{}");
+    } catch {
+      state = {};
+    }
+    if (typeof state !== "object" || state === null) state = {};
+
+    try {
+      memos = JSON.parse(localStorage.getItem(MEMO_KEY(device)) || "null");
+    } catch {
+      memos = null;
+    }
+    // 壊れた値が入っていても画面が真っ白にならないよう、形を必ず整える
+    if (!memos || typeof memos !== "object") memos = { items: {}, global: "" };
+    if (!memos.items || typeof memos.items !== "object") memos.items = {};
+    if (typeof memos.global !== "string") memos.global = "";
+    document.getElementById("global-memo").value = memos.global;
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(KEY(device), JSON.stringify(state));
+    } catch {
+      /* 保存できなくても台本としては読める */
+    }
+  }
+
+  function saveMemos() {
+    try {
+      localStorage.setItem(MEMO_KEY(device), JSON.stringify(memos));
+    } catch {
+      /* 同上 */
+    }
+  }
+
+  function render() {
+    $prep.innerHTML = PREP[device]
+      .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`)
+      .join("");
+
+    $acts.innerHTML = DATA[device].acts
+      .map(
+        (act, ai) => `
+        <section class="act" data-act="${ai}">
+          <div class="act-head">
+            <span class="act-no mono">${String(ai + 1).padStart(2, "0")}</span>
+            <h2 class="act-title">${act.title}</h2>
+            <span class="act-tally mono" data-tally="${ai}"></span>
+          </div>
+          ${act.note ? `<p class="act-note">${act.note}</p>` : ""}
+          <div class="items">
+            ${act.items
+              .map((item, ii) => {
+                const id = `${ai}-${ii}`;
+                const done = state[id] === true;
+                const memo = memos.items[id] || "";
+                return `
+                <article class="item${done ? " done" : ""}${memo ? " has-memo" : ""}" data-id="${id}" data-new="${item.n ? "1" : "0"}">
+                  <button type="button" class="head" aria-pressed="${done}">
+                    <span class="box" aria-hidden="true">&#10003;</span>
+                    <span class="do">${item.n ? '<span class="new">今日</span>' : ""}${item.do}</span>
+                  </button>
+                  <div class="body">
+                    <div class="line okline">
+                      <span class="tag ok mono">正しい</span>
+                      <p>${item.ok}</p>
+                    </div>
+                    ${
+                      item.ng
+                        ? `<div class="line">
+                             <span class="tag ng mono">補足</span>
+                             <p>${item.ng}</p>
+                           </div>`
+                        : ""
+                    }
+                    <button type="button" class="memo-open">${memo ? "メモを見る" : "メモを書く"}</button>
+                    <textarea class="memo" rows="3" placeholder="ちがった挙動、気になったこと、こうしたいこと"${memo ? "" : " hidden"}>${memo.replace(/</g, "&lt;")}</textarea>
+                  </div>
+                </article>`;
+              })
+              .join("")}
+          </div>
+        </section>`,
+      )
+      .join("");
+
+    applyFilter();
+  }
+
+  function applyFilter() {
+    let shown = 0;
+
+    document.querySelectorAll("section.act").forEach((section) => {
+      const items = section.querySelectorAll(".item");
+      let visible = 0;
+      let done = 0;
+
+      items.forEach((item) => {
+        const isDone = state[item.dataset.id] === true;
+        if (isDone) done += 1;
+        let show = true;
+        if (filter === "new") show = item.dataset.new === "1";
+        else if (filter === "rest") show = !isDone;
+        item.hidden = !show;
+        if (show) visible += 1;
+      });
+
+      const tally = section.querySelector("[data-tally]");
+      if (tally) tally.textContent = `${done} / ${items.length}`;
+      section.hidden = visible === 0;
+      shown += visible;
+    });
+
+    $empty.hidden = shown > 0;
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const total = DATA[device].acts.reduce((n, a) => n + a.items.length, 0);
+    const done = Object.values(state).filter(Boolean).length;
+    $fill.style.width = total ? `${(done / total) * 100}%` : "0";
+    $count.textContent = `${done} / ${total}`;
+  }
+
+  // メモの開閉。チェックの判定より先に見る（メモのボタンは項目の中にある）
+  $acts.addEventListener("click", (event) => {
+    const opener = event.target.closest(".memo-open");
+    if (!opener) return;
+    const field = opener.closest(".body").querySelector("textarea.memo");
+    field.hidden = !field.hidden;
+    if (!field.hidden) field.focus();
+  });
+
+  $acts.addEventListener("input", (event) => {
+    const field = event.target.closest("textarea.memo");
+    if (!field) return;
+    const item = field.closest(".item");
+    const text = field.value.trim();
+    if (text) memos.items[item.dataset.id] = text;
+    else delete memos.items[item.dataset.id];
+    item.classList.toggle("has-memo", Boolean(text));
+    item.querySelector(".memo-open").textContent = text
+      ? "メモを見る"
+      : "メモを書く";
+    saveMemos();
+  });
+
+  document.getElementById("global-memo").addEventListener("input", (event) => {
+    memos.global = event.target.value;
+    saveMemos();
+  });
+
+  $acts.addEventListener("click", (event) => {
+    const head = event.target.closest(".head");
+    if (!head) return;
+    const item = head.closest(".item");
+    const id = item.dataset.id;
+    const next = !(state[id] === true);
+    if (next) state[id] = true;
+    else delete state[id];
+    item.classList.toggle("done", next);
+    head.setAttribute("aria-pressed", String(next));
+    save();
+    // 「未チェック」で絞っている間は、付けた項目がその場で消えると
+    // 押し間違いに気づけない。数え直しだけして並びは触らない
+    if (filter === "rest") updateProgress();
+    else applyFilter();
+  });
+
+  document.querySelectorAll(".seg button").forEach((button) => {
+    button.addEventListener("click", () => {
+      device = button.dataset.device;
+      document.querySelectorAll(".seg button").forEach((other) => {
+        other.setAttribute(
+          "aria-pressed",
+          String(other.dataset.device === device),
+        );
+      });
+      load();
+      render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  });
+
+  document.querySelectorAll(".chips button[data-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      filter = button.dataset.filter;
+      document
+        .querySelectorAll(".chips button[data-filter]")
+        .forEach((other) => {
+          other.setAttribute(
+            "aria-pressed",
+            String(other.dataset.filter === filter),
+          );
+        });
+      applyFilter();
+    });
+  });
+
+  document.getElementById("reset").addEventListener("click", () => {
+    // メモは消さない。チェックはやり直せても、気づいたことは書き直せない
+    state = {};
+    save();
+    render();
+  });
+
+  // ── 報告の文章を組み立てる ──
+  // そのまま Claude Code のチャットへ貼れば、どの項目の話かが伝わる形にする。
+  // 番号だけでは台本を持っていない側から引けないので、項目の文も添える
+  const REPORT_UNCHECKED_LIMIT = 40;
+
+  function buildReport() {
+    const label = device === "phone" ? "スマホ" : "PC";
+    const acts = DATA[device].acts;
+    const withMemo = [];
+    const unchecked = [];
+    let total = 0;
+    let done = 0;
+
+    acts.forEach((act, ai) => {
+      act.items.forEach((item, ii) => {
+        const id = `${ai}-${ii}`;
+        const no = `${String(ai + 1).padStart(2, "0")}-${ii + 1}`;
+        const isDone = state[id] === true;
+        total += 1;
+        if (isDone) done += 1;
+        const memo = memos.items[id];
+        if (memo) {
+          withMemo.push({ no, act: act.title, do_: plain(item.do), memo, isDone });
+        } else if (!isDone) {
+          unchecked.push({ no, act: act.title, do_: plain(item.do) });
+        }
+      });
+    });
+
+    const lines = [];
+    lines.push(`# Choreon 動作確認の報告（${label}）`);
+    lines.push("");
+    lines.push(`- 進み具合: ${done} / ${total} 項目`);
+    lines.push(`- 気づきを書いた項目: ${withMemo.length} 件`);
+    lines.push("");
+
+    lines.push("## 気づいたこと");
+    if (withMemo.length === 0) {
+      lines.push("（項目ごとのメモはありません）");
+    } else {
+      withMemo.forEach((row) => {
+        lines.push(
+          `- **${row.no} ${row.act}** ${row.isDone ? "（チェック済み）" : "（未チェック）"}`,
+        );
+        lines.push(`  - 操作: ${row.do_}`);
+        row.memo.split("\n").forEach((part) => {
+          lines.push(`  - メモ: ${part}`);
+        });
+      });
+    }
+    lines.push("");
+
+    if (memos.global.trim()) {
+      lines.push("## 項目に紐づかない気づき");
+      memos.global
+        .trim()
+        .split("\n")
+        .forEach((part) => lines.push(part));
+      lines.push("");
+    }
+
+    lines.push(`## まだチェックしていない項目（${unchecked.length} 件）`);
+    if (unchecked.length === 0) {
+      lines.push("（ありません）");
+    } else {
+      unchecked.slice(0, REPORT_UNCHECKED_LIMIT).forEach((row) => {
+        lines.push(`- ${row.no} ${row.act} — ${row.do_}`);
+      });
+      if (unchecked.length > REPORT_UNCHECKED_LIMIT) {
+        lines.push(
+          `- （ほか ${unchecked.length - REPORT_UNCHECKED_LIMIT} 件は省略）`,
+        );
+      }
+    }
+
+    return lines.join("\n");
+  }
+
+  const $out = document.getElementById("report-out");
+  const $copy = document.getElementById("copy-report");
+  const $copied = document.getElementById("copied");
+
+  document.getElementById("make-report").addEventListener("click", () => {
+    $out.value = buildReport();
+    $out.hidden = false;
+    $copy.hidden = false;
+    $copied.hidden = true;
+    $out.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  });
+
+  $copy.addEventListener("click", async () => {
+    // クリップボードが使えない環境（埋め込みの制限など）でも渡せるよう、
+    // 失敗したら全選択して「手でコピーしてください」の状態にする
+    try {
+      await navigator.clipboard.writeText($out.value);
+      $copied.hidden = false;
+    } catch {
+      $out.focus();
+      $out.select();
+      $copied.textContent = "選択しました。手でコピーしてください";
+      $copied.hidden = false;
+    }
+  });
+
+  load();
+  render();
+</script>
