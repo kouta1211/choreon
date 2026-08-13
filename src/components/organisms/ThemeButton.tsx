@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Palette } from "lucide-react";
 import { ThemeSheet } from "@/components/organisms/ThemeSheet";
 import { useThemeStore } from "@/features/theme/store/useThemeStore";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 /**
  * 見た目を選ぶ入口。ホームのヘッダーにだけ置く。
@@ -24,14 +25,14 @@ export function ThemeButton() {
 
   return (
     <>
-      <button
-        type="button"
+      <PressableButton
+        kind="icon"
         aria-label="見た目を変える"
         onClick={() => setIsOpen(true)}
         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[calc(var(--radius)*1.0833)] border border-accent bg-accent/12 text-accent-soft"
       >
         <Palette size={19} />
-      </button>
+      </PressableButton>
       <ThemeSheet isOpen={isOpen} onClose={() => setIsOpen(false)} />
     </>
   );

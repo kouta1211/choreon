@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { TAP_PATTERN, vibrate } from "@/lib/haptics";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 /** 長押しと見なすまでの時間。触覚を返して「出るよ」と知らせる */
 const HOLD_MS = 450;
@@ -241,13 +242,13 @@ function PopoverPanel({
 
       {action && (
         <div className="mt-2.5">
-          <button
-            type="button"
+          <PressableButton
+            kind="primary"
             onClick={onClose}
             className="flex h-[30px] w-full items-center justify-center rounded-[calc(var(--radius)*0.6)] bg-accent text-[12px] font-semibold text-accent-fg"
           >
             {action.label}
-          </button>
+          </PressableButton>
           {action.note && (
             <p className="mt-1 text-[10.5px] text-fg-muted">{action.note}</p>
           )}

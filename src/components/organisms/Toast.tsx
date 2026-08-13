@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { AlertTriangle, Check, X } from "lucide-react";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { capturePointer, releasePointer } from "@/lib/pointerCapture";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 /** 読み切るのに要る時間。「元に戻す」が付いていれば、決める時間も要る */
 const AUTO_DISMISS_MS = 4000;
@@ -113,17 +114,18 @@ export function Toast() {
       </span>
 
       {toast.action && (
-        <button
-          type="button"
+        <PressableButton
           onClick={() => {
             // 押した時点で消す。処理の結果は次のトーストが知らせる
             clearToast();
             toast.action?.onAction();
           }}
+          // 横スワイプで消す判定は板の側にある。ボタンから始めても
+          // 同じように払えるよう、ここでイベントを止めない
           className="flex h-[30px] shrink-0 items-center rounded-[calc(var(--radius)*0.6)] border border-line-strong px-[11px] text-[12px] font-medium text-fg-strong"
         >
           {toast.action.label}
-        </button>
+        </PressableButton>
       )}
     </div>
   );

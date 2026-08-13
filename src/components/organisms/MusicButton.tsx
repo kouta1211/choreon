@@ -6,6 +6,7 @@ import { MusicSheet } from "@/components/organisms/MusicSheet";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { Tooltip } from "@/components/atoms/Tooltip";
 import type { Project } from "@/features/project/types";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 type Props = {
   project: Project;
@@ -28,8 +29,8 @@ export function MusicButton({ project }: Props) {
   return (
     <>
       <Tooltip label="曲">
-        <button
-          type="button"
+        <PressableButton
+          kind="icon"
           aria-label="曲"
           aria-pressed={hasMusic}
           onClick={() => setIsOpen(true)}
@@ -40,7 +41,7 @@ export function MusicButton({ project }: Props) {
           }`}
         >
           <Music size={17} />
-        </button>
+        </PressableButton>
       </Tooltip>
       <MusicSheet
         project={project}

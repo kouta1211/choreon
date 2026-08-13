@@ -18,6 +18,7 @@ import {
 import type { Project } from "@/features/project/types";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { randomId } from "@/lib/randomId";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 type Props = {
   project: Project;
@@ -224,20 +225,19 @@ export function AddDancerSheet({ project }: Props) {
         </p>
 
         <div className="flex gap-2">
-          <button
-            type="button"
+          <PressableButton
             onClick={close}
             className="h-12 flex-1 rounded-[calc(var(--radius)*0.9167)] border border-line-strong text-sm font-medium text-fg-strong"
           >
             キャンセル
-          </button>
-          <button
+          </PressableButton>
+          <PressableButton
             type="submit"
             disabled={!selectedSceneId || isSubmitting}
             className="h-12 flex-[2] rounded-[calc(var(--radius)*0.9167)] bg-accent text-[15px] font-semibold text-accent-fg disabled:opacity-50"
           >
             {count}人を追加する
-          </button>
+          </PressableButton>
         </div>
       </form>
     </BottomSheet>
@@ -256,14 +256,14 @@ function StepperButton({
   disabled: boolean;
 }) {
   return (
-    <button
-      type="button"
+    <PressableButton
+      kind="icon"
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
       className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[calc(var(--radius)*0.9167)] border border-line-strong text-fg disabled:opacity-30"
     >
       <Icon size={18} />
-    </button>
+    </PressableButton>
   );
 }

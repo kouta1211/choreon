@@ -58,6 +58,9 @@ type ProjectState = {
   renameProject: (title: string) => void;
   /** 曲の速さ。カウントで組むときの物差しなので、作品が持つ */
   setBpm: (bpm: number) => void;
+  /** 拍子。稽古場で数える単位は8カウントだが、それは拍子とは別の話で、
+   * メトロノームの強拍と拍線の太さだけがこの値で決まる */
+  setBeatsPerBar: (beatsPerBar: number) => void;
 
   /** ゲストの編集が1つでも起きたことを記録する(persist()から呼ばれる) */
   markUnsaved: () => void;
@@ -142,6 +145,11 @@ export const useProjectStore = create<ProjectState>((set) => ({
   setBpm: (bpm: number) =>
     set((state) =>
       state.project ? { project: { ...state.project, bpm } } : {},
+    ),
+
+  setBeatsPerBar: (beatsPerBar: number) =>
+    set((state) =>
+      state.project ? { project: { ...state.project, beatsPerBar } } : {},
     ),
 
   setMusicOffset: (musicOffsetSeconds) =>

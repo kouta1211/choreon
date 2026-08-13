@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 /** ブランドマークのドット。山型に並べて「隊形が組まれる瞬間」を表す */
 const BRAND_DOTS = [
@@ -99,7 +100,7 @@ export function AuthSubmitButton({
   pendingLabel: string;
 }) {
   return (
-    <button
+    <PressableButton
       type="submit"
       disabled={isSubmitting}
       className="flex h-12 w-full items-center justify-center gap-2 rounded-[calc(var(--radius)*0.9167)] bg-accent text-sm font-semibold text-accent-fg disabled:opacity-55"
@@ -111,6 +112,6 @@ export function AuthSubmitButton({
         />
       )}
       {isSubmitting ? pendingLabel : children}
-    </button>
+    </PressableButton>
   );
 }

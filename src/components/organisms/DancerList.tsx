@@ -4,6 +4,7 @@ import { UserPlus } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 /**
  * いまのシーンにいるダンサーの一覧。画面が広いときだけ出す右パネルの中身。
@@ -52,8 +53,7 @@ export function DancerList() {
               const isSelected = dancer.id === selectedDancerId;
               return (
                 <li key={dancer.id}>
-                  <button
-                    type="button"
+                  <PressableButton
                     onClick={() => selectDancer(isSelected ? null : dancer.id)}
                     aria-pressed={isSelected}
                     className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left ${
@@ -76,21 +76,20 @@ export function DancerList() {
                       {position.xCoordinate.toFixed(1)},
                       {position.yCoordinate.toFixed(1)}
                     </span>
-                  </button>
+                  </PressableButton>
                 </li>
               );
             })}
           </ul>
         )}
 
-        <button
-          type="button"
+        <PressableButton
           onClick={() => setAddDancerSheetOpen(true)}
           className="mt-2 flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-line-strong text-[12px] font-medium whitespace-nowrap text-fg-sub"
         >
           <UserPlus size={14} className="shrink-0" />
           ダンサーを追加
-        </button>
+        </PressableButton>
       </div>
     </div>
   );

@@ -31,6 +31,10 @@ type Props = {
   bpm: number | null;
   /** 1拍目がどこか(曲の頭出しのオフセット) */
   originSeconds: number;
+  /** 何拍ごとに強拍(太い線)を引くか。作品の拍子。
+   * 稽古場で数える単位は8カウントだが、それは拍子とは別の話で、
+   * 線の太さを決めるのはこちら */
+  beatsPerBar?: number;
   /** セット番号を出すか。ミニマップでは細かすぎて読めない */
   showSetNumbers?: boolean;
   /** 全体を薄くする。ミニマップで使う */
@@ -72,6 +76,7 @@ export function TimelineWaveform({
   playheadSeconds,
   bpm,
   originSeconds,
+  beatsPerBar = 4,
   showSetNumbers = false,
   opacity = 1,
   className,
@@ -97,6 +102,38 @@ export function TimelineWaveform({
     const idle = styles.getPropertyValue("--line-strong").trim();
     const played = styles.getPropertyValue("--accent-soft").trim();
     const ink = parseInk(styles.getPropertyValue("--texture-ink"));
+
+    /**
+     * 拍線。曲があってもこれだけは引く。
+     *
+     * BPMが入っているなら、波形と拍を重ねて見られる方が良い
+     * (どの山が何拍目に当たるかが読める)。潰れて灰色の面になる
+     * 細かさでは描かない。
+     */
+    const drawBeatLines = (
+      context: CanvasRenderingContext2D,
+      { fromSeconds, toSeconds }: { fromSeconds: number; toSeconds: number },
+      strength: number,
+    ) => {
+      if (!bpm || !shouldDrawBeatLines(bpm, pxPerSecond)) return;
+      const x = (seconds: number) => (seconds - fromSeconds) * pxPerSecond;
+
+      for (const beat of beatTimesInWindow(
+        bpm,
+        Math.max(0, fromSeconds),
+        toSeconds,
+        originSeconds,
+      )) {
+        const isBar = isDownbeat(beat, bpm, originSeconds, beatsPerBar);
+        context.fillStyle = `rgba(${ink}, ${(isBar ? 0.13 : 0.05) * strength})`;
+        context.fillRect(
+          Math.round(x(beat)),
+          isBar ? 0 : height * 0.25,
+          1,
+          isBar ? height : height * 0.5,
+        );
+      }
+    };
 
     /**
      * カウントの地。8カウントごとの縞・拍線・セット番号の3層。
@@ -125,24 +162,8 @@ export function TimelineWaveform({
         context.fillRect(x(start), 0, setSeconds * pxPerSecond, height);
       }
 
-      // 2. 拍線。潰れて灰色の面になる細かさでは描かない
-      if (shouldDrawBeatLines(bpm, pxPerSecond)) {
-        for (const beat of beatTimesInWindow(
-          bpm,
-          Math.max(0, fromSeconds),
-          toSeconds,
-          originSeconds,
-        )) {
-          const isBar = isDownbeat(beat, bpm, originSeconds);
-          context.fillStyle = `rgba(${ink}, ${isBar ? 0.13 : 0.05})`;
-          context.fillRect(
-            Math.round(x(beat)),
-            isBar ? 0 : height * 0.25,
-            1,
-            isBar ? height : height * 0.5,
-          );
-        }
-      }
+      // 2. 拍線
+      drawBeatLines(context, { fromSeconds, toSeconds }, 1);
 
       // 3. セット番号。小節番号ではなく、稽古場で数える単位の番号
       if (showSetNumbers && setSeconds * pxPerSecond >= 34) {
@@ -177,6 +198,15 @@ export function TimelineWaveform({
         if (bpm) drawCounts(context, { fromSeconds, toSeconds: fromSeconds + width / pxPerSecond });
         return;
       }
+
+      // 曲が入っても拍線は残す。BPMが分かっているなら、波形と拍を
+      // 重ねて見られる方が良い。ただし主役は波形なので半分の濃さで、
+      // 波形より先に(下に)描く
+      drawBeatLines(
+        context,
+        { fromSeconds, toSeconds: fromSeconds + width / pxPerSecond },
+        0.5,
+      );
 
       const center = height / 2;
       // 上下いっぱいまで振らせない。帯の縁で頭打ちになると、
@@ -217,6 +247,7 @@ export function TimelineWaveform({
     playheadSeconds,
     bpm,
     originSeconds,
+    beatsPerBar,
     showSetNumbers,
     themePreference,
   ]);

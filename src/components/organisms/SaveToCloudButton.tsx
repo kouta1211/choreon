@@ -3,6 +3,7 @@
 import { CloudUpload } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 /**
  * ゲストモードのときだけヘッダーに出る「保存」。
@@ -22,8 +23,8 @@ export function SaveToCloudButton() {
   if (!isGuest) return null;
 
   return (
-    <button
-      type="button"
+    <PressableButton
+      kind="primary"
       onClick={() => openAuthDialog("signup")}
       className="flex h-8 shrink-0 items-center gap-1.5 rounded-2xl bg-accent pr-3 pl-2.5 text-xs font-semibold text-accent-fg"
     >
@@ -38,6 +39,6 @@ export function SaveToCloudButton() {
           className="block h-1.5 w-1.5 rounded-full bg-white/90"
         />
       )}
-    </button>
+    </PressableButton>
   );
 }

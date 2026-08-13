@@ -4,6 +4,7 @@ import type { PointerEvent as ReactPointerEvent, ReactNode, Ref } from "react";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { ConcentricGuides } from "@/components/molecules/ConcentricGuides";
 import { MARKER_SIZE } from "@/features/dancer/constants";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 /**
  * 「空いている領域に、縦横比を保ったまま目一杯収まる幅」を返す。
@@ -225,14 +226,14 @@ export function EmptyStage({
         <p className="relative text-[13.5px] font-medium text-fg">
           まだシーンがありません
         </p>
-        <button
-          type="button"
+        <PressableButton
+          kind="primary"
           onClick={onCreateScene}
           disabled={isCreating}
           className="relative flex h-10 items-center gap-1.5 rounded-[calc(var(--radius)*0.8333)] bg-accent px-4 text-[13px] font-semibold whitespace-nowrap text-accent-fg disabled:opacity-50"
         >
           最初のシーンを作る
-        </button>
+        </PressableButton>
       </div>
     </div>
   );

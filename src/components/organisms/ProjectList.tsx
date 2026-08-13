@@ -10,6 +10,7 @@ import { deleteProject } from "@/features/project/api/projects";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import type { ProjectSummary } from "@/features/project/types";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 type Props = {
   projects: ProjectSummary[];
@@ -116,15 +117,15 @@ export function ProjectList({ projects }: Props) {
                 )}
               </span>
             </Link>
-            <button
-              type="button"
+            <PressableButton
+              kind="icon"
               onClick={() => handleDelete(project)}
               disabled={deletingId === project.id}
               aria-label={`${project.title}を削除`}
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[calc(var(--radius)*0.9167)] text-fg-muted hover:bg-red-950 hover:text-red-400 disabled:opacity-40"
             >
               <Trash2 size={17} />
-            </button>
+            </PressableButton>
           </li>
         ))}
       </ul>

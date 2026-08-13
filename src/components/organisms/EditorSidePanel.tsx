@@ -6,6 +6,7 @@ import { DancerList } from "@/components/organisms/DancerList";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { totalTransitionSeconds } from "@/features/scene/lib/playback";
 import type { Project } from "@/features/project/types";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 type Props = {
   project: Project;
@@ -38,7 +39,7 @@ export function EditorSidePanel({ project, showScenes }: Props) {
             { value: "scenes" as const, label: "シーン", count: scenes.length },
             { value: "dancers" as const, label: "ダンサー" },
           ].map((item) => (
-            <button
+            <PressableButton
               key={item.value}
               type="button"
               aria-pressed={activeTab === item.value}
@@ -50,7 +51,7 @@ export function EditorSidePanel({ project, showScenes }: Props) {
               }`}
             >
               {item.label}
-            </button>
+            </PressableButton>
           ))}
         </div>
       ) : null}

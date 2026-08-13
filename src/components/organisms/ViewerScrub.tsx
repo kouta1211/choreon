@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { useMotionValue } from "motion/react";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { capturePointer, releasePointer } from "@/lib/pointerCapture";
 import { TAP_PATTERN, vibrate } from "@/lib/haptics";
 import { formatClock } from "@/components/molecules/PlayheadClock";
-import { axisX } from "@/features/music/lib/timelineScale";
+import { TimelineWaveform } from "@/components/molecules/TimelineWaveform";
+import { useWaveformPeaks } from "@/features/music/hooks/useWaveformPeaks";
+import { axisX, LEAD_IN_PX } from "@/features/music/lib/timelineScale";
 
 /** エディタの帯(80px)より低い。コマを小さくできるぶん */
 const BAND_HEIGHT = 56;
@@ -17,6 +20,11 @@ const SELECTED_CARD_WIDTH = 34;
 const PLAYHEAD_RATIO = 0.5;
 /** 見るだけなので、エディタより引き気味の縮尺で十分 */
 const PX_PER_SECOND = 24;
+
+/** 目盛りの刻みの候補。ラベルが重ならない最小の刻みを選ぶ */
+const RULER_STEPS = [1, 2, 5, 10, 15, 30, 60];
+/** 時刻のラベル同士を、これ以上は近づけない(px) */
+const RULER_MIN_GAP_PX = 56;
 
 /**
  * ビューアのスクラブ帯。この画面の主操作。
@@ -47,6 +55,8 @@ export function ViewerScrub() {
 
   const bandRef = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState(0);
+  // 時間軸の【地】。曲を選んでいなければ波形は null で、拍のグリッドになる
+  const waveform = useWaveformPeaks();
   const draggingRef = useRef(false);
   const dragStartRef = useRef<{
     x: number;
@@ -80,6 +90,17 @@ export function ViewerScrub() {
     }
   }, [currentSceneId, focusedDancerId, positionsBySceneId]);
 
+  // 地(Canvas)は、指を動かすたびにReactを通さず描き直したい。
+  // MotionValue に流し込んで、Canvasだけが変化を受け取るようにする
+  // ── エディタの時間軸と同じ作り
+  const scrollXValue = useMotionValue(0);
+  const playheadValue = useMotionValue(0);
+  const scrollX = axisX(currentSeconds, PX_PER_SECOND) - viewport * PLAYHEAD_RATIO;
+  useEffect(() => {
+    scrollXValue.set(scrollX);
+    playheadValue.set(currentSeconds);
+  }, [scrollX, currentSeconds, scrollXValue, playheadValue]);
+
   if (!project) return null;
 
   const focusColor = focusedDancerId
@@ -88,9 +109,6 @@ export function ViewerScrub() {
           "#888",
       )
     : null;
-
-  // 再生ヘッドが中央に来るように軸を流す
-  const scrollX = axisX(currentSeconds, PX_PER_SECOND) - viewport * PLAYHEAD_RATIO;
 
   /**
    * 指の【動いた量】で時刻を動かす。
@@ -148,6 +166,23 @@ export function ViewerScrub() {
         style={{ height: BAND_HEIGHT }}
         className="relative touch-none overflow-hidden rounded-lg bg-surface-sunken"
       >
+        {/* 地。曲が選ばれていれば波形、無ければ8カウントの縞と拍線。
+            無地の帯を払うと「どれだけ動いたか」が分からなくなる */}
+        <TimelineWaveform
+          waveform={waveform}
+          scrollX={scrollXValue}
+          originPx={LEAD_IN_PX}
+          pxPerSecond={PX_PER_SECOND}
+          width={viewport}
+          height={BAND_HEIGHT}
+          playheadSeconds={playheadValue}
+          bpm={project.bpm}
+          originSeconds={project.musicOffsetSeconds}
+          beatsPerBar={project.beatsPerBar}
+          showSetNumbers
+          className="absolute inset-0"
+        />
+
         <div
           className="absolute inset-y-0 left-0"
           style={{ transform: `translateX(${-scrollX}px)` }}
@@ -214,15 +249,59 @@ export function ViewerScrub() {
         />
       </div>
 
-      {/* 目盛り。いま何分何秒を見ているか */}
+      {/* 目盛り。帯と同じ軸の上に時刻を置き、中央(再生ヘッドの真下)だけ
+          いま見ている時刻を濃く出す。エディタの帯と同じ作り */}
       <div
+        aria-hidden
         style={{ height: RULER_HEIGHT }}
-        className="flex items-center justify-center"
+        className="relative overflow-hidden"
       >
-        <span className="font-mono text-[10.5px] tabular-nums text-fg-muted">
+        {rulerTicks(scrollX, viewport).map((seconds) => (
+          <span
+            key={seconds}
+            style={{ left: axisX(seconds, PX_PER_SECOND) - scrollX }}
+            className="absolute top-0 -translate-x-1/2 font-mono text-[9.5px] tabular-nums text-fg-muted"
+          >
+            {formatClock(seconds)}
+          </span>
+        ))}
+
+        <span
+          style={{ left: `${PLAYHEAD_RATIO * 100}%` }}
+          className="absolute top-0 -translate-x-1/2 bg-surface px-1 font-mono text-[10.5px] tabular-nums text-fg-sub"
+        >
           {formatClock(currentSeconds)}
         </span>
       </div>
     </div>
   );
+}
+
+/**
+ * 窓に入っている目盛りの時刻。
+ *
+ * ラベルが重ならない最小の刻みを選び、その倍数だけを返す。
+ * 曲の頭より手前(負の時刻)は出さない — 「曲が始まる前」という
+ * 意味になってしまう。
+ */
+function rulerTicks(scrollX: number, viewport: number): number[] {
+  if (viewport <= 0) return [];
+
+  const step =
+    RULER_STEPS.find(
+      (candidate) => candidate * PX_PER_SECOND >= RULER_MIN_GAP_PX,
+    ) ?? RULER_STEPS[RULER_STEPS.length - 1];
+
+  const fromSeconds = Math.max(0, (scrollX - LEAD_IN_PX) / PX_PER_SECOND);
+  const toSeconds = (scrollX + viewport - LEAD_IN_PX) / PX_PER_SECOND;
+
+  const ticks: number[] = [];
+  for (
+    let seconds = Math.ceil(fromSeconds / step) * step;
+    seconds <= toSeconds;
+    seconds += step
+  ) {
+    ticks.push(seconds);
+  }
+  return ticks;
 }

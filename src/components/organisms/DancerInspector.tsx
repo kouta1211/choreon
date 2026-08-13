@@ -18,6 +18,7 @@ import { InlineEditableText } from "@/components/molecules/InlineEditableText";
 import { Tooltip } from "@/components/atoms/Tooltip";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { sceneDurations } from "@/features/scene/lib/sceneTiming";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 /** ダンサー個別の遷移時間の入力が許容する範囲。schema.sqlのCHECK制約と合わせている */
 const MIN_DURATION_SECONDS = 0.1;
@@ -212,8 +213,8 @@ export function DancerInspector() {
           )}
 
           <Tooltip label="マイ・フォーカス" placement="top">
-            <button
-              type="button"
+            <PressableButton
+              kind="icon"
               onClick={() => setFocusedDancer(isFocused ? null : dancer.id)}
               aria-pressed={isFocused}
               aria-label="マイ・フォーカス"
@@ -224,36 +225,36 @@ export function DancerInspector() {
               }`}
             >
               <Focus size={15} />
-            </button>
+            </PressableButton>
           </Tooltip>
 
           <Tooltip label="ダンサーを削除" placement="top">
-            <button
-              type="button"
+            <PressableButton
+              kind="icon"
               onClick={handleDelete}
               disabled={isDeleting}
               aria-label="ダンサーを削除"
               className="flex h-7 w-7 items-center justify-center rounded-lg text-fg-muted hover:bg-red-950 hover:text-red-400 disabled:opacity-50"
             >
               <Trash2 size={15} />
-            </button>
+            </PressableButton>
           </Tooltip>
 
           <Tooltip label="選択を解除" placement="top" align="right">
-            <button
-              type="button"
+            <PressableButton
+              kind="icon"
               onClick={() => selectDancer(null)}
               aria-label="選択を解除"
               className="flex h-7 w-7 items-center justify-center rounded-lg text-fg-muted hover:bg-line-strong"
             >
               <X size={15} />
-            </button>
+            </PressableButton>
           </Tooltip>
         </div>
 
         <div className="mt-2 flex items-center gap-1.5">
           {DANCER_COLOR_PALETTE.map((color) => (
-            <button
+            <PressableButton
               key={color}
               type="button"
               aria-label={`色を${color}に変更`}

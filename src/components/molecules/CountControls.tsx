@@ -4,6 +4,7 @@ import { Music4 } from "lucide-react";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { useBpm } from "@/features/music/hooks/useBpm";
 import { MAX_BPM, MIN_BPM } from "@/features/music/lib/metronomePreference";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 /** ミニマップと同じ段。倍率が変わっても段の高さが動かないようにする */
 export const COUNT_CONTROLS_HEIGHT = 34;
@@ -36,8 +37,7 @@ export function CountControls() {
       style={{ height: COUNT_CONTROLS_HEIGHT }}
       className="flex items-center gap-2.5"
     >
-      <button
-        type="button"
+      <PressableButton
         role="switch"
         aria-checked={isEnabled}
         onClick={toggleMetronome}
@@ -49,7 +49,7 @@ export function CountControls() {
         }`}
       >
         <Music4 size={13} />
-      </button>
+      </PressableButton>
 
       <label className="flex min-w-0 flex-1 items-center gap-2">
         <span className="sr-only">速さ(BPM)</span>
@@ -60,7 +60,7 @@ export function CountControls() {
           step={1}
           value={bpm}
           onChange={(event) => setBpm(Number(event.target.value))}
-          className="min-w-0 flex-1 accent-[var(--accent)]"
+          className="slider min-w-0 flex-1"
         />
       </label>
 

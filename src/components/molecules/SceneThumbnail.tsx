@@ -2,6 +2,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { X } from "lucide-react";
 import type { Scene } from "@/features/scene/types";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 type Props = {
   scene: Scene;
@@ -80,8 +81,11 @@ export function SceneThumbnail({
       }}
       className={`relative shrink-0 ${isDragging ? "z-10 opacity-70" : ""}`}
     >
-      <button
-        type="button"
+      {/* 掴んで並び替えるものなので、押しても沈めずに持ち上げる。
+          並び替えのつまみ(listeners)はここに付いていて、
+          PressableButton はその onPointerDown を消さずに足す */}
+      <PressableButton
+        kind="lift"
         onClick={onClick}
         className="flex w-full touch-none flex-col"
         {...attributes}
@@ -140,17 +144,17 @@ export function SceneThumbnail({
             </span>
           </div>
         )}
-      </button>
+      </PressableButton>
 
       {onDelete && (
-        <button
-          type="button"
+        <PressableButton
+          kind="icon"
           onClick={onDelete}
           aria-label={`「${scene.name}」を削除`}
           className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-line-strong bg-surface-strong text-fg-muted hover:border-red-950 hover:text-red-400"
         >
           <X size={11} />
-        </button>
+        </PressableButton>
       )}
     </div>
   );

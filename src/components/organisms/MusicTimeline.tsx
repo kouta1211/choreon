@@ -39,6 +39,7 @@ import {
   TimelineSceneFlag,
 } from "@/components/molecules/TimelineSceneCard";
 import { TimelineMinimap } from "@/components/molecules/TimelineMinimap";
+import { PressableButton } from "@/components/atoms/PressableButton";
 import { CountControls } from "@/components/molecules/CountControls";
 import { capturePointer, releasePointer } from "@/lib/pointerCapture";
 import { useScreenKind } from "@/components/hooks/useIsWideScreen";
@@ -103,6 +104,8 @@ export function MusicTimeline({ project, audioRef }: Props) {
   const musicDuration = useMusicStore((state) => state.durationSeconds);
   const hasMusic = useMusicStore((state) => state.objectUrl !== null);
   const bpm = useProjectStore((state) => state.project?.bpm ?? DEFAULT_BPM);
+  // 拍子。8カウントの縞は変わらず、太く引く拍線だけがこれで決まる
+  const beatsPerBar = useProjectStore((state) => state.project?.beatsPerBar ?? 4);
   // 倍率は作品ごとに端末へ覚える。0.5秒刻みで組む作品と、8秒ごとに
   // 大きく変わる作品とでは、見たい細かさが違う(読み込みは restore が行う)。
   // 一度も触っていなければ、帯の実幅から決める(§3-1)
@@ -523,6 +526,7 @@ export function MusicTimeline({ project, audioRef }: Props) {
           playheadSeconds={playheadSeconds}
           bpm={bpm}
           originSeconds={offsetSeconds}
+          beatsPerBar={beatsPerBar}
           showSetNumbers
           className="absolute inset-0"
         />
@@ -623,24 +627,24 @@ export function MusicTimeline({ project, audioRef }: Props) {
             {Math.round(pxPerSecond)}
             <span className="ml-0.5">px/秒</span>
           </span>
-          <button
-            type="button"
+          <PressableButton
+            kind="icon"
             onClick={() => changeZoom(1 / ZOOM_BUTTON_FACTOR, viewport / 2)}
             disabled={pxPerSecond <= MIN_PX_PER_SECOND}
             aria-label="時間軸を引く"
             className="flex h-7 w-7 items-center justify-center rounded-[calc(var(--radius)*0.5)] border border-line-strong text-fg-sub disabled:opacity-40"
           >
             <Minus size={13} />
-          </button>
-          <button
-            type="button"
+          </PressableButton>
+          <PressableButton
+            kind="icon"
             onClick={() => changeZoom(ZOOM_BUTTON_FACTOR, viewport / 2)}
             disabled={pxPerSecond >= MAX_PX_PER_SECOND}
             aria-label="時間軸を寄せる"
             className="flex h-7 w-7 items-center justify-center rounded-[calc(var(--radius)*0.5)] border border-line-strong text-fg-sub disabled:opacity-40"
           >
             <Plus size={13} />
-          </button>
+          </PressableButton>
         </div>
       )}
 

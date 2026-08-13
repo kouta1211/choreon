@@ -14,6 +14,7 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useThemeStore } from "@/features/theme/store/useThemeStore";
 import { projectIdFromPath } from "@/features/theme/lib/themePreference";
 import { Switch } from "@/components/atoms/Switch";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 /**
  * ステージの見え方とモードをまとめて切り替えるメニュー。ヘッダー右端の
@@ -135,8 +136,8 @@ export function DisplayModeMenu() {
 
   return (
     <div ref={containerRef} className="relative shrink-0">
-      <button
-        type="button"
+      <PressableButton
+        kind="icon"
         onClick={() => setIsOpen((open) => !open)}
         aria-expanded={isOpen}
         aria-haspopup="menu"
@@ -157,12 +158,14 @@ export function DisplayModeMenu() {
             {activeCount}
           </span>
         )}
-      </button>
+      </PressableButton>
 
       {isOpen && (
         <>
           {/* 外側をタップしても閉じられるようにする。メニューより手前に
-              置くと中身が押せなくなるので、z順はメニューの下 */}
+              置くと中身が押せなくなるので、z順はメニューの下。
+              押す的ではなく「外側」なので、押し心地は付けない
+              (画面いっぱいの面が沈むと、何を押したのか分からなくなる) */}
           <button
             type="button"
             aria-label="閉じる"
@@ -187,7 +190,7 @@ export function DisplayModeMenu() {
               <span className="flex-1 text-[12.5px] text-fg">目盛り</span>
               <span className="flex shrink-0 overflow-hidden rounded-full border border-line-strong">
                 {GRID_MODES.map((option) => (
-                  <button
+                  <PressableButton
                     key={option.value}
                     type="button"
                     aria-pressed={gridMode === option.value}
@@ -199,7 +202,7 @@ export function DisplayModeMenu() {
                     }`}
                   >
                     {option.label}
-                  </button>
+                  </PressableButton>
                 ))}
               </span>
             </div>
@@ -219,8 +222,7 @@ export function DisplayModeMenu() {
             {/* 使い方の案内をもう一度。初回に飛ばした人と、
                 しばらく空けて戻ってきた人のための入口 */}
             <span aria-hidden className="my-1 block h-px bg-line" />
-            <button
-              type="button"
+            <PressableButton
               onClick={() => {
                 setIsOpen(false);
                 requestTour();
@@ -229,7 +231,7 @@ export function DisplayModeMenu() {
             >
               <HelpCircle size={15} className="shrink-0 text-fg-muted" />
               使い方をもう一度見る
-            </button>
+            </PressableButton>
 
             {/* 見た目(テーマ)の選択そのものはホームにある。ここに置くのは
                 「この1件だけ端末の既定から外す」というスイッチだけ。

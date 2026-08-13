@@ -13,6 +13,7 @@ import {
 } from "@/features/music/hooks/useMusicPlayback";
 import { useSilentClock } from "@/features/music/hooks/useSilentClock";
 import { useMetronome } from "@/features/music/hooks/useMetronome";
+import { useBpm } from "@/features/music/hooks/useBpm";
 import {
   nearestSceneIndexAtSeconds,
   sceneStartSeconds,
@@ -21,6 +22,7 @@ import { SceneListSheet } from "@/components/organisms/SceneListSheet";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
 import type { Project } from "@/features/project/types";
 import { sceneDurations } from "@/features/scene/lib/sceneTiming";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 type Props = {
   project: Project;
@@ -68,7 +70,13 @@ export function SceneDock({ project }: Props) {
   const musicUrl = useMusicStore((state) => state.objectUrl);
   const musicFileName = useMusicStore((state) => state.fileName);
   const setMusicDuration = useMusicStore((state) => state.setDurationSeconds);
-  const bpm = project.bpm;
+  // 速さ・拍子・頭出しは【storeから読む】。props の project は
+  // ページが取ってきたときのままで、シートで変えても更新されない。
+  // props を読んでいると、鳴っているメトロノームだけが古い速さのままになる
+  const { bpm, beatsPerBar } = useBpm();
+  const offsetSeconds = useProjectStore(
+    (state) => state.project?.musicOffsetSeconds ?? project.musicOffsetSeconds,
+  );
   const isMetronomeEnabled = useMusicStore((state) => state.isMetronomeEnabled);
   const setCurrentTime = useMusicStore((state) => state.setCurrentTime);
   const musicDuration = useMusicStore((state) => state.durationSeconds);
@@ -87,11 +95,8 @@ export function SceneDock({ project }: Props) {
   // 曲が無ければカウントで読む。毎レンダー新しい入れ物を作ると
   // PlayheadClock の購読が張り直されるので、中身が同じなら使い回す
   const countSetting = useMemo(
-    () =>
-      hasMusic
-        ? null
-        : { bpm, originSeconds: project.musicOffsetSeconds ?? 0 },
-    [hasMusic, bpm, project.musicOffsetSeconds],
+    () => (hasMusic ? null : { bpm, originSeconds: offsetSeconds ?? 0 }),
+    [hasMusic, bpm, offsetSeconds],
   );
 
   // 曲が無いときの時計。曲があるときは<audio>が時刻の正になる
@@ -101,6 +106,7 @@ export function SceneDock({ project }: Props) {
   useMetronome({
     isActive: isPlaying && !hasMusic && isMetronomeEnabled,
     bpm,
+    beatsPerBar,
   });
 
   // トーストはドックの直上に出す。ドックの高さは曲の有無や画面の段で
@@ -174,8 +180,7 @@ export function SceneDock({ project }: Props) {
     >
       {/* 持ち手。シートが下から出てくることを形で示す。狭い画面だけ
           (広い画面では一覧が横に常時出ていて、開く相手が無い) */}
-      <button
-        type="button"
+      <PressableButton
         onClick={() => setSceneSheetOpen(true)}
         aria-label="シーン一覧を開く"
         className="mx-auto mb-2.5 block h-1 w-9 rounded-full bg-line-strong md:hidden"
@@ -186,8 +191,8 @@ export function SceneDock({ project }: Props) {
       <div className="flex items-center gap-2.5 px-3.5">
         {selectedScene ? (
           <>
-            <button
-              type="button"
+            <PressableButton
+              kind="round"
               onClick={handleTogglePlay}
               aria-label={isPlaying ? "再生を停止" : "最後のシーンまで再生"}
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-fg"
@@ -197,7 +202,7 @@ export function SceneDock({ project }: Props) {
               ) : (
                 <Play size={16} fill="currentColor" />
               )}
-            </button>
+            </PressableButton>
 
             {/* いま何を見ているかの表示。名前そのものは押せないままにして
                 いる(触ったつもりの無い改名を防ぐ。SceneListのカードと同じ
@@ -211,14 +216,13 @@ export function SceneDock({ project }: Props) {
                 <span className="min-w-0 truncate text-sm font-semibold text-fg-strong">
                   {selectedScene.name}
                 </span>
-                <button
-                  type="button"
+                <PressableButton
                   onClick={() => setSceneSheetOpen(true)}
                   aria-label={`「${selectedScene.name}」の設定を開く`}
                   className="flex h-6 w-6 shrink-0 translate-y-0.5 items-center justify-center rounded-[calc(var(--radius)*0.5)] border border-line-strong text-fg-muted"
                 >
                   <Pencil size={11} />
-                </button>
+                </PressableButton>
               </div>
               {/* 時刻は【いま再生している位置】。選択中シーンの時刻ではなく
                   再生位置を出すのは、時間軸を触ってシークしたときに
@@ -239,8 +243,8 @@ export function SceneDock({ project }: Props) {
           </span>
         )}
 
-        <button
-          type="button"
+        <PressableButton
+          kind="icon"
           onClick={handleAddScene}
           disabled={isCreating}
           data-tour="add-scene"
@@ -248,18 +252,17 @@ export function SceneDock({ project }: Props) {
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[calc(var(--radius)*0.75)] border border-line-strong text-fg-sub disabled:opacity-50"
         >
           <Plus size={17} />
-        </button>
+        </PressableButton>
 
         {/* 以前はここが無地の細いバーで、押せることも、押すと何が出るのかも
             分からなかった。文字を出して行き先を名指しする */}
-        <button
-          type="button"
+        <PressableButton
           onClick={() => setSceneSheetOpen(true)}
           className="flex h-10 shrink-0 items-center gap-1.5 rounded-[calc(var(--radius)*0.75)] border border-line-strong px-2.5 text-[13px] font-medium whitespace-nowrap text-fg-sub md:hidden"
         >
           <List size={15} className="shrink-0" />
           一覧
-        </button>
+        </PressableButton>
       </div>
 
       {/* 曲の時間軸。シーンは「曲の何秒目か」の位置に載る */}

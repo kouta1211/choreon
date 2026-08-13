@@ -125,8 +125,7 @@ export function ViewerRoute() {
             const isHere = current?.sceneId === step.sceneId;
             return (
               <li key={step.sceneId}>
-                <button
-                  type="button"
+                <PressableButton
                   onClick={() => {
                     setCurrentSeconds(step.timeSeconds);
                     setSheetOpen(false);
@@ -172,7 +171,7 @@ export function ViewerRoute() {
                       aria-label="歩いて間に合わない速さです"
                     />
                   )}
-                </button>
+                </PressableButton>
               </li>
             );
           })}

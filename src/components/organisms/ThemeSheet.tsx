@@ -6,6 +6,7 @@ import { BottomSheet } from "@/components/molecules/BottomSheet";
 import { ThemePreview } from "@/components/molecules/ThemePreview";
 import { useThemeStore } from "@/features/theme/store/useThemeStore";
 import { resolveAppearance } from "@/features/theme/lib/themePreference";
+import { PressableButton } from "@/components/atoms/PressableButton";
 import {
   THEMES,
   TEXTURES,
@@ -64,13 +65,12 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
         onClose={handleClose}
         title={detailTheme.name}
         titleRight={
-          <button
-            type="button"
+          <PressableButton
             onClick={() => setDetailOf(null)}
             className="font-sans text-[12px] text-fg-sub underline underline-offset-2"
           >
             一覧へ戻る
-          </button>
+          </PressableButton>
         }
         wideMaxWidthClassName="min-[1200px]:max-w-md"
       >
@@ -85,7 +85,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
               {TEXTURES.map((texture) => {
                 const isSelected = current.texture === texture.id;
                 return (
-                  <button
+                  <PressableButton
                     key={texture.id}
                     type="button"
                     aria-pressed={isSelected}
@@ -97,7 +97,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
                     }`}
                   >
                     {texture.name}
-                  </button>
+                  </PressableButton>
                 );
               })}
             </div>
@@ -131,7 +131,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
               : THEMES.filter((theme) => theme.category === item.id).length;
           const isSelected = filter === item.id;
           return (
-            <button
+            <PressableButton
               key={item.id}
               type="button"
               aria-pressed={isSelected}
@@ -144,7 +144,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
             >
               {item.label}
               {item.id !== "all" && ` ${count}`}
-            </button>
+            </PressableButton>
           );
         })}
         <span className="ml-auto shrink-0 text-[10px] text-fg-muted">
@@ -170,7 +170,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
                 {themes.map((theme) => {
                   const isSelected = current.theme === theme.id;
                   return (
-                    <button
+                    <PressableButton
                       key={theme.id}
                       type="button"
                       aria-pressed={isSelected}
@@ -210,7 +210,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
                       <span className="-mt-1 truncate text-[9.5px] text-fg-muted">
                         {theme.subtitle}
                       </span>
-                    </button>
+                    </PressableButton>
                   );
                 })}
               </div>

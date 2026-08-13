@@ -23,12 +23,22 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
  *
  * 見た目まで種類ごとに固めてしまうと、既にある10テーマぶんの塗り分けと
  * 二重になる。沈み方だけを共通化して、塗りはトークンのままにしている。
+ *
+ * ■ 呼び出し側のポインタ操作を【消さない】
+ * 押し心地はポインタのイベントで作っているので、そのまま上書きすると
+ * 同じボタンに付いている他の操作 — dnd-kit の並び替え、時間軸のコマの
+ * 横ドラッグ、帯へイベントを渡さないための stopPropagation — が
+ * 黙って効かなくなる。渡された関数を先に呼んでから、自分の処理をする。
  */
 export function PressableButton({
   kind = "secondary",
   haptic = false,
   className = "",
   children,
+  onPointerDown,
+  onPointerUp,
+  onPointerCancel,
+  onPointerLeave,
   ...rest
 }: Props) {
   const { isPressed, handlers } = usePressable({ haptic });
@@ -37,7 +47,22 @@ export function PressableButton({
     <button
       type="button"
       {...rest}
-      {...handlers}
+      onPointerDown={(event) => {
+        onPointerDown?.(event);
+        handlers.onPointerDown(event);
+      }}
+      onPointerUp={(event) => {
+        onPointerUp?.(event);
+        handlers.onPointerUp();
+      }}
+      onPointerCancel={(event) => {
+        onPointerCancel?.(event);
+        handlers.onPointerCancel();
+      }}
+      onPointerLeave={(event) => {
+        onPointerLeave?.(event);
+        handlers.onPointerLeave();
+      }}
       className={`${className} ${pressableClass(kind, isPressed)}`}
     >
       {children}

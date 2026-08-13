@@ -18,6 +18,7 @@ import {
 } from "@/features/canvas/lib/formationTemplates";
 import type { Project } from "@/features/project/types";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 type Props = {
   project: Project;
@@ -120,7 +121,7 @@ export function TemplateSheet({ project }: Props) {
             {templates.map((formation, index) => {
               const isPicked = pickedIndex === index;
               return (
-                <button
+                <PressableButton
                   key={`${formation.count}-${formation.name}-${index}`}
                   type="button"
                   aria-pressed={isPicked}
@@ -145,21 +146,20 @@ export function TemplateSheet({ project }: Props) {
                   >
                     {formation.name}
                   </span>
-                </button>
+                </PressableButton>
               );
             })}
           </div>
 
           {/* 確定ボタン。スクロールしても見失わないよう下端に貼り付ける */}
           <div className="sticky bottom-0 -mx-3.5 -mb-3 bg-surface/95 px-3.5 pt-2 pb-3 backdrop-blur">
-            <button
-              type="button"
+            <PressableButton
               onClick={handleApply}
               disabled={!picked || isApplying}
               className="h-12 w-full rounded-[calc(var(--radius)*0.9167)] bg-accent text-sm font-semibold text-accent-fg disabled:bg-surface-strong disabled:text-fg-muted"
             >
               {picked ? `${picked.name}に置き換える` : "この形に置き換える"}
-            </button>
+            </PressableButton>
           </div>
         </div>
       )}
@@ -184,7 +184,7 @@ function CountRail({
       {counts.map((count) => {
         const isShown = count === shownCount;
         return (
-          <button
+          <PressableButton
             key={count}
             type="button"
             aria-pressed={isShown}
@@ -201,7 +201,7 @@ function CountRail({
                 いま
               </span>
             )}
-          </button>
+          </PressableButton>
         );
       })}
     </div>
@@ -287,7 +287,7 @@ function TransformControls({
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {toggles.map((item) => (
-        <button
+        <PressableButton
           key={item.key}
           type="button"
           role="switch"
@@ -303,12 +303,12 @@ function TransformControls({
         >
           <item.icon size={13} />
           {item.label}
-        </button>
+        </PressableButton>
       ))}
 
       <div className="flex overflow-hidden rounded-full border border-line-strong">
         {SPACING_LABELS.map((option) => (
-          <button
+          <PressableButton
             key={option.value}
             type="button"
             aria-pressed={transform.spacing === option.value}
@@ -320,7 +320,7 @@ function TransformControls({
             }`}
           >
             {option.label}
-          </button>
+          </PressableButton>
         ))}
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { signOut } from "@/features/auth/api/auth";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 export function SignOutButton() {
   const router = useRouter();
@@ -16,12 +17,11 @@ export function SignOutButton() {
   };
 
   return (
-    <button
-      type="button"
+    <PressableButton
       onClick={handleClick}
       className="text-sm text-fg-sub underline"
     >
       ログアウト
-    </button>
+    </PressableButton>
   );
 }

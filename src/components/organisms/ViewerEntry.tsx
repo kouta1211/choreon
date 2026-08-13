@@ -84,9 +84,12 @@ export function ViewerEntry() {
           const isSelected = dancer.id === focusedDancerId;
 
           return (
-            <button
+            <PressableButton
               key={dancer.id}
-              type="button"
+              // 掴んで動かすものではないが、ステージの上のマーカーなので
+              // 沈めずに持ち上げる(ダンサーのマーカーと同じ扱い)
+              kind="lift"
+              haptic
               // 名前チップと同じ読み上げにすると、2つ同じものが並ぶ。
               // どちらから選んでもよいが、何を押しているかは違う
               aria-label={`${dancer.name} の立ち位置`}

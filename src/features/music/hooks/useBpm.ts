@@ -4,11 +4,19 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
-import { updateProjectBpm } from "@/features/project/api/projects";
+import {
+  updateProjectBeatsPerBar,
+  updateProjectBpm,
+} from "@/features/project/api/projects";
 import {
   clampBpm,
   DEFAULT_BPM,
 } from "@/features/music/lib/metronomePreference";
+
+/** 拍子として選べる範囲。DBの制約(2〜12)と合わせてある */
+export const MIN_BEATS_PER_BAR = 2;
+export const MAX_BEATS_PER_BAR = 12;
+export const DEFAULT_BEATS_PER_BAR = 4;
 
 /**
  * 作品の速さ(BPM)。読むのと変えるのをまとめて配る。
@@ -27,9 +35,15 @@ import {
 export function useBpm(): {
   bpm: number;
   setBpm: (bpm: number) => void;
+  beatsPerBar: number;
+  setBeatsPerBar: (beatsPerBar: number) => void;
 } {
   const bpm = useProjectStore((state) => state.project?.bpm ?? DEFAULT_BPM);
   const applyBpm = useProjectStore((state) => state.setBpm);
+  const beatsPerBar = useProjectStore(
+    (state) => state.project?.beatsPerBar ?? DEFAULT_BEATS_PER_BAR,
+  );
+  const applyBeatsPerBar = useProjectStore((state) => state.setBeatsPerBar);
   const showToast = useUIStore((state) => state.showToast);
 
   const setBpm = (next: number) => {
@@ -55,5 +69,29 @@ export function useBpm(): {
     });
   };
 
-  return { bpm, setBpm };
+  const setBeatsPerBar = (next: number) => {
+    const project = useProjectStore.getState().project;
+    if (!project) return;
+
+    const clamped = Math.min(
+      MAX_BEATS_PER_BAR,
+      Math.max(MIN_BEATS_PER_BAR, Math.round(next)),
+    );
+    if (clamped === project.beatsPerBar) return;
+
+    const previous = project.beatsPerBar;
+    applyBeatsPerBar(clamped);
+
+    void persist((supabase) =>
+      updateProjectBeatsPerBar(supabase, project.id, clamped),
+    ).catch((error) => {
+      applyBeatsPerBar(previous);
+      showToast({
+        message: toUserMessage(error, "拍子の変更に失敗しました"),
+        type: "error",
+      });
+    });
+  };
+
+  return { bpm, setBpm, beatsPerBar, setBeatsPerBar };
 }

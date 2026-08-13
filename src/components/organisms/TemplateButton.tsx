@@ -5,6 +5,7 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { Tooltip } from "@/components/atoms/Tooltip";
 import { useTemplateSuggestion } from "@/features/canvas/hooks/useTemplateSuggestion";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 /**
  * フォーメーションのテンプレートを開く入口。ステージ【直下】の行の左端。
@@ -33,8 +34,7 @@ export function TemplateButton() {
 
   return (
     <Tooltip label="フォーメーションから選ぶ" placement="top" align="left">
-      <button
-        type="button"
+      <PressableButton
         onClick={() => setTemplateSheetOpen(true)}
         disabled={!isAvailable}
         aria-label={
@@ -59,7 +59,7 @@ export function TemplateButton() {
             className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-surface bg-accent"
           />
         )}
-      </button>
+      </PressableButton>
     </Tooltip>
   );
 }

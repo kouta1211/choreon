@@ -12,6 +12,7 @@ import {
   signUpWithPassword,
 } from "@/features/auth/api/auth";
 import { AuthField, AuthSubmitButton } from "@/components/molecules/AuthScreen";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 export type AuthMode = "login" | "signup";
 
@@ -136,8 +137,7 @@ export function AuthForm({
           メール内のリンクを開くと登録が完了します。
         </p>
         {emailSentNote}
-        <button
-          type="button"
+        <PressableButton
           onClick={() => {
             setIsEmailSent(false);
             onModeChange("login");
@@ -145,7 +145,7 @@ export function AuthForm({
           className="mt-1 text-xs text-accent-soft underline"
         >
           ログイン画面に戻る
-        </button>
+        </PressableButton>
       </div>
     );
   }
@@ -207,8 +207,7 @@ export function AuthForm({
         {mode === "signup"
           ? "既にアカウントをお持ちの方は "
           : "アカウントをお持ちでない方は "}
-        <button
-          type="button"
+        <PressableButton
           onClick={() => {
             setError(null);
             onModeChange(mode === "signup" ? "login" : "signup");
@@ -216,7 +215,7 @@ export function AuthForm({
           className="text-accent-soft underline"
         >
           {mode === "signup" ? "ログイン" : "新規登録"}
-        </button>
+        </PressableButton>
       </p>
     </form>
   );

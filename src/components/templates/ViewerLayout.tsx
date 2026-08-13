@@ -7,7 +7,9 @@ import { ViewerEntry } from "@/components/organisms/ViewerEntry";
 import { ViewerStage } from "@/components/organisms/ViewerStage";
 import { ViewerScrub } from "@/components/organisms/ViewerScrub";
 import { ViewerRoute } from "@/components/organisms/ViewerRoute";
+import { ViewerMusic } from "@/components/organisms/ViewerMusic";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import type { Dancer } from "@/features/dancer/types";
 import type { Project } from "@/features/project/types";
@@ -55,6 +57,7 @@ export function ViewerLayout({
   const currentSeconds = useViewerStore((state) => state.currentSeconds);
   const setCurrentSeconds = useViewerStore((state) => state.setCurrentSeconds);
   const [isPlaying, setIsPlaying] = useState(false);
+  const hasMusic = useMusicStore((state) => state.objectUrl !== null);
 
   useEffect(() => {
     hydrate({ project, dancers, scenes, positions, requestedDancerId });
@@ -63,9 +66,11 @@ export function ViewerLayout({
   const lastSeconds =
     scenes.length > 0 ? scenes[scenes.length - 1].timeSeconds : 0;
 
-  // 通し再生。主役ではないので、時計は素朴な rAF で足りる
+  // 通し再生。主役ではないので、時計は素朴な rAF で足りる。
+  // ただし曲が入っているときは【曲が時計】になる(ViewerMusic)ので、
+  // こちらは動かさない。2つの時計が同じ値を奪い合うと、再生位置が震える
   useEffect(() => {
-    if (!isPlaying) return;
+    if (!isPlaying || hasMusic) return;
 
     let frame = 0;
     let previous = performance.now();
@@ -84,7 +89,7 @@ export function ViewerLayout({
     };
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
-  }, [isPlaying, lastSeconds, setCurrentSeconds]);
+  }, [isPlaying, hasMusic, lastSeconds, setCurrentSeconds]);
 
   if (!hasChosen) return <ViewerEntry />;
 
@@ -131,6 +136,13 @@ export function ViewerLayout({
       </div>
 
       <div className="shrink-0 px-3.5 pt-2">
+        {/* 曲は共有されないので、見る人が自分の端末で選べるようにする。
+            選ぶまでは帯の地が8カウントの縞になっている */}
+        <ViewerMusic
+          isPlaying={isPlaying}
+          onEnded={() => setIsPlaying(false)}
+        />
+
         <ViewerScrub />
 
         <div className="mt-1 flex items-center gap-2">

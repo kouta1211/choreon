@@ -11,7 +11,9 @@ import { updateMusicOffset } from "@/features/project/api/projects";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { totalTransitionSeconds } from "@/features/scene/lib/playback";
 import { MetronomeControls } from "@/components/molecules/MetronomeControls";
+import { BeatsPerBarSegment } from "@/components/molecules/BeatsPerBarSegment";
 import type { Project } from "@/features/project/types";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 type Props = {
   project: Project;
@@ -69,14 +71,13 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
     <BottomSheet isOpen={isOpen} onClose={onClose} title="曲">
       <div className="flex flex-col gap-4 px-3.5 py-3">
         <div>
-          <button
-            type="button"
+          <PressableButton
             onClick={() => fileInputRef.current?.click()}
             className="flex h-13 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-line-strong text-[13px] font-medium text-fg-sub"
           >
             <Upload size={15} className="shrink-0" />
             {fileName ? "別の曲を選ぶ" : "端末から曲を選ぶ"}
-          </button>
+          </PressableButton>
           {/* Android の一部端末は audio/* だけだと .wav を選ばせない
               (端末側が wav に MIME を割り当てていないことがあり、
               その場合ファイルが灰色で並ぶ)。拡張子も並べておくと、
@@ -107,14 +108,14 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
                     {formatClock(durationSeconds)}
                   </span>
                 )}
-                <button
-                  type="button"
+                <PressableButton
+                  kind="icon"
                   onClick={() => clearMusic(project.id)}
                   aria-label="曲を外す"
                   className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-muted"
                 >
                   <X size={15} />
-                </button>
+                </PressableButton>
               </div>
               <p className="text-[10.5px] leading-snug text-fg-muted">
                 この端末に控えてあります。開き直しても入ったままです。
@@ -140,6 +141,19 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
             </p>
           </div>
         )}
+
+        {/* 拍子は曲の有無に関わらず出す。曲が入っていても、時間軸の拍線の
+            どれを太く引くかはこの値で決まる */}
+        <div>
+          <div className="flex items-center gap-2.5">
+            <span className="flex-1 text-[13px] text-fg">拍子</span>
+            <BeatsPerBarSegment />
+          </div>
+          <p className="mt-1.5 text-[11px] leading-snug text-fg-muted">
+            数える単位(8カウント)は拍子では変わりません。ここで変わるのは、
+            メトロノームで強く鳴る拍と、時間軸で太く引く線だけです。
+          </p>
+        </div>
 
         <div>
           <label className="flex items-center gap-2.5">

@@ -26,6 +26,7 @@ import { useAddScene } from "@/features/scene/hooks/useAddScene";
 import { useDuplicateScene } from "@/features/scene/hooks/useDuplicateScene";
 import { useSceneActions } from "@/features/scene/hooks/useSceneActions";
 import type { Project } from "@/features/project/types";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 type Props = {
   project: Project;
@@ -98,7 +99,7 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
                 // 特に指では押し外しやすい
                 onClick={(event) => {
                   // ボタン・入力欄の上で押したときは、その操作だけを起こす。
-                  // ミニチュアも <button> なのでここで抜けるが、あちらは
+                  // ミニチュアも <PressableButton> なのでここで抜けるが、あちらは
                   // 自分の onClick で選択するので結果は同じ
                   if (
                     event.target instanceof Element &&
@@ -199,15 +200,14 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
         </SortableContext>
       </DndContext>
 
-      <button
-        type="button"
+      <PressableButton
         onClick={addScene}
         disabled={isCreating}
         className="flex h-13 items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong text-[13px] font-medium whitespace-nowrap text-fg-sub disabled:opacity-50"
       >
         <Plus size={15} className="shrink-0" />
         いまの配置をコピーして追加
-      </button>
+      </PressableButton>
     </div>
   );
 }
@@ -226,8 +226,7 @@ function SheetAction({
   tone?: "default" | "danger";
 }) {
   return (
-    <button
-      type="button"
+    <PressableButton
       onClick={onClick}
       disabled={disabled}
       className={`flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[calc(var(--radius)*0.75)] border bg-surface text-xs font-medium whitespace-nowrap disabled:opacity-50 ${
@@ -238,6 +237,6 @@ function SheetAction({
     >
       <Icon size={13} className="shrink-0" />
       {label}
-    </button>
+    </PressableButton>
   );
 }

@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 type Props = {
   checked: boolean;
@@ -39,8 +40,8 @@ export function Switch({
   );
 
   return (
-    <button
-      type="button"
+    <PressableButton
+      haptic
       role="switch"
       aria-checked={checked}
       onClick={onChange}
@@ -77,6 +78,6 @@ export function Switch({
           {label}
         </>
       )}
-    </button>
+    </PressableButton>
   );
 }

@@ -4,6 +4,7 @@ import { Music4 } from "lucide-react";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { useBpm } from "@/features/music/hooks/useBpm";
 import { MAX_BPM, MIN_BPM } from "@/features/music/lib/metronomePreference";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 /** 押すだけで置ける速さ。バラード〜アップテンポの目安 */
 const PRESETS = [90, 110, 128, 140];
@@ -27,8 +28,7 @@ export function MetronomeControls() {
   return (
     <div className="flex flex-col gap-2.5">
       <div className="flex items-center gap-2.5">
-        <button
-          type="button"
+        <PressableButton
           role="switch"
           aria-checked={isEnabled}
           onClick={toggleMetronome}
@@ -40,7 +40,7 @@ export function MetronomeControls() {
         >
           <Music4 size={14} className="shrink-0" />
           メトロノーム
-        </button>
+        </PressableButton>
 
         <label className="flex min-w-0 flex-1 items-center gap-2">
           <span className="sr-only">BPM</span>
@@ -51,7 +51,7 @@ export function MetronomeControls() {
             step={1}
             value={bpm}
             onChange={(event) => setBpm(Number(event.target.value))}
-            className="min-w-0 flex-1 accent-[var(--accent)]"
+            className="slider min-w-0 flex-1"
           />
           <span className="w-14 shrink-0 text-right font-mono text-[12px] tabular-nums text-fg">
             {bpm}
@@ -63,7 +63,7 @@ export function MetronomeControls() {
       {/* 数字だけだと、速いのか遅いのかの見当が付かない。よく使う値を置く */}
       <div className="flex flex-wrap items-center gap-1.5">
         {PRESETS.map((preset) => (
-          <button
+          <PressableButton
             key={preset}
             type="button"
             aria-pressed={bpm === preset}
@@ -75,7 +75,7 @@ export function MetronomeControls() {
             }`}
           >
             {preset}
-          </button>
+          </PressableButton>
         ))}
       </div>
     </div>

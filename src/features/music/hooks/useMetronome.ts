@@ -20,6 +20,9 @@ type Params = {
   /** 鳴らすかどうか。再生中かつメトロノームONのときだけ true */
   isActive: boolean;
   bpm: number;
+  /** 何拍ごとに高い音にするか。作品の拍子(projects.beats_per_bar)。
+   * 数える単位の8カウントとは別で、ここで決まるのは音の高さだけ */
+  beatsPerBar?: number;
 };
 
 /**
@@ -35,7 +38,7 @@ type Params = {
  * ブラウザは、利用者の操作を伴わずに音を出すことを許さない。
  * 画面を開いた時点で作ると suspended のまま止まり、最初の数拍が鳴らない。
  */
-export function useMetronome({ isActive, bpm }: Params) {
+export function useMetronome({ isActive, bpm, beatsPerBar = 4 }: Params) {
   const contextRef = useRef<AudioContext | null>(null);
   /** どこまで予約し終えたか(AudioContextの時計) */
   const scheduledUntilRef = useRef(0);
@@ -84,7 +87,9 @@ export function useMetronome({ isActive, bpm }: Params) {
         until,
         origin,
       );
-      for (const time of beats) click(time, isDownbeat(time, bpm, origin));
+      for (const time of beats) {
+        click(time, isDownbeat(time, bpm, origin, beatsPerBar));
+      }
       scheduledUntilRef.current = until;
     };
 
@@ -96,7 +101,7 @@ export function useMetronome({ isActive, bpm }: Params) {
       // 予約済みの音は鳴り切ってしまうので、止めた時点で黙らせる
       void context.suspend().catch(() => {});
     };
-  }, [isActive, bpm]);
+  }, [isActive, bpm, beatsPerBar]);
 
   // 画面を離れるときにオーディオの資源を返す
   useEffect(() => {

@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { createProject } from "@/features/project/api/projects";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 type Props = {
   userId: string;
@@ -49,14 +50,14 @@ export function CreateProjectForm({ userId }: Props) {
           className="h-[46px] w-full rounded-xl border border-line-strong bg-surface px-3.5 text-sm text-fg-strong placeholder:text-fg-muted focus:border-accent focus:ring-[3px] focus:ring-accent/16 focus:outline-none"
         />
       </label>
-      <button
+      <PressableButton
         type="submit"
         disabled={isSubmitting || !title.trim()}
         aria-label="プロジェクトを作成"
         className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-xl bg-accent text-accent-fg disabled:opacity-50"
       >
         <Plus size={20} />
-      </button>
+      </PressableButton>
     </form>
   );
 }

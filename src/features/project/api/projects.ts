@@ -49,6 +49,28 @@ export async function updateProjectBpm(
   if (error && error.code !== "PGRST204") throw error;
 }
 
+/**
+ * 拍子を保存する。BPMと同じく、列がまだ無いDBでは黙って流す。
+ *
+ * 拍子だけを別に持つのは、稽古場で数える単位(8カウント)と拍子が
+ * 別のものだから。8カウントは数え方で、拍子は曲の性質。4拍子以外の曲でも
+ * 8つ数えることに変わりはないので、この値で決まるのは
+ * 「どの拍を強く鳴らすか」と拍線の太さだけになる。
+ */
+export async function updateProjectBeatsPerBar(
+  supabase: SupabaseClient<Database>,
+  projectId: string,
+  beatsPerBar: number,
+): Promise<void> {
+  const { error } = await supabase
+    .from("projects")
+    // 列がまだ無いDBがあるため、型定義から外れる書き込みになる
+    .update({ beats_per_bar: beatsPerBar } as never)
+    .eq("id", projectId);
+
+  if (error && error.code !== "PGRST204") throw error;
+}
+
 /** 曲の開始オフセット(秒)を保存する。曲そのものは端末側にしか無いので、
  * ここで保存するのは「何秒目から始めるか」だけ */
 export async function updateMusicOffset(

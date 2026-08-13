@@ -11,6 +11,7 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { Tooltip } from "@/components/atoms/Tooltip";
 import type { Project } from "@/features/project/types";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 type Props = {
   project: Project;
@@ -56,14 +57,14 @@ export function EditorHeader({ project }: Props) {
       <MusicButton project={project} />
       <ReviewButton project={project} />
       <Tooltip label="ダンサーを追加" align="right">
-        <button
-          type="button"
+        <PressableButton
+          kind="icon"
           onClick={() => setAddDancerSheetOpen(true)}
           aria-label="ダンサーを追加"
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[calc(var(--radius)*0.8333)] text-fg-sub"
         >
           <UserPlus size={17} />
-        </button>
+        </PressableButton>
       </Tooltip>
       <DisplayModeMenu />
     </header>

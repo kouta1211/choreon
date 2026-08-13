@@ -5,6 +5,7 @@ import { Redo2, Undo2 } from "lucide-react";
 import { useHistoryStore } from "@/features/canvas/store/useHistoryStore";
 import { useHistoryActions } from "@/features/canvas/hooks/useHistoryActions";
 import { Tooltip } from "@/components/atoms/Tooltip";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 /** キーボードショートカットを無視する要素。テキスト入力中のCtrl+Zは
  * ブラウザ標準の「入力の取り消し」であってほしいため */
@@ -71,26 +72,26 @@ export function HistoryControls() {
   return (
     <div className="absolute right-2 bottom-2 flex gap-1.5">
       <Tooltip label="元に戻す (Ctrl+Z)" placement="top">
-        <button
-          type="button"
+        <PressableButton
+          kind="icon"
           onClick={handleUndo}
           disabled={!canUndo}
           aria-label="元に戻す"
           className="flex h-[38px] w-[38px] items-center justify-center rounded-[calc(var(--radius)*0.9167)] border border-line-strong bg-surface/90 text-fg disabled:pointer-events-none disabled:opacity-30"
         >
           <Undo2 size={17} />
-        </button>
+        </PressableButton>
       </Tooltip>
       <Tooltip label="やり直す (Ctrl+Shift+Z)" placement="top" align="right">
-        <button
-          type="button"
+        <PressableButton
+          kind="icon"
           onClick={handleRedo}
           disabled={!canRedo}
           aria-label="やり直す"
           className="flex h-[38px] w-[38px] items-center justify-center rounded-[calc(var(--radius)*0.9167)] border border-line-strong bg-surface/90 text-fg disabled:pointer-events-none disabled:opacity-30"
         >
           <Redo2 size={17} />
-        </button>
+        </PressableButton>
       </Tooltip>
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { Pencil } from "lucide-react";
+import { PressableButton } from "@/components/atoms/PressableButton";
 
 type Props = {
   /** 現在の確定値 */
@@ -86,8 +87,8 @@ export function InlineEditableText({
       <span className={`min-w-0 truncate text-fg-strong ${textClassName}`}>
         {value}
       </span>
-      <button
-        type="button"
+      <PressableButton
+        kind="icon"
         onClick={() => setDraft(value)}
         aria-label={`${label}を変更`}
         // 指で押せる大きさ(32px)を確保する。鉛筆の絵だけを置くと
@@ -95,7 +96,7 @@ export function InlineEditableText({
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line-strong text-fg-muted"
       >
         <Pencil size={13} aria-hidden />
-      </button>
+      </PressableButton>
     </span>
   );
 }
