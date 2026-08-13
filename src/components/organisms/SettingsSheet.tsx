@@ -28,6 +28,12 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { flushPendingWrites } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { signOut } from "@/features/auth/api/auth";
+import {
+  useLocale,
+  useT,
+  writeLocaleCookie,
+} from "@/features/i18n/LocaleProvider";
+import { LOCALE_LABELS, LOCALES, type Locale } from "@/features/i18n/lib/locale";
 
 type Props = {
   isOpen: boolean;
@@ -59,6 +65,16 @@ export function SettingsSheet({
   onResetProject,
 }: Props) {
   const router = useRouter();
+  const t = useT();
+  const locale = useLocale();
+
+  /** 言語を選んだとき。Cookie を書いてから描き直す —
+   * サーバーが出す文字(`<html lang>` など)も一緒に変わってほしい */
+  const handleLocale = (next: Locale) => {
+    writeLocaleCookie(next);
+    router.refresh();
+  };
+
   const requestConfirm = useUIStore((state) => state.requestConfirm);
   const showToast = useUIStore((state) => state.showToast);
   const settings = useSettingsStore();
@@ -114,7 +130,7 @@ export function SettingsSheet({
       await flushPendingWrites();
     } catch (error) {
       showToast({
-        message: toUserMessage(error, "保存に失敗しました"),
+        message: toUserMessage(error, t.settings.app.autoSave.failed),
         type: "error",
       });
     }
@@ -127,60 +143,59 @@ export function SettingsSheet({
   };
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose} title="設定" isTall>
+    <BottomSheet isOpen={isOpen} onClose={onClose} title={t.settings.title} isTall>
       <div className="flex flex-col gap-gutter-lg px-gutter py-gutter">
         <SettingsGroup
-          title="舞台"
-          description="向きを変えても、保存されている立ち位置は動きません。描く向きと、道順の言葉づかいだけが入れ替わります。"
+          title={t.settings.stage.title}
+          description={t.settings.stage.description}
         >
           <SettingsSwitchRow
-            label="客席を上にする"
-            description="既定は上がバックステージ。稽古場で鏡を見ながら組むときに入れ替える"
+            label={t.settings.stage.audienceOnTop.label}
+            description={t.settings.stage.audienceOnTop.description}
             checked={settings.isAudienceOnTop}
             onChange={() =>
               update("isAudienceOnTop", !settings.isAudienceOnTop)
             }
           />
           <SettingsNumberRow
-            label="ステージの幅"
+            label={t.settings.stage.width}
             value={settings.defaultStageWidth}
             min={MIN_STAGE_UNITS}
             max={MAX_STAGE_UNITS}
-            unit="マス"
+            unit={t.settings.stage.unit}
             onChange={(value) => update("defaultStageWidth", value)}
           />
           <SettingsNumberRow
-            label="ステージの奥行き"
-            description="1マス = 90cm。ここで決めるのは、これから作る作品の広さです"
+            label={t.settings.stage.depth}
+            description={t.settings.stage.depthDescription}
             value={settings.defaultStageHeight}
             min={MIN_STAGE_UNITS}
             max={MAX_STAGE_UNITS}
-            unit="マス"
+            unit={t.settings.stage.unit}
             onChange={(value) => update("defaultStageHeight", value)}
           />
         </SettingsGroup>
 
-        <SettingsGroup title="目盛り">
+        <SettingsGroup title={t.settings.grid.title}>
           <SettingsSegmentRow
-            label="格子の間隔"
-            description="人数が多いと格子が細かすぎて点が沈む。間引くと隊形だけが残る"
+            label={t.settings.grid.interval.label}
+            description={t.settings.grid.interval.description}
             value={settings.gridInterval}
-            options={[
-              { value: 1, label: "1マス" },
-              { value: 2, label: "2マス" },
-              { value: 4, label: "4マス" },
-            ]}
+            options={[1, 2, 4].map((value) => ({
+              value,
+              label: t.settings.grid.interval.squares(value),
+            }))}
             onChange={(value) => update("gridInterval", value)}
           />
           <SettingsSwitchRow
-            label="格子に吸着させる"
-            description="切ると、どこにでも置けます"
+            label={t.settings.grid.snap.label}
+            description={t.settings.grid.snap.description}
             checked={settings.isSnapEnabled}
             onChange={() => update("isSnapEnabled", !settings.isSnapEnabled)}
           />
           <SettingsSwitchRow
-            label="センターラインを強調"
-            description="中央(0の列)を目立たせます"
+            label={t.settings.grid.centerLine.label}
+            description={t.settings.grid.centerLine.description}
             checked={settings.isCenterLineVisible}
             onChange={() =>
               update("isCenterLineVisible", !settings.isCenterLineVisible)
@@ -188,97 +203,112 @@ export function SettingsSheet({
           />
         </SettingsGroup>
 
-        <SettingsGroup title="再生">
+        <SettingsGroup title={t.settings.playback.title}>
           <SettingsSegmentRow
-            label="カウントイン"
-            description="再生を押してから、実際に動き出すまでに鳴らす拍"
+            label={t.settings.playback.countIn.label}
+            description={t.settings.playback.countIn.description}
             value={settings.countIn}
             options={[
-              { value: 0, label: "なし" },
-              { value: 4, label: "4拍" },
-              { value: 8, label: "8拍" },
+              { value: 0, label: t.settings.playback.countIn.off },
+              { value: 4, label: t.settings.playback.countIn.beats(4) },
+              { value: 8, label: t.settings.playback.countIn.beats(8) },
             ]}
             onChange={(value) => update("countIn", value)}
           />
           <SettingsNumberRow
-            label="既定の速さ"
-            description="曲を入れていないときの物差し。新しく作る作品に入ります"
+            label={t.settings.playback.bpm.label}
+            description={t.settings.playback.bpm.description}
             value={settings.defaultBpm}
             min={40}
             max={240}
-            unit="BPM"
+            unit={t.settings.playback.bpm.unit}
             onChange={(value) => update("defaultBpm", value)}
           />
           <SettingsNumberRow
-            label="シーンの間隔"
-            description="シーンを足したとき、いまの位置から何秒後に置くか。120BPMなら4秒が1つの8カウント"
+            label={t.settings.playback.segment.label}
+            description={t.settings.playback.segment.description}
             value={settings.defaultSegmentSeconds}
             min={MIN_SEGMENT_SETTING}
             max={MAX_SEGMENT_SETTING}
             step={0.5}
-            unit="秒"
+            unit={t.settings.playback.segment.unit}
             onChange={(value) => update("defaultSegmentSeconds", value)}
           />
         </SettingsGroup>
 
         <SettingsGroup
-          title="表示"
-          description="下の4つは、エディタの「表示とモード」と同じスイッチです。どちらから変えても同じ状態を指します。"
+          title={t.settings.display.title}
+          description={t.settings.display.description}
         >
           <SettingsSegmentRow
-            label="ダンサー名"
-            description="人数が多いと名前で埋まる。選択時だけにすると隊形が読みやすい"
+            label={t.settings.display.dancerName.label}
+            description={t.settings.display.dancerName.description}
             value={settings.dancerNameDisplay}
             options={[
-              { value: "always", label: "常に" },
-              { value: "selected", label: "選択時" },
-              { value: "never", label: "出さない" },
+              { value: "always", label: t.settings.display.dancerName.always },
+              {
+                value: "selected",
+                label: t.settings.display.dancerName.selected,
+              },
+              { value: "never", label: t.settings.display.dancerName.never },
             ]}
             onChange={(value) => update("dancerNameDisplay", value)}
           />
           <SettingsSwitchRow
-            label="導線"
-            description="次のシーンへの動きを線で描きます"
+            label={t.settings.display.path.label}
+            description={t.settings.display.path.description}
             checked={isPathVisible}
             onChange={togglePathVisible}
           />
           <SettingsSwitchRow
-            label="バミリ"
-            description="全シーンの立ち位置を、床の印として重ねます"
+            label={t.settings.display.stageMarks.label}
+            description={t.settings.display.stageMarks.description}
             checked={isStageMarksVisible}
             onChange={toggleStageMarks}
           />
           <SettingsSwitchRow
-            label="顔被りチェック"
-            description="手前の人の真後ろに入って、客席から見えない人に印を付けます"
+            label={t.settings.display.blindSpot.label}
+            description={t.settings.display.blindSpot.description}
             checked={isBlindSpotCheckVisible}
             onChange={toggleBlindSpotCheck}
           />
           <SettingsSwitchRow
-            label="払ってシーンを送る"
-            description="ステージを横になぞると、前後のシーンへ移ります"
+            label={t.settings.display.swipe.label}
+            description={t.settings.display.swipe.description}
             checked={isSwipeSceneChangeEnabled}
             onChange={toggleSwipeSceneChange}
           />
         </SettingsGroup>
 
         <SettingsGroup
-          title="アプリ"
-          description="「明るい」は紙の隊形図の見た目になります。細かく選ぶときはホームのパレットから。"
+          title={t.settings.app.title}
+          description={t.settings.app.description}
         >
+          {/* 言語だけは、どの言語で見ていてもそれぞれの言葉で出す。
+              間違えて知らない言語にしても、自分の言葉を探して戻れる */}
           <SettingsSegmentRow
-            label="見た目"
+            label={t.language.label}
+            description={t.language.description}
+            value={locale}
+            options={LOCALES.map((value) => ({
+              value,
+              label: LOCALE_LABELS[value],
+            }))}
+            onChange={handleLocale}
+          />
+          <SettingsSegmentRow
+            label={t.settings.app.colorScheme.label}
             value={displayedScheme}
             options={[
-              { value: "dark", label: "暗い" },
-              { value: "light", label: "明るい" },
-              { value: "system", label: "端末" },
+              { value: "dark", label: t.settings.app.colorScheme.dark },
+              { value: "light", label: t.settings.app.colorScheme.light },
+              { value: "system", label: t.settings.app.colorScheme.system },
             ]}
             onChange={handleColorScheme}
           />
           <SettingsSwitchRow
-            label="自動保存"
-            description="切ると、変更はヘッダーの保存を押すまで送られません"
+            label={t.settings.app.autoSave.label}
+            description={t.settings.app.autoSave.description}
             checked={settings.isAutoSaveEnabled}
             onChange={() => void handleAutoSave(!settings.isAutoSaveEnabled)}
           />
@@ -286,28 +316,28 @@ export function SettingsSheet({
 
         {(onExport || onImport || onResetProject) && (
           <SettingsGroup
-            title="データ"
-            description="曲は入りません(音源はこの端末から出ないため)。取り込みは、いまの作品を上書きせず別の作品として作ります。"
+            title={t.settings.data.title}
+            description={t.settings.data.description}
           >
             {onExport && (
               <SettingsActionRow
-                label="この作品を書き出す"
-                description="JSONで手元に保存します"
+                label={t.settings.data.export.label}
+                description={t.settings.data.export.description}
                 icon={<Download size={20} />}
                 onClick={onExport}
               />
             )}
             {onImport && (
               <SettingsActionRow
-                label="ファイルから取り込む"
+                label={t.settings.data.import}
                 icon={<Upload size={20} />}
                 onClick={onImport}
               />
             )}
             {onResetProject && (
               <SettingsActionRow
-                label="この作品を空にする"
-                description="シーンとダンサーを全部消します"
+                label={t.settings.data.reset.label}
+                description={t.settings.data.reset.description}
                 icon={<RotateCcw size={20} />}
                 isDangerous
                 onClick={onResetProject}
@@ -316,17 +346,16 @@ export function SettingsSheet({
           </SettingsGroup>
         )}
 
-        <SettingsGroup title="アカウント">
+        <SettingsGroup title={t.settings.account.title}>
           <SettingsActionRow
-            label="別のアカウントでログイン"
-            description="いまのアカウントからログアウトして、ログイン画面へ移ります"
+            label={t.settings.account.switch.label}
+            description={t.settings.account.switch.description}
             icon={<UserRoundCog size={20} />}
             onClick={() =>
               requestConfirm({
-                title: "別のアカウントでログインしますか",
-                description:
-                  "いまのアカウントからは一度ログアウトします。作品はアカウントに紐づいているので、別のアカウントからは見えません。",
-                confirmLabel: "ログアウトして移る",
+                title: t.settings.account.switch.confirmTitle,
+                description: t.settings.account.switch.confirmDescription,
+                confirmLabel: t.settings.account.switch.confirmLabel,
                 onConfirm: async () => {
                   await signOut();
                   router.push("/login");
@@ -336,13 +365,13 @@ export function SettingsSheet({
             }
           />
           <SettingsActionRow
-            label="ログアウト"
+            label={t.settings.account.signOut}
             icon={<LogOut size={20} />}
             onClick={() => void handleSignOut()}
           />
           <SettingsActionRow
-            label="設定を既定に戻す"
-            description="この画面の選択だけを戻します。作品には触れません"
+            label={t.settings.account.resetSettings.label}
+            description={t.settings.account.resetSettings.description}
             onClick={reset}
           />
         </SettingsGroup>

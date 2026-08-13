@@ -7,6 +7,8 @@ import { AuthDialog } from "@/components/organisms/AuthDialog";
 import { THEME_INIT_SCRIPT } from "@/features/theme/themeScript";
 import { ServiceWorkerRegistrar } from "@/components/atoms/ServiceWorkerRegistrar";
 import { SettingsLoader } from "@/components/atoms/SettingsLoader";
+import { LocaleProvider } from "@/features/i18n/LocaleProvider";
+import { getLocale } from "@/features/i18n/server";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -79,10 +81,18 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+/**
+ * 言語を Cookie から読むので、ここから下は全部リクエストごとの描画になる
+ * (ログイン・登録・オフラインの3枚は、それまで静的に焼けていた)。
+ * 小さい画面ばかりなので焼けなくなる損は小さく、
+ * **最初の1バイト目から正しい言語で出ること**の方が値打ちがある。
+ */
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const locale = await getLocale();
+
   return (
     <html
-      lang="ja"
+      lang={locale}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       // data-theme / data-texture は下のスクリプトが描画前に書き込む。
       // サーバーは端末の選択を知らないので、ここだけは食い違って当然
@@ -92,18 +102,20 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col">
-        {children}
-        {/* 画面をまたいで使う重ね物はここで1回だけ描く。
-            以前はエディタ画面だけがToastを持っていたため、プロジェクト一覧の
-            失敗はページ内のテキストで知らせる、という別扱いになっていた */}
-        <Toast />
-        <ConfirmDialog />
-        <AuthDialog />
-        {/* 圏外でも、一度開いた画面は出るようにする(public/sw.js)。
-            画面には何も出さない */}
-        <ServiceWorkerRegistrar />
-        {/* 端末に覚えてある設定を読む。画面には何も出さない */}
-        <SettingsLoader />
+        <LocaleProvider locale={locale}>
+          {children}
+          {/* 画面をまたいで使う重ね物はここで1回だけ描く。
+              以前はエディタ画面だけがToastを持っていたため、プロジェクト一覧の
+              失敗はページ内のテキストで知らせる、という別扱いになっていた */}
+          <Toast />
+          <ConfirmDialog />
+          <AuthDialog />
+          {/* 圏外でも、一度開いた画面は出るようにする(public/sw.js)。
+              画面には何も出さない */}
+          <ServiceWorkerRegistrar />
+          {/* 端末に覚えてある設定を読む。画面には何も出さない */}
+          <SettingsLoader />
+        </LocaleProvider>
       </body>
     </html>
   );
