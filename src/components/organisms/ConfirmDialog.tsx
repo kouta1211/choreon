@@ -85,7 +85,7 @@ export function ConfirmDialog() {
         <div className="flex items-start gap-3">
           <span
             aria-hidden
-            className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] border border-red-400/28 bg-red-900/50 text-red-400"
+            className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[calc(var(--radius)*0.9167)] border border-red-400/28 bg-red-900/50 text-red-400"
           >
             <Trash2 size={18} />
           </span>
@@ -115,7 +115,7 @@ export function ConfirmDialog() {
         )}
 
         {/* 履歴との違い。ここが無いと「元に戻す」で戻せると思われる */}
-        <p className="rounded-[10px] bg-fg/5 px-[11px] py-[9px] text-[11.5px] leading-[1.55] text-fg-sub">
+        <p className="rounded-[calc(var(--radius)*0.8333)] bg-fg/5 px-[11px] py-[9px] text-[11.5px] leading-[1.55] text-fg-sub">
           <span className="font-semibold text-fg-strong">
             削除は元に戻せません。
           </span>

@@ -206,7 +206,7 @@ export function ViewerScrub() {
                     (width * project.stageHeight) / project.stageWidth,
                   ),
                 }}
-                className={`absolute top-1/2 block -translate-y-1/2 overflow-hidden rounded-[4px] bg-stage ${
+                className={`absolute top-1/2 block -translate-y-1/2 overflow-hidden rounded-[calc(var(--radius)*0.3333)] bg-stage ${
                   isCurrent
                     ? "border-2 border-accent"
                     : "border border-line-strong"
