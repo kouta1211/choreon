@@ -1,6 +1,12 @@
-import { describe, expect, it, vi } from "vitest";
-import { persist } from "./persistence";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  discardPendingWrites,
+  flushPendingWrites,
+  pendingWriteCount,
+  persist,
+} from "./persistence";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { createGuestProject } from "@/features/project/lib/guestProject";
 
 const supabaseStub = { from: () => ({}) };
@@ -13,6 +19,12 @@ function loadStore(isGuest: boolean) {
   const snapshot = createGuestProject();
   useProjectStore.getState().hydrate({ ...snapshot, isGuest });
 }
+
+afterEach(() => {
+  // 貯めた書き込みはモジュールに残るので、テスト間で持ち越さない
+  useSettingsStore.setState({ isAutoSaveEnabled: true });
+  discardPendingWrites();
+});
 
 describe("persist", () => {
   it("通常のプロジェクトではSupabaseへ渡して実行する", async () => {
@@ -62,5 +74,50 @@ describe("persist", () => {
 
     expect(run).toHaveBeenCalledWith(supabaseStub);
     expect(useProjectStore.getState().hasUnsavedChanges).toBe(false);
+  });
+});
+
+describe("自動保存を切っているとき", () => {
+  it("その場では書き込まず、未保存の印を立てる", async () => {
+    loadStore(false);
+    useSettingsStore.setState({ isAutoSaveEnabled: false });
+    const run = vi.fn().mockResolvedValue(undefined);
+
+    await expect(persist(run)).resolves.toBeNull();
+
+    expect(run).not.toHaveBeenCalled();
+    expect(pendingWriteCount()).toBe(1);
+    expect(useProjectStore.getState().hasUnsavedChanges).toBe(true);
+  });
+
+  it("保存すると、貯めた順に実行して印を降ろす", async () => {
+    loadStore(false);
+    useSettingsStore.setState({ isAutoSaveEnabled: false });
+    const order: number[] = [];
+    await persist(async () => {
+      order.push(1);
+    });
+    await persist(async () => {
+      order.push(2);
+    });
+
+    await flushPendingWrites();
+
+    expect(order).toEqual([1, 2]);
+    expect(pendingWriteCount()).toBe(0);
+    expect(useProjectStore.getState().hasUnsavedChanges).toBe(false);
+  });
+
+  it("途中で失敗したら、失敗したものと以降を残す", async () => {
+    loadStore(false);
+    useSettingsStore.setState({ isAutoSaveEnabled: false });
+    await persist(vi.fn().mockResolvedValue(undefined));
+    await persist(vi.fn().mockRejectedValue(new Error("network")));
+    await persist(vi.fn().mockResolvedValue(undefined));
+
+    await expect(flushPendingWrites()).rejects.toThrow("network");
+
+    expect(pendingWriteCount()).toBe(2);
+    expect(useProjectStore.getState().hasUnsavedChanges).toBe(true);
   });
 });

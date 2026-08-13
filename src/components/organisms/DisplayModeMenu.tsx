@@ -7,6 +7,7 @@ import {
   Hand,
   Music4,
   Palette,
+  Settings,
   Share2,
   SlidersHorizontal,
   Sparkles,
@@ -59,12 +60,14 @@ type Props = {
   onOpenMusic?: () => void;
   onOpenShare?: () => void;
   onOpenReview?: () => void;
+  onOpenSettings?: () => void;
 };
 
 export function DisplayModeMenu({
   onOpenMusic,
   onOpenShare,
   onOpenReview,
+  onOpenSettings,
 }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const requestTour = useUIStore((state) => state.requestTour);
@@ -258,6 +261,12 @@ export function DisplayModeMenu({
         <DropdownMenuItem onSelect={() => requestTour()}>
           <HelpCircle size={16} className="shrink-0 text-fg-muted" />
           使い方をもう一度見る
+        </DropdownMenuItem>
+        {/* 設定はアプリ全体のものだが、書き出し・取り込み・初期化だけは
+            開いている作品が要る。だからホームだけでなくここにも入口を置く */}
+        <DropdownMenuItem onSelect={() => onOpenSettings?.()}>
+          <Settings size={16} className="shrink-0 text-fg-muted" />
+          設定
         </DropdownMenuItem>
 
         {/* 見た目(テーマ)の選択そのものはホームにある。ここに置くのは

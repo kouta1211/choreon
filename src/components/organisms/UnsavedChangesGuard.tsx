@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 
 /**
  * 未ログインのまま編集した内容を、うっかり閉じて失わせないための保険。
@@ -21,7 +22,12 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 export function UnsavedChangesGuard() {
   const isGuest = useProjectStore((state) => state.isGuest);
   const hasUnsavedChanges = useProjectStore((state) => state.hasUnsavedChanges);
-  const shouldWarn = isGuest && hasUnsavedChanges;
+  const isAutoSaveEnabled = useSettingsStore(
+    (state) => state.isAutoSaveEnabled,
+  );
+  // 自動保存を切っている人も同じ立場にいる。送っていない変更を抱えたまま
+  // 閉じれば、ゲストの下書きと同じように消える
+  const shouldWarn = (isGuest || !isAutoSaveEnabled) && hasUnsavedChanges;
 
   useEffect(() => {
     if (!shouldWarn) return;

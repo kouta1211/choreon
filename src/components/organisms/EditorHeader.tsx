@@ -6,9 +6,12 @@ import { ChevronLeft, UserPlus } from "lucide-react";
 import { ProjectTitle } from "@/components/organisms/ProjectTitle";
 import { DisplayModeMenu } from "@/components/organisms/DisplayModeMenu";
 import { SaveToCloudButton } from "@/components/organisms/SaveToCloudButton";
+import { SaveChangesButton } from "@/components/organisms/SaveChangesButton";
 import { MusicSheet } from "@/components/organisms/MusicSheet";
 import { ReviewSheet } from "@/components/organisms/ReviewSheet";
 import { ShareSheet } from "@/components/organisms/ShareSheet";
+import { SettingsSheet } from "@/components/organisms/SettingsSheet";
+import { useProjectData } from "@/features/settings/hooks/useProjectData";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { Tooltip } from "@/components/atoms/Tooltip";
@@ -41,8 +44,15 @@ export function EditorHeader({ project }: Props) {
   const isGuest = useProjectStore((state) => state.isGuest);
 
   const [openSheet, setOpenSheet] = useState<
-    "music" | "share" | "review" | null
+    "music" | "share" | "review" | "settings" | null
   >(null);
+  const {
+    fileInputRef,
+    handleExport,
+    handleImport,
+    handleImportFile,
+    handleResetProject,
+  } = useProjectData(project);
 
   return (
     <header className="flex h-target-lg items-center gap-base px-base">
@@ -63,6 +73,8 @@ export function EditorHeader({ project }: Props) {
       </div>
 
       <SaveToCloudButton />
+      {/* 自動保存を切っている人にだけ出る。どちらも出ない状態が既定 */}
+      <SaveChangesButton />
 
       <Tooltip label="ダンサーを追加" align="right">
         <PressableButton
@@ -79,6 +91,7 @@ export function EditorHeader({ project }: Props) {
         onOpenMusic={() => setOpenSheet("music")}
         onOpenShare={isGuest ? undefined : () => setOpenSheet("share")}
         onOpenReview={() => setOpenSheet("review")}
+        onOpenSettings={() => setOpenSheet("settings")}
       />
 
       <MusicSheet
@@ -98,6 +111,28 @@ export function EditorHeader({ project }: Props) {
           onClose={() => setOpenSheet(null)}
         />
       )}
+      {/* 下書き(ゲスト)にはクラウド上の置き場所がまだ無いので、
+          書き出し・取り込み・初期化は出さない。設定そのものは開ける */}
+      <SettingsSheet
+        isOpen={openSheet === "settings"}
+        onClose={() => setOpenSheet(null)}
+        onExport={isGuest ? undefined : handleExport}
+        onImport={isGuest ? undefined : handleImport}
+        onResetProject={isGuest ? undefined : handleResetProject}
+      />
+      {/* 取り込みのファイル選択。見えない入り口で、押すのは設定の行 */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/json,.json"
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          // 同じファイルを続けて選び直せるよう、値を空に戻す
+          event.target.value = "";
+          if (file) void handleImportFile(file);
+        }}
+      />
     </header>
   );
 }
