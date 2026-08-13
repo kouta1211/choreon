@@ -24,7 +24,7 @@ export const LOCALE_COOKIE = "choreon.locale";
 /** 1年。毎回選び直させない */
 export const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
-export function isLocale(value: unknown): value is Locale {
+function isLocale(value: unknown): value is Locale {
   return (
     typeof value === "string" && (LOCALES as readonly string[]).includes(value)
   );
