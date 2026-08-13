@@ -11,6 +11,7 @@ import type { Project } from "@/features/project/types";
 import { randomId } from "@/lib/randomId";
 import { insertTimeSeconds } from "@/features/scene/lib/sceneTiming";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 
 /**
  * 「いまの配置をコピーして、いま聞いている位置に新しいシーンを作る」処理。
@@ -50,7 +51,11 @@ export function useAddScene(project: Project) {
     const timeSeconds =
       scenes.length === 0
         ? 0
-        : insertTimeSeconds(scenes, useMusicStore.getState().currentTime);
+        : insertTimeSeconds(
+            scenes,
+            useMusicStore.getState().currentTime,
+            useSettingsStore.getState().defaultSegmentSeconds,
+          );
 
     const scene = {
       id: randomId(),

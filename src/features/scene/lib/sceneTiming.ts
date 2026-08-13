@@ -228,6 +228,8 @@ export function retimeForOrder(
 export function insertTimeSeconds(
   scenes: TimedScene[],
   atSeconds: number,
+  /** 空きが無いときに空ける秒数。設定から渡す(既定は1つの8カウント) */
+  segmentSeconds: number = DEFAULT_SEGMENT_SECONDS,
 ): number {
   const target = roundSeconds(Math.max(0, atSeconds));
   const sorted = [...scenes].sort((a, b) => a.timeSeconds - b.timeSeconds);
@@ -240,7 +242,7 @@ export function insertTimeSeconds(
   const next = sorted.find(
     (scene) => scene.timeSeconds > collision.timeSeconds,
   );
-  if (!next) return roundSeconds(collision.timeSeconds + DEFAULT_SEGMENT_SECONDS);
+  if (!next) return roundSeconds(collision.timeSeconds + segmentSeconds);
   return roundSeconds(
     Math.max(
       collision.timeSeconds + MIN_SEGMENT_SECONDS,

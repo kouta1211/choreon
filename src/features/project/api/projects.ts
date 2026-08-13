@@ -320,14 +320,31 @@ export async function insertProject(
   return toProject(data);
 }
 
+/**
+ * 新しい作品を作る。
+ *
+ * ステージの広さと速さは【設定の初期値】を受け取る。作品が持つ値なので
+ * 一度作ったあとは作品側が正で、設定を変えても既存の作品は動かない。
+ */
 export async function createProject(
   supabase: SupabaseClient<Database>,
   userId: string,
   title: string,
+  defaults?: { stageWidth: number; stageHeight: number; bpm: number },
 ): Promise<Project> {
   const { data, error } = await supabase
     .from("projects")
-    .insert({ user_id: userId, title })
+    .insert({
+      user_id: userId,
+      title,
+      ...(defaults
+        ? {
+            stage_width: defaults.stageWidth,
+            stage_height: defaults.stageHeight,
+            bpm: defaults.bpm,
+          }
+        : {}),
+    })
     .select()
     .single();
 

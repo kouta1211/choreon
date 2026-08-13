@@ -5,6 +5,7 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { ConcentricGuides } from "@/components/molecules/ConcentricGuides";
 import { MARKER_SIZE } from "@/features/dancer/constants";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 
 /**
  * 「空いている領域に、縦横比を保ったまま目一杯収まる幅」を返す。
@@ -89,11 +90,18 @@ export function Stage({
   const gridMode = useUIStore((state) => state.gridMode);
   const focusedDancerId = useUIStore((state) => state.focusedDancerId);
   const dragSnapLine = useUIStore((state) => state.dragSnapLine);
+  const gridInterval = useSettingsStore((state) => state.gridInterval);
+  const isCenterLineVisible = useSettingsStore(
+    (state) => state.isCenterLineVisible,
+  );
+  // 客席を上にして描くか。ここでは札の入れ替えだけを受け持ち、
+  // 立ち位置の写しは描く側(DancerLayer配下)が行う(stageFlip.ts)
+  const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-unit">
       <p className="text-center text-caption tracking-[0.16em] text-fg-muted uppercase">
-        バックステージ
+        {isAudienceOnTop ? "客席側" : "バックステージ"}
       </p>
       <div
         data-tour="stage"
@@ -123,8 +131,21 @@ export function Stage({
                 focusedDancerId ? "opacity-40" : ""
               }`}
               style={{
-                backgroundSize: `${100 / widthUnits}% ${100 / heightUnits}%`,
+                /* 間隔は設定で間引ける。人数が多いと1マスごとの線が細かすぎて、
+                   点(ダンサー)が線に沈む */
+                backgroundSize: `${(100 * gridInterval) / widthUnits}% ${
+                  (100 * gridInterval) / heightUnits
+                }%`,
               }}
+            />
+          )}
+          {/* センターライン。中央(0の列)は隊形の基準になるので、
+              格子より一段強く引く */}
+          {isCenterLineVisible && gridMode !== "none" && (
+            <div
+              aria-hidden
+              data-testid="stage-center-line"
+              className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-line-strong"
             />
           )}
           {gridMode === "circle" && (
@@ -182,7 +203,7 @@ export function Stage({
       </div>
       <div className="flex w-full items-center justify-center">
         <p className="text-center text-caption tracking-[0.16em] text-fg-muted uppercase">
-          客席側
+          {isAudienceOnTop ? "バックステージ" : "客席側"}
         </p>
       </div>
     </div>

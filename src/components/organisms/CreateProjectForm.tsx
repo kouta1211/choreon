@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { createProject } from "@/features/project/api/projects";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { PressableButton } from "@/components/atoms/PressableButton";
 
 type Props = {
@@ -25,7 +26,14 @@ export function CreateProjectForm({ userId }: Props) {
 
     try {
       const supabase = createClient();
-      const project = await createProject(supabase, userId, title);
+      // ステージの広さと速さは設定の初期値から。作った後は作品側が正で、
+      // 設定を変えても既にある作品は動かない
+      const settings = useSettingsStore.getState();
+      const project = await createProject(supabase, userId, title, {
+        stageWidth: settings.defaultStageWidth,
+        stageHeight: settings.defaultStageHeight,
+        bpm: settings.defaultBpm,
+      });
       router.push(`/projects/${project.id}`);
       router.refresh();
     } catch (error) {

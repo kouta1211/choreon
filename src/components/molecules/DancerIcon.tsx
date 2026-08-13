@@ -3,6 +3,7 @@
 import { memo } from "react";
 import { motion } from "motion/react";
 import { DancerNameLabel } from "@/components/atoms/DancerNameLabel";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { DancerExcessiveMoveBadge } from "@/components/atoms/DancerExcessiveMoveBadge";
 import { DancerBlindSpotBadge } from "@/components/atoms/DancerBlindSpotBadge";
 import { DancerCollisionBadge } from "@/components/atoms/DancerCollisionBadge";
@@ -94,6 +95,8 @@ function DancerMarkerImpl({
   /** シーン切り替え時、向きの補間アニメーションにかける秒数。省略時は0.3秒 */
   transitionDurationSeconds?: number;
 }) {
+  const nameDisplay = useSettingsStore((state) => state.dancerNameDisplay);
+
   // 大きさは強い順に1つだけ効かせる。掛け合わせると、掴んだフォーカス中の
   // ダンサーだけが極端に膨らむ
   const markerScale = isDragging
@@ -243,12 +246,23 @@ function DancerMarkerImpl({
           transparent なので描かれていても見えない */}
       <span
         aria-hidden
-        className="pointer-events-none absolute left-0 top-0 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center text-caption font-bold text-[var(--marker-initial)]"
-        style={{ width: MARKER_SIZE, height: MARKER_SIZE }}
+        className="pointer-events-none absolute left-0 top-0 flex items-center justify-center text-caption font-bold text-[var(--marker-initial)]"
+        /* ずらしをクラス(-translate-x-1/2)ではなくここに書いているのは、
+           上下反転の打ち消し(var(--upright))と1つのtransformに並べるため */
+        style={{
+          width: MARKER_SIZE,
+          height: MARKER_SIZE,
+          transform: "translate(-50%, -50%) var(--upright)",
+        }}
       >
         {[...dancer.name][0] ?? ""}
       </span>
-      <DancerNameLabel name={dancer.name} />
+      {/* 名前の出し方は設定で決める。人数が多いと名前で画面が埋まり、
+          隊形そのものが読めなくなるため */}
+      {(nameDisplay === "always" ||
+        (nameDisplay === "selected" && isSelected)) && (
+        <DancerNameLabel name={dancer.name} />
+      )}
       {isBlocked && <DancerBlindSpotBadge dancerName={dancer.name} />}
       {collision && (
         <DancerCollisionBadge

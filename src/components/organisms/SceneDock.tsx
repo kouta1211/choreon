@@ -13,6 +13,8 @@ import {
 } from "@/features/music/hooks/useMusicPlayback";
 import { useSilentClock } from "@/features/music/hooks/useSilentClock";
 import { useMetronome } from "@/features/music/hooks/useMetronome";
+import { useCountIn } from "@/features/music/hooks/useCountIn";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { useBpm } from "@/features/music/hooks/useBpm";
 import {
   nearestSceneIndexAtSeconds,
@@ -103,8 +105,12 @@ export function SceneDock({ project }: Props) {
   // (useMusicPlayback)。どちらのモードでも「時刻 → シーン」と一方向に
   // 流れるので、時計は常に1つだけになる
   useSilentClock();
+  const countIn = useSettingsStore((state) => state.countIn);
+  const { isCountingIn, remainingBeats, start, cancel } = useCountIn(bpm);
   useMetronome({
-    isActive: isPlaying && !hasMusic && isMetronomeEnabled,
+    // 予備拍の間は曲の有無に関わらず鳴らす。音の出ないカウントインは
+    // ただの遅れで、構えるための合図にならない
+    isActive: (isPlaying && !hasMusic && isMetronomeEnabled) || isCountingIn,
     bpm,
     beatsPerBar,
   });
@@ -139,13 +145,20 @@ export function SceneDock({ project }: Props) {
   }, [isPlaying, selectedSceneId, audioRef]);
 
   const handleTogglePlay = () => {
+    // 数えている最中にもう一度押したら、始まる前に取り消す
+    if (isCountingIn) {
+      cancel();
+      return;
+    }
+
     if (!isPlaying) {
       // 選択中のシーンの時刻から始める。曲があれば<audio>側が
       // seekToSelectedScene で既にそこへ寄っている
       if (!hasMusic && selectedIndex >= 0) {
         setCurrentTime(sceneStartSeconds(scenes)[selectedIndex] ?? 0);
       }
-      setIsPlaying(true);
+      // 予備拍を数えてから動き出す(設定が0なら、その場で始まる)
+      start(countIn, () => setIsPlaying(true));
       return;
     }
 
@@ -198,10 +211,25 @@ export function SceneDock({ project }: Props) {
             <PressableButton
               kind="round"
               onClick={handleTogglePlay}
-              aria-label={isPlaying ? "再生を停止" : "最後のシーンまで再生"}
+              aria-label={
+                isCountingIn
+                  ? "カウントインを取り消す"
+                  : isPlaying
+                    ? "再生を停止"
+                    : "最後のシーンまで再生"
+              }
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-accent-fg"
             >
-              {isPlaying ? (
+              {/* 数えている間は残りの拍を出す。押したのに何も起きていない
+                  ように見える時間を作らない */}
+              {isCountingIn ? (
+                <span
+                  role="status"
+                  className="font-mono text-headline tabular-nums"
+                >
+                  {remainingBeats}
+                </span>
+              ) : isPlaying ? (
                 <Pause size={20} fill="currentColor" />
               ) : (
                 <Play size={20} fill="currentColor" />
