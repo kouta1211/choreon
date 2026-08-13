@@ -97,8 +97,8 @@ export function ViewerLayout({
 
   return (
     <div className="flex h-dvh flex-col overflow-clip pb-[max(24px,env(safe-area-inset-bottom))]">
-      <header className="flex h-10 shrink-0 items-center gap-2 px-4">
-        <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-fg-strong">
+      <header className="flex h-target-lg shrink-0 items-center gap-unit px-gutter">
+        <span className="min-w-0 flex-1 truncate text-headline text-fg-strong">
           {project.title}
         </span>
         {/* 自分のポジション。押すと入口へ戻って選び直せる。
@@ -107,7 +107,7 @@ export function ViewerLayout({
         <PressableButton
           onClick={chooseAgain}
           aria-label="ポジションを選び直す"
-          className="flex h-8 shrink-0 items-center gap-1.5 rounded-2xl border border-line-strong px-[11px] text-[12px] text-fg-sub"
+          className="flex h-8 shrink-0 items-center gap-unit rounded-full bg-surface-raised px-3 font-mono text-mono-m text-fg"
         >
           {dancer ? (
             <>
@@ -142,7 +142,9 @@ export function ViewerLayout({
         </div>
       </div>
 
-      <div className="shrink-0 px-3.5 pt-2">
+      {/* 下の道具は1枚の板にまとめる。曲・スクラブ・再生が別々の面に
+          散っていると、画面の下半分が細切れに見える */}
+      <div className="shrink-0 px-gutter pt-unit">
         {/* 曲は共有されないので、見る人が自分の端末で選べるようにする。
             選ぶまでは帯の地が8カウントの縞になっている */}
         <ViewerMusic
@@ -152,7 +154,7 @@ export function ViewerLayout({
 
         <ViewerScrub />
 
-        <div className="mt-1 flex items-center gap-2">
+        <div className="mt-unit flex items-center gap-unit">
           <PressableButton
             kind="icon"
             onClick={() => {
@@ -160,12 +162,13 @@ export function ViewerLayout({
               setIsPlaying((playing) => !playing);
             }}
             aria-label={isPlaying ? "止める" : "通しで再生"}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line-strong text-fg-sub"
+            /* 主役はスクラブなので、再生は静かなボタンに格下げしてある */
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-raised text-fg"
           >
             {isPlaying ? (
-              <Pause size={14} fill="currentColor" />
+              <Pause size={16} fill="currentColor" />
             ) : (
-              <Play size={14} fill="currentColor" />
+              <Play size={16} fill="currentColor" />
             )}
           </PressableButton>
 

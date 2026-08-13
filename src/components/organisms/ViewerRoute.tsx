@@ -78,12 +78,14 @@ export function ViewerRoute() {
 
   return (
     <>
-      <div className="overlay-panel flex items-center gap-2.5 rounded-[calc(var(--radius)*1.0833)] px-3 py-[11px]">
+      {/* この1行がこの画面の主役。稽古場で見るのは「次にどこへ何歩か」で、
+          それを座標ではなく言葉で置く */}
+      <div className="overlay-panel flex h-target-lg items-center gap-unit rounded-2xl px-gutter">
         <ArrowRight size={22} className="shrink-0 text-fg-sub" />
-        <p className="min-w-0 flex-1 text-[12.5px] leading-snug font-medium text-fg">
+        <p className="min-w-0 flex-1 text-label text-fg">
           {current ? (
             <>
-              <span className="font-semibold text-fg-strong">
+              <span className="text-body font-semibold text-fg-strong">
                 {current.text}
               </span>
               {current.turn && (
@@ -99,7 +101,7 @@ export function ViewerRoute() {
         </p>
         <PressableButton
           onClick={() => setSheetOpen(true)}
-          className="flex h-[30px] shrink-0 items-center rounded-[calc(var(--radius)*0.6)] border border-line-strong px-2.5 text-[12px] text-fg-sub"
+          className="flex h-8 shrink-0 items-center rounded-lg bg-surface-raised px-3 text-label text-fg-sub"
         >
           ぜんぶ
         </PressableButton>
