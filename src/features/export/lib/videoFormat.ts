@@ -16,7 +16,7 @@
  */
 
 /** 上から順に試す。左が最優先 */
-export const VIDEO_CANDIDATES = [
+const VIDEO_CANDIDATES = [
   // Safari 17+ / iOS。配りやすさが段違いなので最優先
   { mimeType: "video/mp4;codecs=avc1.42E01E", extension: "mp4" },
   { mimeType: "video/mp4", extension: "mp4" },

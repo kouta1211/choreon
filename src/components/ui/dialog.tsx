@@ -24,11 +24,12 @@ import { cn } from "@/lib/utils";
  */
 
 export const Dialog = DialogPrimitive.Root;
-export const DialogTrigger = DialogPrimitive.Trigger;
-export const DialogPortal = DialogPrimitive.Portal;
-export const DialogClose = DialogPrimitive.Close;
 
-export function DialogOverlay({
+/** 幕と板は DialogContent の中でしか使わない。外へ出すと、
+ * 幕だけを別の場所で使うような組み方ができてしまう */
+const DialogPortal = DialogPrimitive.Portal;
+
+function DialogOverlay({
   className,
   ...props
 }: ComponentProps<typeof DialogPrimitive.Overlay>) {

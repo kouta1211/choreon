@@ -46,13 +46,10 @@ next-env.d.ts
 /*.jpeg
 /*.png
 
-# design handoff bundles exported from Claude Design (reference only, not built here).
-# The export drops its loose companions in the repo root too -- the .dc.html
-# reference pages, support.js, the .thumbnail preview and an uploads/ folder of
-# pasted images. None of it is built or linted here; leaving support.js tracked
-# would fail `npm run verify` on rules that only make sense for our own source.
+# design tool exports dropped into the repo root (reference only, never built).
+# Kept as a guard: the export also leaves loose companions behind, and one of
+# them (support.js) fails `npm run verify` on rules meant for our own source.
 /design_handoff_*/
-/design_handoff_choreon_INDEX.md
 /*.dc.html
 /support.js
 /.thumbnail

@@ -1,5 +1,5 @@
 /**
- * 触覚。3種だけ。
+ * 触覚。2種だけ。
  *
  * ■ 意味を触覚に依存させない
  * iOS Safari は `navigator.vibrate` を持たない。つまり主対象である
@@ -14,8 +14,6 @@
 export const TAP_PATTERN = 8;
 /** 削除のような、取り返しのつかない操作の確定 */
 export const DESTRUCTIVE_PATTERN = [12, 40, 12];
-/** 保存・テンプレート適用などの完了 */
-export const DONE_PATTERN = [8, 30, 20];
 
 export function vibrate(pattern: number | number[]): void {
   try {

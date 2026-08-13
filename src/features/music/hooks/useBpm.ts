@@ -14,9 +14,9 @@ import {
 } from "@/features/music/lib/metronomePreference";
 
 /** 拍子として選べる範囲。DBの制約(2〜12)と合わせてある */
-export const MIN_BEATS_PER_BAR = 2;
-export const MAX_BEATS_PER_BAR = 12;
-export const DEFAULT_BEATS_PER_BAR = 4;
+const MIN_BEATS_PER_BAR = 2;
+const MAX_BEATS_PER_BAR = 12;
+const DEFAULT_BEATS_PER_BAR = 4;
 
 /**
  * 作品の速さ(BPM)。読むのと変えるのをまとめて配る。
