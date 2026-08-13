@@ -19,6 +19,119 @@ export const ja = {
     description: "この端末で覚えます",
   },
 
+  /**
+   * 隊形の呼び名。
+   *
+   * 59個の名前を並べる代わりに、形と人数の内訳に分けてある
+   * (formationTemplates.ts の FormationLabel)。「V字」と「2列」が
+   * どの人数でも同じ言葉で出るので、言語をまたいでも関係が崩れない。
+   *
+   * 奥から手前への順。「後1-2-2前」なら奥から1人・2人・2人。
+   */
+  formations: {
+    row: "横1列",
+    rowPair: "横並び",
+    rowFront: "前寄せ横並び",
+    rowBack: "奥寄せ横並び",
+    column: "縦1列",
+    columnPair: "縦1列（前後）",
+    diagonal: "斜め",
+    diagonalLine: "斜め列",
+    lShape: "L字",
+    xShape: "X字",
+    wShape: "W字（ジグザグ）",
+    diamond: "ダイヤ",
+    circle: "円（サークル）",
+    circleCenter: "円＋センター",
+    arc: "弧（アーチ）",
+    wedgeIn: "ハの字（後狭・前広）",
+    wedgeOut: "くさび（後広・前狭）",
+    triangle: (rows: number[]) => `三角（後${rows[0]}・前${rows[1]}）`,
+    triangleDown: (rows: number[]) => `逆三角（後${rows[0]}・前${rows[1]}）`,
+    v: (rows: number[]) => `V字（後${rows.join("-")}前）`,
+    vDown: (rows: number[]) => `逆V字（後${rows.join("-")}前）`,
+    twoRows: (rows: number[]) => `2列（${rows.join("-")}）`,
+    twoColumns: (rows: number[]) => `縦2列（${rows.join("-")}）`,
+    stagger: (rows: number[]) => `千鳥（${rows.join("-")}）`,
+    arcRows: (rows: number[]) => `弧2列（${rows.join("-")}）`,
+    grid: (rows: number[]) => `${rows[0]}×${rows[1]} グリッド`,
+  },
+
+  templateSheet: {
+    shapeCount: (n: number) => `${n}種`,
+    needsTwoNotice:
+      "フォーメーションを選ぶには2人以上が必要です。ヘッダーの人物アイコンからダンサーを追加してください。",
+    castCount: (n: number) => `${n}人`,
+    current: "いま",
+    matchingCast: (n: number) => `いまステージにいる${n}人に合わせて表示しています`,
+    forCast: (n: number) => `${n}人ぶんの形です。`,
+    leftOver: (n: number) => `余る${n}人はいまの位置のまま残ります（消えません）。`,
+    emptySpots: (n: number) => `${n}点は空きになります（前列から埋めます）。`,
+    title: "フォーメーション",
+    needsTwo: "2人以上",
+    spacing: { narrow: "狭い", normal: "標準", wide: "広い" },
+    flipX: "左右反転",
+    flipY: "前後反転",
+    rotate: "90°回転",
+    apply: "この形に置き換える",
+    applyNamed: (name: string) => `${name}に置き換える`,
+    applied: (name: string) => `${name}に置き換えました`,
+    appliedPartial: (name: string, leftOut: number) =>
+      `${name}に置き換えました（${leftOut}人はそのまま）`,
+    undo: "元に戻す",
+    failed: "フォーメーションの適用に失敗しました",
+  },
+
+  themeSheet: {
+    backToList: "一覧へ戻る",
+    textureTitle: "背景の質感",
+    textureNote: "地の上に薄く重ねる装飾です。ステージの中には掛かりません。",
+    themeCount: (n: number) => `${n}種`,
+    previewMode: "モード",
+    title: "見た目",
+    all: "すべて",
+    dark: "暗い系",
+    material: "紙・素材系",
+    selected: "選択中",
+    deviceOnly: "この端末だけに保存",
+  },
+
+  themes: {
+    midnight: "ミッドナイト・ピンク",
+    neon: "ネオン・シアン",
+    amber: "アンバー・ステージ",
+    mono: "モノクローム",
+    chalk: "黒板＋チョーク",
+    paper: "紙の隊形図",
+    gridnote: "方眼ノート＋青インク",
+    kraft: "クラフト紙＋活版",
+    tracing: "トレーシングペーパー",
+    whiteboard: "ホワイトボード＋マーカー",
+  },
+
+  themeSubtitles: {
+    midnight: "既定",
+    neon: "発光・ガラス",
+    amber: "舞台照明・板張り",
+    mono: "UIは無彩色だけ",
+    chalk: "暗いまま素材を変える",
+    paper: "クリーム紙・赤鉛筆",
+    gridnote: "万年筆・赤ペン",
+    kraft: "厚紙・沈んだ文字",
+    tracing: "次のシーンが透ける",
+    whiteboard: "太いマーカー・強い色",
+  },
+
+  textures: {
+    flat: "フラット",
+    nebula: "ネビュラ",
+    horizon: "ホリゾント幕",
+    spot: "スポットの円光",
+    grid: "方眼と目盛り",
+    grain: "グレイン",
+    curtain: "暗幕",
+  },
+
   settings: {
     title: "設定",
 

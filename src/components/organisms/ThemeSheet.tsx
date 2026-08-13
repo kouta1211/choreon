@@ -7,6 +7,7 @@ import { ThemePreview } from "@/components/molecules/ThemePreview";
 import { useThemeStore } from "@/features/theme/store/useThemeStore";
 import { resolveAppearance } from "@/features/theme/lib/themePreference";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 import {
   THEMES,
   TEXTURES,
@@ -16,16 +17,9 @@ import {
 
 type Filter = "all" | ThemeCategory;
 
-const FILTERS: { id: Filter; label: string }[] = [
-  { id: "all", label: "すべて" },
-  { id: "dark", label: "暗い系" },
-  { id: "material", label: "紙・素材系" },
-];
+const FILTERS: Filter[] = ["all", "dark", "material"];
 
-const CATEGORY_HEADINGS: { id: ThemeCategory; label: string }[] = [
-  { id: "dark", label: "暗い系" },
-  { id: "material", label: "紙・素材系" },
-];
+const CATEGORY_HEADINGS: ThemeCategory[] = ["dark", "material"];
 
 type Props = {
   isOpen: boolean;
@@ -41,6 +35,7 @@ type Props = {
  * 選ぶ前に結果が見えている方が早い。
  */
 export function ThemeSheet({ isOpen, onClose }: Props) {
+  const t = useT();
   const preference = useThemeStore((state) => state.preference);
   const projectId = useThemeStore((state) => state.projectId);
   const setAppearance = useThemeStore((state) => state.setAppearance);
@@ -63,13 +58,13 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
       <BottomSheet
         isOpen={isOpen}
         onClose={handleClose}
-        title={detailTheme.name}
+        title={t.themes[detailTheme.id]}
         titleRight={
           <PressableButton
             onClick={() => setDetailOf(null)}
             className="font-sans text-label text-fg-sub underline underline-offset-2"
           >
-            一覧へ戻る
+            {t.themeSheet.backToList}
           </PressableButton>
         }
         wideMaxWidthClassName="min-[1200px]:max-w-md"
@@ -79,7 +74,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
 
           <div>
             <p className="mb-2 text-label font-medium text-fg-sub">
-              背景の質感
+              {t.themeSheet.textureTitle}
             </p>
             <div className="flex flex-wrap gap-1.5">
               {TEXTURES.map((texture) => {
@@ -96,13 +91,13 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
                         : "border-line-strong text-fg-sub"
                     }`}
                   >
-                    {texture.name}
+                    {t.textures[texture.id]}
                   </PressableButton>
                 );
               })}
             </div>
             <p className="mt-2 text-caption leading-relaxed text-fg-muted">
-              地の上に薄く重ねる装飾です。ステージの中には掛かりません。
+              {t.themeSheet.textureNote}
             </p>
           </div>
         </div>
@@ -118,53 +113,51 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
     <BottomSheet
       isOpen={isOpen}
       onClose={handleClose}
-      title="見た目"
-      titleRight={`${THEMES.length}種`}
+      title={t.themeSheet.title}
+      titleRight={t.themeSheet.themeCount(THEMES.length)}
       isTall
       wideMaxWidthClassName="min-[1200px]:max-w-2xl"
     >
       <div className="flex items-center gap-1.5 border-b border-line px-[18px] py-3">
         {FILTERS.map((item) => {
           const count =
-            item.id === "all"
+            item === "all"
               ? THEMES.length
-              : THEMES.filter((theme) => theme.category === item.id).length;
-          const isSelected = filter === item.id;
+              : THEMES.filter((theme) => theme.category === item).length;
+          const isSelected = filter === item;
           return (
             <PressableButton
-              key={item.id}
+              key={item}
               type="button"
               aria-pressed={isSelected}
-              onClick={() => setFilter(item.id)}
+              onClick={() => setFilter(item)}
               className={`h-8 rounded-2xl px-3 text-label ${
                 isSelected
                   ? "bg-accent font-semibold text-accent-fg"
                   : "border border-line-strong text-fg-sub"
               }`}
             >
-              {item.label}
-              {item.id !== "all" && ` ${count}`}
+              {t.themeSheet[item]}
+              {item !== "all" && ` ${count}`}
             </PressableButton>
           );
         })}
         <span className="ml-auto shrink-0 text-caption text-fg-muted">
-          この端末だけに保存
+          {t.themeSheet.deviceOnly}
         </span>
       </div>
 
       <div className="px-[18px] pt-4 pb-6">
         {CATEGORY_HEADINGS.filter(
-          (heading) => filter === "all" || filter === heading.id,
+          (heading) => filter === "all" || filter === heading,
         ).map((heading) => {
-          const themes = visible.filter(
-            (theme) => theme.category === heading.id,
-          );
+          const themes = visible.filter((theme) => theme.category === heading);
           if (themes.length === 0) return null;
 
           return (
-            <section key={heading.id} className="mb-5 last:mb-0">
+            <section key={heading} className="mb-5 last:mb-0">
               <p className="mb-2.5 text-caption font-semibold tracking-[0.14em] text-fg-sub">
-                {heading.label}
+                {t.themeSheet[heading]}
               </p>
               <div className="grid grid-cols-2 gap-x-4 gap-y-3.5 lg:grid-cols-3">
                 {themes.map((theme) => {
@@ -197,18 +190,18 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
                               : "font-medium text-fg-strong"
                           }`}
                         >
-                          {theme.name}
+                          {t.themes[theme.id]}
                         </span>
                         {isSelected && (
                           <Check
                             size={12}
                             className="shrink-0 text-accent-soft"
-                            aria-label="選択中"
+                            aria-label={t.themeSheet.selected}
                           />
                         )}
                       </span>
                       <span className="-mt-1 truncate text-caption text-fg-muted">
-                        {theme.subtitle}
+                        {t.themeSubtitles[theme.id]}
                       </span>
                     </PressableButton>
                   );

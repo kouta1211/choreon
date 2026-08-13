@@ -16,6 +16,8 @@ import {
   type FormationTransform,
 } from "@/features/canvas/lib/formationTemplates";
 import type { Project } from "@/features/project/types";
+import { useT } from "@/features/i18n/LocaleProvider";
+import { formationName } from "@/features/i18n/lib/formationName";
 
 /**
  * テンプレートの隊形を、選択中シーンのダンサーへ適用する。
@@ -31,6 +33,7 @@ import type { Project } from "@/features/project/types";
  * 動かす操作なので、元に戻すときも一度で戻せないと使いづらい。
  */
 export function useApplyTemplate(project: Project) {
+  const t = useT();
   const [isApplying, setIsApplying] = useState(false);
   const updateDancerPosition = useProjectStore(
     (state) => state.updateDancerPosition,
@@ -96,22 +99,23 @@ export function useApplyTemplate(project: Project) {
       useHistoryStore.getState().push({ kind: "template", changes });
 
       const leftOut = dancers.length - changes.length;
+      const name = formationName(formation.label, t);
       showToast({
         message:
           leftOut > 0
-            ? `${formation.name}に置き換えました（${leftOut}人はそのまま）`
-            : `${formation.name}に置き換えました`,
+            ? t.templateSheet.appliedPartial(name, leftOut)
+            : t.templateSheet.applied(name),
         type: "success",
         // 一度に全員動く操作なので、その場で戻せる導線を出す。
         // 履歴ボタンを探しに行かせない
-        action: { label: "元に戻す", onAction: () => void undo() },
+        action: { label: t.templateSheet.undo, onAction: () => void undo() },
       });
     } catch (error) {
       for (const change of changes) {
         updateDancerPosition(sceneId, change.dancerId, change.before);
       }
       showToast({
-        message: toUserMessage(error, "フォーメーションの適用に失敗しました"),
+        message: toUserMessage(error, t.templateSheet.failed),
         type: "error",
       });
     } finally {

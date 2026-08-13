@@ -12,6 +12,115 @@ export const en = {
     description: "Remembered on this device",
   },
 
+  // 内訳は奥→手前。英語では upstage → downstage と言うので、
+  // 「後1-2-2前」は "1-2-2 from upstage" になる
+  formations: {
+    row: "Single line",
+    rowPair: "Side by side",
+    rowFront: "Line, downstage",
+    rowBack: "Line, upstage",
+    column: "Single file",
+    columnPair: "One behind the other",
+    diagonal: "Diagonal",
+    diagonalLine: "Diagonal line",
+    lShape: "L shape",
+    xShape: "X shape",
+    wShape: "W (zigzag)",
+    diamond: "Diamond",
+    circle: "Circle",
+    circleCenter: "Circle with a centre",
+    arc: "Arc",
+    wedgeIn: "Opening out (narrow upstage)",
+    wedgeOut: "Closing in (wide upstage)",
+    triangle: (rows: number[]) => `Triangle (${rows[0]} back, ${rows[1]} front)`,
+    triangleDown: (rows: number[]) =>
+      `Inverted triangle (${rows[0]} back, ${rows[1]} front)`,
+    v: (rows: number[]) => `V (${rows.join("-")} from upstage)`,
+    vDown: (rows: number[]) => `Inverted V (${rows.join("-")} from upstage)`,
+    twoRows: (rows: number[]) => `Two lines (${rows.join("-")})`,
+    twoColumns: (rows: number[]) => `Two files (${rows.join("-")})`,
+    stagger: (rows: number[]) => `Staggered (${rows.join("-")})`,
+    arcRows: (rows: number[]) => `Two arcs (${rows.join("-")})`,
+    grid: (rows: number[]) => `${rows[0]}×${rows[1]} grid`,
+  },
+
+  templateSheet: {
+    shapeCount: (n: number) => `${n} shapes`,
+    needsTwoNotice:
+      "You need two or more dancers to pick a formation. Add them from the person icon in the header.",
+    castCount: (n: number) => `${n}`,
+    current: "now",
+    matchingCast: (n: number) => `Showing shapes for the ${n} dancers on stage`,
+    forCast: (n: number) => `A shape for ${n} dancers.`,
+    leftOver: (n: number) =>
+      `The ${n} left over stay where they are (nobody is removed).`,
+    emptySpots: (n: number) => `${n} spots stay empty (filled from the front).`,
+    title: "Formations",
+    needsTwo: "two or more",
+    spacing: { narrow: "Tight", normal: "Normal", wide: "Wide" },
+    flipX: "Flip left–right",
+    flipY: "Flip front–back",
+    rotate: "Rotate 90°",
+    apply: "Use this shape",
+    applyNamed: (name: string) => `Use ${name}`,
+    applied: (name: string) => `Changed to ${name}`,
+    appliedPartial: (name: string, leftOut: number) =>
+      `Changed to ${name} (${leftOut} left where they were)`,
+    undo: "Undo",
+    failed: "Could not apply the formation",
+  },
+
+  themeSheet: {
+    backToList: "Back to the list",
+    textureTitle: "Background texture",
+    textureNote:
+      "A light overlay on the ground. It never covers the stage itself.",
+    themeCount: (n: number) => `${n} themes`,
+    previewMode: "Mode",
+    title: "Appearance",
+    all: "All",
+    dark: "Dark",
+    material: "Paper and material",
+    selected: "Selected",
+    deviceOnly: "Saved on this device only",
+  },
+
+  themes: {
+    midnight: "Midnight Pink",
+    neon: "Neon Cyan",
+    amber: "Amber Stage",
+    mono: "Monochrome",
+    chalk: "Blackboard & Chalk",
+    paper: "Paper Chart",
+    gridnote: "Grid Notebook & Blue Ink",
+    kraft: "Kraft Paper & Letterpress",
+    tracing: "Tracing Paper",
+    whiteboard: "Whiteboard & Marker",
+  },
+
+  themeSubtitles: {
+    midnight: "Default",
+    neon: "Glow and glass",
+    amber: "Stage lights on boards",
+    mono: "No colour in the interface",
+    chalk: "Dark ground, different material",
+    paper: "Cream paper, red pencil",
+    gridnote: "Fountain pen, red pen",
+    kraft: "Thick card, sunken type",
+    tracing: "The next scene shows through",
+    whiteboard: "Thick marker, strong colour",
+  },
+
+  textures: {
+    flat: "Flat",
+    nebula: "Nebula",
+    horizon: "Cyclorama",
+    spot: "Spotlight pool",
+    grid: "Grid and ruler",
+    grain: "Grain",
+    curtain: "Blackout curtain",
+  },
+
   settings: {
     title: "Settings",
 

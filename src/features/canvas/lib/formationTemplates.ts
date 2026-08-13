@@ -12,8 +12,52 @@
 
 export type FormationPoint = { x: number; y: number };
 
+/**
+ * 隊形の呼び名。**文字ではなく、辞書を引くための鍵で持つ**。
+ *
+ * ここに日本語を書いてしまうと、英語や韓国語で見ている人の一覧にだけ
+ * 日本語が並ぶ。`DANCER_COLOR_PALETTE` を CSS 変数にしないのと同じで、
+ * データとして扱う値と、画面に出す文字を混ぜない。
+ *
+ * `rows` は奥から手前への人数の内訳(「V字（後1-2-2前）」の 1-2-2)。
+ * 名前ごとに59個の文字列を持つ代わりに、形と内訳に分けてある。
+ * 同じ「2列」でも中身が違うだけ、という関係が言語をまたいで保てる。
+ */
+export type FormationLabel = {
+  shape: FormationShape;
+  rows?: number[];
+};
+
+export type FormationShape =
+  | "row"
+  | "rowPair"
+  | "rowFront"
+  | "rowBack"
+  | "column"
+  | "columnPair"
+  | "diagonal"
+  | "diagonalLine"
+  | "lShape"
+  | "xShape"
+  | "wShape"
+  | "diamond"
+  | "circle"
+  | "circleCenter"
+  | "arc"
+  | "wedgeIn"
+  | "wedgeOut"
+  | "triangle"
+  | "triangleDown"
+  | "v"
+  | "vDown"
+  | "twoRows"
+  | "twoColumns"
+  | "stagger"
+  | "arcRows"
+  | "grid";
+
 export type FormationTemplate = {
-  name: string;
+  label: FormationLabel;
   count: number;
   /** 8×6マス基準の座標 */
   points: FormationPoint[];
@@ -23,12 +67,20 @@ export type FormationTemplate = {
 const BASE_WIDTH = 8;
 const BASE_HEIGHT = 6;
 
-function template(name: string, points: [number, number][]): FormationTemplate {
+function template(
+  label: FormationLabel,
+  points: [number, number][],
+): FormationTemplate {
   return {
-    name,
+    label,
     count: points.length,
     points: points.map(([x, y]) => ({ x, y })),
   };
+}
+
+/** 一覧の中で1つを指すための鍵。同じ人数の中で重ならない */
+export function formationKey(label: FormationLabel): string {
+  return label.rows ? `${label.shape}-${label.rows.join("-")}` : label.shape;
 }
 
 /**
@@ -40,97 +92,97 @@ function template(name: string, points: [number, number][]): FormationTemplate {
  */
 export const FORMATION_TEMPLATES: FormationTemplate[] = [
   // --- 2人(5種) ---
-  template("横並び", [
+  template({ shape: "rowPair" }, [
     [2.6, 3],
     [5.4, 3],
   ]),
-  template("縦1列（前後）", [
+  template({ shape: "columnPair" }, [
     [4, 1.6],
     [4, 4.4],
   ]),
-  template("斜め", [
+  template({ shape: "diagonal" }, [
     [2.2, 1.6],
     [5.8, 4.4],
   ]),
-  template("前寄せ横並び", [
+  template({ shape: "rowFront" }, [
     [2.6, 4.8],
     [5.4, 4.8],
   ]),
-  template("奥寄せ横並び", [
+  template({ shape: "rowBack" }, [
     [2.6, 1.2],
     [5.4, 1.2],
   ]),
 
   // --- 3人(6種) ---
-  template("横1列", [
+  template({ shape: "row" }, [
     [1.6, 3],
     [4, 3],
     [6.4, 3],
   ]),
-  template("三角（後1・前2）", [
+  template({ shape: "triangle", rows: [1, 2] }, [
     [4, 1.2],
     [2.2, 4.4],
     [5.8, 4.4],
   ]),
-  template("逆三角（後2・前1）", [
+  template({ shape: "triangleDown", rows: [2, 1] }, [
     [2.2, 1.4],
     [5.8, 1.4],
     [4, 4.6],
   ]),
-  template("縦1列", [
+  template({ shape: "column" }, [
     [4, 1.2],
     [4, 3],
     [4, 4.8],
   ]),
-  template("斜め列", [
+  template({ shape: "diagonalLine" }, [
     [1.6, 1.2],
     [4, 3],
     [6.4, 4.8],
   ]),
-  template("L字", [
+  template({ shape: "lShape" }, [
     [1.6, 1.4],
     [1.6, 4.6],
     [5, 4.6],
   ]),
 
   // --- 4人(7種) ---
-  template("横1列", [
+  template({ shape: "row" }, [
     [1.4, 3],
     [3.1, 3],
     [4.9, 3],
     [6.6, 3],
   ]),
-  template("2列（2-2）", [
+  template({ shape: "twoRows", rows: [2, 2] }, [
     [2.4, 1.6],
     [5.6, 1.6],
     [2.4, 4.4],
     [5.6, 4.4],
   ]),
-  template("ダイヤ", [
+  template({ shape: "diamond" }, [
     [4, 1],
     [2, 3],
     [6, 3],
     [4, 5],
   ]),
-  template("ハの字（後狭・前広）", [
+  template({ shape: "wedgeIn" }, [
     [3.2, 1.4],
     [4.8, 1.4],
     [1.2, 4.8],
     [6.8, 4.8],
   ]),
-  template("くさび（後広・前狭）", [
+  template({ shape: "wedgeOut" }, [
     [1.2, 1.4],
     [6.8, 1.4],
     [3.2, 4.8],
     [4.8, 4.8],
   ]),
-  template("縦1列", [
+  template({ shape: "column" }, [
     [4, 1.2],
     [4, 2.6],
     [4, 4],
     [4, 5.4],
   ]),
-  template("斜め列", [
+  template({ shape: "diagonalLine" }, [
     [1.2, 1],
     [2.8, 2.3],
     [4.4, 3.6],
@@ -138,49 +190,49 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
   ]),
 
   // --- 5人(7種) ---
-  template("横1列", [
+  template({ shape: "row" }, [
     [1.2, 3],
     [2.6, 3],
     [4, 3],
     [5.4, 3],
     [6.8, 3],
   ]),
-  template("V字（後1-2-2前）", [
+  template({ shape: "v", rows: [1, 2, 2] }, [
     [4, 0.9],
     [2.4, 2.7],
     [5.6, 2.7],
     [1, 4.9],
     [7, 4.9],
   ]),
-  template("逆V字（後2-2-1前）", [
+  template({ shape: "vDown", rows: [2, 2, 1] }, [
     [1, 1.1],
     [7, 1.1],
     [2.4, 3.3],
     [5.6, 3.3],
     [4, 5.1],
   ]),
-  template("縦1列", [
+  template({ shape: "column" }, [
     [4, 1],
     [4, 2.1],
     [4, 3.2],
     [4, 4.3],
     [4, 5.4],
   ]),
-  template("2列（2-3）", [
+  template({ shape: "twoRows", rows: [2, 3] }, [
     [2.6, 1.4],
     [5.4, 1.4],
     [1.4, 4.6],
     [4, 4.6],
     [6.6, 4.6],
   ]),
-  template("W字（ジグザグ）", [
+  template({ shape: "wShape" }, [
     [1.2, 1.2],
     [2.6, 4.8],
     [4, 1.2],
     [5.4, 4.8],
     [6.8, 1.2],
   ]),
-  template("L字", [
+  template({ shape: "lShape" }, [
     [1.4, 1.2],
     [1.4, 3],
     [1.4, 4.8],
@@ -189,7 +241,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
   ]),
 
   // --- 6人(8種) ---
-  template("横1列", [
+  template({ shape: "row" }, [
     [1, 3],
     [2.24, 3],
     [3.48, 3],
@@ -197,7 +249,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [5.96, 3],
     [7.2, 3],
   ]),
-  template("2列（3-3）", [
+  template({ shape: "twoRows", rows: [3, 3] }, [
     [1.8, 1.5],
     [4, 1.5],
     [6.2, 1.5],
@@ -205,7 +257,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [4, 4.5],
     [6.2, 4.5],
   ]),
-  template("千鳥（3-3）", [
+  template({ shape: "stagger", rows: [3, 3] }, [
     [1.2, 1.5],
     [3.4, 1.5],
     [5.6, 1.5],
@@ -213,7 +265,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [4.6, 4.5],
     [6.8, 4.5],
   ]),
-  template("V字（後1-2-3前）", [
+  template({ shape: "v", rows: [1, 2, 3] }, [
     [4, 0.8],
     [2.4, 2.4],
     [5.6, 2.4],
@@ -221,7 +273,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [4, 4.9],
     [7, 4.9],
   ]),
-  template("円（サークル）", [
+  template({ shape: "circle" }, [
     [4, 0.7],
     [6.9, 2.2],
     [6.9, 3.8],
@@ -229,7 +281,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [1.1, 3.8],
     [1.1, 2.2],
   ]),
-  template("縦2列（3-3）", [
+  template({ shape: "twoColumns", rows: [3, 3] }, [
     [2.8, 1.3],
     [2.8, 3],
     [2.8, 4.7],
@@ -237,7 +289,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [5.2, 3],
     [5.2, 4.7],
   ]),
-  template("斜め列", [
+  template({ shape: "diagonalLine" }, [
     [0.9, 0.9],
     [2.2, 1.8],
     [3.5, 2.7],
@@ -245,7 +297,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [6.1, 4.5],
     [7.2, 5.3],
   ]),
-  template("W字（ジグザグ）", [
+  template({ shape: "wShape" }, [
     [0.9, 1.1],
     [2.2, 4.9],
     [3.5, 1.1],
@@ -255,7 +307,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
   ]),
 
   // --- 7人(7種) ---
-  template("横1列", [
+  template({ shape: "row" }, [
     [0.9, 3],
     [1.95, 3],
     [3, 3],
@@ -264,7 +316,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [6.15, 3],
     [7.2, 3],
   ]),
-  template("2列（3-4）", [
+  template({ shape: "twoRows", rows: [3, 4] }, [
     [2.2, 1.4],
     [4, 1.4],
     [5.8, 1.4],
@@ -273,7 +325,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [5, 4.6],
     [7, 4.6],
   ]),
-  template("2列（4-3）", [
+  template({ shape: "twoRows", rows: [4, 3] }, [
     [1, 1.4],
     [3, 1.4],
     [5, 1.4],
@@ -282,7 +334,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [4, 4.6],
     [5.8, 4.6],
   ]),
-  template("V字（後1-2-4前）", [
+  template({ shape: "v", rows: [1, 2, 4] }, [
     [4, 0.8],
     [2.5, 2.3],
     [5.5, 2.3],
@@ -291,7 +343,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [5.1, 4.9],
     [7, 4.9],
   ]),
-  template("円＋センター", [
+  template({ shape: "circleCenter" }, [
     [4, 3],
     [4, 0.7],
     [6.9, 2.1],
@@ -300,7 +352,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [1.1, 3.9],
     [1.1, 2.1],
   ]),
-  template("弧（アーチ）", [
+  template({ shape: "arc" }, [
     [0.9, 5],
     [2, 3.4],
     [3.2, 2.2],
@@ -309,7 +361,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [6, 3.4],
     [7.1, 5],
   ]),
-  template("斜め列", [
+  template({ shape: "diagonalLine" }, [
     [0.9, 0.9],
     [2, 1.6],
     [3.1, 2.4],
@@ -320,7 +372,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
   ]),
 
   // --- 8人(7種) ---
-  template("横1列", [
+  template({ shape: "row" }, [
     [0.8, 3],
     [1.71, 3],
     [2.63, 3],
@@ -330,7 +382,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [6.29, 3],
     [7.2, 3],
   ]),
-  template("2列（4-4）", [
+  template({ shape: "twoRows", rows: [4, 4] }, [
     [1.2, 1.5],
     [3.1, 1.5],
     [4.9, 1.5],
@@ -340,7 +392,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [4.9, 4.5],
     [6.8, 4.5],
   ]),
-  template("千鳥（4-4）", [
+  template({ shape: "stagger", rows: [4, 4] }, [
     [0.9, 1.5],
     [2.8, 1.5],
     [4.7, 1.5],
@@ -350,7 +402,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [5.65, 4.5],
     [7.2, 4.5],
   ]),
-  template("V字（後1-3-4前）", [
+  template({ shape: "v", rows: [1, 3, 4] }, [
     [4, 0.7],
     [2.3, 2.2],
     [4, 2.2],
@@ -360,7 +412,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [5.3, 4.9],
     [7.1, 4.9],
   ]),
-  template("円（サークル）", [
+  template({ shape: "circle" }, [
     [4, 0.7],
     [6.3, 1.5],
     [7, 3],
@@ -370,7 +422,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [1, 3],
     [1.7, 1.5],
   ]),
-  template("縦2列（4-4）", [
+  template({ shape: "twoColumns", rows: [4, 4] }, [
     [2.8, 1.1],
     [2.8, 2.4],
     [2.8, 3.7],
@@ -380,7 +432,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [5.2, 3.7],
     [5.2, 5],
   ]),
-  template("X字", [
+  template({ shape: "xShape" }, [
     [0.9, 0.9],
     [7.1, 0.9],
     [2.6, 2.6],
@@ -392,7 +444,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
   ]),
 
   // --- 9人(6種) ---
-  template("3×3 グリッド", [
+  template({ shape: "grid", rows: [3, 3] }, [
     [1.6, 1.4],
     [4, 1.4],
     [6.4, 1.4],
@@ -403,7 +455,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [4, 4.6],
     [6.4, 4.6],
   ]),
-  template("横1列", [
+  template({ shape: "row" }, [
     [0.8, 3],
     [1.6, 3],
     [2.4, 3],
@@ -414,7 +466,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [6.4, 3],
     [7.2, 3],
   ]),
-  template("V字（後1-3-5前）", [
+  template({ shape: "v", rows: [1, 3, 5] }, [
     [4, 0.7],
     [2.3, 2.3],
     [4, 2.3],
@@ -425,7 +477,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [5.6, 4.9],
     [7.2, 4.9],
   ]),
-  template("2列（4-5）", [
+  template({ shape: "twoRows", rows: [4, 5] }, [
     [1.4, 1.4],
     [3.1, 1.4],
     [4.9, 1.4],
@@ -436,7 +488,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [5.6, 4.6],
     [7.2, 4.6],
   ]),
-  template("円＋センター", [
+  template({ shape: "circleCenter" }, [
     [4, 3],
     [4, 0.7],
     [6.3, 1.5],
@@ -447,7 +499,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [1, 3],
     [1.7, 1.5],
   ]),
-  template("弧2列（4-5）", [
+  template({ shape: "arcRows", rows: [4, 5] }, [
     [1.2, 2.6],
     [3.1, 1.6],
     [4.9, 1.6],
@@ -460,7 +512,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
   ]),
 
   // --- 10人(6種) ---
-  template("2列（5-5）", [
+  template({ shape: "twoRows", rows: [5, 5] }, [
     [0.9, 1.5],
     [2.4, 1.5],
     [4, 1.5],
@@ -472,7 +524,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [5.6, 4.5],
     [7.1, 4.5],
   ]),
-  template("千鳥（5-5）", [
+  template({ shape: "stagger", rows: [5, 5] }, [
     [0.8, 1.5],
     [2.3, 1.5],
     [3.8, 1.5],
@@ -484,7 +536,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [6, 4.5],
     [7.2, 4.5],
   ]),
-  template("横1列", [
+  template({ shape: "row" }, [
     [0.7, 3],
     [1.42, 3],
     [2.14, 3],
@@ -496,7 +548,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [6.48, 3],
     [7.2, 3],
   ]),
-  template("V字（後1-2-3-4前）", [
+  template({ shape: "v", rows: [1, 2, 3, 4] }, [
     [4, 0.7],
     [2.8, 1.8],
     [5.2, 1.8],
@@ -508,7 +560,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [5.2, 4.9],
     [7.2, 4.9],
   ]),
-  template("円（サークル）", [
+  template({ shape: "circle" }, [
     [4, 0.6],
     [5.9, 1.1],
     [7.1, 2.3],
@@ -520,7 +572,7 @@ export const FORMATION_TEMPLATES: FormationTemplate[] = [
     [0.9, 2.3],
     [2.1, 1.1],
   ]),
-  template("縦2列（5-5）", [
+  template({ shape: "twoColumns", rows: [5, 5] }, [
     [2.8, 1],
     [2.8, 2.1],
     [2.8, 3.2],

@@ -19,16 +19,15 @@ import {
 import type { Project } from "@/features/project/types";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
+import { formationName } from "@/features/i18n/lib/formationName";
+import { formationKey } from "@/features/canvas/lib/formationTemplates";
 
 type Props = {
   project: Project;
 };
 
-const SPACING_LABELS: { value: FormationSpacing; label: string }[] = [
-  { value: "narrow", label: "狭い" },
-  { value: "normal", label: "標準" },
-  { value: "wide", label: "広い" },
-];
+const SPACING_VALUES: FormationSpacing[] = ["narrow", "normal", "wide"];
 
 /**
  * 既成のフォーメーションから選んで、いまのシーンに当てはめるシート。
@@ -42,6 +41,7 @@ const SPACING_LABELS: { value: FormationSpacing; label: string }[] = [
  * 確かめてから決められるようにするため。
  */
 export function TemplateSheet({ project }: Props) {
+  const t = useT();
   const [transform, setTransform] =
     useState<FormationTransform>(DEFAULT_TRANSFORM);
   /** null = いまステージにいる人数に従う(開き直すたびに追従させたいので、
@@ -86,16 +86,18 @@ export function TemplateSheet({ project }: Props) {
     <BottomSheet
       isOpen={isOpen}
       onClose={close}
-      title="フォーメーション"
-      titleRight={templates.length > 0 ? `${templates.length}種` : undefined}
+      title={t.templateSheet.title}
+      titleRight={
+        templates.length > 0
+          ? t.templateSheet.shapeCount(templates.length)
+          : undefined
+      }
       isTall
       wideMaxWidthClassName="min-[1200px]:max-w-4xl"
     >
       {dancerCount < 2 ? (
         <p className="m-3.5 rounded-xl border border-line bg-surface-raised p-4 text-xs leading-relaxed text-fg-sub">
-          フォーメーションを選ぶには
-          <span className="text-fg-strong">2人以上</span>
-          が必要です。ヘッダーの人物アイコンからダンサーを追加してください。
+          {t.templateSheet.needsTwoNotice}
         </p>
       ) : (
         <div className="flex flex-col gap-3 px-3.5 py-3">
@@ -122,7 +124,7 @@ export function TemplateSheet({ project }: Props) {
               const isPicked = pickedIndex === index;
               return (
                 <PressableButton
-                  key={`${formation.count}-${formation.name}-${index}`}
+                  key={`${formation.count}-${formationKey(formation.label)}-${index}`}
                   type="button"
                   aria-pressed={isPicked}
                   onClick={() => setPickedIndex(index)}
@@ -144,7 +146,7 @@ export function TemplateSheet({ project }: Props) {
                       isPicked ? "text-accent-soft" : "text-fg"
                     }`}
                   >
-                    {formation.name}
+                    {formationName(formation.label, t)}
                   </span>
                 </PressableButton>
               );
@@ -158,7 +160,9 @@ export function TemplateSheet({ project }: Props) {
               disabled={!picked || isApplying}
               className="h-12 w-full rounded-[calc(var(--radius)*0.9167)] bg-accent text-sm font-semibold text-accent-fg disabled:bg-surface-strong disabled:text-fg-muted"
             >
-              {picked ? `${picked.name}に置き換える` : "この形に置き換える"}
+              {picked
+                ? t.templateSheet.applyNamed(formationName(picked.label, t))
+                : t.templateSheet.apply}
             </PressableButton>
           </div>
         </div>
@@ -179,6 +183,7 @@ function CountRail({
   dancerCount: number;
   onChange: (count: number) => void;
 }) {
+  const t = useT();
   return (
     <div className="scrollbar-hide -mx-3.5 flex gap-1.5 overflow-x-auto px-3.5">
       {counts.map((count) => {
@@ -195,10 +200,10 @@ function CountRail({
                 : "border-line-strong text-fg-sub"
             }`}
           >
-            <span className="font-mono">{count}</span>人
+            <span className="font-mono">{t.templateSheet.castCount(count)}</span>
             {count === dancerCount && (
               <span className="ml-1.5 rounded-[calc(var(--radius)*0.4167)] bg-accent px-1 py-px text-caption font-semibold text-accent-fg">
-                いま
+                {t.templateSheet.current}
               </span>
             )}
           </PressableButton>
@@ -224,6 +229,7 @@ function CountMismatchNote({
   dancerCount: number;
   dancerColors: string[];
 }) {
+  const t = useT();
   if (shownCount === dancerCount) {
     return (
       <div className="flex flex-wrap items-center gap-1.5">
@@ -236,7 +242,7 @@ function CountMismatchNote({
           />
         ))}
         <span className="ml-1 text-caption text-fg-muted">
-          いまステージにいる{dancerCount}人に合わせて表示しています
+          {t.templateSheet.matchingCast(dancerCount)}
         </span>
       </div>
     );
@@ -245,19 +251,10 @@ function CountMismatchNote({
   const gap = Math.abs(shownCount - dancerCount);
   return (
     <p className="rounded-[calc(var(--radius)*0.8333)] border border-accent/40 bg-accent/10 px-3 py-2 text-caption leading-relaxed text-accent-bright">
-      <span className="font-mono">{shownCount}</span>
-      人ぶんの形です。
-      {shownCount < dancerCount ? (
-        <>
-          余る<span className="font-mono">{gap}</span>
-          人はいまの位置のまま残ります（消えません）。
-        </>
-      ) : (
-        <>
-          <span className="font-mono">{gap}</span>
-          点は空きになります（前列から埋めます）。
-        </>
-      )}
+      {t.templateSheet.forCast(shownCount)}{" "}
+      {shownCount < dancerCount
+        ? t.templateSheet.leftOver(gap)
+        : t.templateSheet.emptySpots(gap)}
     </p>
   );
 }
@@ -270,18 +267,19 @@ function TransformControls({
   transform: FormationTransform;
   onChange: (next: FormationTransform) => void;
 }) {
+  const t = useT();
   const toggles = [
     {
       key: "flipX" as const,
-      label: "左右反転",
+      label: t.templateSheet.flipX,
       icon: FlipHorizontal2,
     },
     {
       key: "flipY" as const,
-      label: "前後反転",
+      label: t.templateSheet.flipY,
       icon: FlipVertical2,
     },
-    { key: "rotate" as const, label: "90°回転", icon: RotateCw },
+    { key: "rotate" as const, label: t.templateSheet.rotate, icon: RotateCw },
   ];
 
   return (
@@ -307,19 +305,19 @@ function TransformControls({
       ))}
 
       <div className="flex overflow-hidden rounded-full border border-line-strong">
-        {SPACING_LABELS.map((option) => (
+        {SPACING_VALUES.map((option) => (
           <PressableButton
-            key={option.value}
+            key={option}
             type="button"
-            aria-pressed={transform.spacing === option.value}
-            onClick={() => onChange({ ...transform, spacing: option.value })}
+            aria-pressed={transform.spacing === option}
+            onClick={() => onChange({ ...transform, spacing: option })}
             className={`h-8 px-3 text-caption font-medium whitespace-nowrap ${
-              transform.spacing === option.value
+              transform.spacing === option
                 ? "bg-accent/12 text-accent-soft"
                 : "text-fg-sub"
             }`}
           >
-            {option.label}
+            {t.templateSheet.spacing[option]}
           </PressableButton>
         ))}
       </div>

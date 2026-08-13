@@ -1,4 +1,7 @@
+"use client";
+
 import type { ThemeId } from "@/features/theme/catalog";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /** ミニチュアに立たせる6人。実際の隊形(V字)をそのまま小さくしたもの */
 const PREVIEW_POINTS = [
@@ -26,6 +29,7 @@ type Props = {
  * このファイルは変わらない。
  */
 export function ThemePreview({ themeId, size = "small" }: Props) {
+  const t = useT();
   const isLarge = size === "large";
 
   return (
@@ -49,7 +53,7 @@ export function ThemePreview({ themeId, size = "small" }: Props) {
                 : "text-[6.5px] leading-[11px]"
             }`}
           >
-            モード
+            {t.themeSheet.previewMode}
           </span>
         </div>
 

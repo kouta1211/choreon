@@ -1,3 +1,4 @@
+import { formationKey } from "./formationTemplates";
 import { describe, expect, it } from "vitest";
 import {
   assignDancersToPoints,
@@ -44,7 +45,7 @@ describe("FORMATION_TEMPLATES", () => {
 
   it("同じ人数の中で名前が重複していない", () => {
     for (const count of availableCounts()) {
-      const names = templatesForCount(count).map((item) => item.name);
+      const names = templatesForCount(count).map((item) => formationKey(item.label));
       expect(new Set(names).size).toBe(names.length);
     }
   });

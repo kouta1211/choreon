@@ -29,73 +29,50 @@ export type ThemeCategory = "dark" | "material";
 
 export type ThemeInfo = {
   id: ThemeId;
-  name: string;
-  /** 一覧で名前の下に出す一言 */
-  subtitle: string;
   category: ThemeCategory;
 };
 
 export const THEMES: ThemeInfo[] = [
   {
     id: "midnight",
-    name: "ミッドナイト・ピンク",
-    subtitle: "既定",
     category: "dark",
   },
   {
     id: "neon",
-    name: "ネオン・シアン",
-    subtitle: "発光・ガラス",
     category: "dark",
   },
   {
     id: "amber",
-    name: "アンバー・ステージ",
-    subtitle: "舞台照明・板張り",
     category: "dark",
   },
   {
     id: "mono",
-    name: "モノクローム",
-    subtitle: "UIは無彩色だけ",
     category: "dark",
   },
   // 素材(輪郭マーカー・チョークの6色)は紙系と同じだが、地は暗い。
   // 仕様書の並びどおり「暗い系」に置く — 選ぶ人が探すのは地の明るさの方
   {
     id: "chalk",
-    name: "黒板＋チョーク",
-    subtitle: "暗いまま素材を変える",
     category: "dark",
   },
   {
     id: "paper",
-    name: "紙の隊形図",
-    subtitle: "クリーム紙・赤鉛筆",
     category: "material",
   },
   {
     id: "gridnote",
-    name: "方眼ノート＋青インク",
-    subtitle: "万年筆・赤ペン",
     category: "material",
   },
   {
     id: "kraft",
-    name: "クラフト紙＋活版",
-    subtitle: "厚紙・沈んだ文字",
     category: "material",
   },
   {
     id: "tracing",
-    name: "トレーシングペーパー",
-    subtitle: "次のシーンが透ける",
     category: "material",
   },
   {
     id: "whiteboard",
-    name: "ホワイトボード＋マーカー",
-    subtitle: "太いマーカー・強い色",
     category: "material",
   },
 ];
@@ -114,16 +91,16 @@ export type TextureId = (typeof TEXTURE_IDS)[number];
 
 export const DEFAULT_TEXTURE: TextureId = "flat";
 
-export type TextureInfo = { id: TextureId; name: string };
+export type TextureInfo = { id: TextureId };
 
 export const TEXTURES: TextureInfo[] = [
-  { id: "flat", name: "フラット" },
-  { id: "nebula", name: "ネビュラ" },
-  { id: "horizon", name: "ホリゾント幕" },
-  { id: "spot", name: "スポットの円光" },
-  { id: "grid", name: "方眼と目盛り" },
-  { id: "grain", name: "グレイン" },
-  { id: "curtain", name: "暗幕" },
+  { id: "flat" },
+  { id: "nebula" },
+  { id: "horizon" },
+  { id: "spot" },
+  { id: "grid" },
+  { id: "grain" },
+  { id: "curtain" },
 ];
 
 export function isThemeId(value: unknown): value is ThemeId {
