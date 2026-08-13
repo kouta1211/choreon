@@ -11,6 +11,7 @@ import {
   makeProject,
   makeScene,
 } from "@/test/factories";
+import { ja } from "@/features/i18n/messages/ja";
 
 const INPUT = {
   project: makeProject({ title: "発表会A", bpm: 128 }),
@@ -44,7 +45,7 @@ describe("buildBackup", () => {
 
 describe("parseBackup", () => {
   it("書き出したものを読み戻せる", () => {
-    const backup = parseBackup(JSON.stringify(buildBackup(INPUT)));
+    const backup = parseBackup(JSON.stringify(buildBackup(INPUT)), ja.data);
 
     expect(backup.project.title).toBe("発表会A");
     expect(backup.positions).toHaveLength(1);
@@ -62,7 +63,7 @@ describe("parseBackup", () => {
       JSON.stringify({ version: 1, project: { title: "x" }, dancers: [] }),
     ],
   ])("%s ときは断る", (_name, raw) => {
-    expect(() => parseBackup(raw)).toThrow(BackupFormatError);
+    expect(() => parseBackup(raw, ja.data)).toThrow(BackupFormatError);
   });
 });
 

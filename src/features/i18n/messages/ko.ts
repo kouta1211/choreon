@@ -233,6 +233,146 @@ export const ko = {
     },
   },
 
+  common: {
+    close: "닫기",
+    loading: "불러오는 중",
+    rename: (label: string) => `${label} 변경`,
+    saveToCloud: "저장",
+    settings: "설정",
+    appearance: "화면 모양 바꾸기",
+    undoFailed: "실행 취소하지 못했습니다",
+    redoFailed: "다시 실행하지 못했습니다",
+    undoTargetGone: "대상이 삭제되어 실행 취소할 수 없었습니다",
+    travelFromPrevious: (seconds: string) =>
+      `앞 장면에서 ${seconds}초 동안 이동`,
+  },
+
+  app: {
+    description: "스마트폰으로 만드는 댄스 포메이션",
+    ogLocale: "ko_KR",
+  },
+
+  auth: {
+    signIn: "로그인",
+    signUp: "회원가입",
+    createAccount: "계정 만들기",
+    email: "이메일 주소",
+    password: "비밀번호",
+    passwordSignUp: "비밀번호(6자 이상)",
+    signingIn: "로그인 중...",
+    signingUp: "가입 중...",
+    submitSignUp: "가입하기",
+    haveAccount: "이미 계정이 있으시면 ",
+    noAccount: "계정이 없으시면 ",
+    wrongCredentials: "이메일 주소 또는 비밀번호가 맞지 않습니다.",
+    alreadyRegistered: "이미 가입된 이메일 주소입니다.",
+    signUpFailed: "가입하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+    confirmSent: "확인 메일을 보냈습니다.",
+    confirmOpen: "메일 안의 링크를 열면 가입이 완료됩니다.",
+    backToSignIn: "로그인 화면으로 돌아가기",
+    insecure:
+      "이 화면은 암호화되지 않은 연결로 열려 있어 로그인할 수 없습니다.",
+    insecureWhy: (https: string, localhost: string) =>
+      `브라우저는 ${https}와 ${localhost}만 안전하다고 보고, 그 밖에서는 로그인에 필요한 기능을 끕니다. 실제 기기에서 시험할 때는`,
+    insecureHow: "로 열어 주세요.",
+    draftHere: "지금 만들고 있는 작품은 이 기기 안에만 있습니다.",
+    draftSaved: "가입하면 그대로 저장됩니다.",
+    draftPending:
+      "확인이 끝날 때까지 작품은 저장되지 않습니다. 이 탭을 닫지 말고 메일의 링크를 연 뒤 돌아와 주세요.",
+  },
+
+  projects: {
+    count: (n: number) => `작품 ${n}개`,
+    empty: "아직 작품이 없습니다.",
+    emptyHint: "위 입력란에 곡 이름을 넣으면 무대가 하나 만들어집니다.",
+    newName: "새 작품 이름",
+    create: "작품 만들기",
+    createFailed: "작품을 만들지 못했습니다",
+    tapToStart: "눌러서 첫 장면 만들기",
+    noScenes: "장면 0",
+    remove: (title: string) => `${title} 삭제`,
+    deleteTitle: (title: string) => `'${title}'을(를) 삭제할까요?`,
+    deleteDescription:
+      "이 작품의 장면·댄서·위치가 모두 사라집니다. 삭제는 되돌릴 수 없습니다.",
+    deleteMetaScenes: (n: number) => `${n}장면`,
+    deleteMetaDancers: (n: number) => `${n}명`,
+    deleteMetaPositions: (n: number) => `${n}개 위치`,
+    deleteFailed: "작품을 삭제하지 못했습니다",
+    guestTitle: "첫 포메이션",
+    sceneName: (index: number) => `장면${index}`,
+  },
+
+  confirm: {
+    cannotUndo: "삭제는 되돌릴 수 없습니다.",
+    cancel: "취소",
+    deleting: "삭제 중...",
+    delete: "삭제하기",
+  },
+
+  tour: {
+    stageTitle: "여기가 무대입니다",
+    stageBody:
+      "위가 무대 뒤, 아래가 객석 쪽입니다. 동그라미가 댄서이고, 잡아서 옮길 수 있습니다. 아래 눈금은 센터에서의 거리입니다.",
+    timelineTitle: "가로 위치가 곡의 시간입니다",
+    timelineBody:
+      "각 컷은 '곡의 몇 초의 대형인지'의 위치에 놓입니다. 컷을 옆으로 끌면 그 시각이 움직이고, 간격이 그대로 이동에 쓸 수 있는 시간이 됩니다.",
+    addTitle: "대형 추가하기",
+    addBody:
+      "지금 듣고 있는 위치에, 지금 배치를 복사한 대형을 만듭니다. 만들고 나서 옮기는 것이 기본 흐름입니다.",
+    viewTitle: "보이는 방식 바꾸기",
+    viewBody:
+      "동선·격자·가림 경고 같은 전환과 화면 모양 변경이 여기 있습니다. 이 안내를 다시 보는 것도 여기서 할 수 있습니다.",
+    back: "뒤로",
+    close: "닫기",
+    last: "시작하기",
+    next: "다음",
+    nextWithProgress: "다음（{current}/{total}）",
+    skip: "건너뛰기",
+  },
+
+  offline: {
+    title: "오프라인 — Choreon",
+    heading: "지금 연결이 되지 않습니다",
+    body: "한 번 열었던 화면은 그대로 볼 수 있습니다. 이전 화면으로 돌아가거나, 연결이 돌아온 뒤 다시 열어 주세요.",
+    toProjects: "작품 목록으로",
+  },
+
+  data: {
+    needsSignIn: "로그인한 뒤에 가져와 주세요",
+    imported: "가져왔습니다",
+    importFailed: "가져오지 못했습니다",
+    resetTitle: "이 작품을 비울까요?",
+    resetDescription:
+      "장면과 댄서를 모두 지웁니다. 작품 자체(이름·무대 크기·곡의 시작 위치)는 남습니다. 되돌릴 수 없습니다.",
+    resetMetaScenes: (n: number) => `${n}장면`,
+    resetMetaDancers: (n: number) => `${n}명`,
+    resetConfirm: "비우기",
+    resetFailed: "비우지 못했습니다",
+    unreadableFile: "파일을 읽지 못했습니다",
+    wrongShape: "파일의 형식이 다릅니다",
+    wrongVersion: "이 형식은 읽을 수 없습니다(다른 버전에서 내보낸 파일입니다)",
+    noProject: "작품 정보가 들어 있지 않습니다",
+    incomplete: "댄서·장면·위치 중 하나가 빠져 있습니다",
+  },
+
+  sceneActions: {
+    renameFailed: "장면 이름을 바꾸지 못했습니다",
+    retimeFailed: "장면의 시각을 바꾸지 못했습니다",
+    deleteTitle: (name: string) => `'${name}'을(를) 삭제할까요?`,
+    deleteDescription:
+      "이 장면의 위치와, 여기로 들어오는 동선도 함께 사라집니다. 삭제는 되돌릴 수 없습니다(이동과 방향은 되돌릴 수 있습니다).",
+    deleteMeta: (dancers: number) => `${dancers}명의 위치`,
+    deleteFailed: "장면을 삭제하지 못했습니다",
+    remove: (name: string) => `'${name}' 삭제`,
+  },
+
+  dbErrors: {
+    missingColumn:
+      "DB 마이그레이션이 적용되지 않았습니다. supabase/migrations/ 의 SQL을 Supabase SQL Editor에서 실행해 주세요",
+    insufficientPrivilege:
+      "권한이 없습니다. 테이블의 GRANT와 RLS 정책을 확인해 주세요",
+  },
+
   viewer: {
     move: {
       still: "제자리",

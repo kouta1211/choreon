@@ -82,9 +82,7 @@ export function SceneTimeField({
       {!isFirst && (
         <p className="flex items-center gap-1.5 text-caption text-fg-muted">
           <MoveRight size={12} className="shrink-0" />
-          前のシーンから{" "}
-          <span className="font-mono text-fg-sub">{segmentSeconds}</span>{" "}
-          秒かけて移動
+          {t.common.travelFromPrevious(String(segmentSeconds))}
         </p>
       )}
 

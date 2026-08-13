@@ -61,9 +61,14 @@ export function EditorSidePanel({ project, showScenes }: Props) {
       {activeTab === "scenes" ? (
         <>
           <div className="flex shrink-0 items-baseline justify-between gap-2 px-3.5 py-3">
-            <span className="text-sm font-semibold text-fg-strong">シーン</span>
+            <span className="text-sm font-semibold text-fg-strong">
+              {t.editor.scenes.title}
+            </span>
             <span className="shrink-0 font-mono text-caption text-fg-muted">
-              {scenes.length}件 · 合計 {totalTransitionSeconds(scenes)}s
+              {t.editor.scenes.summary(
+                scenes.length,
+                totalTransitionSeconds(scenes),
+              )}
             </span>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">

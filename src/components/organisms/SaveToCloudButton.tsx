@@ -31,7 +31,7 @@ export function SaveToCloudButton() {
       className="flex h-8 shrink-0 items-center gap-1.5 rounded-2xl bg-accent pr-3 pl-2.5 text-xs font-semibold text-accent-fg"
     >
       <CloudUpload size={15} />
-      保存
+      {t.common.saveToCloud}
       {/* 未保存の変更があることは、文字ではなく点で添える。
           「保存」の隣に長い注意書きを置くと、狭い画面で名前を押し出す */}
       {hasUnsavedChanges && (

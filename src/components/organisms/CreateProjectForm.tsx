@@ -9,12 +9,14 @@ import { createProject } from "@/features/project/api/projects";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   userId: string;
 };
 
 export function CreateProjectForm({ userId }: Props) {
+  const t = useT();
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,7 +40,7 @@ export function CreateProjectForm({ userId }: Props) {
       router.refresh();
     } catch (error) {
       showToast({
-        message: toUserMessage(error, "プロジェクトの作成に失敗しました"),
+        message: toUserMessage(error, t.projects.createFailed),
         type: "error",
       });
       setIsSubmitting(false);
@@ -48,11 +50,11 @@ export function CreateProjectForm({ userId }: Props) {
   return (
     <form onSubmit={handleSubmit} className="flex gap-unit">
       <label className="flex-1">
-        <span className="sr-only">新しいプロジェクト名</span>
+        <span className="sr-only">{t.projects.newName}</span>
         <input
           type="text"
           required
-          placeholder="新しいプロジェクト名"
+          placeholder={t.projects.newName}
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           className="h-target-lg w-full rounded-lg border border-line bg-surface-raised px-gutter text-body text-fg-strong placeholder:text-fg-muted focus:border-accent focus:outline-none"
@@ -62,7 +64,7 @@ export function CreateProjectForm({ userId }: Props) {
         kind="primary"
         type="submit"
         disabled={isSubmitting || !title.trim()}
-        aria-label="プロジェクトを作成"
+        aria-label={t.projects.create}
         className="flex h-target-lg w-target-lg shrink-0 items-center justify-center rounded-lg bg-accent text-accent-fg disabled:opacity-50"
       >
         <Plus size={24} />

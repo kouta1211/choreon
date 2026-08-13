@@ -8,7 +8,7 @@ import { THEME_INIT_SCRIPT } from "@/features/theme/themeScript";
 import { ServiceWorkerRegistrar } from "@/components/atoms/ServiceWorkerRegistrar";
 import { SettingsLoader } from "@/components/atoms/SettingsLoader";
 import { LocaleProvider } from "@/features/i18n/LocaleProvider";
-import { getLocale } from "@/features/i18n/server";
+import { getLocale, getMessages } from "@/features/i18n/server";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,7 +20,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const DESCRIPTION = "スマートフォンで作る、ダンスのフォーメーション";
 
 /**
  * リンクを絶対URLに直すための土台。
@@ -40,34 +39,37 @@ const siteUrl =
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
     : "http://localhost:3000");
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: "Choreon",
-  description: DESCRIPTION,
-  // iOS はマニフェストのアイコンを読まないので、こちらでも渡す
-  icons: { apple: "/apple-icon.png" },
-  // 共有リンクはチャットに貼って渡すもの。ここが無いと、受け取る側には
-  // 長いURLの文字列だけが出る(絵は app/opengraph-image.tsx が作る)
-  openGraph: {
-    type: "website",
-    siteName: "Choreon",
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getMessages();
+  return {
+    metadataBase: new URL(siteUrl),
     title: "Choreon",
-    description: DESCRIPTION,
-    locale: "ja_JP",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Choreon",
-    description: DESCRIPTION,
-  },
+    description: t.app.description,
+    // iOS はマニフェストのアイコンを読まないので、こちらでも渡す
+    icons: { apple: "/apple-icon.png" },
+    // 共有リンクはチャットに貼って渡すもの。ここが無いと、受け取る側には
+    // 長いURLの文字列だけが出る(絵は app/opengraph-image.tsx が作る)
+    openGraph: {
+      type: "website",
+      siteName: "Choreon",
+      title: "Choreon",
+      description: t.app.description,
+      locale: t.app.ogLocale,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Choreon",
+      description: t.app.description,
+    },
   appleWebApp: {
-    capable: true,
-    title: "Choreon",
-    // 上端まで地の色を伸ばす。ステータスバーの下に別の色の帯が出ると、
-    // 画面が2枚に割れて見える
-    statusBarStyle: "black-translucent",
-  },
-};
+      capable: true,
+      title: "Choreon",
+      // 上端まで地の色を伸ばす。ステータスバーの下に別の色の帯が出ると、
+      // 画面が2枚に割れて見える
+      statusBarStyle: "black-translucent",
+    },
+  };
+}
 
 /**
  * 端末のUI(ステータスバー・アドレスバー)の色。

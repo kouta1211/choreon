@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { Pencil } from "lucide-react";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   /** 現在の確定値 */
@@ -48,6 +49,7 @@ export function InlineEditableText({
   textClassName = "",
   fullWidth = false,
 }: Props) {
+  const t = useT();
   const [draft, setDraft] = useState<string | null>(null);
 
   const commit = () => {
@@ -90,7 +92,7 @@ export function InlineEditableText({
       <PressableButton
         kind="icon"
         onClick={() => setDraft(value)}
-        aria-label={`${label}を変更`}
+        aria-label={t.common.rename(label)}
         // 指で押せる大きさ(32px)を確保する。鉛筆の絵だけを置くと
         // 「飾りか操作か」が分かれないため、枠を持たせて押せると示す
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line-strong text-fg-muted"

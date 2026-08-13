@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { createGuestProject, withFreshIds } from "./guestProject";
+import { ja } from "@/features/i18n/messages/ja";
+
+const GUEST_WORDS = {
+  title: ja.projects.guestTitle,
+  sceneName: ja.projects.sceneName,
+};
 
 describe("createGuestProject", () => {
   it("開いた直後から再生できるだけの中身がある(2シーン・4人)", () => {
-    const snapshot = createGuestProject();
+    const snapshot = createGuestProject(GUEST_WORDS);
     expect(snapshot.scenes).toHaveLength(2);
     expect(snapshot.dancers).toHaveLength(4);
     // 全シーン×全員ぶんの配置が揃っていないと、移動アニメーションが欠ける
@@ -11,7 +17,7 @@ describe("createGuestProject", () => {
   });
 
   it("2つのシーンで配置が違う(再生して動きが見える)", () => {
-    const { scenes, positions } = createGuestProject();
+    const { scenes, positions } = createGuestProject(GUEST_WORDS);
     const first = positions.filter((p) => p.sceneId === scenes[0].id);
     const second = positions.filter((p) => p.sceneId === scenes[1].id);
     const key = (list: typeof first) =>
@@ -23,7 +29,7 @@ describe("createGuestProject", () => {
   });
 
   it("配置はすべてステージの内側にある", () => {
-    const { project, positions } = createGuestProject();
+    const { project, positions } = createGuestProject(GUEST_WORDS);
     for (const position of positions) {
       expect(position.xCoordinate).toBeGreaterThanOrEqual(0);
       expect(position.xCoordinate).toBeLessThanOrEqual(project.stageWidth);
@@ -33,13 +39,13 @@ describe("createGuestProject", () => {
   });
 
   it("色が重複していない", () => {
-    const { dancers } = createGuestProject();
+    const { dancers } = createGuestProject(GUEST_WORDS);
     expect(new Set(dancers.map((d) => d.color)).size).toBe(dancers.length);
   });
 
   it("何度呼んでも同じIDになる(サーバー描画とブラウザ描画で食い違わない)", () => {
-    expect(createGuestProject().project.id).toBe(
-      createGuestProject().project.id,
+    expect(createGuestProject(GUEST_WORDS).project.id).toBe(
+      createGuestProject(GUEST_WORDS).project.id,
     );
   });
 });
@@ -51,7 +57,7 @@ describe("withFreshIds", () => {
   }
 
   it("すべてのIDを採り直し、持ち主を入れる", () => {
-    const snapshot = createGuestProject();
+    const snapshot = createGuestProject(GUEST_WORDS);
     const fresh = withFreshIds(snapshot, "user-1", fakeIds());
 
     expect(fresh.project.userId).toBe("user-1");
@@ -65,7 +71,7 @@ describe("withFreshIds", () => {
   });
 
   it("positionsの参照先を新しいIDへ貼り替える", () => {
-    const snapshot = createGuestProject();
+    const snapshot = createGuestProject(GUEST_WORDS);
     const fresh = withFreshIds(snapshot, "user-1", fakeIds());
 
     const sceneIds = new Set(fresh.scenes.map((s) => s.id));
@@ -78,14 +84,14 @@ describe("withFreshIds", () => {
   });
 
   it("2回保存しても同じIDにならない", () => {
-    const snapshot = createGuestProject();
+    const snapshot = createGuestProject(GUEST_WORDS);
     const a = withFreshIds(snapshot, "user-1");
     const b = withFreshIds(snapshot, "user-1");
     expect(a.project.id).not.toBe(b.project.id);
   });
 
   it("参照先を失ったpositionは落とす(外部キー違反で全体を失敗させない)", () => {
-    const snapshot = createGuestProject();
+    const snapshot = createGuestProject(GUEST_WORDS);
     const orphan = {
       ...snapshot.positions[0],
       dancerId: "消えたダンサー",
@@ -99,7 +105,7 @@ describe("withFreshIds", () => {
   });
 
   it("名前・秒数・座標などの中身は変えない", () => {
-    const snapshot = createGuestProject();
+    const snapshot = createGuestProject(GUEST_WORDS);
     const fresh = withFreshIds(snapshot, "user-1", fakeIds());
     expect(fresh.project.title).toBe(snapshot.project.title);
     expect(fresh.scenes.map((s) => s.name)).toEqual(

@@ -8,6 +8,7 @@ import {
   useTransform,
 } from "motion/react";
 import { useIsWideScreen } from "@/components/hooks/useIsWideScreen";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   isOpen: boolean;
@@ -58,6 +59,7 @@ export function BottomSheet({
   wideMaxWidthClassName = "min-[1200px]:max-w-lg",
   children,
 }: Props) {
+  const t = useT();
   const isWide = useIsWideScreen();
   const panelRef = useRef<HTMLDivElement>(null);
   const dragY = useMotionValue(0);
@@ -81,7 +83,7 @@ export function BottomSheet({
         <div className="fixed inset-0 z-40 flex flex-col justify-end min-[1200px]:items-center min-[1200px]:justify-center min-[1200px]:p-6">
           <motion.button
             type="button"
-            aria-label="閉じる"
+            aria-label={t.common.close}
             onClick={onClose}
             style={{ opacity: isWide ? 1 : scrimOpacity }}
             initial={{ opacity: 0 }}

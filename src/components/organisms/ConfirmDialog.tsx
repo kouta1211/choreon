@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DESTRUCTIVE_PATTERN, vibrate } from "@/lib/haptics";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
  * 取り消せない操作の前に出す確認ダイアログ。ブラウザ標準の
@@ -45,6 +46,7 @@ import { DESTRUCTIVE_PATTERN, vibrate } from "@/lib/haptics";
  * 読めたままだった(画面は塞がっているのに、後ろのボタンが押せた)。
  */
 export function ConfirmDialog() {
+  const t = useT();
   const confirmRequest = useUIStore((state) => state.confirm);
   const closeConfirm = useUIStore((state) => state.closeConfirm);
   const [isRunning, setIsRunning] = useState(false);
@@ -119,7 +121,7 @@ export function ConfirmDialog() {
 
           {/* 履歴との違い。ここが無いと「元に戻す」で戻せると思われる */}
           <p className="text-caption text-fg-muted">
-            <span className="text-fg-sub">削除は元に戻せません。</span>
+            <span className="text-fg-sub">{t.confirm.cannotUndo}</span>
             （移動や向きの変更は「元に戻す」で戻せます）
           </p>
         </div>
@@ -133,7 +135,7 @@ export function ConfirmDialog() {
             disabled={isRunning}
             className="h-target-lg flex-1 border-r border-line text-label text-fg-sub disabled:opacity-50"
           >
-            キャンセル
+            {t.confirm.cancel}
           </PressableButton>
           <PressableButton
             onClick={handleConfirm}
@@ -141,8 +143,8 @@ export function ConfirmDialog() {
             className="h-target-lg flex-1 text-label text-[var(--dancer-2)] disabled:opacity-50"
           >
             {isRunning
-              ? "削除中..."
-              : (confirmRequest.confirmLabel ?? "削除する")}
+              ? t.confirm.deleting
+              : (confirmRequest.confirmLabel ?? t.confirm.delete)}
           </PressableButton>
         </div>
       </DialogContent>

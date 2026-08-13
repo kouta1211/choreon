@@ -171,12 +171,12 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
                   />
                 </div>
                 <p className="text-caption text-fg-muted">
-                  書き出し中… 残り{" "}
-                  {Math.max(
-                    0,
-                    Math.ceil(durationSeconds * (1 - (progress ?? 0))),
+                  {t.exportVideo.running(
+                    Math.max(
+                      0,
+                      Math.ceil(durationSeconds * (1 - (progress ?? 0))),
+                    ),
                   )}
-                  秒。この画面を閉じずにお待ちください。
                 </p>
                 <PressableButton
                   onClick={cancel}

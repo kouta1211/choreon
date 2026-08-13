@@ -10,6 +10,7 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { upsertPositions } from "@/features/scene/api/positions";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
  * 履歴を1ステップ戻す/やり直す処理。
@@ -22,6 +23,7 @@ import { upsertPositions } from "@/features/scene/api/positions";
  * 失敗時は見た目も履歴スタックも動かす前へ戻す。
  */
 export function useHistoryActions() {
+  const t = useT();
   const updateDancerPosition = useProjectStore(
     (state) => state.updateDancerPosition,
   );
@@ -43,7 +45,7 @@ export function useHistoryActions() {
 
       if (changes.length === 0) {
         showToast({
-          message: "対象が削除されているため元に戻せませんでした",
+          message: t.common.undoTargetGone,
           type: "error",
         });
         return true;
@@ -76,15 +78,15 @@ export function useHistoryActions() {
           message: toUserMessage(
             error,
             direction === "undo"
-              ? "元に戻す操作に失敗しました"
-              : "やり直す操作に失敗しました",
+              ? t.common.undoFailed
+              : t.common.redoFailed,
           ),
           type: "error",
         });
         return false;
       }
     },
-    [selectScene, showToast, updateDancerPosition],
+    [selectScene, showToast, updateDancerPosition, t],
   );
 
   const undo = useCallback(async () => {

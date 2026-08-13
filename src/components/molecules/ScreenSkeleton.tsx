@@ -1,4 +1,7 @@
+"use client";
+
 import type { CSSProperties, ReactNode } from "react";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
  * 読み込み中に出す骨格。
@@ -17,9 +20,10 @@ import type { CSSProperties, ReactNode } from "react";
  * 「読み込み中」とだけ伝える。四角形の数を読み上げても意味が無い。
  */
 export function ScreenSkeleton({ children }: { children: ReactNode }) {
+  const t = useT();
   return (
     <div role="status" aria-busy="true" className="contents">
-      <span className="sr-only">読み込み中</span>
+      <span className="sr-only">{t.common.loading}</span>
       <div aria-hidden className="contents">
         {children}
       </div>

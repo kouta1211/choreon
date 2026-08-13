@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { EditorLayout } from "@/components/templates/EditorLayout";
 import { createGuestProject } from "@/features/project/lib/guestProject";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
  * 未ログインのまま触れるエディタ。
@@ -21,7 +22,11 @@ import { createGuestProject } from "@/features/project/lib/guestProject";
  * サーバー描画とブラウザ描画で食い違うこともない。
  */
 export function GuestEditor() {
-  const [snapshot] = useState(() => createGuestProject());
+  const t = useT();
+  const [snapshot] = useState(() => createGuestProject({
+      title: t.projects.guestTitle,
+      sceneName: t.projects.sceneName,
+    }));
 
   return (
     <EditorLayout

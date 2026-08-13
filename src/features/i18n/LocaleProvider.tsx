@@ -8,6 +8,7 @@ import {
   type Locale,
 } from "@/features/i18n/lib/locale";
 import { messagesFor, type Messages } from "@/features/i18n/messages";
+import { setDbErrorMessages } from "@/lib/supabase/errors";
 
 /**
  * いまの言語と、その辞書を配る。
@@ -29,11 +30,12 @@ export function LocaleProvider({
   locale: Locale;
   children: ReactNode;
 }) {
-  return (
-    <LocaleContext value={{ locale, t: messagesFor(locale) }}>
-      {children}
-    </LocaleContext>
-  );
+  const t = messagesFor(locale);
+  // DBが返す原因の文だけは、context を辿れない場所(catch節)から使われる。
+  // 言語は画面に1つなので、ここで書き写しておく(errors.ts の説明を参照)
+  setDbErrorMessages(t.dbErrors);
+
+  return <LocaleContext value={{ locale, t }}>{children}</LocaleContext>;
 }
 
 /**

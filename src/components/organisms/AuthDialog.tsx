@@ -6,6 +6,7 @@ import { AuthForm } from "@/components/organisms/AuthForm";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useSaveGuestProject } from "@/features/project/hooks/useSaveGuestProject";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
  * 作りかけの作品の上に重ねて出す、登録/ログインのモーダル。
@@ -18,6 +19,7 @@ import { useSaveGuestProject } from "@/features/project/hooks/useSaveGuestProjec
  * 中央のダイアログ)。アプリの他のシートと出方が揃う。
  */
 export function AuthDialog() {
+  const t = useT();
   const router = useRouter();
   const mode = useUIStore((state) => state.authDialogMode);
   const openAuthDialog = useUIStore((state) => state.openAuthDialog);
@@ -40,7 +42,7 @@ export function AuthDialog() {
     <BottomSheet
       isOpen={mode !== null}
       onClose={closeAuthDialog}
-      title={mode === "login" ? "ログイン" : "アカウントを作る"}
+      title={mode === "login" ? t.auth.signIn : t.auth.createAccount}
       wideMaxWidthClassName="min-[1200px]:max-w-md"
     >
       <div className="px-4 pt-1 pb-4">
@@ -51,9 +53,9 @@ export function AuthDialog() {
           intro={
             isGuest ? (
               <p className="rounded-xl border border-line bg-surface-strong/60 p-3 text-xs leading-relaxed text-fg-sub">
-                いま作っている作品は、この端末の中にだけあります。
+                {t.auth.draftHere}
                 <span className="text-fg-strong">
-                  登録すると、そのまま保存されます。
+                  {t.auth.draftSaved}
                 </span>
               </p>
             ) : null
@@ -61,8 +63,8 @@ export function AuthDialog() {
           emailSentNote={
             isGuest ? (
               <p className="rounded-lg bg-amber-950/60 px-3 py-2 text-caption leading-relaxed text-amber-300">
-                確認が済むまで作品は保存されません。このタブを閉じずに、
-                メールのリンクを開いてから戻ってください。
+                {t.auth.draftPending}
+
               </p>
             ) : null
           }

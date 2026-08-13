@@ -246,6 +246,146 @@ export const ja = {
     },
   },
 
+  common: {
+    close: "閉じる",
+    loading: "読み込み中",
+    rename: (label: string) => `${label}を変更`,
+    saveToCloud: "保存",
+    settings: "設定",
+    appearance: "見た目を変える",
+    undoFailed: "元に戻す操作に失敗しました",
+    redoFailed: "やり直す操作に失敗しました",
+    undoTargetGone: "対象が削除されているため元に戻せませんでした",
+    travelFromPrevious: (seconds: string) =>
+      `前のシーンから ${seconds}秒かけて移動`,
+  },
+
+  app: {
+    description: "スマートフォンで作る、ダンスのフォーメーション",
+    ogLocale: "ja_JP",
+  },
+
+  auth: {
+    signIn: "ログイン",
+    signUp: "新規登録",
+    createAccount: "アカウントを作る",
+    email: "メールアドレス",
+    password: "パスワード",
+    passwordSignUp: "パスワード(6文字以上)",
+    signingIn: "ログイン中...",
+    signingUp: "登録中...",
+    submitSignUp: "登録する",
+    haveAccount: "既にアカウントをお持ちの方は ",
+    noAccount: "アカウントをお持ちでない方は ",
+    wrongCredentials: "メールアドレスまたはパスワードが正しくありません。",
+    alreadyRegistered: "このメールアドレスは既に登録されています。",
+    signUpFailed: "登録に失敗しました。時間をおいて再度お試しください。",
+    confirmSent: "確認メールを送信しました。",
+    confirmOpen: "メール内のリンクを開くと登録が完了します。",
+    backToSignIn: "ログイン画面に戻る",
+    insecure:
+      "この画面は暗号化されていない接続で開かれているため、ログインできません。",
+    insecureWhy: (https: string, localhost: string) =>
+      `ブラウザは ${https} と ${localhost} だけを安全とみなし、認証に必要な機能をそれ以外で無効にします。実機で試すときは`,
+    insecureHow: "で開いてください。",
+    draftHere: "いま作っている作品は、この端末の中にだけあります。",
+    draftSaved: "登録すると、そのまま保存されます。",
+    draftPending:
+      "確認が済むまで作品は保存されません。このタブを閉じずに、メールのリンクを開いてから戻ってください。",
+  },
+
+  projects: {
+    count: (n: number) => `プロジェクト ${n}件`,
+    empty: "まだプロジェクトがありません。",
+    emptyHint: "上の入力から曲名を入れると、ステージが1つ立ち上がります。",
+    newName: "新しいプロジェクト名",
+    create: "プロジェクトを作成",
+    createFailed: "プロジェクトの作成に失敗しました",
+    tapToStart: "タップして最初のシーンを作る",
+    noScenes: "シーン 0",
+    remove: (title: string) => `${title}を削除`,
+    deleteTitle: (title: string) => `「${title}」を削除しますか?`,
+    deleteDescription:
+      "このプロジェクトのシーン・ダンサー・配置がすべて消えます。削除は元に戻せません。",
+    deleteMetaScenes: (n: number) => `${n} シーン`,
+    deleteMetaDancers: (n: number) => `${n} 人`,
+    deleteMetaPositions: (n: number) => `${n} 配置`,
+    deleteFailed: "プロジェクトの削除に失敗しました",
+    guestTitle: "はじめてのフォーメーション",
+    sceneName: (index: number) => `シーン${index}`,
+  },
+
+  confirm: {
+    cannotUndo: "削除は元に戻せません。",
+    cancel: "キャンセル",
+    deleting: "削除中...",
+    delete: "削除する",
+  },
+
+  tour: {
+    stageTitle: "ここが舞台です",
+    stageBody:
+      "上がバックステージ、下が客席側。丸がダンサーで、掴んで動かせます。下の目盛りはセンターからの位置です。",
+    timelineTitle: "横の位置が、曲の時間です",
+    timelineBody:
+      "コマは「曲の何秒目の隊形か」の位置に並びます。コマを横に引くとその時刻が動き、間隔がそのまま移動にかけられる時間になります。",
+    addTitle: "隊形を足す",
+    addBody:
+      "いま聞いている位置に、いまの配置をコピーした隊形を作ります。作ってから動かす、が基本の流れです。",
+    viewTitle: "見え方を変える",
+    viewBody:
+      "導線・格子・顔被りの警告などの切り替えと、見た目の変更はここです。この案内をもう一度見るのもここから。",
+    back: "戻る",
+    close: "閉じる",
+    last: "はじめる",
+    next: "次へ",
+    nextWithProgress: "次へ（{current}/{total}）",
+    skip: "とばす",
+  },
+
+  offline: {
+    title: "オフライン — Choreon",
+    heading: "いま電波が届いていません",
+    body: "一度開いた画面は、そのまま見られます。直前の画面へ戻るか、電波が戻ってから開き直してください。",
+    toProjects: "作品の一覧へ",
+  },
+
+  data: {
+    needsSignIn: "ログインしてから取り込んでください",
+    imported: "取り込みました",
+    importFailed: "取り込めませんでした",
+    resetTitle: "この作品を空にしますか",
+    resetDescription:
+      "シーンとダンサーを全部消します。作品そのもの(名前・ステージの広さ・曲の頭出し)は残ります。取り消せません。",
+    resetMetaScenes: (n: number) => `${n} シーン`,
+    resetMetaDancers: (n: number) => `${n} 人`,
+    resetConfirm: "空にする",
+    resetFailed: "空にできませんでした",
+    unreadableFile: "ファイルを読み取れませんでした",
+    wrongShape: "ファイルの形が違います",
+    wrongVersion: "この形式は読み込めません(別の版で書き出されたファイルです)",
+    noProject: "作品の情報が入っていません",
+    incomplete: "ダンサー・シーン・配置のどれかが足りません",
+  },
+
+  sceneActions: {
+    renameFailed: "シーン名の変更に失敗しました",
+    retimeFailed: "シーンの時刻の変更に失敗しました",
+    deleteTitle: (name: string) => `「${name}」を削除しますか?`,
+    deleteDescription:
+      "このシーンの配置と、ここへ入る導線も一緒に消えます。削除は元に戻せません(移動や向きの変更は戻せます)。",
+    deleteMeta: (dancers: number) => `${dancers} 人の配置`,
+    deleteFailed: "シーンの削除に失敗しました",
+    remove: (name: string) => `「${name}」を削除`,
+  },
+
+  dbErrors: {
+    missingColumn:
+      "DBのマイグレーションが未適用です。supabase/migrations/ のSQLをSupabaseのSQL Editorで実行してください",
+    insufficientPrivilege:
+      "権限がありません。テーブルのGRANT・RLSポリシーを確認してください",
+  },
+
   viewer: {
     move: {
       still: "その場",

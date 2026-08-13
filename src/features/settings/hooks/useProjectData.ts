@@ -20,6 +20,7 @@ import {
   BackupFormatError,
 } from "@/features/settings/lib/backup";
 import type { Project } from "@/features/project/types";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
  * 設定の「データ」欄の3つ(書き出し・取り込み・初期化)。
@@ -34,6 +35,7 @@ import type { Project } from "@/features/project/types";
  * 消したい場合の入口は一覧側にあり、そちらとは別の操作にしてある。
  */
 export function useProjectData(project: Project) {
+  const t = useT();
   const router = useRouter();
   const showToast = useUIStore((state) => state.showToast);
   const requestConfirm = useUIStore((state) => state.requestConfirm);
@@ -67,12 +69,12 @@ export function useProjectData(project: Project) {
   const handleImportFile = async (file: File) => {
     setIsBusy(true);
     try {
-      const backup = parseBackup(await file.text());
+      const backup = parseBackup(await file.text(), t.data);
       const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) throw new Error("ログインしてから取り込んでください");
+      if (!user) throw new Error(t.data.needsSignIn);
 
       const now = new Date().toISOString();
       const created = await saveGuestProject(supabase, user.id, {
@@ -96,7 +98,7 @@ export function useProjectData(project: Project) {
         positions: backup.positions,
       });
 
-      showToast({ message: "取り込みました", type: "success" });
+      showToast({ message: t.data.imported, type: "success" });
       router.push(`/projects/${created.id}`);
       router.refresh();
     } catch (error) {
@@ -104,7 +106,7 @@ export function useProjectData(project: Project) {
         message:
           error instanceof BackupFormatError
             ? error.message
-            : toUserMessage(error, "取り込めませんでした"),
+            : toUserMessage(error, t.data.importFailed),
         type: "error",
       });
     } finally {
@@ -117,11 +119,14 @@ export function useProjectData(project: Project) {
   const handleResetProject = () => {
     const { scenes, dancers } = useProjectStore.getState();
     requestConfirm({
-      title: "この作品を空にしますか",
+      title: t.data.resetTitle,
       description:
-        "シーンとダンサーを全部消します。作品そのもの(名前・ステージの広さ・曲の頭出し)は残ります。取り消せません。",
-      meta: [`${scenes.length} シーン`, `${Object.keys(dancers).length} 人`],
-      confirmLabel: "空にする",
+        t.data.resetDescription,
+      meta: [
+        t.data.resetMetaScenes(scenes.length),
+        t.data.resetMetaDancers(Object.keys(dancers).length),
+      ],
+      confirmLabel: t.data.resetConfirm,
       onConfirm: async () => {
         setIsBusy(true);
         const sceneIds = scenes.map((scene) => scene.id);
@@ -145,7 +150,7 @@ export function useProjectData(project: Project) {
           router.refresh();
         } catch (error) {
           showToast({
-            message: toUserMessage(error, "空にできませんでした"),
+            message: toUserMessage(error, t.data.resetFailed),
             type: "error",
           });
         } finally {

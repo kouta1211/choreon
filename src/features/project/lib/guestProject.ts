@@ -8,6 +8,12 @@ import { DEFAULT_SEGMENT_SECONDS } from "@/features/scene/lib/sceneTiming";
 
 /** プロジェクト1件ぶんの中身をまとめたもの。ゲストの下書きを作るときも、
  * それをクラウドへ保存するときも、この形で受け渡しする */
+/** 下見本に付ける名前。作った時点の言語で決まる */
+export type GuestWords = {
+  title: string;
+  sceneName: (index: number) => string;
+};
+
 export type ProjectSnapshot = {
   project: Project;
   dancers: Dancer[];
@@ -71,13 +77,14 @@ const SEED_LAYOUT: [number, number][][] = [
  * 中身はあくまで叩き台なので、ダンサーもシーンも自由に消して作り直せる。
  */
 export function createGuestProject(
+  words: GuestWords,
   now = "1970-01-01T00:00:00.000Z",
 ): ProjectSnapshot {
   const project: Project = {
     id: SEED_IDS.project,
     // 保存するまで持ち主は決まらない。保存時にログインしたユーザーを入れる
     userId: "",
-    title: "はじめてのフォーメーション",
+    title: words.title,
     stageWidth: STAGE_WIDTH,
     stageHeight: STAGE_HEIGHT,
     // 曲はまだ選ばれていないので頭出しも無い(DBのdefaultと同じ0)
@@ -105,7 +112,7 @@ export function createGuestProject(
   const scenes: Scene[] = SEED_IDS.scenes.map((id, index) => ({
     id,
     projectId: project.id,
-    name: `シーン${index + 1}`,
+    name: words.sceneName(index + 1),
     orderIndex: index,
     // 1秒おきに並べた種。時刻は絶対値で持つ
     timeSeconds: index * DEFAULT_SEGMENT_SECONDS,

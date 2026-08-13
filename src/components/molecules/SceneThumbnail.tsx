@@ -3,6 +3,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { X } from "lucide-react";
 import type { Scene } from "@/features/scene/types";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   scene: Scene;
@@ -61,6 +62,7 @@ export function SceneThumbnail({
   showLabel = false,
   onDelete,
 }: Props) {
+  const t = useT();
   const {
     attributes,
     listeners,
@@ -150,7 +152,7 @@ export function SceneThumbnail({
         <PressableButton
           kind="icon"
           onClick={onDelete}
-          aria-label={`「${scene.name}」を削除`}
+          aria-label={t.sceneActions.remove(scene.name)}
           className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-line-strong bg-surface-strong text-fg-muted hover:border-red-950 hover:text-red-400"
         >
           <X size={11} />

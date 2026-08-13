@@ -5,6 +5,7 @@ import { Palette } from "lucide-react";
 import { ThemeSheet } from "@/components/organisms/ThemeSheet";
 import { useThemeStore } from "@/features/theme/store/useThemeStore";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
  * 見た目を選ぶ入口。ホームのヘッダーにだけ置く。
@@ -13,6 +14,7 @@ import { PressableButton } from "@/components/atoms/PressableButton";
  * ステージに場所を譲るために操作を絞ってある。
  */
 export function ThemeButton() {
+  const t = useT();
   const [isOpen, setIsOpen] = useState(false);
   const load = useThemeStore((state) => state.load);
 
@@ -27,7 +29,7 @@ export function ThemeButton() {
     <>
       <PressableButton
         kind="icon"
-        aria-label="見た目を変える"
+        aria-label={t.common.appearance}
         onClick={() => setIsOpen(true)}
         /* アクセントで塗らない。ここは「いま選んでいるもの」ではなく
            入口なので、色を持つと画面で一番強い要素になってしまう */

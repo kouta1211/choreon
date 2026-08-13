@@ -75,6 +75,15 @@ export function buildBackup(input: {
   };
 }
 
+/** 読み取れなかった理由の文。言語ごとに変わるので、外から渡す */
+export type BackupWords = {
+  unreadableFile: string;
+  wrongShape: string;
+  wrongVersion: string;
+  noProject: string;
+  incomplete: string;
+};
+
 export class BackupFormatError extends Error {}
 
 /**
@@ -84,34 +93,34 @@ export class BackupFormatError extends Error {}
  * 形が合わないものは黙って直さず、その場で断る。半端に読み込むと、
  * 座標が欠けた作品ができて、どこが壊れているのか分からなくなる。
  */
-export function parseBackup(raw: string): Backup {
+export function parseBackup(raw: string, words: BackupWords): Backup {
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
   } catch {
-    throw new BackupFormatError("ファイルを読み取れませんでした");
+    throw new BackupFormatError(words.unreadableFile);
   }
   if (typeof parsed !== "object" || parsed === null) {
-    throw new BackupFormatError("ファイルの形が違います");
+    throw new BackupFormatError(words.wrongShape);
   }
 
   const record = parsed as Record<string, unknown>;
   if (record.version !== BACKUP_VERSION) {
     throw new BackupFormatError(
-      "この形式は読み込めません(別の版で書き出されたファイルです)",
+      words.wrongVersion,
     );
   }
 
   const project = record.project as Backup["project"] | undefined;
   if (!project || typeof project.title !== "string") {
-    throw new BackupFormatError("作品の情報が入っていません");
+    throw new BackupFormatError(words.noProject);
   }
   if (
     !Array.isArray(record.dancers) ||
     !Array.isArray(record.scenes) ||
     !Array.isArray(record.positions)
   ) {
-    throw new BackupFormatError("ダンサー・シーン・配置のどれかが足りません");
+    throw new BackupFormatError(words.incomplete);
   }
 
   return {

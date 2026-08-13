@@ -234,6 +234,146 @@ export const en = {
     },
   },
 
+  common: {
+    close: "Close",
+    loading: "Loading",
+    rename: (label: string) => `Change the ${label}`,
+    saveToCloud: "Save",
+    settings: "Settings",
+    appearance: "Change the look",
+    undoFailed: "Could not undo",
+    redoFailed: "Could not redo",
+    undoTargetGone: "Could not undo — what it applied to has been deleted",
+    travelFromPrevious: (seconds: string) =>
+      `${seconds}s from the previous scene`,
+  },
+
+  app: {
+    description: "Dance formations, made on your phone",
+    ogLocale: "en_US",
+  },
+
+  auth: {
+    signIn: "Sign in",
+    signUp: "Create an account",
+    createAccount: "Create an account",
+    email: "Email address",
+    password: "Password",
+    passwordSignUp: "Password (6 characters or more)",
+    signingIn: "Signing in…",
+    signingUp: "Creating…",
+    submitSignUp: "Create the account",
+    haveAccount: "Already have an account? ",
+    noAccount: "No account yet? ",
+    wrongCredentials: "That email address or password is not right.",
+    alreadyRegistered: "There is already an account with that email address.",
+    signUpFailed: "Could not create the account. Please try again in a while.",
+    confirmSent: "A confirmation email is on its way.",
+    confirmOpen: "Open the link in it to finish creating your account.",
+    backToSignIn: "Back to sign in",
+    insecure:
+      "This page was opened over an unencrypted connection, so signing in is not possible.",
+    insecureWhy: (https: string, localhost: string) =>
+      `Browsers treat only ${https} and ${localhost} as secure, and switch off what sign-in needs everywhere else. To try it on a phone, open it over`,
+    insecureHow: "instead.",
+    draftHere: "What you are making right now lives only on this device.",
+    draftSaved: "Create an account and it is kept as it is.",
+    draftPending:
+      "Nothing is saved until the address is confirmed. Keep this tab open, follow the link in the email, and come back.",
+  },
+
+  projects: {
+    count: (n: number) => `${n} pieces`,
+    empty: "No pieces yet.",
+    emptyHint: "Type a track name above and a stage appears.",
+    newName: "Name for the new piece",
+    create: "Create the piece",
+    createFailed: "Could not create the piece",
+    tapToStart: "Tap to make the first scene",
+    noScenes: "no scenes",
+    remove: (title: string) => `Delete ${title}`,
+    deleteTitle: (title: string) => `Delete “${title}”?`,
+    deleteDescription:
+      "Every scene, dancer and position in this piece disappears. Deleting cannot be undone.",
+    deleteMetaScenes: (n: number) => `${n} scenes`,
+    deleteMetaDancers: (n: number) => `${n} dancers`,
+    deleteMetaPositions: (n: number) => `${n} positions`,
+    deleteFailed: "Could not delete the piece",
+    guestTitle: "My first formation",
+    sceneName: (index: number) => `Scene ${index}`,
+  },
+
+  confirm: {
+    cannotUndo: "Deleting cannot be undone.",
+    cancel: "Cancel",
+    deleting: "Deleting…",
+    delete: "Delete",
+  },
+
+  tour: {
+    stageTitle: "This is the stage",
+    stageBody:
+      "Upstage at the top, the audience at the bottom. The circles are dancers — pick one up and move it. The numbers along the bottom are the distance from centre.",
+    timelineTitle: "Across is time in the music",
+    timelineBody:
+      "Each frame sits at the second of the track it belongs to. Drag a frame sideways to change that time, and the gap between frames is the time the move gets.",
+    addTitle: "Add a formation",
+    addBody:
+      "Makes a new formation at the position you are listening to, copied from the current one. Make it, then move people — that is the usual order.",
+    viewTitle: "Change what you see",
+    viewBody:
+      "Paths, the grid, the blocked-view warning and the look of the app are all here. So is this walkthrough, if you want it again.",
+    back: "Back",
+    close: "Close",
+    last: "Start",
+    next: "Next",
+    nextWithProgress: "Next ({current}/{total})",
+    skip: "Skip",
+  },
+
+  offline: {
+    title: "Offline — Choreon",
+    heading: "There is no connection right now",
+    body: "Screens you have already opened still work. Go back to the last one, or open this again once you are back online.",
+    toProjects: "To your pieces",
+  },
+
+  data: {
+    needsSignIn: "Sign in before importing",
+    imported: "Imported",
+    importFailed: "Could not import the file",
+    resetTitle: "Empty this piece?",
+    resetDescription:
+      "Every scene and dancer is deleted. The piece itself stays — its name, the size of the stage, and the start position in the track. This cannot be undone.",
+    resetMetaScenes: (n: number) => `${n} scenes`,
+    resetMetaDancers: (n: number) => `${n} dancers`,
+    resetConfirm: "Empty it",
+    resetFailed: "Could not empty the piece",
+    unreadableFile: "Could not read the file",
+    wrongShape: "That file is not the right shape",
+    wrongVersion: "This format cannot be read (it was exported by another version)",
+    noProject: "There is no piece in the file",
+    incomplete: "Dancers, scenes or positions are missing",
+  },
+
+  sceneActions: {
+    renameFailed: "Could not rename the scene",
+    retimeFailed: "Could not change the time of the scene",
+    deleteTitle: (name: string) => `Delete “${name}”?`,
+    deleteDescription:
+      "The positions in this scene go, and so do the paths leading into it. Deleting cannot be undone (moves and facings can be).",
+    deleteMeta: (dancers: number) => `positions for ${dancers} dancers`,
+    deleteFailed: "Could not delete the scene",
+    remove: (name: string) => `Delete “${name}”`,
+  },
+
+  dbErrors: {
+    missingColumn:
+      "The database migrations have not been applied. Run the SQL in supabase/migrations/ from the Supabase SQL Editor.",
+    insufficientPrivilege:
+      "Not permitted. Check the table's GRANTs and RLS policies.",
+  },
+
   viewer: {
     move: {
       still: "Stay put",

@@ -7,6 +7,12 @@ import * as dancersApi from "@/features/dancer/api/dancers";
 import * as scenesApi from "@/features/scene/api/scenes";
 import * as positionsApi from "@/features/scene/api/positions";
 import { createGuestProject } from "@/features/project/lib/guestProject";
+import { ja } from "@/features/i18n/messages/ja";
+
+const GUEST_WORDS = {
+  title: ja.projects.guestTitle,
+  sceneName: ja.projects.sceneName,
+};
 
 const supabase = {} as SupabaseClient<Database>;
 
@@ -43,7 +49,7 @@ afterEach(() => {
 describe("saveGuestProject", () => {
   it("プロジェクト・ダンサー・シーン・配置をまとめて入れる", async () => {
     const api = stubAll();
-    const snapshot = createGuestProject();
+    const snapshot = createGuestProject(GUEST_WORDS);
 
     await saveGuestProject(supabase, "user-1", snapshot);
 
@@ -55,7 +61,7 @@ describe("saveGuestProject", () => {
 
   it("下書きのIDをそのまま使わない(2回保存しても主キーが衝突しない)", async () => {
     const api = stubAll();
-    const snapshot = createGuestProject();
+    const snapshot = createGuestProject(GUEST_WORDS);
 
     await saveGuestProject(supabase, "user-1", snapshot);
     await saveGuestProject(supabase, "user-1", snapshot);
@@ -69,7 +75,7 @@ describe("saveGuestProject", () => {
   it("ログインしたユーザーを持ち主にする", async () => {
     const api = stubAll();
 
-    await saveGuestProject(supabase, "user-1", createGuestProject());
+    await saveGuestProject(supabase, "user-1", createGuestProject(GUEST_WORDS));
 
     expect(api.insertProject.mock.calls[0][1].userId).toBe("user-1");
   });
@@ -79,7 +85,7 @@ describe("saveGuestProject", () => {
     api.upsertPositions.mockRejectedValue(new Error("network"));
 
     await expect(
-      saveGuestProject(supabase, "user-1", createGuestProject()),
+      saveGuestProject(supabase, "user-1", createGuestProject(GUEST_WORDS)),
     ).rejects.toThrow("network");
 
     expect(api.deleteProject).toHaveBeenCalledTimes(1);
@@ -91,7 +97,7 @@ describe("saveGuestProject", () => {
     api.deleteProject.mockRejectedValue(new Error("片付けにも失敗"));
 
     await expect(
-      saveGuestProject(supabase, "user-1", createGuestProject()),
+      saveGuestProject(supabase, "user-1", createGuestProject(GUEST_WORDS)),
     ).rejects.toThrow("シーンの保存に失敗");
   });
 });

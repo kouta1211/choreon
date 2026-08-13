@@ -15,6 +15,7 @@ import {
   retimeForOrder,
   retimeScene,
 } from "@/features/scene/lib/sceneTiming";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
  * シーンの改名・並び替え・遷移時間・削除。
@@ -26,6 +27,7 @@ import {
  * どれも楽観的更新(先にローカルへ反映し、保存に失敗したら戻す)。
  */
 export function useSceneActions() {
+  const t = useT();
   const scenes = useProjectStore((state) => state.scenes);
   const positionsBySceneId = useProjectStore(
     (state) => state.positionsBySceneId,
@@ -47,7 +49,7 @@ export function useSceneActions() {
     } catch (error) {
       renameScene(scene.id, previousName);
       showToast({
-        message: toUserMessage(error, "シーン名の変更に失敗しました"),
+        message: toUserMessage(error, t.sceneActions.renameFailed),
         type: "error",
       });
     }
@@ -121,7 +123,7 @@ export function useSceneActions() {
     } catch (error) {
       applySceneTimes(previous);
       showToast({
-        message: toUserMessage(error, "シーンの時刻の変更に失敗しました"),
+        message: toUserMessage(error, t.sceneActions.retimeFailed),
         type: "error",
       });
     }
@@ -132,10 +134,10 @@ export function useSceneActions() {
     const dancerCount = Object.keys(positionsBySceneId[scene.id] ?? {}).length;
 
     requestConfirm({
-      title: `「${scene.name}」を削除しますか?`,
+      title: t.sceneActions.deleteTitle(scene.name),
       description:
-        "このシーンの配置と、ここへ入る導線も一緒に消えます。削除は元に戻せません(移動や向きの変更は戻せます)。",
-      meta: [`${dancerCount} 人の配置`],
+        t.sceneActions.deleteDescription,
+      meta: [t.sceneActions.deleteMeta(dancerCount)],
       onConfirm: async () => {
         try {
           await persist((supabase) => deleteScene(supabase, scene.id));
@@ -144,7 +146,7 @@ export function useSceneActions() {
           selectScene(remaining[0]?.id ?? null);
         } catch (error) {
           showToast({
-            message: toUserMessage(error, "シーンの削除に失敗しました"),
+            message: toUserMessage(error, t.sceneActions.deleteFailed),
             type: "error",
           });
         }

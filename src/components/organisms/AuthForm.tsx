@@ -13,6 +13,7 @@ import {
 } from "@/features/auth/api/auth";
 import { AuthField, AuthSubmitButton } from "@/components/molecules/AuthScreen";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 export type AuthMode = "login" | "signup";
 
@@ -45,6 +46,7 @@ export function AuthForm({
   intro,
   emailSentNote,
 }: Props) {
+  const t = useT();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +86,7 @@ export function AuthForm({
         password,
       );
       if (signInError || !data.user) {
-        setError("メールアドレスまたはパスワードが正しくありません。");
+        setError(t.auth.wrongCredentials);
         setIsSubmitting(false);
         return;
       }
@@ -102,8 +104,8 @@ export function AuthForm({
     if (signUpError) {
       setError(
         signUpError.message === "User already registered"
-          ? "このメールアドレスは既に登録されています。"
-          : "登録に失敗しました。時間をおいて再度お試しください。",
+          ? t.auth.alreadyRegistered
+          : t.auth.signUpFailed,
       );
       setIsSubmitting(false);
       return;
@@ -131,10 +133,10 @@ export function AuthForm({
           <Mail size={20} />
         </span>
         <p className="text-sm font-medium text-fg-strong">
-          確認メールを送信しました。
+          {t.auth.confirmSent}
         </p>
         <p className="text-xs leading-relaxed text-fg-muted">
-          メール内のリンクを開くと登録が完了します。
+          {t.auth.confirmOpen}
         </p>
         {emailSentNote}
         <PressableButton
@@ -144,7 +146,7 @@ export function AuthForm({
           }}
           className="mt-1 text-xs text-accent-soft underline"
         >
-          ログイン画面に戻る
+          {t.auth.backToSignIn}
         </PressableButton>
       </div>
     );
@@ -159,20 +161,17 @@ export function AuthForm({
           role="status"
           className="rounded-[calc(var(--radius)*0.6667)] border border-amber-500/40 bg-amber-500/10 px-3 py-2.5 text-label leading-relaxed text-amber-200"
         >
-          この画面は暗号化されていない接続で開かれているため、ログインできません。
+          {t.auth.insecure}
           <span className="mt-1 block text-amber-200/80">
-            ブラウザは <code className="font-mono">https</code> と{" "}
-            <code className="font-mono">localhost</code> だけを安全とみなし、
-            認証に必要な機能をそれ以外で無効にします。実機で試すときは
+            {t.auth.insecureWhy("https", "localhost")}
             <code className="font-mono"> npm run dev:https </code>
-            で立ち上げ、<code className="font-mono">https://</code>{" "}
-            で開いてください。
+            {t.auth.insecureHow}
           </span>
         </p>
       )}
 
       <AuthField
-        label="メールアドレス"
+        label={t.auth.email}
         id={`${mode}-email`}
         type="email"
         required
@@ -183,7 +182,7 @@ export function AuthForm({
       />
 
       <AuthField
-        label={mode === "signup" ? "パスワード(6文字以上)" : "パスワード"}
+        label={mode === "signup" ? t.auth.passwordSignUp : t.auth.password}
         id={`${mode}-password`}
         type="password"
         required
@@ -198,15 +197,15 @@ export function AuthForm({
 
       <AuthSubmitButton
         isSubmitting={isSubmitting}
-        pendingLabel={mode === "signup" ? "登録中..." : "ログイン中..."}
+        pendingLabel={mode === "signup" ? t.auth.signingUp : t.auth.signingIn}
       >
-        {mode === "signup" ? "登録する" : "ログイン"}
+        {mode === "signup" ? t.auth.submitSignUp : t.auth.signIn}
       </AuthSubmitButton>
 
       <p className="text-center text-xs text-fg-muted">
         {mode === "signup"
-          ? "既にアカウントをお持ちの方は "
-          : "アカウントをお持ちでない方は "}
+          ? t.auth.haveAccount
+          : t.auth.noAccount}
         <PressableButton
           onClick={() => {
             setError(null);
@@ -214,7 +213,7 @@ export function AuthForm({
           }}
           className="text-accent-soft underline"
         >
-          {mode === "signup" ? "ログイン" : "新規登録"}
+          {mode === "signup" ? t.auth.signIn : t.auth.signUp}
         </PressableButton>
       </p>
     </form>

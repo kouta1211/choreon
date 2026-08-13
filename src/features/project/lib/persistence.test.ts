@@ -8,6 +8,12 @@ import {
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { createGuestProject } from "@/features/project/lib/guestProject";
+import { ja } from "@/features/i18n/messages/ja";
+
+const GUEST_WORDS = {
+  title: ja.projects.guestTitle,
+  sceneName: ja.projects.sceneName,
+};
 
 const supabaseStub = { from: () => ({}) };
 
@@ -16,7 +22,7 @@ vi.mock("@/lib/supabase/client", () => ({
 }));
 
 function loadStore(isGuest: boolean) {
-  const snapshot = createGuestProject();
+  const snapshot = createGuestProject(GUEST_WORDS);
   useProjectStore.getState().hydrate({ ...snapshot, isGuest });
 }
 

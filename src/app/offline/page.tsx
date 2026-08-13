@@ -1,10 +1,15 @@
 import Link from "next/link";
 import { CloudOff } from "lucide-react";
+import { getMessages } from "@/features/i18n/server";
+import type { Metadata } from "next";
 
-export const metadata = {
-  title: "オフライン — Choreon",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getMessages();
+  return {
+    title: t.offline.title,
+    robots: { index: false, follow: false },
+  };
+}
 
 /**
  * 圏外で、まだ一度も開いたことのない画面を出そうとしたときに出るもの。
@@ -14,7 +19,9 @@ export const metadata = {
  * 【いま何ができるか】を書く。一度開いた画面は控えから出るので、
  * 戻れば見られることが多い。
  */
-export default function OfflinePage() {
+export default async function OfflinePage() {
+  const t = await getMessages();
+
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
       <span
@@ -25,19 +32,17 @@ export default function OfflinePage() {
       </span>
       <div>
         <h1 className="text-body font-semibold text-fg-strong">
-          いま電波が届いていません
+          {t.offline.heading}
         </h1>
         <p className="mt-1.5 text-label leading-relaxed text-fg-sub">
-          一度開いた画面は、そのまま見られます。
-          <br />
-          直前の画面へ戻るか、電波が戻ってから開き直してください。
+          {t.offline.body}
         </p>
       </div>
       <Link
         href="/"
         className="flex h-11 items-center rounded-xl border border-line-strong px-4 text-label text-fg"
       >
-        作品の一覧へ
+        {t.offline.toProjects}
       </Link>
     </main>
   );

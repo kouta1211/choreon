@@ -26,6 +26,28 @@ function asPostgrestError(error: unknown): PostgrestLikeError | null {
 }
 
 /**
+ * DBが返す2種類の原因を、いまの言語の文にするための入れ物。
+ *
+ * ■ なぜ引数で渡さないのか
+ * `toUserMessage` は51箇所から呼ばれていて、そのほとんどが
+ * 「失敗したときの一言」を渡すだけの catch 節。辞書を全部の呼び出しへ
+ * 足すと、この2文のためにファイル数十個が変わる。
+ * 言語は画面全体で1つしかない値なので、**LocaleProvider が変わったときに
+ * ここへ書き写す**形にした(dbErrorMessages)。既定は日本語で、
+ * 書き写す前に呼ばれても文字が消えない。
+ */
+let dbErrorMessages = {
+  missingColumn:
+    "DBのマイグレーションが未適用です。supabase/migrations/ のSQLをSupabaseのSQL Editorで実行してください",
+  insufficientPrivilege:
+    "権限がありません。テーブルのGRANT・RLSポリシーを確認してください",
+};
+
+export function setDbErrorMessages(messages: typeof dbErrorMessages): void {
+  dbErrorMessages = messages;
+}
+
+/**
  * @param error catch節で受け取ったerror(型はunknown)
  * @param fallback 原因を特定できなかった場合に使う、操作に応じた文言
  */
@@ -33,11 +55,11 @@ export function toUserMessage(error: unknown, fallback: string): string {
   const postgrestError = asPostgrestError(error);
 
   if (postgrestError?.code === MISSING_COLUMN_CODE) {
-    return "DBのマイグレーションが未適用です。supabase/migrations/ のSQLをSupabaseのSQL Editorで実行してください";
+    return dbErrorMessages.missingColumn;
   }
 
   if (postgrestError?.code === INSUFFICIENT_PRIVILEGE_CODE) {
-    return "権限がありません。テーブルのGRANT・RLSポリシーを確認してください";
+    return dbErrorMessages.insufficientPrivilege;
   }
 
   return fallback;

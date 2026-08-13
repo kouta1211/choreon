@@ -1,13 +1,15 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { EventData, Step } from "react-joyride";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import {
   hasSeenTutorial,
   markTutorialSeen,
 } from "@/features/tutorial/lib/tutorialPreference";
+import { useT } from "@/features/i18n/LocaleProvider";
+import type { Messages } from "@/features/i18n/messages";
 
 /**
  * ライブラリごと遅延させる。案内は初回の1度しか使わないので、
@@ -34,38 +36,43 @@ const Joyride = dynamic(
  * 使い方が分かっている人に読ませない。飛ばしても「見た」として扱い、
  * 二度と自動では出さない(もう一度見る道は表示メニューに置く)。
  */
-const STEPS: Step[] = [
+function steps(t: Messages): Step[] {
+  return [
   {
     target: '[data-tour="stage"]',
-    title: "ここが舞台です",
+    title: t.tour.stageTitle,
     content:
-      "上がバックステージ、下が客席側。丸がダンサーで、掴んで動かせます。下の目盛りはセンターからの位置です。",
+      t.tour.stageBody,
     placement: "bottom",
   },
   {
     target: '[data-tour="timeline"]',
-    title: "横の位置が、曲の時間です",
+    title: t.tour.timelineTitle,
     content:
-      "コマは「曲の何秒目の隊形か」の位置に並びます。コマを横に引くとその時刻が動き、間隔がそのまま移動にかけられる時間になります。",
+      t.tour.timelineBody,
     placement: "top",
   },
   {
     target: '[data-tour="add-scene"]',
-    title: "隊形を足す",
+    title: t.tour.addTitle,
     content:
-      "いま聞いている位置に、いまの配置をコピーした隊形を作ります。作ってから動かす、が基本の流れです。",
+      t.tour.addBody,
     placement: "top",
   },
   {
     target: '[data-tour="display-menu"]',
-    title: "見え方を変える",
+    title: t.tour.viewTitle,
     content:
-      "導線・格子・顔被りの警告などの切り替えと、見た目の変更はここです。この案内をもう一度見るのもここから。",
+      t.tour.viewBody,
     placement: "bottom",
-  },
-];
+    },
+  ];
+}
 
 export function EditorTour() {
+  const t = useT();
+  // 言語が変わったら作り直す。案内の中身は辞書が持つ
+  const tourSteps = useMemo(() => steps(t), [t]);
   // 初回だけ自動で出す。読み込み直後は指す先がまだ描かれていないので、
   // 少し待ってから始める
   const [isAutoStarted, setAutoStarted] = useState(false);
@@ -105,18 +112,18 @@ export function EditorTour() {
 
   return (
     <Joyride
-      steps={STEPS}
+      steps={tourSteps}
       run
       continuous
       onEvent={handleEvent}
       locale={{
-        back: "戻る",
-        close: "閉じる",
-        last: "はじめる",
-        next: "次へ",
+        back: t.tour.back,
+        close: t.tour.close,
+        last: t.tour.last,
+        next: t.tour.next,
         // 進み具合を出すときは、こちらが使われる
-        nextWithProgress: "次へ（{current}/{total}）",
-        skip: "とばす",
+        nextWithProgress: t.tour.nextWithProgress,
+        skip: t.tour.skip,
       }}
       options={{
         buttons: ["back", "primary", "skip"],

@@ -11,6 +11,7 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import type { ProjectSummary } from "@/features/project/types";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   projects: ProjectSummary[];
@@ -30,6 +31,7 @@ type Props = {
  * から反映する方が納得しやすいため。
  */
 export function ProjectList({ projects }: Props) {
+  const t = useT();
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const requestConfirm = useUIStore((state) => state.requestConfirm);
@@ -37,13 +39,15 @@ export function ProjectList({ projects }: Props) {
 
   const handleDelete = (project: ProjectSummary) => {
     requestConfirm({
-      title: `「${project.title}」を削除しますか?`,
+      title: t.projects.deleteTitle(project.title),
       description:
-        "このプロジェクトのシーン・ダンサー・配置がすべて消えます。削除は元に戻せません。",
+        t.projects.deleteDescription,
       meta: [
-        `${project.sceneCount} シーン`,
-        `${project.dancerCount} 人`,
-        `${project.sceneCount * project.dancerCount} 配置`,
+        t.projects.deleteMetaScenes(project.sceneCount),
+        t.projects.deleteMetaDancers(project.dancerCount),
+        t.projects.deleteMetaPositions(
+          project.sceneCount * project.dancerCount,
+        ),
       ],
       onConfirm: async () => {
         setDeletingId(project.id);
@@ -54,7 +58,7 @@ export function ProjectList({ projects }: Props) {
           router.refresh();
         } catch (caught) {
           showToast({
-            message: toUserMessage(caught, "プロジェクトの削除に失敗しました"),
+            message: toUserMessage(caught, t.projects.deleteFailed),
             type: "error",
           });
         } finally {
@@ -71,7 +75,7 @@ export function ProjectList({ projects }: Props) {
   return (
     <div className="flex flex-col gap-unit">
       <p className="mx-base text-caption tracking-[0.14em] text-fg-muted">
-        プロジェクト {projects.length}件
+        {t.projects.count(projects.length)}
       </p>
       <ul className="grid gap-unit md:grid-cols-2">
         {projects.map((project) => (
@@ -114,7 +118,7 @@ export function ProjectList({ projects }: Props) {
                   </span>
                 ) : (
                   <span className="text-caption text-fg-muted">
-                    タップして最初のシーンを作る
+                    {t.projects.tapToStart}
                   </span>
                 )}
               </span>
@@ -125,7 +129,7 @@ export function ProjectList({ projects }: Props) {
               kind="icon"
               onClick={() => handleDelete(project)}
               disabled={deletingId === project.id}
-              aria-label={`${project.title}を削除`}
+              aria-label={t.projects.remove(project.title)}
               className="flex h-target w-target shrink-0 items-center justify-center rounded-full text-fg-muted transition-colors hover:bg-surface-strong hover:text-fg disabled:opacity-40"
             >
               <Trash2 size={20} />
@@ -139,6 +143,7 @@ export function ProjectList({ projects }: Props) {
 
 /** 先頭シーンの隊形のミニチュア。まだシーンが無ければ破線で「シーン 0」 */
 function ProjectThumbnail({ project }: { project: ProjectSummary }) {
+  const t = useT();
   const aspectRatio = `${project.stageWidth} / ${project.stageHeight}`;
 
   if (project.sceneCount === 0) {
@@ -148,7 +153,7 @@ function ProjectThumbnail({ project }: { project: ProjectSummary }) {
         className="flex w-20 shrink-0 items-center justify-center rounded-lg border border-dashed border-line-strong bg-surface-sunken font-mono text-mono-s text-fg-muted"
         style={{ aspectRatio }}
       >
-        シーン 0
+        {t.projects.noScenes}
       </span>
     );
   }
@@ -185,6 +190,7 @@ function ProjectThumbnail({ project }: { project: ProjectSummary }) {
  * 上の隊形イラストは、このアプリが何を作るものなのかの手がかりでもある。
  */
 function EmptyProjectList() {
+  const t = useT();
   return (
     <div className="rounded-2xl border border-dashed border-line-strong px-5 py-6 text-center">
       <span
@@ -205,12 +211,12 @@ function EmptyProjectList() {
         ))}
       </span>
       <p className="text-sm leading-relaxed font-medium text-fg">
-        まだプロジェクトがありません。
+        {t.projects.empty}
       </p>
       <p className="mt-1.5 text-xs leading-relaxed text-fg-muted">
-        上の入力から曲名を入れると、
+        {t.projects.emptyHint}
         <br />
-        ステージが1つ立ち上がります。
+
       </p>
     </div>
   );
