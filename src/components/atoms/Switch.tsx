@@ -15,18 +15,18 @@ type Props = {
   description?: string;
 };
 
-/** ラベル付きのトグルスイッチ。オンでpink背景、offでzincの枠線のみ
- * (Button/TextFieldと同じ配色ルールを踏襲している) */
-export function Switch({
-  checked,
-  onChange,
-  label,
-  icon: Icon,
-  fullWidth = false,
-  description,
-}: Props) {
-  const toggle = (
+/**
+ * トグルの【見た目だけ】。押す仕掛けは持たない。
+ *
+ * メニューの中では行そのものが項目(menuitemcheckbox)になるので、
+ * その中にボタンを入れられない(ボタンの入れ子は不正なHTMLで、
+ * 支援技術からは押せる的が2つあるように見える)。
+ * 見た目をここへ切り出して、Switch と メニューの行の両方から使う。
+ */
+export function SwitchTrack({ checked }: { checked: boolean }) {
+  return (
     <span
+      aria-hidden
       className={`relative block h-6 w-11 shrink-0 rounded-full transition-colors ${
         checked ? "bg-accent" : "bg-line-strong"
       }`}
@@ -38,6 +38,19 @@ export function Switch({
       />
     </span>
   );
+}
+
+/** ラベル付きのトグルスイッチ。オンでpink背景、offでzincの枠線のみ
+ * (Button/TextFieldと同じ配色ルールを踏襲している) */
+export function Switch({
+  checked,
+  onChange,
+  label,
+  icon: Icon,
+  fullWidth = false,
+  description,
+}: Props) {
+  const toggle = <SwitchTrack checked={checked} />;
 
   return (
     <PressableButton

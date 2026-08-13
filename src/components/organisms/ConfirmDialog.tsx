@@ -1,9 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { DESTRUCTIVE_PATTERN, vibrate } from "@/lib/haptics";
 
 /**
@@ -31,46 +37,20 @@ import { DESTRUCTIVE_PATTERN, vibrate } from "@/lib/haptics";
  *
  * 実行中(onConfirmのawait中)はボタンを無効にする。削除は重い操作で、
  * 二度押しすると2回目が「存在しない行の削除」になってエラーになるため。
+ *
+ * ■ 開閉のふるまいは shadcn/ui (Radix) の Dialog に任せている
+ * フォーカスの閉じ込め・Escape・幕のタップ・背景のスクロール停止・
+ * 閉じたあとに元の要素へフォーカスを戻すところまでを実装ごと借りる。
+ * 自前で書いていたときは Tab の巡回しか無く、後ろのページは支援技術から
+ * 読めたままだった(画面は塞がっているのに、後ろのボタンが押せた)。
  */
 export function ConfirmDialog() {
   const confirmRequest = useUIStore((state) => state.confirm);
   const closeConfirm = useUIStore((state) => state.closeConfirm);
   const [isRunning, setIsRunning] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
   // 開いたときにフォーカスを持ってくる先。破壊的な操作なので、
   // 実行ボタンではなくキャンセル側に当てる
   const cancelRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!confirmRequest) return;
-    cancelRef.current?.focus();
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        closeConfirm();
-        return;
-      }
-      // フォーカスを板の中に閉じ込める。外へ出られると、後ろにある
-      // ステージのダンサーを掴めてしまう(画面は塞がっているのに)
-      if (event.key !== "Tab") return;
-      const focusable = panelRef.current?.querySelectorAll<HTMLElement>(
-        "button:not([disabled])",
-      );
-      if (!focusable || focusable.length === 0) return;
-
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [confirmRequest, closeConfirm]);
 
   if (!confirmRequest) return null;
 
@@ -86,21 +66,21 @@ export function ConfirmDialog() {
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal
-      aria-label={confirmRequest.title}
-      className="fixed inset-0 z-50 flex items-end justify-center bg-scrim/60 backdrop-blur-[2px] md:items-center"
-      onClick={(event) => {
-        // 背景をタップしたときだけ閉じる(カード内のクリックは無視)。
-        // 幕をタップして【消える】ことはあっても、幕をタップして
-        // 【削除される】ことは無い
-        if (event.target === event.currentTarget && !isRunning) closeConfirm();
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        // 幕のタップや Escape で閉じる。ただし削除の実行中は閉じない
+        // (処理の途中で画面だけ消えると、終わったのかどうか分からない)
+        if (!open && !isRunning) closeConfirm();
       }}
     >
-      <div
-        ref={panelRef}
-        className="overlay-panel absolute inset-x-[18px] bottom-[104px] flex flex-col gap-[13px] rounded-[calc(var(--radius)*1.17)] p-[18px] md:static md:inset-auto md:w-full md:max-w-[420px]"
+      <DialogContent
+        // 開いた直後のフォーカスはキャンセル側。破壊的な操作なので、
+        // Enter を押しっぱなしにしていた指で実行されないようにする
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          cancelRef.current?.focus();
+        }}
       >
         <div className="flex items-start gap-3">
           <span
@@ -110,13 +90,11 @@ export function ConfirmDialog() {
             <Trash2 size={18} />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-[15px] leading-[1.35] font-semibold text-fg-strong">
-              {confirmRequest.title}
-            </p>
+            <DialogTitle>{confirmRequest.title}</DialogTitle>
             {confirmRequest.description && (
-              <p className="mt-1.5 text-[12px] leading-[1.6] text-fg-sub">
+              <DialogDescription className="mt-1.5">
                 {confirmRequest.description}
-              </p>
+              </DialogDescription>
             )}
           </div>
         </div>
@@ -164,7 +142,7 @@ export function ConfirmDialog() {
               : (confirmRequest.confirmLabel ?? "削除する")}
           </PressableButton>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

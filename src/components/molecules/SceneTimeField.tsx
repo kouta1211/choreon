@@ -2,6 +2,7 @@
 
 import { useId, useState, type FocusEvent } from "react";
 import { Clock, MoveRight } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Props = {
   /** このシーンが曲の何秒目か */
@@ -87,11 +88,11 @@ export function SceneTimeField({
           狙わせない — 指では外しやすく、外すと何も起きないので
           「効かない」ように見える */}
       <label className="flex min-h-11 items-start gap-2.5 py-1 text-[11px] leading-snug text-fg-muted">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={ripple}
-          onChange={(event) => setRipple(event.target.checked)}
-          className="checkbox mt-0.5 shrink-0"
+          onCheckedChange={(checked) => setRipple(checked === true)}
+          aria-label="以降のシーンも一緒にずらす"
+          className="mt-0.5"
         />
         <span>
           以降のシーンも一緒にずらす

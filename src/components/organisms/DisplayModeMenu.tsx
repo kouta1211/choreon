@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Grid3x3,
   Hand,
@@ -13,8 +13,19 @@ import { useUIStore, type GridMode } from "@/features/canvas/store/useUIStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useThemeStore } from "@/features/theme/store/useThemeStore";
 import { projectIdFromPath } from "@/features/theme/lib/themePreference";
-import { Switch } from "@/components/atoms/Switch";
+import { SwitchTrack } from "@/components/atoms/Switch";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 /**
  * ステージの見え方とモードをまとめて切り替えるメニュー。ヘッダー右端の
@@ -40,7 +51,6 @@ const GRID_MODES: { value: GridMode; label: string }[] = [
 export function DisplayModeMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const requestTour = useUIStore((state) => state.requestTour);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const gridMode = useUIStore((state) => state.gridMode);
   const setGridMode = useUIStore((state) => state.setGridMode);
@@ -91,14 +101,6 @@ export function DisplayModeMenu() {
     setThemeProjectId(projectIdFromPath(window.location.pathname));
   }, [loadTheme, setThemeProjectId]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setIsOpen(false);
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen]);
 
   const modes = [
     {
@@ -135,127 +137,122 @@ export function DisplayModeMenu() {
   const activeCount = modes.filter((mode) => mode.checked).length;
 
   return (
-    <div ref={containerRef} className="relative shrink-0">
-      <PressableButton
-        kind="icon"
-        onClick={() => setIsOpen((open) => !open)}
-        aria-expanded={isOpen}
-        aria-haspopup="menu"
-        data-tour="display-menu"
-        aria-label="表示とモード"
-        className={`relative flex h-9 w-9 items-center justify-center rounded-[calc(var(--radius)*0.8333)] border transition-colors ${
-          isOpen
-            ? "border-accent bg-accent/12 text-accent-soft"
-            : "border-line-strong text-fg-sub"
-        }`}
-      >
-        <SlidersHorizontal size={17} />
-        {activeCount > 0 && (
-          <span
-            aria-hidden
-            className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 font-mono text-[9px] font-semibold text-accent-fg"
-          >
-            {activeCount}
-          </span>
-        )}
-      </PressableButton>
-
-      {isOpen && (
-        <>
-          {/* 外側をタップしても閉じられるようにする。メニューより手前に
-              置くと中身が押せなくなるので、z順はメニューの下。
-              押す的ではなく「外側」なので、押し心地は付けない
-              (画面いっぱいの面が沈むと、何を押したのか分からなくなる) */}
-          <button
-            type="button"
-            aria-label="閉じる"
-            onClick={() => setIsOpen(false)}
-            className="fixed inset-0 z-30 cursor-default"
-          />
-          <div
-            role="menu"
-            aria-label="表示とモード"
-            className="absolute top-full right-0 z-40 mt-2 w-64 rounded-xl border border-line-strong bg-surface p-1.5 shadow-2xl"
-          >
-            <div className="flex items-baseline justify-between px-2 pt-1 pb-2">
-              <span className="text-[11px] font-semibold tracking-wider text-fg-muted">
-                表示とモード
-              </span>
-              <span className="font-mono text-[10px] text-fg-muted">
-                {dancerCount}人 · {sceneCount}シーン
-              </span>
-            </div>
-            <div className="flex items-center gap-2 px-2 py-1.5">
-              <Grid3x3 size={15} className="shrink-0 text-fg-muted" />
-              <span className="flex-1 text-[12.5px] text-fg">目盛り</span>
-              <span className="flex shrink-0 overflow-hidden rounded-full border border-line-strong">
-                {GRID_MODES.map((option) => (
-                  <PressableButton
-                    key={option.value}
-                    type="button"
-                    aria-pressed={gridMode === option.value}
-                    onClick={() => setGridMode(option.value)}
-                    className={`h-7 px-2.5 text-[11px] font-medium whitespace-nowrap ${
-                      gridMode === option.value
-                        ? "bg-accent/12 text-accent-soft"
-                        : "text-fg-sub"
-                    }`}
-                  >
-                    {option.label}
-                  </PressableButton>
-                ))}
-              </span>
-            </div>
-
-            {modes.map((mode) => (
-              <Switch
-                key={mode.label}
-                checked={mode.checked}
-                onChange={mode.onChange}
-                label={mode.label}
-                description={mode.description}
-                icon={mode.icon}
-                fullWidth
-              />
-            ))}
-
-            {/* 使い方の案内をもう一度。初回に飛ばした人と、
-                しばらく空けて戻ってきた人のための入口 */}
-            <span aria-hidden className="my-1 block h-px bg-line" />
-            <PressableButton
-              onClick={() => {
-                setIsOpen(false);
-                requestTour();
-              }}
-              className="flex w-full items-center gap-2.5 rounded-[calc(var(--radius)*0.6667)] px-2 py-2 text-left text-[13px] text-fg-sub"
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+      <DropdownMenuTrigger asChild>
+        <PressableButton
+          kind="icon"
+          data-tour="display-menu"
+          aria-label="表示とモード"
+          className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-[calc(var(--radius)*0.8333)] border transition-colors ${
+            isOpen
+              ? "border-accent bg-accent/12 text-accent-soft"
+              : "border-line-strong text-fg-sub"
+          }`}
+        >
+          <SlidersHorizontal size={17} />
+          {activeCount > 0 && (
+            <span
+              aria-hidden
+              className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 font-mono text-[9px] font-semibold text-accent-fg"
             >
-              <HelpCircle size={15} className="shrink-0 text-fg-muted" />
-              使い方をもう一度見る
-            </PressableButton>
+              {activeCount}
+            </span>
+          )}
+        </PressableButton>
+      </DropdownMenuTrigger>
 
-            {/* 見た目(テーマ)の選択そのものはホームにある。ここに置くのは
-                「この1件だけ端末の既定から外す」というスイッチだけ。
-                対象のプロジェクトが必要なので、下書き(ゲスト)では出せない */}
-            {isThemeLoaded && themeProjectId !== null && (
-              <>
-                <span aria-hidden className="my-1 block h-px bg-line" />
-                <Switch
-                  checked={hasProjectOverride}
-                  onChange={() => setProjectOverride(!hasProjectOverride)}
-                  label="このプロジェクトだけ別の見た目"
-                  description={
-                    hasProjectOverride
-                      ? "ホームでテーマを変えても、ここは変わりません"
-                      : "オンにすると、いまの見た目をこのプロジェクトに固定します"
-                  }
-                  icon={Palette}
-                  fullWidth
-                />
-              </>
-            )}
-          </div>
-        </>
-      )}
-    </div>
+      <DropdownMenuContent align="end" aria-label="表示とモード">
+        <DropdownMenuLabel>
+          表示とモード
+          <span className="font-mono text-[10px] font-normal tracking-normal">
+            {dancerCount}人 · {sceneCount}シーン
+          </span>
+        </DropdownMenuLabel>
+
+        {/* 目盛りは3択なので、オン/オフではなくラジオで持つ。
+            矢印キーで選び替えられ、いまどれかも読み上げられる */}
+        <div className="flex items-center gap-2 px-2 py-1.5">
+          <Grid3x3 size={15} className="shrink-0 text-fg-muted" />
+          <span className="flex-1 text-[12.5px] text-fg">目盛り</span>
+          <DropdownMenuRadioGroup
+            value={gridMode}
+            onValueChange={(value) => setGridMode(value as GridMode)}
+            className="flex shrink-0 overflow-hidden rounded-full border border-line-strong"
+          >
+            {GRID_MODES.map((option) => (
+              <DropdownMenuRadioItem
+                key={option.value}
+                value={option.value}
+                // 選んでも閉じない。続けて見比べたい場所なので
+                onSelect={(event) => event.preventDefault()}
+              >
+                {option.label}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </div>
+
+        {modes.map((mode) => (
+          <DropdownMenuCheckboxItem
+            key={mode.label}
+            checked={mode.checked}
+            onCheckedChange={mode.onChange}
+            onSelect={(event) => event.preventDefault()}
+          >
+            <mode.icon
+              size={16}
+              aria-hidden
+              className={`shrink-0 ${mode.checked ? "text-accent-soft" : "text-fg-muted"}`}
+            />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate">{mode.label}</span>
+              <span className="mt-0.5 block text-[11px] leading-snug text-fg-muted">
+                {mode.description}
+              </span>
+            </span>
+            <SwitchTrack checked={mode.checked} />
+          </DropdownMenuCheckboxItem>
+        ))}
+
+        {/* 使い方の案内をもう一度。初回に飛ばした人と、
+            しばらく空けて戻ってきた人のための入口 */}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => requestTour()}>
+          <HelpCircle size={15} className="shrink-0 text-fg-muted" />
+          使い方をもう一度見る
+        </DropdownMenuItem>
+
+        {/* 見た目(テーマ)の選択そのものはホームにある。ここに置くのは
+            「この1件だけ端末の既定から外す」というスイッチだけ。
+            対象のプロジェクトが必要なので、下書き(ゲスト)では出せない */}
+        {isThemeLoaded && themeProjectId !== null && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuCheckboxItem
+              checked={hasProjectOverride}
+              onCheckedChange={(checked) => setProjectOverride(checked === true)}
+              onSelect={(event) => event.preventDefault()}
+            >
+              <Palette
+                size={16}
+                aria-hidden
+                className={`shrink-0 ${hasProjectOverride ? "text-accent-soft" : "text-fg-muted"}`}
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate">
+                  このプロジェクトだけ別の見た目
+                </span>
+                <span className="mt-0.5 block text-[11px] leading-snug text-fg-muted">
+                  {hasProjectOverride
+                    ? "ホームでテーマを変えても、ここは変わりません"
+                    : "オンにすると、いまの見た目をこのプロジェクトに固定します"}
+                </span>
+              </span>
+              <SwitchTrack checked={hasProjectOverride} />
+            </DropdownMenuCheckboxItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

@@ -4,6 +4,7 @@ import { Music4 } from "lucide-react";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { useBpm } from "@/features/music/hooks/useBpm";
 import { MAX_BPM, MIN_BPM } from "@/features/music/lib/metronomePreference";
+import { Slider } from "@/components/ui/slider";
 import { PressableButton } from "@/components/atoms/PressableButton";
 
 /** 押すだけで置ける速さ。バラード〜アップテンポの目安 */
@@ -42,22 +43,21 @@ export function MetronomeControls() {
           メトロノーム
         </PressableButton>
 
-        <label className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="sr-only">BPM</span>
-          <input
-            type="range"
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <Slider
+            aria-label="BPM"
             min={MIN_BPM}
             max={MAX_BPM}
             step={1}
-            value={bpm}
-            onChange={(event) => setBpm(Number(event.target.value))}
-            className="slider min-w-0 flex-1"
+            value={[bpm]}
+            onValueChange={([next]) => setBpm(next)}
+            className="min-w-0 flex-1"
           />
           <span className="w-14 shrink-0 text-right font-mono text-[12px] tabular-nums text-fg">
             {bpm}
             <span className="ml-0.5 text-[10px] text-fg-muted">BPM</span>
           </span>
-        </label>
+        </div>
       </div>
 
       {/* 数字だけだと、速いのか遅いのかの見当が付かない。よく使う値を置く */}
