@@ -83,12 +83,15 @@ export function SceneTimeField({
         </p>
       )}
 
-      <label className="flex items-start gap-2 text-[11px] leading-snug text-fg-muted">
+      {/* ラベルまで含めて押せる的にする(44px以上)。小さな四角だけを
+          狙わせない — 指では外しやすく、外すと何も起きないので
+          「効かない」ように見える */}
+      <label className="flex min-h-11 items-start gap-2.5 py-1 text-[11px] leading-snug text-fg-muted">
         <input
           type="checkbox"
           checked={ripple}
           onChange={(event) => setRipple(event.target.checked)}
-          className="mt-0.5 shrink-0 accent-[var(--accent)]"
+          className="checkbox mt-0.5 shrink-0"
         />
         <span>
           以降のシーンも一緒にずらす

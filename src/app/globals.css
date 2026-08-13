@@ -102,6 +102,55 @@ body::before {
   display: none; /* Chrome/Safari */
 }
 
+/* チェックボックス。標準の四角はOSが描くので、10テーマのどれとも合わず、
+   タッチには小さすぎる。22pxの角丸に✓を入れたものへ置き換える
+   (押す的としては、ラベルを含む行全体で44pxを確保する) */
+.checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: calc(var(--radius) * 0.5);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-strong);
+  display: inline-grid;
+  place-content: center;
+  cursor: pointer;
+  transition:
+    background-color 0.11s ease,
+    border-color 0.11s ease;
+}
+.checkbox::after {
+  content: "";
+  width: 12px;
+  height: 12px;
+  transform: scale(0);
+  transition: transform 0.11s cubic-bezier(0.2, 0.7, 0.2, 1);
+  background: var(--accent-fg);
+  /* ✓ の形。アイコンを1つ読み込む代わりに、面を切り抜いて作る */
+  clip-path: polygon(
+    14% 44%,
+    0 58%,
+    40% 100%,
+    100% 16%,
+    86% 2%,
+    40% 72%
+  );
+}
+.checkbox:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.checkbox:checked::after {
+  transform: scale(1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .checkbox,
+  .checkbox::after {
+    transition: none;
+  }
+}
+
 /* スライダー(速さ・頭出しなど)。
    標準のつまみはOSが描くので、10テーマのどれとも合わない。しかも
    Windowsでは小さすぎて指では掴めない。トラックは細く、つまみは18pxの丸に
