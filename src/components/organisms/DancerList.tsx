@@ -37,14 +37,14 @@ export function DancerList() {
     <div className="flex min-h-0 flex-col">
       <div className="flex shrink-0 items-baseline justify-between gap-2 px-3.5 py-3">
         <span className="text-sm font-semibold text-fg-strong">ダンサー</span>
-        <span className="shrink-0 font-mono text-[11px] text-fg-muted">
+        <span className="shrink-0 font-mono text-caption text-fg-muted">
           {rows.length}人
         </span>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
         {rows.length === 0 ? (
-          <p className="px-0.5 text-[11px] leading-relaxed text-fg-muted">
+          <p className="px-0.5 text-caption leading-relaxed text-fg-muted">
             このシーンにはまだ誰もいません。
           </p>
         ) : (
@@ -69,7 +69,7 @@ export function DancerList() {
                         backgroundColor: themedDancerColor(dancer.color),
                       }}
                     />
-                    <span className="min-w-0 flex-1 truncate text-[13px] text-fg-strong">
+                    <span className="min-w-0 flex-1 truncate text-label text-fg-strong">
                       {dancer.name}
                     </span>
                     <span className="shrink-0 font-mono text-[10px] text-fg-muted">
@@ -85,7 +85,7 @@ export function DancerList() {
 
         <PressableButton
           onClick={() => setAddDancerSheetOpen(true)}
-          className="mt-2 flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-line-strong text-[12px] font-medium whitespace-nowrap text-fg-sub"
+          className="mt-2 flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-line-strong text-label font-medium whitespace-nowrap text-fg-sub"
         >
           <UserPlus size={14} className="shrink-0" />
           ダンサーを追加

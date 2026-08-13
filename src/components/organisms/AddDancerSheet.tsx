@@ -196,7 +196,7 @@ export function AddDancerSheet({ project }: Props) {
 
         {/* 何が作られるかを、追加する前に見せる */}
         <div className="flex flex-col gap-2 rounded-xl border border-line bg-surface-raised p-3">
-          <span className="text-[11px] font-medium text-fg-muted">
+          <span className="text-caption font-medium text-fg-muted">
             名前と色は自動で決まります（あとで変更できます）
           </span>
           <div className="flex flex-wrap gap-1.5">
@@ -210,7 +210,7 @@ export function AddDancerSheet({ project }: Props) {
                   className="block h-3.5 w-3.5 rounded-full"
                   style={{ backgroundColor: themedDancerColor(colors[index]) }}
                 />
-                <span className="font-mono text-[11px] font-semibold text-fg">
+                <span className="font-mono text-caption font-semibold text-fg">
                   {name}
                 </span>
               </span>

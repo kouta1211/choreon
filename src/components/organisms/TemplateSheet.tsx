@@ -140,7 +140,7 @@ export function TemplateSheet({ project }: Props) {
                     dancerColors={dancerColors}
                   />
                   <span
-                    className={`truncate text-[11px] font-medium ${
+                    className={`truncate text-caption font-medium ${
                       isPicked ? "text-accent-soft" : "text-fg"
                     }`}
                   >
@@ -235,7 +235,7 @@ function CountMismatchNote({
             style={{ backgroundColor: color }}
           />
         ))}
-        <span className="ml-1 text-[11px] text-fg-muted">
+        <span className="ml-1 text-caption text-fg-muted">
           いまステージにいる{dancerCount}人に合わせて表示しています
         </span>
       </div>
@@ -244,7 +244,7 @@ function CountMismatchNote({
 
   const gap = Math.abs(shownCount - dancerCount);
   return (
-    <p className="rounded-[calc(var(--radius)*0.8333)] border border-accent/40 bg-accent/10 px-3 py-2 text-[11px] leading-relaxed text-accent-bright">
+    <p className="rounded-[calc(var(--radius)*0.8333)] border border-accent/40 bg-accent/10 px-3 py-2 text-caption leading-relaxed text-accent-bright">
       <span className="font-mono">{shownCount}</span>
       人ぶんの形です。
       {shownCount < dancerCount ? (
@@ -295,7 +295,7 @@ function TransformControls({
           onClick={() =>
             onChange({ ...transform, [item.key]: !transform[item.key] })
           }
-          className={`flex h-8 items-center gap-1.5 rounded-full border px-3 text-[11px] font-medium whitespace-nowrap ${
+          className={`flex h-8 items-center gap-1.5 rounded-full border px-3 text-caption font-medium whitespace-nowrap ${
             transform[item.key]
               ? "border-accent bg-accent/12 text-accent-soft"
               : "border-line-strong text-fg-sub"
@@ -313,7 +313,7 @@ function TransformControls({
             type="button"
             aria-pressed={transform.spacing === option.value}
             onClick={() => onChange({ ...transform, spacing: option.value })}
-            className={`h-8 px-3 text-[11px] font-medium whitespace-nowrap ${
+            className={`h-8 px-3 text-caption font-medium whitespace-nowrap ${
               transform.spacing === option.value
                 ? "bg-accent/12 text-accent-soft"
                 : "text-fg-sub"

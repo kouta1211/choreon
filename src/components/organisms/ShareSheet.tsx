@@ -135,7 +135,7 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
             fullWidth
           />
           {!stored.shareToken && (
-            <p className="mt-2 rounded-xl border border-line px-3 py-2.5 text-[11px] leading-snug text-fg-muted">
+            <p className="mt-2 rounded-xl border border-line px-3 py-2.5 text-caption leading-snug text-fg-muted">
               この作品にはまだ共有用の鍵がありません。
               <span className="font-mono"> 0007 </span>
               のマイグレーションを実行すると使えるようになります。
@@ -146,9 +146,9 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
         {stored.isShared && link && (
           <>
             <div>
-              <p className="mb-1.5 text-[12px] text-fg-sub">みんなに配るリンク</p>
+              <p className="mb-1.5 text-label text-fg-sub">みんなに配るリンク</p>
               <div className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate rounded-xl border border-line-strong bg-surface-strong px-3 py-2.5 font-mono text-[11px] text-fg">
+                <span className="min-w-0 flex-1 truncate rounded-xl border border-line-strong bg-surface-strong px-3 py-2.5 font-mono text-caption text-fg">
                   {link}
                 </span>
                 <PressableButton
@@ -168,7 +168,7 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
 
             {Object.keys(dancers).length > 0 && (
               <div>
-                <p className="mb-1.5 text-[12px] text-fg-sub">
+                <p className="mb-1.5 text-label text-fg-sub">
                   一人ひとりに配るリンク
                 </p>
                 <ul className="flex flex-col gap-1">
@@ -186,7 +186,7 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
                             dancer.id,
                           )
                         }
-                        className="flex h-11 w-full items-center gap-2.5 rounded-xl px-2 text-left text-[13px] text-fg"
+                        className="flex h-11 w-full items-center gap-2.5 rounded-xl px-2 text-left text-label text-fg"
                       >
                         <span
                           aria-hidden
@@ -197,7 +197,7 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
                           {dancer.name}
                         </span>
                         {copiedKey === dancer.id ? (
-                          <span className="flex shrink-0 items-center gap-1 text-[11px] text-accent-soft">
+                          <span className="flex shrink-0 items-center gap-1 text-caption text-accent-soft">
                             <Check size={13} />
                             コピーしました
                           </span>
@@ -208,7 +208,7 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-1.5 text-[11px] leading-snug text-fg-muted">
+                <p className="mt-1.5 text-caption leading-snug text-fg-muted">
                   開いた時点でその人が選ばれます。見られる範囲は同じで、
                   他の人の道順も見られます。
                 </p>
@@ -217,7 +217,7 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
 
             <PressableButton
               onClick={rotate}
-              className="flex h-11 items-center justify-center gap-2 rounded-xl border border-line-strong text-[12.5px] text-fg-sub"
+              className="flex h-11 items-center justify-center gap-2 rounded-xl border border-line-strong text-label text-fg-sub"
             >
               <RefreshCw size={15} />
               リンクを作り直す
@@ -225,7 +225,7 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
           </>
         )}
 
-        <p className="text-[11px] leading-snug text-fg-muted">
+        <p className="text-caption leading-snug text-fg-muted">
           曲は付いていきません(音源はこの端末から出ないため)。相手の画面では
           8カウントの縞が地になり、同じ曲を相手の端末で選べば波形になります。
           曲の開始位置は共有されるので、選んでもらえれば位置は合います。

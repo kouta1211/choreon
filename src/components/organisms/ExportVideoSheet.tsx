@@ -113,18 +113,18 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
     >
       <div className="flex flex-col gap-4 px-3.5 py-3">
         {!format ? (
-          <p className="rounded-xl border border-line px-3 py-2.5 text-[12px] leading-snug text-fg-muted">
+          <p className="rounded-xl border border-line px-3 py-2.5 text-label leading-snug text-fg-muted">
             この端末のブラウザでは動画を書き出せません。パソコンの Chrome か、
             新しい iPhone の Safari でお試しください。
           </p>
         ) : scenes.length < 2 ? (
-          <p className="rounded-xl border border-line px-3 py-2.5 text-[12px] leading-snug text-fg-muted">
+          <p className="rounded-xl border border-line px-3 py-2.5 text-label leading-snug text-fg-muted">
             シーンが2つ以上あると、その間の動きを動画にできます。
           </p>
         ) : (
           <>
             <div className="flex items-center gap-2.5">
-              <span className="flex-1 text-[13px] text-fg">大きさ</span>
+              <span className="flex-1 text-label text-fg">大きさ</span>
               <div className="flex shrink-0 overflow-hidden rounded-[calc(var(--radius)*0.8333)] border border-line-strong">
                 {SIZES.map((size) => (
                   <PressableButton
@@ -132,7 +132,7 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
                     aria-pressed={height === size.height}
                     disabled={isRunning}
                     onClick={() => setHeight(size.height)}
-                    className={`h-8 min-w-11 px-2 font-mono text-[12px] ${
+                    className={`h-8 min-w-11 px-2 font-mono text-label ${
                       height === size.height
                         ? "bg-accent/16 text-accent-soft"
                         : "text-fg-muted"
@@ -166,7 +166,7 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
                     className="block h-full bg-accent transition-[width] duration-200"
                   />
                 </div>
-                <p className="text-[11px] text-fg-muted">
+                <p className="text-caption text-fg-muted">
                   書き出し中… 残り{" "}
                   {Math.max(
                     0,
@@ -176,7 +176,7 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
                 </p>
                 <PressableButton
                   onClick={cancel}
-                  className="h-11 rounded-xl border border-line-strong text-[13px] text-fg-sub"
+                  className="h-11 rounded-xl border border-line-strong text-label text-fg-sub"
                 >
                   中止する
                 </PressableButton>
@@ -192,7 +192,7 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
               </PressableButton>
             )}
 
-            <p className="text-[11px] leading-snug text-fg-muted">
+            <p className="text-caption leading-snug text-fg-muted">
               書き出しには作品と同じだけ時間がかかります(実際に動かしながら
               録っているため)。音は入りません。
             </p>

@@ -92,19 +92,19 @@ export function ReviewSheet({ project, isOpen, onClose }: Props) {
       titleRight={scene?.name}
     >
       <div className="flex flex-col gap-3 px-[18px] py-4">
-        <p className="text-[12px] leading-[1.65] text-fg-sub">
+        <p className="text-label leading-[1.65] text-fg-sub">
           いま開いているシーンの立ち位置だけを送ります。作品名やダンサーの色は
           送りません。返ってくるのは判定ではなく、考えるための材料です。
         </p>
 
         {text && (
-          <div className="rounded-[calc(var(--radius)*0.8)] border border-line-strong bg-surface-sunken p-3 text-[12.5px] leading-[1.75] whitespace-pre-wrap text-fg">
+          <div className="rounded-[calc(var(--radius)*0.8)] border border-line-strong bg-surface-sunken p-3 text-label leading-[1.75] whitespace-pre-wrap text-fg">
             {text}
           </div>
         )}
 
         {error && (
-          <p className="rounded-[calc(var(--radius)*0.8)] bg-fg/5 p-3 text-[12px] text-fg-sub">
+          <p className="rounded-[calc(var(--radius)*0.8)] bg-fg/5 p-3 text-label text-fg-sub">
             {error}
           </p>
         )}
@@ -113,7 +113,7 @@ export function ReviewSheet({ project, isOpen, onClose }: Props) {
           kind="primary"
           onClick={() => void run()}
           disabled={isRunning || !scene}
-          className="flex h-11 items-center justify-center gap-1.5 rounded-[calc(var(--radius)*0.9)] bg-accent text-[13px] font-semibold text-accent-fg shadow-[inset_0_1px_0_rgb(255_255_255/.22)] disabled:opacity-50"
+          className="flex h-11 items-center justify-center gap-1.5 rounded-[calc(var(--radius)*0.9)] bg-accent text-label font-semibold text-accent-fg shadow-[inset_0_1px_0_rgb(255_255_255/.22)] disabled:opacity-50"
         >
           <Sparkles size={15} />
           {isRunning ? "見てもらっています..." : text ? "もう一度" : "見てもらう"}

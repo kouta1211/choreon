@@ -154,7 +154,7 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
                       fullWidth
                     />
                     <span
-                      className={`mt-1 block font-mono text-[10.5px] ${
+                      className={`mt-1 block font-mono text-caption ${
                         isSelected ? "text-accent-bright" : "text-fg-muted"
                       }`}
                     >
@@ -203,7 +203,7 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
       <PressableButton
         onClick={addScene}
         disabled={isCreating}
-        className="flex h-13 items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong text-[13px] font-medium whitespace-nowrap text-fg-sub disabled:opacity-50"
+        className="flex h-13 items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong text-label font-medium whitespace-nowrap text-fg-sub disabled:opacity-50"
       >
         <Plus size={15} className="shrink-0" />
         いまの配置をコピーして追加

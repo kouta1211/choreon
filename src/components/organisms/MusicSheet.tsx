@@ -69,11 +69,11 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title="曲">
-      <div className="flex flex-col gap-4 px-3.5 py-3">
+      <div className="flex flex-col gap-gutter-lg px-gutter py-gutter">
         <div>
           <PressableButton
             onClick={() => fileInputRef.current?.click()}
-            className="flex h-13 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-line-strong text-[13px] font-medium text-fg-sub"
+            className="flex h-20 w-full flex-col items-center justify-center gap-base rounded-xl border border-dashed border-line-strong bg-surface text-label text-fg-sub"
           >
             <Upload size={15} className="shrink-0" />
             {fileName ? "別の曲を選ぶ" : "端末から曲を選ぶ"}
@@ -100,11 +100,11 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
             <div className="mt-2 flex flex-col gap-1.5 rounded-xl border border-line bg-surface-raised px-3 py-2.5">
               <div className="flex items-center gap-2">
                 <Music size={15} className="shrink-0 text-accent-soft" />
-                <span className="min-w-0 flex-1 truncate text-[13px] text-fg-strong">
+                <span className="min-w-0 flex-1 truncate text-label text-fg-strong">
                   {fileName}
                 </span>
                 {durationSeconds !== null && (
-                  <span className="shrink-0 font-mono text-[11px] text-fg-muted">
+                  <span className="shrink-0 font-mono text-caption text-fg-muted">
                     {formatClock(durationSeconds)}
                   </span>
                 )}
@@ -117,13 +117,13 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
                   <X size={15} />
                 </PressableButton>
               </div>
-              <p className="text-[10.5px] leading-snug text-fg-muted">
+              <p className="text-caption leading-snug text-fg-muted">
                 この端末に控えてあります。開き直しても入ったままです。
               </p>
             </div>
           )}
 
-          <p className="mt-2 text-[11px] leading-snug text-fg-muted">
+          <p className="mt-2 text-caption leading-snug text-fg-muted">
             音源はこの端末から出ません。作品を共有しても曲は付いていかないので、
             相手には同じ曲を選んでもらってください(開始位置は共有されます)。
           </p>
@@ -133,9 +133,9 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
             なるので、2つの拍が同時に鳴ると合わせる先が分からなくなる */}
         {!fileName && (
           <div className="flex flex-col gap-2 border-t border-line pt-3.5">
-            <p className="text-[13px] text-fg">曲がないときの拍</p>
+            <p className="text-label text-fg">曲がないときの拍</p>
             <MetronomeControls />
-            <p className="text-[11px] leading-snug text-fg-muted">
+            <p className="text-caption leading-snug text-fg-muted">
               曲を用意する前でも、振付の速さを耳で確かめられます。
               再生ボタンを押している間だけ鳴ります。
             </p>
@@ -146,10 +146,10 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
             どれを太く引くかはこの値で決まる */}
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="flex-1 text-[13px] text-fg">拍子</span>
+            <span className="flex-1 text-label text-fg">拍子</span>
             <BeatsPerBarSegment />
           </div>
-          <p className="mt-1.5 text-[11px] leading-snug text-fg-muted">
+          <p className="mt-1.5 text-caption leading-snug text-fg-muted">
             数える単位(8カウント)は拍子では変わりません。ここで変わるのは、
             メトロノームで強く鳴る拍と、時間軸で太く引く線だけです。
           </p>
@@ -157,8 +157,8 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
 
         <div>
           <label className="flex items-center gap-2.5">
-            <span className="flex-1 text-[13px] text-fg">曲の開始位置</span>
-            <span className="flex shrink-0 items-center gap-1 rounded-[calc(var(--radius)*0.5833)] border border-line-strong bg-surface-strong px-2 py-1 font-mono text-[12px] text-fg focus-within:border-accent">
+            <span className="flex-1 text-label text-fg">曲の開始位置</span>
+            <span className="flex shrink-0 items-center gap-1 rounded-[calc(var(--radius)*0.5833)] border border-line-strong bg-surface-strong px-2 py-1 font-mono text-label text-fg focus-within:border-accent">
               <input
                 key={storedOffset}
                 type="number"
@@ -185,14 +185,14 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
               </span>
             </span>
           </label>
-          <p className="mt-1.5 text-[11px] leading-snug text-fg-muted">
+          <p className="mt-1.5 text-caption leading-snug text-fg-muted">
             振付が曲の途中から始まるときに使います。イントロが12.5秒あるなら
             12.5と入れると、再生ボタンでそこから鳴ります。
           </p>
         </div>
 
         <div className="rounded-xl border border-line px-3 py-2.5">
-          <p className="font-mono text-[11px] text-fg-muted">
+          <p className="font-mono text-caption text-fg-muted">
             通しで {totalTransitionSeconds(scenes)}秒 ·{" "}
             {formatClock(storedOffset)} 〜{" "}
             {formatClock(storedOffset + totalTransitionSeconds(scenes))}

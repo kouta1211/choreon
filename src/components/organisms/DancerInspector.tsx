@@ -195,7 +195,7 @@ export function DancerInspector() {
             value={dancer.name}
             onCommit={commitRename}
             label="ダンサー名"
-            textClassName="text-[13px] font-semibold"
+            textClassName="text-label font-semibold"
           />
 
           {selectedSceneId && position && (
