@@ -84,7 +84,7 @@ export function Toast() {
         transform: `translateX(${dragPx}px)`,
         opacity: Math.max(0.2, 1 - Math.abs(dragPx) / (SWIPE_DISMISS_PX * 2)),
       }}
-      className={`overlay-panel fixed right-[14px] bottom-[var(--toast-bottom,24px)] left-[14px] z-50 flex touch-pan-y items-center gap-[10px] rounded-[13px] px-3 py-[11px] md:left-auto md:w-[380px] ${
+      className={`overlay-panel fixed right-[14px] bottom-[var(--toast-bottom,24px)] left-[14px] z-50 flex touch-pan-y items-center gap-[10px] rounded-[calc(var(--radius)*1.0833)] px-3 py-[11px] md:left-auto md:w-[380px] ${
         dragPx === 0
           ? "transition-[transform,opacity] duration-200 motion-reduce:transition-none"
           : ""
@@ -92,7 +92,7 @@ export function Toast() {
     >
       <span
         aria-hidden
-        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] ${
+        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-[calc(var(--radius)*0.5)] ${
           isError
             ? "bg-red-500/18 text-red-400"
             : isWarning

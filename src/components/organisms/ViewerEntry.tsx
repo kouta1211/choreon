@@ -131,7 +131,7 @@ export function ViewerEntry() {
                     }
                   : undefined
               }
-              className={`flex h-10 items-center gap-2 rounded-[11px] border px-[13px] text-[13px] ${
+              className={`flex h-10 items-center gap-2 rounded-[calc(var(--radius)*0.9167)] border px-[13px] text-[13px] ${
                 isSelected
                   ? "font-semibold text-fg-strong"
                   : "border-line-strong text-fg-sub"

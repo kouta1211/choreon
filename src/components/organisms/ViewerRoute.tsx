@@ -78,7 +78,7 @@ export function ViewerRoute() {
 
   return (
     <>
-      <div className="overlay-panel flex items-center gap-2.5 rounded-[13px] px-3 py-[11px]">
+      <div className="overlay-panel flex items-center gap-2.5 rounded-[calc(var(--radius)*1.0833)] px-3 py-[11px]">
         <ArrowRight size={22} className="shrink-0 text-fg-sub" />
         <p className="min-w-0 flex-1 text-[12.5px] leading-snug font-medium text-fg">
           {current ? (

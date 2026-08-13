@@ -311,6 +311,7 @@ where tablename in ('projects', 'dancers', 'scenes', 'positions');
 --   supabase/migrations/0004_scene_time_seconds.sql
 --   supabase/migrations/0005_project_bpm.sql
 --   supabase/migrations/0006_drop_scene_transition_duration.sql
+--   supabase/migrations/0007_share_link.sql
 --
 -- どのファイルも「何度実行しても安全」に書いてあるため、適用済みかどうか
 -- 分からない場合はとりあえず流してよい。各ファイル末尾には、意図した列が

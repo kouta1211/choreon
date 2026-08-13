@@ -87,19 +87,6 @@ export async function renameScene(
   if (error) throw error;
 }
 
-export async function updateSceneOrder(
-  supabase: SupabaseClient<Database>,
-  sceneId: string,
-  orderIndex: number,
-): Promise<void> {
-  const { error } = await supabase
-    .from("scenes")
-    .update({ order_index: orderIndex })
-    .eq("id", sceneId);
-
-  if (error) throw error;
-}
-
 /** シーンの時刻をまとめて書き戻す。
  * 1つ動かすと隣も動くこと(リップル)があるので、常に複数件で受ける */
 export async function updateSceneTimes(

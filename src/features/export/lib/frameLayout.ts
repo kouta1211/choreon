@@ -45,25 +45,3 @@ export function stageRect(
     unit,
   };
 }
-
-/**
- * 何コマ書き出すか、それぞれ何秒目か。
- *
- * 先頭のシーンから最後のシーンまで。最後のコマは必ず入れる
- * (割り切れないと、最後の隊形が一瞬だけ出て終わる、または出ないため)。
- */
-export function frameTimes(
-  fromSeconds: number,
-  toSeconds: number,
-  fps: number,
-): number[] {
-  if (!(fps > 0) || toSeconds <= fromSeconds) return [fromSeconds];
-
-  const times: number[] = [];
-  const step = 1 / fps;
-  for (let t = fromSeconds; t < toSeconds; t += step) {
-    times.push(Math.round(t * 1000) / 1000);
-  }
-  times.push(toSeconds);
-  return times;
-}
