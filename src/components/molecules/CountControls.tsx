@@ -62,9 +62,9 @@ export function CountControls() {
         className="min-w-0 flex-1"
       />
 
-      <span className="w-[52px] shrink-0 text-right font-mono text-[11px] tabular-nums text-fg-sub">
+      <span className="w-[52px] shrink-0 text-right font-mono text-caption tabular-nums text-fg-sub">
         {bpm}
-        <span className="ml-0.5 text-[9px] text-fg-muted">BPM</span>
+        <span className="ml-0.5 text-caption text-fg-muted">BPM</span>
       </span>
     </div>
   );

@@ -72,7 +72,7 @@ export function DancerList() {
                     <span className="min-w-0 flex-1 truncate text-label text-fg-strong">
                       {dancer.name}
                     </span>
-                    <span className="shrink-0 font-mono text-[10px] text-fg-muted">
+                    <span className="shrink-0 font-mono text-caption text-fg-muted">
                       {position.xCoordinate.toFixed(1)},
                       {position.yCoordinate.toFixed(1)}
                     </span>

@@ -157,7 +157,7 @@ export function AuthForm({
       {isInsecureOrigin && (
         <p
           role="status"
-          className="rounded-[calc(var(--radius)*0.6667)] border border-amber-500/40 bg-amber-500/10 px-3 py-2.5 text-[12px] leading-relaxed text-amber-200"
+          className="rounded-[calc(var(--radius)*0.6667)] border border-amber-500/40 bg-amber-500/10 px-3 py-2.5 text-label leading-relaxed text-amber-200"
         >
           この画面は暗号化されていない接続で開かれているため、ログインできません。
           <span className="mt-1 block text-amber-200/80">

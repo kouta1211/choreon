@@ -45,7 +45,7 @@ export function Tooltip({
       {children}
       <span
         aria-hidden
-        className={`pointer-events-none absolute z-30 rounded-md border border-line-strong bg-surface-strong px-2 py-1 text-[11px] whitespace-nowrap text-fg opacity-0 shadow-lg transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 ${
+        className={`pointer-events-none absolute z-30 rounded-md border border-line-strong bg-surface-strong px-2 py-1 text-caption whitespace-nowrap text-fg opacity-0 shadow-lg transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 ${
           placement === "bottom" ? "top-full mt-1.5" : "bottom-full mb-1.5"
         } ${ALIGNMENT[align]}`}
       >

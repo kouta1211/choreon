@@ -623,7 +623,7 @@ export function MusicTimeline({ project, audioRef }: Props) {
           Ctrl＋ホイールも効くが、知らないと辿り着けない */}
       {layout.showZoomButtons && (
         <div className="flex items-center justify-end gap-1.5">
-          <span className="font-mono text-[10.5px] tabular-nums text-fg-muted">
+          <span className="font-mono text-caption tabular-nums text-fg-muted">
             {Math.round(pxPerSecond)}
             <span className="ml-0.5">px/秒</span>
           </span>

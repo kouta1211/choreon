@@ -60,7 +60,7 @@ export function ProjectTitle({ project }: Props) {
       value={title}
       onCommit={commit}
       label="プロジェクト名"
-      textClassName="text-[15px] font-semibold"
+      textClassName="text-body font-semibold"
       fullWidth
     />
   );

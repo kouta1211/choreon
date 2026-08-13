@@ -77,7 +77,7 @@ export function Switch({
             <span className="min-w-0">
               <span className="block truncate">{label}</span>
               {description && (
-                <span className="mt-0.5 block text-[11px] leading-snug text-fg-muted">
+                <span className="mt-0.5 block text-caption leading-snug text-fg-muted">
                   {description}
                 </span>
               )}

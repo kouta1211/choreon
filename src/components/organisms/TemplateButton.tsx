@@ -48,7 +48,7 @@ export function TemplateButton() {
         {isAvailable && (
           <span
             aria-hidden
-            className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-surface-strong px-1 font-mono text-[9px] font-semibold text-fg"
+            className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-surface-strong px-1 font-mono text-caption font-semibold text-fg"
           >
             {dancerCount}
           </span>

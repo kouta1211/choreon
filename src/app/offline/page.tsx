@@ -24,10 +24,10 @@ export default function OfflinePage() {
         <CloudOff size={24} />
       </span>
       <div>
-        <h1 className="text-[15px] font-semibold text-fg-strong">
+        <h1 className="text-body font-semibold text-fg-strong">
           いま電波が届いていません
         </h1>
-        <p className="mt-1.5 text-[12.5px] leading-relaxed text-fg-sub">
+        <p className="mt-1.5 text-label leading-relaxed text-fg-sub">
           一度開いた画面は、そのまま見られます。
           <br />
           直前の画面へ戻るか、電波が戻ってから開き直してください。
@@ -35,7 +35,7 @@ export default function OfflinePage() {
       </div>
       <Link
         href="/"
-        className="flex h-11 items-center rounded-xl border border-line-strong px-4 text-[13px] text-fg"
+        className="flex h-11 items-center rounded-xl border border-line-strong px-4 text-label text-fg"
       >
         作品の一覧へ
       </Link>

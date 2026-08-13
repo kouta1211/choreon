@@ -52,7 +52,7 @@ export function DropdownMenuLabel({
   return (
     <DropdownMenuPrimitive.Label
       className={cn(
-        "flex items-baseline justify-between px-2 pt-1 pb-2 text-[11px] font-semibold tracking-wider text-fg-muted",
+        "flex items-baseline justify-between px-2 pt-1 pb-2 text-caption font-semibold tracking-wider text-fg-muted",
         className,
       )}
       {...props}
@@ -104,7 +104,7 @@ export function DropdownMenuRadioItem({
   return (
     <DropdownMenuPrimitive.RadioItem
       className={cn(
-        "h-7 cursor-pointer px-2.5 text-[11px] font-medium whitespace-nowrap text-fg-sub outline-none",
+        "h-7 cursor-pointer px-2.5 text-caption font-medium whitespace-nowrap text-fg-sub outline-none",
         "data-[state=checked]:bg-accent/12 data-[state=checked]:text-accent-soft",
         "data-[highlighted]:bg-fg/6",
         className,

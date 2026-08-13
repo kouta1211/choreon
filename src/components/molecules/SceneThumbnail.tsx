@@ -129,14 +129,14 @@ export function SceneThumbnail({
         {showLabel && (
           <div className="mt-1 flex w-full items-baseline justify-between gap-1">
             <span
-              className={`min-w-0 truncate text-[11px] ${
+              className={`min-w-0 truncate text-caption ${
                 isSelected ? "font-semibold text-accent-soft" : "text-fg-sub"
               }`}
             >
               {scene.name}
             </span>
             <span
-              className={`shrink-0 font-mono text-[9px] ${
+              className={`shrink-0 font-mono text-caption ${
                 isSelected ? "font-semibold text-accent-soft" : "text-fg-muted"
               }`}
             >

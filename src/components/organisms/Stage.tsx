@@ -226,14 +226,14 @@ export function EmptyStage({
             backgroundSize: `${100 / widthUnits}% ${100 / heightUnits}%`,
           }}
         />
-        <p className="relative text-[13.5px] font-medium text-fg">
+        <p className="relative text-label font-medium text-fg">
           まだシーンがありません
         </p>
         <PressableButton
           kind="primary"
           onClick={onCreateScene}
           disabled={isCreating}
-          className="relative flex h-10 items-center gap-1.5 rounded-[calc(var(--radius)*0.8333)] bg-accent px-4 text-[13px] font-semibold whitespace-nowrap text-accent-fg disabled:opacity-50"
+          className="relative flex h-10 items-center gap-1.5 rounded-[calc(var(--radius)*0.8333)] bg-accent px-4 text-label font-semibold whitespace-nowrap text-accent-fg disabled:opacity-50"
         >
           最初のシーンを作る
         </PressableButton>

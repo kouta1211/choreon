@@ -67,7 +67,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
         titleRight={
           <PressableButton
             onClick={() => setDetailOf(null)}
-            className="font-sans text-[12px] text-fg-sub underline underline-offset-2"
+            className="font-sans text-label text-fg-sub underline underline-offset-2"
           >
             一覧へ戻る
           </PressableButton>
@@ -78,7 +78,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
           <ThemePreview themeId={detailTheme.id} size="large" />
 
           <div>
-            <p className="mb-2 text-[12px] font-medium text-fg-sub">
+            <p className="mb-2 text-label font-medium text-fg-sub">
               背景の質感
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -90,7 +90,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
                     type="button"
                     aria-pressed={isSelected}
                     onClick={() => setAppearance({ texture: texture.id })}
-                    className={`h-9 rounded-[calc(var(--radius)*0.75)] border px-3 text-[12px] ${
+                    className={`h-9 rounded-[calc(var(--radius)*0.75)] border px-3 text-label ${
                       isSelected
                         ? "border-accent bg-accent/12 font-semibold text-accent-soft"
                         : "border-line-strong text-fg-sub"
@@ -101,7 +101,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
                 );
               })}
             </div>
-            <p className="mt-2 text-[11px] leading-relaxed text-fg-muted">
+            <p className="mt-2 text-caption leading-relaxed text-fg-muted">
               地の上に薄く重ねる装飾です。ステージの中には掛かりません。
             </p>
           </div>
@@ -136,7 +136,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
               type="button"
               aria-pressed={isSelected}
               onClick={() => setFilter(item.id)}
-              className={`h-8 rounded-2xl px-3 text-[12px] ${
+              className={`h-8 rounded-2xl px-3 text-label ${
                 isSelected
                   ? "bg-accent font-semibold text-accent-fg"
                   : "border border-line-strong text-fg-sub"
@@ -147,7 +147,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
             </PressableButton>
           );
         })}
-        <span className="ml-auto shrink-0 text-[10px] text-fg-muted">
+        <span className="ml-auto shrink-0 text-caption text-fg-muted">
           この端末だけに保存
         </span>
       </div>
@@ -163,7 +163,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
 
           return (
             <section key={heading.id} className="mb-5 last:mb-0">
-              <p className="mb-2.5 text-[10px] font-semibold tracking-[0.14em] text-fg-sub">
+              <p className="mb-2.5 text-caption font-semibold tracking-[0.14em] text-fg-sub">
                 {heading.label}
               </p>
               <div className="grid grid-cols-2 gap-x-4 gap-y-3.5 lg:grid-cols-3">
@@ -191,7 +191,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
                       </span>
                       <span className="flex items-center gap-1">
                         <span
-                          className={`truncate text-[11.5px] ${
+                          className={`truncate text-caption ${
                             isSelected
                               ? "font-semibold text-accent-soft"
                               : "font-medium text-fg-strong"
@@ -207,7 +207,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
                           />
                         )}
                       </span>
-                      <span className="-mt-1 truncate text-[9.5px] text-fg-muted">
+                      <span className="-mt-1 truncate text-caption text-fg-muted">
                         {theme.subtitle}
                       </span>
                     </PressableButton>

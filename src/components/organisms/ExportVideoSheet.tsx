@@ -185,7 +185,7 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
               <PressableButton
                 kind="primary"
                 onClick={() => void start()}
-                className="flex h-12 items-center justify-center gap-2 rounded-xl bg-accent text-[14px] font-semibold text-accent-fg"
+                className="flex h-12 items-center justify-center gap-2 rounded-xl bg-accent text-body font-semibold text-accent-fg"
               >
                 <Film size={17} />
                 {Math.ceil(durationSeconds)}秒の動画を作る

@@ -115,7 +115,7 @@ export function ViewerRoute() {
         isTall
       >
         {/* 注記は1度だけ。行ごとに書くと、肝心の道順が埋もれる */}
-        <p className="border-b border-line px-[18px] py-3 text-[11.5px] leading-[1.6] text-fg-muted">
+        <p className="border-b border-line px-[18px] py-3 text-caption leading-[1.6] text-fg-muted">
           歩数は 1歩 60cm・1マス 90cm で計算した目安です。
           <span className="font-semibold text-fg-sub">
             上手／下手は客席から見た向きです。
@@ -145,11 +145,11 @@ export function ViewerRoute() {
                       : "border-transparent"
                   }`}
                 >
-                  <span className="w-[26px] shrink-0 pt-0.5 text-right font-mono text-[11px] text-fg-muted">
+                  <span className="w-[26px] shrink-0 pt-0.5 text-right font-mono text-caption text-fg-muted">
                     {step.number}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[12.5px] leading-snug text-fg">
+                    <span className="block text-label leading-snug text-fg">
                       {step.text}
                       {step.turn && (
                         <span className="text-fg-sub"> {step.turn}</span>
@@ -158,7 +158,7 @@ export function ViewerRoute() {
                         <span className="text-fg-sub"> — 速め</span>
                       )}
                     </span>
-                    <span className="mt-0.5 block font-mono text-[10.5px] text-fg-muted">
+                    <span className="mt-0.5 block font-mono text-caption text-fg-muted">
                       {formatClock(step.timeSeconds)} ·{" "}
                       {step.seconds.toFixed(1)}秒かけて
                       {isHere && " · いまここ"}

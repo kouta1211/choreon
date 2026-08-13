@@ -42,7 +42,7 @@ export function BeatsPerBarSegment() {
             type="button"
             aria-pressed={isOn}
             onClick={() => setBeatsPerBar(choice)}
-            className={`h-8 min-w-11 px-2 font-mono text-[12px] transition-colors ${
+            className={`h-8 min-w-11 px-2 font-mono text-label transition-colors ${
               index < CHOICES.length - 1 ? "border-r border-line-strong" : ""
             } ${
               isOn ? "bg-accent/16 text-accent-soft" : "text-fg-muted"

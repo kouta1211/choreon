@@ -197,7 +197,7 @@ function CountRail({
           >
             <span className="font-mono">{count}</span>人
             {count === dancerCount && (
-              <span className="ml-1.5 rounded-[calc(var(--radius)*0.4167)] bg-accent px-1 py-px text-[9px] font-semibold text-accent-fg">
+              <span className="ml-1.5 rounded-[calc(var(--radius)*0.4167)] bg-accent px-1 py-px text-caption font-semibold text-accent-fg">
                 いま
               </span>
             )}

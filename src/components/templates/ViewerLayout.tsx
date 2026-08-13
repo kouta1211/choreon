@@ -179,7 +179,7 @@ export function ViewerLayout({
               role="switch"
               aria-checked={isPathVisible}
               onClick={togglePath}
-              className={`flex h-8 shrink-0 items-center gap-1.5 rounded-2xl border px-[11px] text-[12px] ${
+              className={`flex h-8 shrink-0 items-center gap-1.5 rounded-2xl border px-[11px] text-label ${
                 isPathVisible
                   ? "border-accent bg-accent/16 text-accent-soft"
                   : "border-line-strong text-fg-muted"

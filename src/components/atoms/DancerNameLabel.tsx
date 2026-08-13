@@ -18,7 +18,7 @@ export function DancerNameLabel({ name }: Props) {
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute left-0 top-0 whitespace-nowrap text-[10px] font-bold leading-none text-[var(--label-text)] [text-shadow:var(--label-shadow)]"
+      className="pointer-events-none absolute left-0 top-0 whitespace-nowrap text-caption font-bold leading-none text-[var(--label-text)] [text-shadow:var(--label-shadow)]"
       style={{
         transform: `translate(-50%, 0%) translateY(${MARKER_SIZE / 2 + 4}px)`,
       }}

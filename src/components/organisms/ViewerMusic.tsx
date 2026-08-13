@@ -102,7 +102,7 @@ export function ViewerMusic({ isPlaying, onEnded }: Props) {
       {fileName ? (
         <>
           <Music size={13} className="shrink-0 text-accent-soft" />
-          <span className="min-w-0 flex-1 truncate text-[11.5px] text-fg-sub">
+          <span className="min-w-0 flex-1 truncate text-caption text-fg-sub">
             {fileName}
           </span>
           <PressableButton
@@ -117,7 +117,7 @@ export function ViewerMusic({ isPlaying, onEnded }: Props) {
       ) : (
         <PressableButton
           onClick={() => fileInputRef.current?.click()}
-          className="flex h-7 items-center gap-1.5 rounded-lg border border-dashed border-line-strong px-2.5 text-[11.5px] text-fg-muted"
+          className="flex h-7 items-center gap-1.5 rounded-lg border border-dashed border-line-strong px-2.5 text-caption text-fg-muted"
         >
           <Upload size={12} className="shrink-0" />
           同じ曲をこの端末で選ぶ

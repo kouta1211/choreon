@@ -33,7 +33,7 @@ export function MetronomeControls() {
           role="switch"
           aria-checked={isEnabled}
           onClick={toggleMetronome}
-          className={`flex h-9 shrink-0 items-center gap-1.5 rounded-[calc(var(--radius)*0.75)] border px-3 text-[12.5px] font-medium transition-colors ${
+          className={`flex h-9 shrink-0 items-center gap-1.5 rounded-[calc(var(--radius)*0.75)] border px-3 text-label font-medium transition-colors ${
             isEnabled
               ? "border-accent bg-accent/12 text-accent-soft"
               : "border-line-strong text-fg-sub"
@@ -53,9 +53,9 @@ export function MetronomeControls() {
             onValueChange={([next]) => setBpm(next)}
             className="min-w-0 flex-1"
           />
-          <span className="w-14 shrink-0 text-right font-mono text-[12px] tabular-nums text-fg">
+          <span className="w-14 shrink-0 text-right font-mono text-label tabular-nums text-fg">
             {bpm}
-            <span className="ml-0.5 text-[10px] text-fg-muted">BPM</span>
+            <span className="ml-0.5 text-caption text-fg-muted">BPM</span>
           </span>
         </div>
       </div>
@@ -68,7 +68,7 @@ export function MetronomeControls() {
             type="button"
             aria-pressed={bpm === preset}
             onClick={() => setBpm(preset)}
-            className={`h-7 rounded-full border px-2.5 font-mono text-[11px] transition-colors ${
+            className={`h-7 rounded-full border px-2.5 font-mono text-caption transition-colors ${
               bpm === preset
                 ? "border-accent bg-accent/14 text-accent-soft"
                 : "border-line-strong text-fg-sub"

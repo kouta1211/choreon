@@ -132,7 +132,7 @@ export function ViewerStage() {
               className="block rounded-full"
             />
             {isOwn && (
-              <span className="absolute top-full left-1/2 mt-1 -translate-x-1/2 rounded px-1 text-[11px] font-semibold whitespace-nowrap text-fg-strong [text-shadow:var(--label-shadow)]">
+              <span className="absolute top-full left-1/2 mt-1 -translate-x-1/2 rounded px-1 text-caption font-semibold whitespace-nowrap text-fg-strong [text-shadow:var(--label-shadow)]">
                 {dancer.name}
               </span>
             )}

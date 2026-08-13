@@ -60,7 +60,7 @@ export function AuthDialog() {
           }
           emailSentNote={
             isGuest ? (
-              <p className="rounded-lg bg-amber-950/60 px-3 py-2 text-[11px] leading-relaxed text-amber-300">
+              <p className="rounded-lg bg-amber-950/60 px-3 py-2 text-caption leading-relaxed text-amber-300">
                 確認が済むまで作品は保存されません。このタブを閉じずに、
                 メールのリンクを開いてから戻ってください。
               </p>

@@ -53,7 +53,7 @@ export function ScrubProgressBar() {
       {/* ステージ面の上に浮くので、下に敷かないとダンサーや格子と重なって
           数字が読めなくなる */}
       <span className="flex max-w-full items-center gap-2.5 rounded-full border border-line bg-[color-mix(in_oklab,var(--surface-strong)_88%,transparent)] px-3 py-1.5 backdrop-blur-sm">
-        <span className="max-w-[40%] truncate text-[11px] text-fg-sub">
+        <span className="max-w-[40%] truncate text-caption text-fg-sub">
           {target?.name}
         </span>
         {/* 溝は下地(surface-strong)と同じ色にすると消えるので一段沈める */}
@@ -62,7 +62,7 @@ export function ScrubProgressBar() {
         </span>
         <span
           ref={labelRef}
-          className="w-9 text-right font-mono text-[11px] tabular-nums text-fg-muted"
+          className="w-9 text-right font-mono text-caption tabular-nums text-fg-muted"
         >
           0%
         </span>

@@ -234,7 +234,7 @@ export function AddDancerSheet({ project }: Props) {
           <PressableButton
             type="submit"
             disabled={!selectedSceneId || isSubmitting}
-            className="h-12 flex-[2] rounded-[calc(var(--radius)*0.9167)] bg-accent text-[15px] font-semibold text-accent-fg disabled:opacity-50"
+            className="h-12 flex-[2] rounded-[calc(var(--radius)*0.9167)] bg-accent text-body font-semibold text-accent-fg disabled:opacity-50"
           >
             {count}人を追加する
           </PressableButton>

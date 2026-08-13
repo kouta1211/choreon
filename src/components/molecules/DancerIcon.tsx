@@ -243,7 +243,7 @@ function DancerMarkerImpl({
           transparent なので描かれていても見えない */}
       <span
         aria-hidden
-        className="pointer-events-none absolute left-0 top-0 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center text-[11px] font-bold text-[var(--marker-initial)]"
+        className="pointer-events-none absolute left-0 top-0 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center text-caption font-bold text-[var(--marker-initial)]"
         style={{ width: MARKER_SIZE, height: MARKER_SIZE }}
       >
         {[...dancer.name][0] ?? ""}

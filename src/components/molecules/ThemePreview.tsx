@@ -38,14 +38,14 @@ export function ThemePreview({ themeId, size = "small" }: Props) {
         {/* ヘッダー: プロジェクト名とモードピル */}
         <div className="flex items-center gap-1.5">
           <span
-            className={`flex-1 truncate font-semibold text-fg ${isLarge ? "text-[11px]" : "text-[9px]"}`}
+            className={`flex-1 truncate font-semibold text-fg ${isLarge ? "text-caption" : "text-caption"}`}
           >
             Choreon
           </span>
           <span
             className={`shrink-0 border border-accent px-1 font-semibold text-accent ${
               isLarge
-                ? "text-[8px] leading-[15px]"
+                ? "text-caption leading-[15px]"
                 : "text-[6.5px] leading-[11px]"
             }`}
           >
@@ -84,7 +84,7 @@ export function ThemePreview({ themeId, size = "small" }: Props) {
           />
           <span className="block h-[2px] flex-1 bg-line-strong opacity-55" />
           <span
-            className={`shrink-0 font-mono font-semibold text-fg-sub ${isLarge ? "text-[9px]" : "text-[7px]"}`}
+            className={`shrink-0 font-mono font-semibold text-fg-sub ${isLarge ? "text-caption" : "text-caption"}`}
           >
             3/5
           </span>

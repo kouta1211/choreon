@@ -56,8 +56,8 @@ export function SceneTimeField({
     <div className="flex flex-col gap-2 rounded-[calc(var(--radius)*0.75)] border border-line bg-surface-sunken p-2.5">
       <label htmlFor={inputId} className="flex items-center gap-2">
         <Clock size={13} className="shrink-0 text-fg-muted" />
-        <span className="flex-1 text-[12px] text-fg">曲のこの位置</span>
-        <span className="flex shrink-0 items-center rounded-[calc(var(--radius)*0.5833)] border border-line-strong bg-surface-strong px-2 py-1 font-mono text-[12.5px] text-fg focus-within:border-accent">
+        <span className="flex-1 text-label text-fg">曲のこの位置</span>
+        <span className="flex shrink-0 items-center rounded-[calc(var(--radius)*0.5833)] border border-line-strong bg-surface-strong px-2 py-1 font-mono text-label text-fg focus-within:border-accent">
           <input
             id={inputId}
             key={fieldKey + timeSeconds}
@@ -76,7 +76,7 @@ export function SceneTimeField({
       {/* 移動時間は差として出るだけ。ここを直接いじらせると、
           「時刻を決める」と「長さを決める」が同じ画面で競合する */}
       {!isFirst && (
-        <p className="flex items-center gap-1.5 text-[11px] text-fg-muted">
+        <p className="flex items-center gap-1.5 text-caption text-fg-muted">
           <MoveRight size={12} className="shrink-0" />
           前のシーンから{" "}
           <span className="font-mono text-fg-sub">{segmentSeconds}</span>{" "}
@@ -87,7 +87,7 @@ export function SceneTimeField({
       {/* ラベルまで含めて押せる的にする(44px以上)。小さな四角だけを
           狙わせない — 指では外しやすく、外すと何も起きないので
           「効かない」ように見える */}
-      <label className="flex min-h-11 items-start gap-2.5 py-1 text-[11px] leading-snug text-fg-muted">
+      <label className="flex min-h-11 items-start gap-2.5 py-1 text-caption leading-snug text-fg-muted">
         <Checkbox
           checked={ripple}
           onCheckedChange={(checked) => setRipple(checked === true)}

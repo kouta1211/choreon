@@ -222,7 +222,7 @@ export function DisplayModeMenu({
             />
             <span className="min-w-0 flex-1">
               <span className="block truncate">{mode.label}</span>
-              <span className="mt-0.5 block text-[11px] leading-snug text-fg-muted">
+              <span className="mt-0.5 block text-caption leading-snug text-fg-muted">
                 {mode.description}
               </span>
             </span>
@@ -280,7 +280,7 @@ export function DisplayModeMenu({
                 <span className="block truncate">
                   このプロジェクトだけ別の見た目
                 </span>
-                <span className="mt-0.5 block text-[11px] leading-snug text-fg-muted">
+                <span className="mt-0.5 block text-caption leading-snug text-fg-muted">
                   {hasProjectOverride
                     ? "ホームでテーマを変えても、ここは変わりません"
                     : "オンにすると、いまの見た目をこのプロジェクトに固定します"}

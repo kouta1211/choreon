@@ -144,7 +144,7 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
                       }
                       prefix={
                         <span
-                          className={`shrink-0 font-mono text-[10px] font-semibold ${
+                          className={`shrink-0 font-mono text-caption font-semibold ${
                             isSelected ? "text-accent-soft" : "text-fg-muted"
                           }`}
                         >

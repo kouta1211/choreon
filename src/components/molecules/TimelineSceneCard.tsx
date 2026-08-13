@@ -220,10 +220,10 @@ export function TimelineSceneCard({
               : "bg-surface-raised text-fg-sub"
           }`}
         >
-          <span className="shrink-0 font-mono text-[9px] leading-none">
+          <span className="shrink-0 font-mono text-caption leading-none">
             {number}
           </span>
-          <span className="min-w-0 truncate text-[9px] leading-none">
+          <span className="min-w-0 truncate text-caption leading-none">
             {scene.name}
           </span>
         </span>
@@ -232,8 +232,8 @@ export function TimelineSceneCard({
           aria-hidden
           className={`absolute bottom-0 left-[2px] font-mono leading-none ${
             isSelected
-              ? "text-[8px] font-semibold text-accent-bright"
-              : "text-[7px] text-fg-muted"
+              ? "text-caption font-semibold text-accent-bright"
+              : "text-caption text-fg-muted"
           }`}
         >
           {number}
@@ -274,7 +274,7 @@ export function TimelineSceneFlag({
       onPointerDown={(event) => event.stopPropagation()}
       onClick={onSelect}
       style={{ left: leftPx, marginLeft: -11 }}
-      className={`absolute top-1/2 z-10 flex h-[22px] w-[22px] -translate-y-1/2 touch-none items-center justify-center rounded-[calc(var(--radius)*0.3333)] font-mono text-[9px] transition-colors ${
+      className={`absolute top-1/2 z-10 flex h-[22px] w-[22px] -translate-y-1/2 touch-none items-center justify-center rounded-[calc(var(--radius)*0.3333)] font-mono text-caption transition-colors ${
         isSelected
           ? "border-2 border-accent bg-surface font-semibold text-accent-bright"
           : "border border-line-strong bg-surface/94 text-fg-sub"
@@ -311,7 +311,7 @@ export function TimelineSceneCluster({
       onPointerDown={(event) => event.stopPropagation()}
       onClick={onZoom}
       style={{ left: leftPx, marginLeft: -23 }}
-      className={`absolute top-1/2 z-10 flex h-[22px] w-[46px] -translate-y-1/2 touch-none items-center justify-center gap-0.5 rounded-full text-[9px] whitespace-nowrap transition-colors ${
+      className={`absolute top-1/2 z-10 flex h-[22px] w-[46px] -translate-y-1/2 touch-none items-center justify-center gap-0.5 rounded-full text-caption whitespace-nowrap transition-colors ${
         isSelected
           ? "border border-accent bg-surface text-accent-bright"
           : "border border-line-strong bg-surface/94 text-fg-sub"

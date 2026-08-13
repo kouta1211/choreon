@@ -235,22 +235,22 @@ function PopoverPanel({
         className="absolute block h-3 w-3 rotate-45"
       />
 
-      <p className="text-[12.5px] leading-snug font-semibold text-fg-strong">
+      <p className="text-label leading-snug font-semibold text-fg-strong">
         {heading}
       </p>
-      <p className="mt-1 text-[11.5px] leading-[1.65] text-fg-sub">{body}</p>
+      <p className="mt-1 text-caption leading-[1.65] text-fg-sub">{body}</p>
 
       {action && (
         <div className="mt-2.5">
           <PressableButton
             kind="primary"
             onClick={onClose}
-            className="flex h-[30px] w-full items-center justify-center rounded-[calc(var(--radius)*0.6)] bg-accent text-[12px] font-semibold text-accent-fg"
+            className="flex h-[30px] w-full items-center justify-center rounded-[calc(var(--radius)*0.6)] bg-accent text-label font-semibold text-accent-fg"
           >
             {action.label}
           </PressableButton>
           {action.note && (
-            <p className="mt-1 text-[10.5px] text-fg-muted">{action.note}</p>
+            <p className="mt-1 text-caption text-fg-muted">{action.note}</p>
           )}
         </div>
       )}

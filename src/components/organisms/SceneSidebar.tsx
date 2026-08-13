@@ -25,7 +25,7 @@ export function SceneSidebar({ project }: Props) {
     <aside className="flex w-[268px] shrink-0 flex-col overflow-hidden rounded-xl border border-line bg-surface/60">
       <div className="flex shrink-0 items-baseline justify-between gap-2 border-b border-line px-3.5 py-3">
         <span className="text-sm font-semibold text-fg-strong">シーン</span>
-        <span className="shrink-0 font-mono text-[11px] text-fg-muted">
+        <span className="shrink-0 font-mono text-caption text-fg-muted">
           {scenes.length}件 · 合計 {totalTransitionSeconds(scenes)}s
         </span>
       </div>

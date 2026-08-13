@@ -260,7 +260,7 @@ export function ViewerScrub() {
           <span
             key={seconds}
             style={{ left: axisX(seconds, PX_PER_SECOND) - scrollX }}
-            className="absolute top-0 -translate-x-1/2 font-mono text-[9.5px] tabular-nums text-fg-muted"
+            className="absolute top-0 -translate-x-1/2 font-mono text-caption tabular-nums text-fg-muted"
           >
             {formatClock(seconds)}
           </span>
@@ -268,7 +268,7 @@ export function ViewerScrub() {
 
         <span
           style={{ left: `${PLAYHEAD_RATIO * 100}%` }}
-          className="absolute top-0 -translate-x-1/2 bg-surface px-1 font-mono text-[10.5px] tabular-nums text-fg-sub"
+          className="absolute top-0 -translate-x-1/2 bg-surface px-1 font-mono text-caption tabular-nums text-fg-sub"
         >
           {formatClock(currentSeconds)}
         </span>

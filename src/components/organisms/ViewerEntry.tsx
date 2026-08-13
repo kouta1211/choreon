@@ -43,23 +43,23 @@ export function ViewerEntry() {
   return (
     <div className="mx-auto flex h-dvh w-full max-w-md flex-col gap-4 overflow-y-auto px-5 pt-6 pb-[max(24px,env(safe-area-inset-bottom))]">
       <div>
-        <p className="font-mono text-[10.5px] tracking-wide text-fg-muted">
+        <p className="font-mono text-caption tracking-wide text-fg-muted">
           CHOREON · 見るだけ
         </p>
-        <h1 className="mt-1 text-[22px] leading-tight font-semibold text-fg-strong">
+        <h1 className="mt-1 text-title leading-tight font-semibold text-fg-strong">
           {project.title}
         </h1>
-        <p className="mt-1 font-mono text-[11.5px] text-fg-muted">
+        <p className="mt-1 font-mono text-caption text-fg-muted">
           {scenes.length} シーン · {dancers.length} 人 ·{" "}
           {formatMinutes(totalSeconds)}
         </p>
       </div>
 
       <div>
-        <h2 className="text-[15px] font-semibold text-fg-strong">
+        <h2 className="text-body font-semibold text-fg-strong">
           あなたはどれですか
         </h2>
-        <p className="mt-1 text-[12px] leading-[1.6] text-fg-sub">
+        <p className="mt-1 text-label leading-[1.6] text-fg-sub">
           選ぶと、その人だけが濃く出て、道順も出るようになります。
           あとで変えられます。
         </p>
@@ -131,7 +131,7 @@ export function ViewerEntry() {
                     }
                   : undefined
               }
-              className={`flex h-10 items-center gap-2 rounded-[calc(var(--radius)*0.9167)] border px-[13px] text-[13px] ${
+              className={`flex h-10 items-center gap-2 rounded-[calc(var(--radius)*0.9167)] border px-[13px] text-label ${
                 isSelected
                   ? "font-semibold text-fg-strong"
                   : "border-line-strong text-fg-sub"
@@ -153,13 +153,13 @@ export function ViewerEntry() {
           kind="primary"
           disabled={!selected}
           onClick={() => selected && focusDancer(selected.id)}
-          className="flex h-[50px] items-center justify-center rounded-[calc(var(--radius)*1.05)] bg-accent text-[15px] font-semibold text-accent-fg shadow-[inset_0_1px_0_rgb(255_255_255/.22)] disabled:opacity-40"
+          className="flex h-[50px] items-center justify-center rounded-[calc(var(--radius)*1.05)] bg-accent text-body font-semibold text-accent-fg shadow-[inset_0_1px_0_rgb(255_255_255/.22)] disabled:opacity-40"
         >
           {selected ? `「${selected.name}」で見る` : "自分を選んでください"}
         </PressableButton>
         <PressableButton
           onClick={() => focusDancer(null)}
-          className="flex h-11 items-center justify-center rounded-[calc(var(--radius)*0.9)] border border-line-strong text-[13px] text-fg-sub"
+          className="flex h-11 items-center justify-center rounded-[calc(var(--radius)*0.9)] border border-line-strong text-label text-fg-sub"
         >
           選ばずに全員を見る
         </PressableButton>

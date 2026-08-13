@@ -268,7 +268,7 @@ export function DancerInspector() {
             />
           ))}
           {isFocused && (
-            <span className="ml-auto text-[10px] text-fg-muted">
+            <span className="ml-auto text-caption text-fg-muted">
               マイ・フォーカス中
             </span>
           )}
