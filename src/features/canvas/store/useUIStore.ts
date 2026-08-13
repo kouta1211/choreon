@@ -80,6 +80,10 @@ type UIState = {
    * 予備拍(カウントイン)を挟む場合があり、その判断をドック側1箇所に
    * まとめておきたいため(requestTour と同じ「合図だけ渡す」形) */
   playToggleRequestedAt: number | null;
+  /** 前回どのシーンから再生を始めたか。最後まで流し終えた状態でもう一度
+   * 押されたときの戻り先になる(playbackStart.ts)。保存はしない —
+   * 開き直したときに、身に覚えのない場所から鳴り出す方が困る */
+  playbackStartSceneId: string | null;
   /** シーン一覧シート(並び替え・複製・削除)を開いているか */
   isSceneSheetOpen: boolean;
   /** 使い方の案内を頼まれた時刻。まだなら null */
@@ -112,6 +116,7 @@ type UIState = {
   setIsPlaying: (isPlaying: boolean) => void;
   /** 再生ボタンを押したのと同じことを頼む(カウントインを含む) */
   requestTogglePlay: () => void;
+  setPlaybackStartScene: (sceneId: string | null) => void;
   setSceneSheetOpen: (isOpen: boolean) => void;
   /** 使い方の案内を出し直す。押した時刻を入れるだけの合図で、
    * 同じ操作を繰り返しても値が変わるので毎回反応する */
@@ -176,6 +181,7 @@ export const useUIStore = create<UIState>((set) => ({
   dragSnapLine: { x: null, y: null },
   isPlaying: false,
   playToggleRequestedAt: null,
+  playbackStartSceneId: null,
   isSceneSheetOpen: false,
   tourRequestedAt: null,
   isAddDancerSheetOpen: false,
@@ -251,6 +257,7 @@ export const useUIStore = create<UIState>((set) => ({
     ),
   setIsPlaying: (isPlaying) => set({ isPlaying }),
   requestTogglePlay: () => set({ playToggleRequestedAt: Date.now() }),
+  setPlaybackStartScene: (sceneId) => set({ playbackStartSceneId: sceneId }),
   setSceneSheetOpen: (isOpen) => set({ isSceneSheetOpen: isOpen }),
 
   requestTour: () => set({ tourRequestedAt: Date.now() }),

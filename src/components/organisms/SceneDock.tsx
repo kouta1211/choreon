@@ -20,6 +20,7 @@ import {
   nearestSceneIndexAtSeconds,
   sceneStartSeconds,
 } from "@/features/music/lib/musicTimeline";
+import { playbackStartIndex } from "@/features/music/lib/playbackStart";
 import { SceneListSheet } from "@/components/organisms/SceneListSheet";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
 import type { Project } from "@/features/project/types";
@@ -69,6 +70,10 @@ export function SceneDock({ project }: Props) {
   const isPlaying = useUIStore((state) => state.isPlaying);
   const setIsPlaying = useUIStore((state) => state.setIsPlaying);
   const setSceneSheetOpen = useUIStore((state) => state.setSceneSheetOpen);
+  const playbackStartSceneId = useUIStore((state) => state.playbackStartSceneId);
+  const setPlaybackStartScene = useUIStore(
+    (state) => state.setPlaybackStartScene,
+  );
   const musicUrl = useMusicStore((state) => state.objectUrl);
   const musicFileName = useMusicStore((state) => state.fileName);
   const setMusicDuration = useMusicStore((state) => state.setDurationSeconds);
@@ -152,10 +157,23 @@ export function SceneDock({ project }: Props) {
     }
 
     if (!isPlaying) {
-      // 選択中のシーンの時刻から始める。曲があれば<audio>側が
-      // seekToSelectedScene で既にそこへ寄っている
-      if (!hasMusic && selectedIndex >= 0) {
-        setCurrentTime(sceneStartSeconds(scenes)[selectedIndex] ?? 0);
+      // どこから流すか。ふだんは選択中のシーンだが、最後まで流し終えた
+      // 状態で押されたときだけ、前回始めた場所へ戻る(playbackStart.ts)
+      const from = playbackStartIndex(
+        scenes,
+        selectedSceneId,
+        playbackStartSceneId,
+      );
+      if (from === -1) return;
+
+      // 曲があるときの時刻の正は<audio>側で、鳴り出す位置は
+      // 「isPlayingが立った時点で選ばれているシーン」から決まる
+      // (useMusicPlayback)。先に選び直しておけば曲も付いてくる
+      if (scenes[from].id !== selectedSceneId) selectScene(scenes[from].id);
+      setPlaybackStartScene(scenes[from].id);
+
+      if (!hasMusic) {
+        setCurrentTime(sceneStartSeconds(scenes)[from] ?? 0);
       }
       // 予備拍を数えてから動き出す(設定が0なら、その場で始まる)
       start(countIn, () => setIsPlaying(true));

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SceneDock } from "./SceneDock";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
@@ -33,6 +33,9 @@ afterEach(() => {
     objectUrl: null,
     fileName: null,
     durationSeconds: null,
+    // 再生位置も戻す。残したままだと、前のテストで進んだ秒数から
+    // 時計が動き出して、次のテストが選ぶシーンを変えてしまう
+    currentTime: 0,
   });
 });
 
@@ -215,6 +218,76 @@ describe("SceneDock", () => {
     render(<SceneDock project={makeProject()} />);
 
     expect(screen.queryByLabelText("シーン名を変更")).not.toBeInTheDocument();
+  });
+
+  /**
+   * ここは押した瞬間の判断だけを見たいので、クリックは fireEvent で送る。
+   * userEvent は待ちが入るぶん、その間に時計(useSilentClock)が数フレーム
+   * 進んでシーンを動かしてしまい、何を確かめているのか分からなくなる。
+   */
+  describe("最後まで流し終えたあとの再生", () => {
+    const threeScenes = () => [
+      makeScene({ timeSeconds: 0 }),
+      makeScene({ id: "scene-2", orderIndex: 1, timeSeconds: 2 }),
+      makeScene({ id: "scene-3", orderIndex: 2, timeSeconds: 4 }),
+    ];
+
+    const pressPlay = () => {
+      fireEvent.click(screen.getByLabelText("最後のシーンまで再生"));
+    };
+
+    /** 最後まで流れて止まった状態。時計が作るのと同じ形にする */
+    const finishedAtLastScene = () => {
+      act(() => {
+        useUIStore.setState({ isPlaying: false, selectedSceneId: "scene-3" });
+      });
+    };
+
+    it("前回始めたシーンへ戻ってから、もう一度流す", () => {
+      useProjectStore.setState({ scenes: threeScenes() });
+      useUIStore.setState({ selectedSceneId: "scene-2" });
+      render(<SceneDock project={makeProject()} />);
+
+      pressPlay();
+      expect(useUIStore.getState().playbackStartSceneId).toBe("scene-2");
+
+      finishedAtLastScene();
+      pressPlay();
+
+      expect(useUIStore.getState().selectedSceneId).toBe("scene-2");
+      expect(useUIStore.getState().isPlaying).toBe(true);
+      // 曲が無いときは時刻もそのシーンへ戻す
+      expect(useMusicStore.getState().currentTime).toBe(2);
+    });
+
+    // 押したのに何も起きない状態を残さない。開き直した直後がこれにあたる
+    it("どこから始めたか覚えていなければ、先頭から流す", () => {
+      useProjectStore.setState({ scenes: threeScenes() });
+      useUIStore.setState({ selectedSceneId: "scene-3" });
+      render(<SceneDock project={makeProject()} />);
+
+      pressPlay();
+
+      expect(useUIStore.getState().selectedSceneId).toBe("scene-1");
+      expect(useMusicStore.getState().currentTime).toBe(0);
+    });
+
+    // 止まったあとに手で選び直した場合。そこから見たいのであって、
+    // 前回の場所へ引き戻されては困る
+    it("まだ先があるシーンを選んでいれば、そこから流す", () => {
+      useProjectStore.setState({ scenes: threeScenes() });
+      useUIStore.setState({
+        selectedSceneId: "scene-2",
+        playbackStartSceneId: "scene-1",
+      });
+      render(<SceneDock project={makeProject()} />);
+
+      pressPlay();
+
+      expect(useUIStore.getState().selectedSceneId).toBe("scene-2");
+      // 次に終端で押されたときは、ここへ戻ってくる
+      expect(useUIStore.getState().playbackStartSceneId).toBe("scene-2");
+    });
   });
 
   // リグレッションテスト: スペースキーは isPlaying を直に立てていたので、
