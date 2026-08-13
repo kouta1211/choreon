@@ -37,29 +37,29 @@ export function AuthScreen({ children }: Props) {
       />
 
       <div className="relative w-full max-w-sm">
-        <div className="mb-6 flex flex-col items-center">
-          <span aria-hidden className="relative mb-4 block h-[31px] w-[97px]">
-            {BRAND_DOTS.map((dot) => (
-              <span
-                key={dot.left}
-                className="absolute block h-[9px] w-[9px] rounded-full"
-                style={{
-                  left: dot.left,
-                  top: dot.top,
-                  backgroundColor: dot.color,
-                }}
-              />
-            ))}
-          </span>
-          <h1 className="text-[34px] leading-none font-bold tracking-[-0.03em] text-fg-strong">
-            Choreon
-          </h1>
-          <p className="mt-2.5 text-xs text-fg-muted">
-            紙のフォーメーション図を、動く絵コンテに。
-          </p>
-        </div>
+        {/* 板の中に入れる。ブランドを外に置くと、カードとの間隔が
+            画面の高さによって伸び縮みして、置き場所が定まらない */}
+        <div className="overlay-panel flex flex-col gap-gutter-lg rounded-2xl p-8">
+          <div className="flex flex-col items-center gap-base">
+            <span aria-hidden className="relative mb-2 block h-[31px] w-[97px]">
+              {BRAND_DOTS.map((dot) => (
+                <span
+                  key={dot.left}
+                  className="absolute block h-[9px] w-[9px] rounded-full"
+                  style={{
+                    left: dot.left,
+                    top: dot.top,
+                    backgroundColor: dot.color,
+                  }}
+                />
+              ))}
+            </span>
+            <h1 className="text-display text-fg-strong">Choreon</h1>
+            <p className="text-body text-fg-sub">
+              紙のフォーメーション図を、動く絵コンテに。
+            </p>
+          </div>
 
-        <div className="rounded-2xl border border-line bg-surface/92 p-5 backdrop-blur-[8px]">
           {children}
         </div>
       </div>
@@ -77,12 +77,14 @@ export function AuthField({
   hasError?: boolean;
 } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium text-fg-sub">{label}</span>
+    <label className="flex flex-col gap-base">
+      <span className="text-label text-fg-sub">{label}</span>
       <input
         {...props}
-        className={`h-[46px] rounded-[calc(var(--radius)*0.9167)] border bg-surface-strong px-3.5 text-sm text-fg-strong focus:ring-[3px] focus:ring-accent/16 focus:outline-none ${
-          hasError ? "border-red-600" : "border-line-strong focus:border-accent"
+        className={`h-target rounded-lg border bg-surface-raised px-gutter text-body text-fg-strong placeholder:text-fg-muted focus:ring-[3px] focus:ring-accent/16 focus:outline-none ${
+          /* 失敗を面の赤で示さない。枠線だけを強くして、
+             何が起きたかは下の文で伝える */
+          hasError ? "border-accent" : "border-line focus:border-accent"
         }`}
       />
     </label>
@@ -103,7 +105,8 @@ export function AuthSubmitButton({
     <PressableButton
       type="submit"
       disabled={isSubmitting}
-      className="flex h-12 w-full items-center justify-center gap-2 rounded-[calc(var(--radius)*0.9167)] bg-accent text-sm font-semibold text-accent-fg disabled:opacity-55"
+      kind="primary"
+      className="flex h-target-lg w-full items-center justify-center gap-unit rounded-lg bg-accent text-headline text-accent-fg disabled:opacity-55"
     >
       {isSubmitting && (
         <span

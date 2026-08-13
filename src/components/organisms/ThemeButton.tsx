@@ -29,9 +29,11 @@ export function ThemeButton() {
         kind="icon"
         aria-label="見た目を変える"
         onClick={() => setIsOpen(true)}
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[calc(var(--radius)*1.0833)] border border-accent bg-accent/12 text-accent-soft"
+        /* アクセントで塗らない。ここは「いま選んでいるもの」ではなく
+           入口なので、色を持つと画面で一番強い要素になってしまう */
+        className="flex h-target w-target shrink-0 items-center justify-center rounded-full text-fg-sub transition-colors hover:bg-surface hover:text-fg"
       >
-        <Palette size={19} />
+        <Palette size={20} />
       </PressableButton>
       <ThemeSheet isOpen={isOpen} onClose={() => setIsOpen(false)} />
     </>

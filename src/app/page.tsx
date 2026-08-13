@@ -30,10 +30,10 @@ export default async function Home() {
   const projects = await listProjectSummaries(supabase);
 
   return (
-    <div className="flex flex-1 flex-col px-4 py-8">
-      <div className="mx-auto w-full max-w-md space-y-4 md:max-w-3xl">
+    <div className="flex flex-1 flex-col px-gutter pb-gutter-lg">
+      <div className="mx-auto flex w-full max-w-md flex-col gap-gutter-lg md:max-w-3xl">
         <AppHeader>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-unit">
             <ThemeButton />
             <SignOutButton />
           </div>

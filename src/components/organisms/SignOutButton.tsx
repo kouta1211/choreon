@@ -19,7 +19,7 @@ export function SignOutButton() {
   return (
     <PressableButton
       onClick={handleClick}
-      className="text-sm text-fg-sub underline"
+      className="flex h-target items-center rounded-lg px-3 text-label text-fg-sub transition-colors hover:bg-surface hover:text-fg"
     >
       ログアウト
     </PressableButton>

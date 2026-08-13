@@ -12,15 +12,10 @@ type Props = {
  */
 export function AppHeader({ children }: Props) {
   return (
-    <header className="flex items-center justify-between border-b border-line pb-4">
-      <div className="flex items-center gap-2">
-        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-accent text-sm font-bold text-accent-fg">
-          C
-        </span>
-        <span className="text-xl font-semibold tracking-tight text-fg-strong">
-          Choreon
-        </span>
-      </div>
+    /* ブランドは文字だけ。頭文字の四角を添えると、その面がアクセントを
+       1つ余計に使い、隣の操作より強くなる(ロゴは押せないのに) */
+    <header className="flex h-target-lg items-center justify-between">
+      <span className="text-display text-fg-strong">Choreon</span>
       {children}
     </header>
   );

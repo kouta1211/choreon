@@ -69,26 +69,28 @@ export function ProjectList({ projects }: Props) {
   }
 
   return (
-    <div className="space-y-2.5">
-      <p className="mx-0.5 text-[10px] font-semibold tracking-[0.14em] text-fg-muted">
+    <div className="flex flex-col gap-unit">
+      <p className="mx-base text-caption tracking-[0.14em] text-fg-muted">
         プロジェクト {projects.length}件
       </p>
-      <ul className="grid gap-2.5 md:grid-cols-2">
+      <ul className="grid gap-unit md:grid-cols-2">
         {projects.map((project) => (
+          /* 面は surface-1。枠線を持たせず、地との明度差だけで浮かせる
+             (押せることは面の変化で示す) */
           <li
             key={project.id}
-            className="flex items-center gap-2.5 rounded-[calc(var(--radius)*1.1667)] border border-line bg-surface p-3"
+            className="flex items-center gap-gutter rounded-2xl bg-surface p-unit transition-colors hover:bg-surface-raised"
           >
             <Link
               href={`/projects/${project.id}`}
-              className="flex min-w-0 flex-1 items-center gap-2.5"
+              className="flex min-w-0 flex-1 items-center gap-gutter"
             >
               <ProjectThumbnail project={project} />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[15px] font-semibold text-fg-strong">
+              <span className="flex min-w-0 flex-1 flex-col gap-base">
+                <span className="truncate text-title text-fg-strong">
                   {project.title}
                 </span>
-                <span className="mt-1.5 block font-mono text-[11px] font-medium text-fg-sub">
+                <span className="font-mono text-mono-s text-fg-sub">
                   {project.sceneCount} シーン · {project.dancerCount} 人
                   {project.sceneCount > 1 && (
                     <>
@@ -100,31 +102,33 @@ export function ProjectList({ projects }: Props) {
                   )}
                 </span>
                 {project.dancerColors.length > 0 ? (
-                  <span className="mt-2 flex gap-1">
+                  <span className="flex gap-base">
                     {project.dancerColors.map((color, index) => (
                       <span
                         key={`${color}-${index}`}
                         aria-hidden
-                        className="block h-2 w-2 rounded-full"
+                        className="block h-1.5 w-1.5 rounded-full"
                         style={{ backgroundColor: themedDancerColor(color) }}
                       />
                     ))}
                   </span>
                 ) : (
-                  <span className="mt-2 block text-[11px] text-fg-muted">
+                  <span className="text-caption text-fg-muted">
                     タップして最初のシーンを作る
                   </span>
                 )}
               </span>
             </Link>
+            {/* 削除は赤い面にしない。赤いダンサーが隣に並ぶので、
+                面が赤いと「危険」ではなく「誰かの色」に見える */}
             <PressableButton
               kind="icon"
               onClick={() => handleDelete(project)}
               disabled={deletingId === project.id}
               aria-label={`${project.title}を削除`}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[calc(var(--radius)*0.9167)] text-fg-muted hover:bg-red-950 hover:text-red-400 disabled:opacity-40"
+              className="flex h-target w-target shrink-0 items-center justify-center rounded-full text-fg-muted transition-colors hover:bg-surface-strong hover:text-fg disabled:opacity-40"
             >
-              <Trash2 size={17} />
+              <Trash2 size={20} />
             </PressableButton>
           </li>
         ))}
@@ -141,7 +145,7 @@ function ProjectThumbnail({ project }: { project: ProjectSummary }) {
     return (
       <span
         aria-hidden
-        className="flex w-[84px] shrink-0 items-center justify-center rounded-lg border border-dashed border-line-strong bg-surface-sunken font-mono text-[9px] text-fg-muted"
+        className="flex w-20 shrink-0 items-center justify-center rounded-lg border border-dashed border-line-strong bg-surface-sunken font-mono text-mono-s text-fg-muted"
         style={{ aspectRatio }}
       >
         シーン 0
@@ -152,7 +156,7 @@ function ProjectThumbnail({ project }: { project: ProjectSummary }) {
   return (
     <span
       aria-hidden
-      className="relative block w-[84px] shrink-0 overflow-hidden rounded-lg border border-line bg-surface-sunken"
+      className="relative block w-20 shrink-0 overflow-hidden rounded-lg border border-line bg-surface-sunken"
       style={{ aspectRatio }}
     >
       <span

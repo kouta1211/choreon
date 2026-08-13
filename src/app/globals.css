@@ -54,6 +54,60 @@
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* タイポの段。**8段しかない。**
+     いままでは text-[12.5px] のような一点物が画面ごとに増えていて、
+     同じ役割の文字が画面ごとに 0.5px ずつ違っていた。
+     行間・太さ・字送りまで段に含めてあるので、
+     `text-label` と書けば3つとも決まる(バラバラに指定しない)。
+
+     階層は【大きさ】ではなく【太さと色】で作る。
+     大きさを増やして目立たせたくなったら、まず色を上げること */
+  --text-display: 32px;
+  --text-display--line-height: 36px;
+  --text-display--font-weight: 700;
+  --text-display--letter-spacing: -0.03em;
+
+  --text-title: 20px;
+  --text-title--line-height: 26px;
+  --text-title--font-weight: 600;
+  --text-title--letter-spacing: -0.02em;
+
+  --text-headline: 17px;
+  --text-headline--line-height: 23px;
+  --text-headline--font-weight: 600;
+  --text-headline--letter-spacing: -0.01em;
+
+  --text-body: 15px;
+  --text-body--line-height: 22px;
+  --text-body--font-weight: 400;
+
+  --text-label: 13px;
+  --text-label--line-height: 18px;
+  --text-label--font-weight: 500;
+
+  --text-caption: 11px;
+  --text-caption--line-height: 16px;
+  --text-caption--font-weight: 500;
+
+  /* 数値(時刻・番号・カウント)。行間を字の高さに揃えてあるので、
+     並べたときに数字の列が揃う */
+  --text-mono-m: 13px;
+  --text-mono-m--line-height: 13px;
+  --text-mono-m--font-weight: 500;
+
+  --text-mono-s: 11px;
+  --text-mono-s--line-height: 11px;
+  --text-mono-s--font-weight: 500;
+
+  /* 余白と的の大きさ。4/8 の格子から外れた数字を書かないための名前。
+     44 は格子の値ではなく【触れる下限】、56 は主ボタンと帯の高さ */
+  --spacing-base: 4px;
+  --spacing-unit: 8px;
+  --spacing-gutter: 16px;
+  --spacing-gutter-lg: 24px;
+  --spacing-target: 44px;
+  --spacing-target-lg: 56px;
 }
 
 body {

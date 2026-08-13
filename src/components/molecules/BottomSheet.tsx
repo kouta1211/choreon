@@ -133,12 +133,10 @@ export function BottomSheet({
               aria-hidden
               className="mx-auto mb-3 block h-1 w-9 shrink-0 rounded-full bg-line-strong min-[1200px]:hidden"
             />
-            <div className="flex shrink-0 items-baseline justify-between gap-2 border-b border-line px-[18px] pb-3">
-              <span className="text-base font-semibold text-fg-strong">
-                {title}
-              </span>
+            <div className="flex shrink-0 items-baseline justify-between gap-unit border-b border-line px-gutter pb-gutter">
+              <span className="text-headline text-fg-strong">{title}</span>
               {titleRight && (
-                <span className="shrink-0 font-mono text-[11px] text-fg-muted">
+                <span className="shrink-0 font-mono text-mono-s text-fg-muted">
                   {titleRight}
                 </span>
               )}

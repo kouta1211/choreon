@@ -82,60 +82,63 @@ export function ConfirmDialog() {
           cancelRef.current?.focus();
         }}
       >
-        <div className="flex items-start gap-3">
+        {/* 中央揃えにするのはこの板だけ。読ませる文は左揃えが原則だが、
+            ここは「止まって決める」1枚で、視線を1本に絞る方が速い */}
+        <div className="flex flex-col items-center gap-gutter px-unit pt-unit text-center">
           <span
             aria-hidden
-            className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[calc(var(--radius)*0.9167)] border border-red-400/28 bg-red-900/50 text-red-400"
+            className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-raised text-fg-sub"
           >
-            <Trash2 size={18} />
+            <Trash2 size={28} />
           </span>
-          <div className="min-w-0 flex-1">
-            <DialogTitle>{confirmRequest.title}</DialogTitle>
+          <div className="flex flex-col gap-unit">
+            <DialogTitle className="text-title">
+              {confirmRequest.title}
+            </DialogTitle>
             {confirmRequest.description && (
-              <DialogDescription className="mt-1.5">
+              <DialogDescription className="text-body">
                 {confirmRequest.description}
               </DialogDescription>
             )}
           </div>
+
+          {/* 一緒に消えるものを数で出す。「シーンを消す」だけでは、
+              そこに入れた配置と導線まで消えることが伝わらない */}
+          {confirmRequest.meta && confirmRequest.meta.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-base">
+              {confirmRequest.meta.map((item) => (
+                <span
+                  key={item}
+                  className="flex h-7 items-center rounded-full bg-surface-raised px-3 font-mono text-mono-s text-fg"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* 履歴との違い。ここが無いと「元に戻す」で戻せると思われる */}
+          <p className="text-caption text-fg-muted">
+            <span className="text-fg-sub">削除は元に戻せません。</span>
+            （移動や向きの変更は「元に戻す」で戻せます）
+          </p>
         </div>
 
-        {/* 一緒に消えるものを数で出す。「シーンを消す」だけでは、
-            そこに入れた配置と導線まで消えることが伝わらない */}
-        {confirmRequest.meta && confirmRequest.meta.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {confirmRequest.meta.map((item) => (
-              <span
-                key={item}
-                className="flex h-[26px] items-center rounded-lg border border-line-strong px-[9px] font-mono text-[11px] text-fg"
-              >
-                {item}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* 履歴との違い。ここが無いと「元に戻す」で戻せると思われる */}
-        <p className="rounded-[calc(var(--radius)*0.8333)] bg-fg/5 px-[11px] py-[9px] text-[11.5px] leading-[1.55] text-fg-sub">
-          <span className="font-semibold text-fg-strong">
-            削除は元に戻せません。
-          </span>
-          （移動や向きの変更は「元に戻す」で戻せます）
-        </p>
-
-        <div className="flex gap-2">
+        {/* 下辺で2つに割る。面ではなく【文字の色】で危険を示す
+            — 赤い面はステージの赤いダンサーと同じ強さになる */}
+        <div className="-mx-gutter-lg -mb-gutter-lg mt-unit flex border-t border-line">
           <PressableButton
             ref={cancelRef}
             onClick={closeConfirm}
             disabled={isRunning}
-            className="h-[46px] flex-1 rounded-xl border border-line-strong bg-surface-raised text-sm font-medium text-fg-strong shadow-[inset_0_1px_0_rgb(255_255_255/.07)] disabled:opacity-50"
+            className="h-target-lg flex-1 border-r border-line text-label text-fg-sub disabled:opacity-50"
           >
             キャンセル
           </PressableButton>
           <PressableButton
-            kind="primary"
             onClick={handleConfirm}
             disabled={isRunning}
-            className="h-[46px] flex-1 rounded-xl bg-red-600 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/.22)] disabled:opacity-50"
+            className="h-target-lg flex-1 text-label text-[var(--dancer-2)] disabled:opacity-50"
           >
             {isRunning
               ? "削除中..."

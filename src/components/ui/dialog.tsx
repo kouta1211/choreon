@@ -60,8 +60,8 @@ export function DialogContent({
         className={cn(
           // 狭い画面では下寄せ。ボタンが親指の届く高さに来る。
           // 中央に置くと、片手で持ったまま「キャンセル」に指が届かない
-          "overlay-panel fixed z-50 flex flex-col gap-[13px] p-[18px]",
-          "inset-x-[18px] bottom-[104px] rounded-[calc(var(--radius)*1.17)]",
+          "overlay-panel fixed z-50 flex flex-col gap-gutter overflow-hidden p-gutter-lg",
+          "inset-x-gutter bottom-[104px] rounded-2xl",
           "md:inset-x-auto md:bottom-auto md:top-1/2 md:left-1/2",
           "md:w-full md:max-w-[420px] md:-translate-x-1/2 md:-translate-y-1/2",
           className,

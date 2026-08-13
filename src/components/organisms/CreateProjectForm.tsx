@@ -38,7 +38,7 @@ export function CreateProjectForm({ userId }: Props) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2">
+    <form onSubmit={handleSubmit} className="flex gap-unit">
       <label className="flex-1">
         <span className="sr-only">新しいプロジェクト名</span>
         <input
@@ -47,16 +47,17 @@ export function CreateProjectForm({ userId }: Props) {
           placeholder="新しいプロジェクト名"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          className="h-[46px] w-full rounded-xl border border-line-strong bg-surface px-3.5 text-sm text-fg-strong placeholder:text-fg-muted focus:border-accent focus:ring-[3px] focus:ring-accent/16 focus:outline-none"
+          className="h-target-lg w-full rounded-lg border border-line bg-surface-raised px-gutter text-body text-fg-strong placeholder:text-fg-muted focus:border-accent focus:outline-none"
         />
       </label>
       <PressableButton
+        kind="primary"
         type="submit"
         disabled={isSubmitting || !title.trim()}
         aria-label="プロジェクトを作成"
-        className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-xl bg-accent text-accent-fg disabled:opacity-50"
+        className="flex h-target-lg w-target-lg shrink-0 items-center justify-center rounded-lg bg-accent text-accent-fg disabled:opacity-50"
       >
-        <Plus size={20} />
+        <Plus size={24} />
       </PressableButton>
     </form>
   );
