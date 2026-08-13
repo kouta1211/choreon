@@ -123,8 +123,12 @@ export function ViewerLayout({
 
       {/* 横持ちと広い画面では、ステージの右に道順を置く */}
       <div className="flex min-h-0 flex-1 flex-col gap-2 px-3.5 landscape:flex-row md:flex-row">
+        {/* Stage は「親の高さいっぱいに伸びて、そこから幅を決める」作り。
+            ここを items-center の横フレックスにすると、Stage が交差軸で
+            伸びずに中身(ラベル)の高さまで縮み、盤面が高さ0になって
+            【ステージが消える】。縦フレックスのまま渡す */}
         <div
-          className="flex min-h-0 min-w-0 flex-1 items-center justify-center [container-type:size]"
+          className="flex min-h-0 min-w-0 flex-1 flex-col"
           style={{ maxWidth: "min(100%, 640px)" }}
         >
           <ViewerStage />
