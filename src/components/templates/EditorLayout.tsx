@@ -6,6 +6,7 @@ import { CanvasBoard } from "@/components/organisms/CanvasBoard";
 import { EditorHeader } from "@/components/organisms/EditorHeader";
 import { AddDancerSheet } from "@/components/organisms/AddDancerSheet";
 import { TemplateSheet } from "@/components/organisms/TemplateSheet";
+import { ExportVideoSheet } from "@/components/organisms/ExportVideoSheet";
 import { DancerInspector } from "@/components/organisms/DancerInspector";
 import { SceneDock } from "@/components/organisms/SceneDock";
 import { SceneSidebar } from "@/components/organisms/SceneSidebar";
@@ -16,6 +17,7 @@ import { UnsavedChangesGuard } from "@/components/organisms/UnsavedChangesGuard"
 import { useSceneThumbnails } from "@/features/scene/hooks/useSceneThumbnails";
 import { SceneScrubProvider } from "@/features/canvas/hooks/useSceneScrub";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
+import { useUIStore } from "@/features/canvas/store/useUIStore";
 import type { Project } from "@/features/project/types";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position, Scene } from "@/features/scene/types";
@@ -72,6 +74,9 @@ export function EditorLayout({
   // この端末に控えてある曲を戻す。作品ごとに1曲なので、別の作品を開いたら
   // 入れ替わる(useMusicStore.restore)。音源はサーバーへ上げていないので、
   // 共有された相手の端末では何も戻らない
+  const isExportSheetOpen = useUIStore((state) => state.isExportSheetOpen);
+  const setExportSheetOpen = useUIStore((state) => state.setExportSheetOpen);
+
   const restoreMusic = useMusicStore((state) => state.restore);
   useEffect(() => {
     void restoreMusic(project.id);
@@ -123,6 +128,11 @@ export function EditorLayout({
 
           <AddDancerSheet project={project} />
           <TemplateSheet project={project} />
+          <ExportVideoSheet
+            project={project}
+            isOpen={isExportSheetOpen}
+            onClose={() => setExportSheetOpen(false)}
+          />
           <EditorShortcuts />
           <UnsavedChangesGuard />
           <EditorTour />

@@ -83,6 +83,8 @@ type UIState = {
   isAddDancerSheetOpen: boolean;
   /** フォーメーションのテンプレートシートを開いているか */
   isTemplateSheetOpen: boolean;
+  /** 動画の書き出しシートを開いているか */
+  isExportSheetOpen: boolean;
   /** 表示中の確認ダイアログ。nullなら出ていない */
   confirm: ConfirmRequest | null;
   /** 登録/ログインのモーダル。nullなら出ていない。
@@ -109,6 +111,7 @@ type UIState = {
   requestTour: () => void;
   setAddDancerSheetOpen: (isOpen: boolean) => void;
   setTemplateSheetOpen: (isOpen: boolean) => void;
+  setExportSheetOpen: (isOpen: boolean) => void;
   /** 確認ダイアログを出す。実行された場合の処理はrequest.onConfirmに持たせる */
   requestConfirm: (request: ConfirmRequest) => void;
   closeConfirm: () => void;
@@ -169,6 +172,7 @@ export const useUIStore = create<UIState>((set) => ({
   tourRequestedAt: null,
   isAddDancerSheetOpen: false,
   isTemplateSheetOpen: false,
+  isExportSheetOpen: false,
   confirm: null,
   authDialogMode: null,
 
@@ -243,6 +247,7 @@ export const useUIStore = create<UIState>((set) => ({
   requestTour: () => set({ tourRequestedAt: Date.now() }),
   setAddDancerSheetOpen: (isOpen) => set({ isAddDancerSheetOpen: isOpen }),
   setTemplateSheetOpen: (isOpen) => set({ isTemplateSheetOpen: isOpen }),
+  setExportSheetOpen: (isOpen) => set({ isExportSheetOpen: isOpen }),
   requestConfirm: (request) => set({ confirm: request }),
   closeConfirm: () => set({ confirm: null }),
   openAuthDialog: (mode) => set({ authDialogMode: mode }),

@@ -2,13 +2,16 @@
 
 import { useEffect, useState } from "react";
 import {
+  Film,
   Grid3x3,
   Hand,
   Palette,
   SlidersHorizontal,
   EyeOff,
   Spline,
-  Target, HelpCircle } from "lucide-react";
+  Target,
+  HelpCircle,
+} from "lucide-react";
 import { useUIStore, type GridMode } from "@/features/canvas/store/useUIStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useThemeStore } from "@/features/theme/store/useThemeStore";
@@ -51,6 +54,7 @@ const GRID_MODES: { value: GridMode; label: string }[] = [
 export function DisplayModeMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const requestTour = useUIStore((state) => state.requestTour);
+  const setExportSheetOpen = useUIStore((state) => state.setExportSheetOpen);
 
   const gridMode = useUIStore((state) => state.gridMode);
   const setGridMode = useUIStore((state) => state.setGridMode);
@@ -217,6 +221,12 @@ export function DisplayModeMenu() {
         {/* 使い方の案内をもう一度。初回に飛ばした人と、
             しばらく空けて戻ってきた人のための入口 */}
         <DropdownMenuSeparator />
+        {/* 動画は「アプリを開かない人にも渡せる」形。リンクとは
+            届く相手が違うので、共有とは別の入口にしてある */}
+        <DropdownMenuItem onSelect={() => setExportSheetOpen(true)}>
+          <Film size={15} className="shrink-0 text-fg-muted" />
+          動画にする
+        </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => requestTour()}>
           <HelpCircle size={15} className="shrink-0 text-fg-muted" />
           使い方をもう一度見る
