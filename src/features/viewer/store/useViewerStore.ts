@@ -34,6 +34,9 @@ type ViewerState = {
     requestedDancerId?: string | null;
   }) => void;
   focusDancer: (dancerId: string | null) => void;
+  /** 入口(「あなたはどれですか」)へ戻す。いまの選択は持ったまま。
+   * 選び直さずにそのまま入れるように、選択は消さない */
+  chooseAgain: () => void;
   setCurrentSeconds: (seconds: number) => void;
   togglePath: () => void;
 };
@@ -96,6 +99,8 @@ export const useViewerStore = create<ViewerState>((set, get) => ({
     if (projectId) saveFocusedDancerId(projectId, dancerId);
     set({ focusedDancerId: dancerId, hasChosen: true });
   },
+
+  chooseAgain: () => set({ hasChosen: false }),
 
   setCurrentSeconds: (seconds) =>
     set({ currentSeconds: Math.max(0, seconds) }),

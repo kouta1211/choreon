@@ -51,7 +51,7 @@ export function ViewerLayout({
   const hydrate = useViewerStore((state) => state.hydrate);
   const hasChosen = useViewerStore((state) => state.hasChosen);
   const focusedDancerId = useViewerStore((state) => state.focusedDancerId);
-  const focusDancer = useViewerStore((state) => state.focusDancer);
+  const chooseAgain = useViewerStore((state) => state.chooseAgain);
   const isPathVisible = useViewerStore((state) => state.isPathVisible);
   const togglePath = useViewerStore((state) => state.togglePath);
   const currentSeconds = useViewerStore((state) => state.currentSeconds);
@@ -101,9 +101,12 @@ export function ViewerLayout({
         <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-fg-strong">
           {project.title}
         </span>
-        {/* 自分のポジション。押すと選び直せる */}
+        {/* 自分のポジション。押すと入口へ戻って選び直せる。
+            ここで focusDancer(null) を呼ぶと「全員」に変わるだけで、
+            入口には二度と戻れなくなる(端末の記憶を消すしかなくなる) */}
         <PressableButton
-          onClick={() => focusDancer(null)}
+          onClick={chooseAgain}
+          aria-label="ポジションを選び直す"
           className="flex h-8 shrink-0 items-center gap-1.5 rounded-2xl border border-line-strong px-[11px] text-[12px] text-fg-sub"
         >
           {dancer ? (

@@ -78,6 +78,36 @@ describe("ViewerLayout", () => {
     expect(screen.getByText("あなたはどれですか")).toBeInTheDocument();
   });
 
+  /**
+   * リグレッションテスト。
+   *
+   * ここは focusDancer(null) を呼んでいて、押しても「全員」に変わるだけで
+   * 入口には戻れなかった。稽古場で人のリンクを開いた・間違えて選んだ、の
+   * どちらも起こるのに、選び直す道が【端末の記憶を消すことしか無かった】。
+   */
+  it("ポジションのピルから、入口へ戻って選び直せる", () => {
+    renderViewer("d1");
+    expect(screen.queryByText("あなたはどれですか")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "ポジションを選び直す" }));
+
+    expect(screen.getByText("あなたはどれですか")).toBeInTheDocument();
+    // いまの選択は持ったまま戻る。選び直さずにそのまま入れる
+    expect(useViewerStore.getState().focusedDancerId).toBe("d1");
+    expect(
+      screen.getByRole("button", { name: "「うみ」で見る" }),
+    ).toBeInTheDocument();
+  });
+
+  it("入口へ戻ったあと、そのまま同じ人で入り直せる", () => {
+    renderViewer("d1");
+    fireEvent.click(screen.getByRole("button", { name: "ポジションを選び直す" }));
+    fireEvent.click(screen.getByRole("button", { name: "「うみ」で見る" }));
+
+    expect(screen.queryByText("あなたはどれですか")).not.toBeInTheDocument();
+    expect(useViewerStore.getState().focusedDancerId).toBe("d1");
+  });
+
   it("選ばずに全員を見ることもできる", () => {
     renderViewer();
     fireEvent.click(screen.getByRole("button", { name: "選ばずに全員を見る" }));
