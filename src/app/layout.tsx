@@ -18,12 +18,46 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const DESCRIPTION = "スマートフォンで作る、ダンスのフォーメーション";
+
+/**
+ * リンクを絶対URLに直すための土台。
+ *
+ * これが無いと openGraph の画像が相対パスのまま出て、チャットアプリが
+ * 絵を取りに行けない。Vercel が渡してくれる本番のホスト名を既定にして、
+ * 手元では localhost に落とす(独自ドメインを取ったら
+ * NEXT_PUBLIC_SITE_URL で上書きする)。
+ *
+ * VERCEL_URL ではなく VERCEL_PROJECT_PRODUCTION_URL を見ているのは、
+ * 前者がデプロイごとに変わる使い捨てのURLで、貼られたリンクの寿命より
+ * 先に消えるため。
+ */
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : "http://localhost:3000");
+
 export const metadata: Metadata = {
-  // TODO: MVP開発中のプレースホルダー。実際のコピーが決まったら差し替える
+  metadataBase: new URL(siteUrl),
   title: "Choreon",
-  description: "スマートフォンに最適化されたダンスフォーメーション作成アプリ",
+  description: DESCRIPTION,
   // iOS はマニフェストのアイコンを読まないので、こちらでも渡す
   icons: { apple: "/apple-icon.png" },
+  // 共有リンクはチャットに貼って渡すもの。ここが無いと、受け取る側には
+  // 長いURLの文字列だけが出る(絵は app/opengraph-image.tsx が作る)
+  openGraph: {
+    type: "website",
+    siteName: "Choreon",
+    title: "Choreon",
+    description: DESCRIPTION,
+    locale: "ja_JP",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Choreon",
+    description: DESCRIPTION,
+  },
   appleWebApp: {
     capable: true,
     title: "Choreon",

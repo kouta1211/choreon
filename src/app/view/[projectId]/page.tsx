@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getProject } from "@/features/project/api/projects";
@@ -8,14 +9,41 @@ import { getSharedProject } from "@/features/viewer/api/sharedProject";
 import { ViewerLayout } from "@/components/templates/ViewerLayout";
 
 /**
- * 検索エンジンに拾わせない。
+ * チャットに貼られたときの見え方。
  *
+ * ■ 検索エンジンには拾わせない
  * 共有リンクは「知っている人だけが開ける」ことで守られているので、
  * どこかに貼られたリンクが索引に載ると、その前提が崩れる。
+ * 索引を断ることと、チャットで作品名が見えることは別の話で、
+ * 後者はリンクを配る側が望んでいること。
+ *
+ * ■ 作品名を出す
+ * 「これ何のリンクだっけ」を稽古の直前に起こさせない。名前が読めるのは
+ * **既にリンク(＝中身を見る鍵)を持っている人**だけなので、これで新しく
+ * 漏れるものは無い。トークンが無効なら既定の名前に落とす — 当てずっぽうの
+ * トークンに対して「その作品はある」と教えないため。
  */
-export const metadata = {
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(
+  props: PageProps<"/view/[projectId]">,
+): Promise<Metadata> {
+  const robots = { index: false, follow: false } as const;
+  const search = await props.searchParams;
+  const token = typeof search?.t === "string" ? search.t : null;
+  if (!token) return { robots };
+
+  const supabase = await createClient();
+  const shared = await getSharedProject(supabase, token);
+  const { projectId } = await props.params;
+  if (!shared || shared.project.id !== projectId) return { robots };
+
+  const title = `${shared.project.title} — Choreon`;
+  return {
+    robots,
+    title,
+    openGraph: { title },
+    twitter: { title },
+  };
+}
 
 /**
  * 閲覧専用のビューア。稽古場でダンサーがスマホから見る画面。
