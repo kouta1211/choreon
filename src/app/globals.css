@@ -130,6 +130,41 @@ body {
   overscroll-behavior-y: contain;
 }
 
+/* スクロールの棒。
+ *
+ * 地がほぼ純黒なので、OSそのままの明るい棒はそこだけ紙を貼ったように浮く。
+ * とくにシートは角丸の板なのに、右端だけ四角い灰色の帯が立って板が切れて見えた。
+ *
+ * 太さと色は面の言葉(--line-strong)で描く。消してしまわないのは、
+ * 設定シートのように縦に長いものだと「まだ下に続く」ことが分からなくなるため。
+ *
+ * 2通り書いてあるのは読む相手が違うから。scrollbar-* は Firefox と Chromium、
+ * ::-webkit-scrollbar-* は Safari が読む(iOSの重ねて出る棒には効かないが、
+ * あれは元から地に馴染む)。テーマ変数を使っているので、明るいテーマでは
+ * そちらの線の色になる */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--line-strong);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-muted);
+}
+
 /* 背景の質感(--bg-texture)を敷く1枚。
    body の background に重ねず別レイヤーにしているのは、テーマによっては
    --bg-fx が2枚組(方眼など)で、background-size を共有すると枚数がずれて
