@@ -283,6 +283,8 @@ export const en = {
   },
 
   projects: {
+    cardSummary: (scenes: number, dancers: number) =>
+      `${scenes} scenes · ${dancers} dancers`,
     count: (n: number) => `${n} pieces`,
     empty: "No pieces yet.",
     emptyHint: "Type a track name above and a stage appears.",

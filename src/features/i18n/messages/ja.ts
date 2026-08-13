@@ -295,6 +295,8 @@ export const ja = {
   },
 
   projects: {
+    cardSummary: (scenes: number, dancers: number) =>
+      `${scenes} シーン · ${dancers} 人`,
     count: (n: number) => `プロジェクト ${n}件`,
     empty: "まだプロジェクトがありません。",
     emptyHint: "上の入力から曲名を入れると、ステージが1つ立ち上がります。",

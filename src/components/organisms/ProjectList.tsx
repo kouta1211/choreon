@@ -95,7 +95,10 @@ export function ProjectList({ projects }: Props) {
                   {project.title}
                 </span>
                 <span className="font-mono text-mono-s text-fg-sub">
-                  {project.sceneCount} シーン · {project.dancerCount} 人
+                  {t.projects.cardSummary(
+                    project.sceneCount,
+                    project.dancerCount,
+                  )}
                   {project.sceneCount > 1 && (
                     <>
                       {" · "}

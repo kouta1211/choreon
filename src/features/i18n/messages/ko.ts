@@ -282,6 +282,8 @@ export const ko = {
   },
 
   projects: {
+    cardSummary: (scenes: number, dancers: number) =>
+      `${scenes}장면 · ${dancers}명`,
     count: (n: number) => `작품 ${n}개`,
     empty: "아직 작품이 없습니다.",
     emptyHint: "위 입력란에 곡 이름을 넣으면 무대가 하나 만들어집니다.",
