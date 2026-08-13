@@ -75,6 +75,11 @@ type UIState = {
   /** シーンのタイムライン再生中かどうか(SceneTimelineの再生シーケンサーが
    * 読み書きする)。手動でシーンを選ぶと止まる */
   isPlaying: boolean;
+  /** 再生の入り切りを頼まれた時刻。まだなら null。
+   * isPlaying を直に書かずここを経由するのは、押してから動き出すまでに
+   * 予備拍(カウントイン)を挟む場合があり、その判断をドック側1箇所に
+   * まとめておきたいため(requestTour と同じ「合図だけ渡す」形) */
+  playToggleRequestedAt: number | null;
   /** シーン一覧シート(並び替え・複製・削除)を開いているか */
   isSceneSheetOpen: boolean;
   /** 使い方の案内を頼まれた時刻。まだなら null */
@@ -105,6 +110,8 @@ type UIState = {
   setIsTransitioning: (isTransitioning: boolean) => void;
   setDragSnapLine: (line: DragSnapLine) => void;
   setIsPlaying: (isPlaying: boolean) => void;
+  /** 再生ボタンを押したのと同じことを頼む(カウントインを含む) */
+  requestTogglePlay: () => void;
   setSceneSheetOpen: (isOpen: boolean) => void;
   /** 使い方の案内を出し直す。押した時刻を入れるだけの合図で、
    * 同じ操作を繰り返しても値が変わるので毎回反応する */
@@ -168,6 +175,7 @@ export const useUIStore = create<UIState>((set) => ({
   isTransitioning: false,
   dragSnapLine: { x: null, y: null },
   isPlaying: false,
+  playToggleRequestedAt: null,
   isSceneSheetOpen: false,
   tourRequestedAt: null,
   isAddDancerSheetOpen: false,
@@ -242,6 +250,7 @@ export const useUIStore = create<UIState>((set) => ({
         : { dragSnapLine: line },
     ),
   setIsPlaying: (isPlaying) => set({ isPlaying }),
+  requestTogglePlay: () => set({ playToggleRequestedAt: Date.now() }),
   setSceneSheetOpen: (isOpen) => set({ isSceneSheetOpen: isOpen }),
 
   requestTour: () => set({ tourRequestedAt: Date.now() }),

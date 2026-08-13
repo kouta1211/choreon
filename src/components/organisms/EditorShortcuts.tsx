@@ -75,7 +75,11 @@ export function EditorShortcuts() {
 
       if (event.key === " " || event.code === "Space") {
         event.preventDefault();
-        ui.setIsPlaying(!ui.isPlaying);
+        // isPlaying を直に立てない。予備拍(カウントイン)を挟むかどうかの
+        // 判断はドックが持っているので、押されたことだけを伝える。
+        // ここで立ててしまうと、設定で予備拍を入れている人だけ
+        // 「ボタンでは数えるのにスペースキーでは数えない」ことになる
+        ui.requestTogglePlay();
         return;
       }
 

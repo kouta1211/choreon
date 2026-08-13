@@ -186,6 +186,23 @@ export function SceneDock({ project }: Props) {
     setIsPlaying(false);
   };
 
+  // スペースキーからの合図。「押された」ことだけが届くので、ボタンを
+  // 押したときと同じ処理へ通す。こうしておかないと、予備拍を設定している人の
+  // スペースキーだけが数えずに始まる。
+  // 最新の関数をrefに写してから読むのは、handleTogglePlayが毎レンダー
+  // 作り直されるため(依存に入れると押していないのに走ってしまう)
+  const playToggleRequestedAt = useUIStore(
+    (state) => state.playToggleRequestedAt,
+  );
+  const togglePlayRef = useRef(handleTogglePlay);
+  useEffect(() => {
+    togglePlayRef.current = handleTogglePlay;
+  });
+  useEffect(() => {
+    if (playToggleRequestedAt === null) return;
+    togglePlayRef.current();
+  }, [playToggleRequestedAt]);
+
   return (
     <div
       ref={dockRef}

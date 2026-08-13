@@ -5,6 +5,7 @@ import { SceneDock } from "./SceneDock";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import * as scenesApi from "@/features/scene/api/scenes";
 import * as positionsApi from "@/features/scene/api/positions";
 import type { Project } from "@/features/project/types";
@@ -214,5 +215,41 @@ describe("SceneDock", () => {
     render(<SceneDock project={makeProject()} />);
 
     expect(screen.queryByLabelText("シーン名を変更")).not.toBeInTheDocument();
+  });
+
+  // リグレッションテスト: スペースキーは isPlaying を直に立てていたので、
+  // 予備拍を設定している人でもキーボードからだけは数えずに始まっていた。
+  // 「押された」合図をドックが受けて、ボタンと同じ道を通す
+  describe("スペースキーからの再生", () => {
+    afterEach(() => {
+      useSettingsStore.setState({ countIn: 0 });
+    });
+
+    it("予備拍を設定していれば、キーボードからでも数えてから始まる", () => {
+      useSettingsStore.setState({ countIn: 4 });
+      useProjectStore.setState({ scenes: [makeScene({ timeSeconds: 0 })] });
+      useUIStore.setState({ selectedSceneId: "scene-1" });
+
+      render(<SceneDock project={makeProject()} />);
+      act(() => {
+        useUIStore.getState().requestTogglePlay();
+      });
+
+      // 数えている間はまだ動き出していない。ボタンには残りの拍が出る
+      expect(useUIStore.getState().isPlaying).toBe(false);
+      expect(screen.getByRole("status")).toHaveTextContent("4");
+    });
+
+    it("予備拍が無ければ、その場で始まる", () => {
+      useProjectStore.setState({ scenes: [makeScene({ timeSeconds: 0 })] });
+      useUIStore.setState({ selectedSceneId: "scene-1" });
+
+      render(<SceneDock project={makeProject()} />);
+      act(() => {
+        useUIStore.getState().requestTogglePlay();
+      });
+
+      expect(useUIStore.getState().isPlaying).toBe(true);
+    });
   });
 });
