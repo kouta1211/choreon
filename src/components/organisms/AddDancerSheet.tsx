@@ -19,6 +19,7 @@ import type { Project } from "@/features/project/types";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { randomId } from "@/lib/randomId";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   project: Project;
@@ -41,6 +42,7 @@ const MAX_COUNT = 20;
  * 掴めなかった。
  */
 export function AddDancerSheet({ project }: Props) {
+  const t = useT();
   const [count, setCount] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isOpen = useUIStore((state) => state.isAddDancerSheetOpen);
@@ -131,14 +133,14 @@ export function AddDancerSheet({ project }: Props) {
       showToast({
         message:
           created.length === 1
-            ? `${created[0].name} をステージに追加しました`
-            : `${created.length}人をステージに追加しました`,
+            ? t.dancer.add.addedOne(created[0].name)
+            : t.dancer.add.addedMany(created.length),
         type: "success",
       });
     } catch (error) {
       for (const dancer of created) removeDancer(dancer.id);
       showToast({
-        message: toUserMessage(error, "ダンサーの追加に失敗しました"),
+        message: toUserMessage(error, t.dancer.add.failed),
         type: "error",
       });
     } finally {
@@ -150,7 +152,7 @@ export function AddDancerSheet({ project }: Props) {
     <BottomSheet
       isOpen={isOpen}
       onClose={close}
-      title="ダンサーを追加"
+      title={t.dancer.add.title}
       wideMaxWidthClassName="min-[1200px]:max-w-md"
     >
       <form
@@ -159,11 +161,11 @@ export function AddDancerSheet({ project }: Props) {
       >
         <div className="flex flex-col gap-2">
           <span className="text-xs font-medium text-fg-sub">
-            何人追加しますか?
+            {t.dancer.add.howMany}
           </span>
           <div className="flex items-center gap-3">
             <StepperButton
-              label="1人減らす"
+              label={t.dancer.add.minus}
               icon={Minus}
               onClick={() => setCount((value) => Math.max(1, value - 1))}
               disabled={count <= 1}
@@ -171,7 +173,7 @@ export function AddDancerSheet({ project }: Props) {
             <input
               type="number"
               inputMode="numeric"
-              aria-label="追加する人数"
+              aria-label={t.dancer.add.count}
               min={1}
               max={MAX_COUNT}
               value={count}
@@ -183,21 +185,23 @@ export function AddDancerSheet({ project }: Props) {
               className="h-[46px] w-20 rounded-[calc(var(--radius)*0.9167)] border border-line-strong bg-surface-strong text-center font-mono text-lg font-semibold text-fg-strong focus:border-accent focus:ring-[3px] focus:ring-accent/16 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
             <StepperButton
-              label="1人増やす"
+              label={t.dancer.add.plus}
               icon={Plus}
               onClick={() =>
                 setCount((value) => Math.min(MAX_COUNT, value + 1))
               }
               disabled={count >= MAX_COUNT}
             />
-            <span className="ml-1 text-sm text-fg-muted">人</span>
+            <span className="ml-1 text-sm text-fg-muted">
+              {t.dancer.add.people}
+            </span>
           </div>
         </div>
 
         {/* 何が作られるかを、追加する前に見せる */}
         <div className="flex flex-col gap-2 rounded-xl border border-line bg-surface-raised p-3">
           <span className="text-caption font-medium text-fg-muted">
-            名前と色は自動で決まります（あとで変更できます）
+            {t.dancer.add.autoNote}
           </span>
           <div className="flex flex-wrap gap-1.5">
             {names.map((name, index) => (
@@ -219,9 +223,8 @@ export function AddDancerSheet({ project }: Props) {
         </div>
 
         <p className="text-xs leading-relaxed text-fg-muted">
-          <span className="text-fg">いま見ているシーンの空いているマス</span>
-          に、中央から順に並びます。重ならないので、そのままドラッグで
-          動かせます。
+          {t.dancer.add.spotsNote}
+
         </p>
 
         <div className="flex gap-2">
@@ -229,14 +232,14 @@ export function AddDancerSheet({ project }: Props) {
             onClick={close}
             className="h-12 flex-1 rounded-[calc(var(--radius)*0.9167)] border border-line-strong text-sm font-medium text-fg-strong"
           >
-            キャンセル
+            {t.dancer.add.cancel}
           </PressableButton>
           <PressableButton
             type="submit"
             disabled={!selectedSceneId || isSubmitting}
             className="h-12 flex-[2] rounded-[calc(var(--radius)*0.9167)] bg-accent text-body font-semibold text-accent-fg disabled:opacity-50"
           >
-            {count}人を追加する
+            {t.dancer.add.submit(count)}
           </PressableButton>
         </div>
       </form>

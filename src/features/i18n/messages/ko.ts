@@ -233,6 +233,68 @@ export const ko = {
     },
   },
 
+  dancer: {
+    add: {
+      title: "댄서 추가",
+      howMany: "몇 명 추가할까요?",
+      minus: "한 명 줄이기",
+      plus: "한 명 늘리기",
+      count: "추가할 인원",
+      people: "명",
+      autoNote: "이름과 색은 자동으로 정해집니다(나중에 바꿀 수 있습니다)",
+      spotsNote:
+        "지금 보고 있는 장면의 빈 칸에 가운데부터 차례로 놓입니다. 겹치지 않으니 바로 끌어서 옮길 수 있습니다.",
+      submit: (n: number) => `${n}명 추가하기`,
+      cancel: "취소",
+      addedOne: (name: string) => `${name}을(를) 무대에 추가했습니다`,
+      addedMany: (n: number) => `${n}명을 무대에 추가했습니다`,
+      failed: "댄서를 추가하지 못했습니다",
+    },
+    list: {
+      title: "댄서",
+      empty: "이 장면에는 아직 아무도 없습니다.",
+    },
+    inspector: {
+      name: "댄서 이름",
+      ownDuration: "이 댄서만의 이동 시간(초)",
+      seconds: "초",
+      focus: "마이 포커스",
+      focusOn: "마이 포커스 중",
+      remove: "댄서 삭제",
+      deselect: "선택 해제",
+      changeColor: (color: string) => `색을 ${color}(으)로 바꾸기`,
+      rotate: "방향 바꾸기",
+      curve: (name: string) => `${name}의 곡선 모양 조정`,
+      deleteTitle: (name: string) => `'${name}'을(를) 삭제할까요?`,
+      deleteDescription:
+        "이 댄서의 위치와 동선이 모든 장면에서 사라집니다. 삭제는 되돌릴 수 없습니다(이동과 방향은 되돌릴 수 있습니다).",
+      deleteMeta: (scenes: number) => `${scenes}개 장면의 위치`,
+      durationFailed: "이동 시간을 바꾸지 못했습니다",
+      nameFailed: "댄서 이름을 바꾸지 못했습니다",
+      colorFailed: "색을 바꾸지 못했습니다",
+      deleteFailed: "댄서를 삭제하지 못했습니다",
+    },
+    badges: {
+      blindSpot: {
+        text: (name: string) => `${name}: 앞사람에 가려 객석에서 보이지 않습니다`,
+        heading: "가림 확인",
+        body: "객석에서 볼 때 앞사람 바로 뒤에 선 사람에게 표시됩니다. 지금 화면에 보이는 대형만 보고, 이동 중은 세지 않습니다.",
+      },
+      collision: {
+        text: (name: string, seconds: string, other: string) =>
+          `${name}: 출발 후 약 ${seconds}초 뒤에 ${other}와(과) 부딪힙니다`,
+        heading: "충돌 위험",
+        body: "동선이 교차하는 것만으로는 표시되지 않습니다. 실제로 같은 시각에 같은 자리에 오는 두 사람에게만 표시됩니다. 한쪽 출발을 늦추거나 동선을 구부려 주세요.",
+      },
+      excessiveMove: {
+        text: (name: string, meters: string, seconds: number, speed: string) =>
+          `${name}: 다음 장면까지 약 ${meters}m를 ${seconds}초에. 약 ${speed}m/s는 뛰어야 합니다`,
+        heading: "이동이 너무 빠릅니다",
+        body: "다음 장면까지의 거리와 초에서 계산한 속도입니다. 걸어서 갈 수 있는 속도를 넘었습니다. 타임라인에서 이 장면을 오른쪽으로 끌면 이동에 쓸 시간이 늘어납니다.",
+      },
+    },
+  },
+
   settings: {
     title: "설정",
 

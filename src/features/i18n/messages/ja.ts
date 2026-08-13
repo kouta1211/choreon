@@ -246,6 +246,68 @@ export const ja = {
     },
   },
 
+  dancer: {
+    add: {
+      title: "ダンサーを追加",
+      howMany: "何人追加しますか?",
+      minus: "1人減らす",
+      plus: "1人増やす",
+      count: "追加する人数",
+      people: "人",
+      autoNote: "名前と色は自動で決まります（あとで変更できます）",
+      spotsNote:
+        "いま見ているシーンの空いているマスに、中央から順に並びます。重ならないので、そのままドラッグで動かせます。",
+      submit: (n: number) => `${n}人を追加する`,
+      cancel: "キャンセル",
+      addedOne: (name: string) => `${name} をステージに追加しました`,
+      addedMany: (n: number) => `${n}人をステージに追加しました`,
+      failed: "ダンサーの追加に失敗しました",
+    },
+    list: {
+      title: "ダンサー",
+      empty: "このシーンにはまだ誰もいません。",
+    },
+    inspector: {
+      name: "ダンサー名",
+      ownDuration: "このダンサーだけの遷移時間(秒)",
+      seconds: "秒",
+      focus: "マイ・フォーカス",
+      focusOn: "マイ・フォーカス中",
+      remove: "ダンサーを削除",
+      deselect: "選択を解除",
+      changeColor: (color: string) => `色を${color}に変更`,
+      rotate: "向きを変更",
+      curve: (name: string) => `${name}の曲線の形を調整`,
+      deleteTitle: (name: string) => `「${name}」を削除しますか?`,
+      deleteDescription:
+        "このダンサーの配置と導線が、すべてのシーンから消えます。削除は元に戻せません(移動や向きの変更は戻せます)。",
+      deleteMeta: (scenes: number) => `${scenes} シーンぶんの配置`,
+      durationFailed: "個別の遷移時間の変更に失敗しました",
+      nameFailed: "ダンサー名の変更に失敗しました",
+      colorFailed: "色の変更に失敗しました",
+      deleteFailed: "ダンサーの削除に失敗しました",
+    },
+    badges: {
+      blindSpot: {
+        text: (name: string) => `${name}: 手前の人に重なって、客席から見えません`,
+        heading: "顔被りチェック",
+        body: "客席から見て、手前の人の真後ろに入っている人に付きます。いま画面に出ている隊形だけを見ていて、移動の途中は数えません。",
+      },
+      collision: {
+        text: (name: string, seconds: string, other: string) =>
+          `${name}: 移動を始めて約${seconds}秒後に ${other} とぶつかります`,
+        heading: "衝突のおそれ",
+        body: "導線が交差しているだけでは出ません。実際にその時刻に同じ場所へ来る2人にだけ付きます。どちらかの出発を遅らせるか、導線を曲げてください。",
+      },
+      excessiveMove: {
+        text: (name: string, meters: string, seconds: number, speed: string) =>
+          `${name}: 次のシーンまで約${meters}mを${seconds}秒。約${speed}m/s は走らないと間に合いません`,
+        heading: "移動が速すぎます",
+        body: "次のシーンまでの距離と秒数から出した速さです。歩いて間に合う速さを超えています。時間軸でこのシーンを右へ引くと、移動に使える時間が延びます。",
+      },
+    },
+  },
+
   settings: {
     title: "設定",
 

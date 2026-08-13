@@ -11,6 +11,7 @@ import type { Position } from "@/features/scene/types";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { toScreenY } from "@/features/canvas/lib/stageFlip";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type StagePoint = { x: number; y: number };
 
@@ -82,6 +83,7 @@ export function PathOverlay({
   editableDancerId = null,
   onCurveControlPointChange,
 }: Props) {
+  const t = useT();
   const svgRef = useRef<SVGSVGElement | null>(null);
   // 客席を上にして描くか。線を引くときはステージ座標を画面の向きへ写し、
   // 指から制御点を拾うときは逆へ戻す(stageFlip.ts)
@@ -286,7 +288,7 @@ export function PathOverlay({
             data-testid="path-overlay-curve-handle"
             role="button"
             tabIndex={-1}
-            aria-label={`${segment.name}の曲線の形を調整`}
+            aria-label={t.dancer.inspector.curve(segment.name)}
             className="absolute z-10 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none items-center justify-center"
             style={{
               left: `${segment.handleLeftPercent}%`,

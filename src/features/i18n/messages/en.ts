@@ -234,6 +234,69 @@ export const en = {
     },
   },
 
+  dancer: {
+    add: {
+      title: "Add dancers",
+      howMany: "How many?",
+      minus: "One fewer",
+      plus: "One more",
+      count: "How many to add",
+      people: "dancers",
+      autoNote: "Names and colours are picked for you (you can change them later)",
+      spotsNote:
+        "They go into the free squares in the scene you are looking at, filling outwards from the centre. Nobody overlaps, so you can drag them straight away.",
+      submit: (n: number) => (n === 1 ? "Add 1 dancer" : `Add ${n} dancers`),
+      cancel: "Cancel",
+      addedOne: (name: string) => `Added ${name} to the stage`,
+      addedMany: (n: number) => `Added ${n} dancers to the stage`,
+      failed: "Could not add the dancers",
+    },
+    list: {
+      title: "Dancers",
+      empty: "Nobody is in this scene yet.",
+    },
+    inspector: {
+      name: "Dancer name",
+      ownDuration: "Travel time for this dancer only (s)",
+      seconds: "s",
+      focus: "Focus on me",
+      focusOn: "Focused",
+      remove: "Delete this dancer",
+      deselect: "Deselect",
+      changeColor: (color: string) => `Change the colour to ${color}`,
+      rotate: "Change the facing",
+      curve: (name: string) => `Adjust the curve for ${name}`,
+      deleteTitle: (name: string) => `Delete “${name}”?`,
+      deleteDescription:
+        "Their position and paths disappear from every scene. Deleting cannot be undone (moves and facings can be).",
+      deleteMeta: (scenes: number) => `positions in ${scenes} scenes`,
+      durationFailed: "Could not change the travel time",
+      nameFailed: "Could not rename the dancer",
+      colorFailed: "Could not change the colour",
+      deleteFailed: "Could not delete the dancer",
+    },
+    badges: {
+      blindSpot: {
+        text: (name: string) =>
+          `${name}: hidden behind someone, out of sight from the audience`,
+        heading: "Blocked-view check",
+        body: "Marks anyone standing directly behind someone as seen from the audience. It only looks at the formation on screen, not at what happens mid-move.",
+      },
+      collision: {
+        text: (name: string, seconds: string, other: string) =>
+          `${name}: runs into ${other} about ${seconds}s after setting off`,
+        heading: "They will collide",
+        body: "Crossing paths alone does not trigger this. It marks two dancers who actually reach the same place at the same moment. Delay one of them, or bend a path.",
+      },
+      excessiveMove: {
+        text: (name: string, meters: string, seconds: number, speed: string) =>
+          `${name}: about ${meters}m in ${seconds}s. ${speed}m/s means running`,
+        heading: "Too fast to walk",
+        body: "The speed comes from the distance and the seconds to the next scene, and it is faster than walking. Drag this scene to the right on the timeline to give the move more time.",
+      },
+    },
+  },
+
   settings: {
     title: "Settings",
 

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { RotateCw } from "lucide-react";
 import { snapRotation } from "@/features/canvas/lib/dragMath";
 import { mirrorAngle } from "@/features/canvas/lib/stageFlip";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   /** 表示に使う現在の角度(度)。ライブドラッグ中は呼び出し側のローカルstateを渡す */
@@ -74,6 +75,7 @@ function RotationHandleImpl({
   getCenter,
   isMirrored = false,
 }: Props) {
+  const t = useT();
   // 8方向へ吸着している最中かどうか。効いていることが指先では分からないので、
   // 格子スナップが吸着先の格子線を光らせるのと同じように、ガイド線を光らせる
   const [isSnapped, setIsSnapped] = useState(false);
@@ -139,7 +141,7 @@ function RotationHandleImpl({
       />
       <div
         role="slider"
-        aria-label="向きを変更"
+        aria-label={t.dancer.inspector.rotate}
         aria-valuemin={0}
         aria-valuemax={359}
         aria-valuenow={Math.round(angle)}

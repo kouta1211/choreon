@@ -6,6 +6,7 @@ import {
   OVERLAY_FADE_IN_SECONDS,
   resolveTransitionDuration,
 } from "@/features/canvas/constants";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   dancerName: string;
@@ -25,12 +26,13 @@ type Props = {
  * 警告は、正しくても誤検知として扱われる。
  */
 export function DancerBlindSpotBadge({ dancerName }: Props) {
-  const description = `${dancerName}: 手前の人に重なって、客席から見えません`;
+  const t = useT();
+  const description = t.dancer.badges.blindSpot.text(dancerName);
   // 長押し(PCはホバー)で説明を出す。title属性はタッチで出ないうえ、
   // テーマの色も当たらない(Popover.tsx)
   const { triggerProps, popover } = usePopover({
-    heading: "顔被りチェック",
-    body: "客席から見て、手前の人の真後ろに入っている人に付きます。いま画面に出ている隊形だけを見ていて、移動の途中は数えません。",
+    heading: t.dancer.badges.blindSpot.heading,
+    body: t.dancer.badges.blindSpot.body,
   });
   return (
     <>

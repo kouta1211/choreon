@@ -19,6 +19,7 @@ import { Tooltip } from "@/components/atoms/Tooltip";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { sceneDurations } from "@/features/scene/lib/sceneTiming";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /** ダンサー個別の遷移時間の入力が許容する範囲。schema.sqlのCHECK制約と合わせている */
 const MIN_DURATION_SECONDS = 0.1;
@@ -43,6 +44,7 @@ const MAX_DURATION_SECONDS = 30;
  * 追加時よりも「消えた→やっぱり戻った」というチラつきが体験を損ねやすいため。
  */
 export function DancerInspector() {
+  const t = useT();
   const [isDeleting, setIsDeleting] = useState(false);
   const selectedDancerId = useUIStore((state) => state.selectedDancerId);
   const selectDancer = useUIStore((state) => state.selectDancer);
@@ -92,7 +94,7 @@ export function DancerInspector() {
         dancerTransitionDurationSeconds: before.dancerTransitionDurationSeconds,
       });
       showToast({
-        message: toUserMessage(error, "個別の遷移時間の変更に失敗しました"),
+        message: toUserMessage(error, t.dancer.inspector.durationFailed),
         type: "error",
       });
     }
@@ -111,7 +113,7 @@ export function DancerInspector() {
     } catch (error) {
       addDancer(previous);
       showToast({
-        message: toUserMessage(error, "ダンサー名の変更に失敗しました"),
+        message: toUserMessage(error, t.dancer.inspector.nameFailed),
         type: "error",
       });
     }
@@ -129,7 +131,7 @@ export function DancerInspector() {
     } catch (error) {
       addDancer(previous);
       showToast({
-        message: toUserMessage(error, "色の変更に失敗しました"),
+        message: toUserMessage(error, t.dancer.inspector.colorFailed),
         type: "error",
       });
     }
@@ -143,10 +145,10 @@ export function DancerInspector() {
     ).filter((positions) => positions[dancer.id] !== undefined).length;
 
     requestConfirm({
-      title: `「${dancer.name}」を削除しますか?`,
+      title: t.dancer.inspector.deleteTitle(dancer.name),
       description:
-        "このダンサーの配置と導線が、すべてのシーンから消えます。削除は元に戻せません(移動や向きの変更は戻せます)。",
-      meta: [`${sceneCount} シーンぶんの配置`],
+        t.dancer.inspector.deleteDescription,
+      meta: [t.dancer.inspector.deleteMeta(sceneCount)],
       onConfirm: async () => {
         setIsDeleting(true);
         try {
@@ -156,7 +158,7 @@ export function DancerInspector() {
           if (focusedDancerId === dancer.id) setFocusedDancer(null);
         } catch (error) {
           showToast({
-            message: toUserMessage(error, "ダンサーの削除に失敗しました"),
+            message: toUserMessage(error, t.dancer.inspector.deleteFailed),
             type: "error",
           });
         } finally {
@@ -194,30 +196,30 @@ export function DancerInspector() {
             key={dancer.id}
             value={dancer.name}
             onCommit={commitRename}
-            label="ダンサー名"
+            label={t.dancer.inspector.name}
             textClassName="text-label font-semibold"
           />
 
           {selectedSceneId && position && (
             <DurationSecondsInput
               key={`${dancer.id}-${selectedSceneId}`}
-              label="このダンサーだけの遷移時間(秒)"
+              label={t.dancer.inspector.ownDuration}
               value={position.dancerTransitionDurationSeconds ?? null}
               onCommit={handleDurationOverrideCommit}
               min={MIN_DURATION_SECONDS}
               max={MAX_DURATION_SECONDS}
               placeholder={String(selectedSegmentSeconds)}
-              suffix="秒"
+              suffix={t.dancer.inspector.seconds}
               tone="dancer"
             />
           )}
 
-          <Tooltip label="マイ・フォーカス" placement="top">
+          <Tooltip label={t.dancer.inspector.focus} placement="top">
             <PressableButton
               kind="icon"
               onClick={() => setFocusedDancer(isFocused ? null : dancer.id)}
               aria-pressed={isFocused}
-              aria-label="マイ・フォーカス"
+              aria-label={t.dancer.inspector.focus}
               className={`ml-auto flex h-7 w-7 items-center justify-center rounded-lg ${
                 isFocused
                   ? "bg-amber-950 text-amber-400"
@@ -228,23 +230,23 @@ export function DancerInspector() {
             </PressableButton>
           </Tooltip>
 
-          <Tooltip label="ダンサーを削除" placement="top">
+          <Tooltip label={t.dancer.inspector.remove} placement="top">
             <PressableButton
               kind="icon"
               onClick={handleDelete}
               disabled={isDeleting}
-              aria-label="ダンサーを削除"
+              aria-label={t.dancer.inspector.remove}
               className="flex h-7 w-7 items-center justify-center rounded-lg text-fg-muted hover:bg-red-950 hover:text-red-400 disabled:opacity-50"
             >
               <Trash2 size={15} />
             </PressableButton>
           </Tooltip>
 
-          <Tooltip label="選択を解除" placement="top" align="right">
+          <Tooltip label={t.dancer.inspector.deselect} placement="top" align="right">
             <PressableButton
               kind="icon"
               onClick={() => selectDancer(null)}
-              aria-label="選択を解除"
+              aria-label={t.dancer.inspector.deselect}
               className="flex h-7 w-7 items-center justify-center rounded-lg text-fg-muted hover:bg-line-strong"
             >
               <X size={15} />
@@ -257,7 +259,7 @@ export function DancerInspector() {
             <PressableButton
               key={color}
               type="button"
-              aria-label={`色を${color}に変更`}
+              aria-label={t.dancer.inspector.changeColor(color)}
               onClick={() => handleColorChange(color)}
               className={`h-[22px] w-[22px] rounded-full ${
                 dancer.color === color
@@ -269,7 +271,7 @@ export function DancerInspector() {
           ))}
           {isFocused && (
             <span className="ml-auto text-caption text-fg-muted">
-              マイ・フォーカス中
+              {t.dancer.inspector.focusOn}
             </span>
           )}
         </div>

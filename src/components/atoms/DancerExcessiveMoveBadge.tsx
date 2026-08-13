@@ -7,6 +7,7 @@ import {
   resolveTransitionDuration,
 } from "@/features/canvas/constants";
 import type { MoveStrain } from "@/features/canvas/lib/physicalLimits";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   strain: MoveStrain;
@@ -27,12 +28,18 @@ type Props = {
 export function DancerExcessiveMoveBadge({ strain, dancerName }: Props) {
   const meters = strain.distanceMeters.toFixed(1);
   const speed = strain.speedMetersPerSecond.toFixed(1);
-  const description = `${dancerName}: 次のシーンまで約${meters}mを${strain.seconds}秒。約${speed}m/s は走らないと間に合いません`;
+  const t = useT();
+  const description = t.dancer.badges.excessiveMove.text(
+    dancerName,
+    meters,
+    strain.seconds,
+    speed,
+  );
   // 長押し(PCはホバー)で説明を出す。title属性はタッチで出ないうえ、
   // テーマの色も当たらない(Popover.tsx)
   const { triggerProps, popover } = usePopover({
-    heading: "移動が速すぎます",
-    body: "次のシーンまでの距離と秒数から出した速さです。歩いて間に合う速さを超えています。時間軸でこのシーンを右へ引くと、移動に使える時間が延びます。",
+    heading: t.dancer.badges.excessiveMove.heading,
+    body: t.dancer.badges.excessiveMove.body,
   });
   return (
     <>

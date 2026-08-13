@@ -7,6 +7,7 @@ import {
   resolveTransitionDuration,
 } from "@/features/canvas/constants";
 import type { Collision } from "@/features/canvas/lib/collision";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   collision: Collision;
@@ -33,12 +34,17 @@ export function DancerCollisionBadge({
   dancerName,
   withDancerName,
 }: Props) {
-  const description = `${dancerName}: 移動を始めて約${collision.atSeconds.toFixed(1)}秒後に ${withDancerName} とぶつかります`;
+  const t = useT();
+  const description = t.dancer.badges.collision.text(
+    dancerName,
+    collision.atSeconds.toFixed(1),
+    withDancerName,
+  );
   // 長押し(PCはホバー)で説明を出す。title属性はタッチで出ないうえ、
   // テーマの色も当たらない(Popover.tsx)
   const { triggerProps, popover } = usePopover({
-    heading: "衝突のおそれ",
-    body: "導線が交差しているだけでは出ません。実際にその時刻に同じ場所へ来る2人にだけ付きます。どちらかの出発を遅らせるか、導線を曲げてください。",
+    heading: t.dancer.badges.collision.heading,
+    body: t.dancer.badges.collision.body,
   });
   return (
     <>

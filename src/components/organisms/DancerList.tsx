@@ -5,6 +5,7 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
  * いまのシーンにいるダンサーの一覧。画面が広いときだけ出す右パネルの中身。
@@ -17,6 +18,7 @@ import { PressableButton } from "@/components/atoms/PressableButton";
  * 位置を伝えるときに数字があると早いため。
  */
 export function DancerList() {
+  const t = useT();
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const selectedDancerId = useUIStore((state) => state.selectedDancerId);
   const selectDancer = useUIStore((state) => state.selectDancer);
@@ -36,7 +38,9 @@ export function DancerList() {
   return (
     <div className="flex min-h-0 flex-col">
       <div className="flex shrink-0 items-baseline justify-between gap-2 px-3.5 py-3">
-        <span className="text-sm font-semibold text-fg-strong">ダンサー</span>
+        <span className="text-sm font-semibold text-fg-strong">
+          {t.dancer.list.title}
+        </span>
         <span className="shrink-0 font-mono text-caption text-fg-muted">
           {rows.length}人
         </span>
@@ -45,7 +49,7 @@ export function DancerList() {
       <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
         {rows.length === 0 ? (
           <p className="px-0.5 text-caption leading-relaxed text-fg-muted">
-            このシーンにはまだ誰もいません。
+            {t.dancer.list.empty}
           </p>
         ) : (
           <ul className="flex flex-col gap-1">
@@ -88,7 +92,7 @@ export function DancerList() {
           className="mt-2 flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-line-strong text-label font-medium whitespace-nowrap text-fg-sub"
         >
           <UserPlus size={14} className="shrink-0" />
-          ダンサーを追加
+          {t.editor.addDancer}
         </PressableButton>
       </div>
     </div>
