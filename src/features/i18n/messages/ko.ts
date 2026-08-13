@@ -233,6 +233,124 @@ export const ko = {
     },
   },
 
+  viewer: {
+    move: {
+      still: "제자리",
+      to: (direction: string, steps: number) =>
+        `${direction}으로 약 ${steps}걸음`,
+      direction: (
+        sideways: "left" | "right" | null,
+        depth: "front" | "back" | null,
+      ) =>
+        `${sideways === null ? "" : sideways === "left" ? "하수" : "상수"}${
+          depth === null ? "" : depth === "front" ? " 앞" : " 뒤"
+        }`.trim(),
+      turn: (facing: string) => `＋ ${facing}`,
+    },
+    facing: {
+      0: "객석 쪽",
+      45: "하수 앞쪽",
+      90: "하수 쪽",
+      135: "하수 뒤쪽",
+      180: "무대 뒤쪽",
+      225: "상수 뒤쪽",
+      270: "상수 쪽",
+      315: "상수 앞쪽",
+    },
+    route: {
+      title: (name: string) => `${name}의 동선`,
+      me: "나",
+      everyone: "전체",
+      all: "전부",
+      summary: (scenes: number, total: string) =>
+        `${scenes}장면 · 전체 ${total}`,
+      lastFormation: "여기가 마지막 대형입니다",
+      stepsNote: "걸음 수는 한 걸음 60cm·한 칸 90cm로 계산한 어림값입니다.",
+      sidesNote: "상수／하수는 객석에서 본 방향입니다.",
+      fast: " — 빠름",
+      hereNow: " · 지금 여기",
+      tooFast: "걸어서는 갈 수 없는 속도입니다",
+      reselect: "포지션 다시 고르기",
+      play: "통으로 재생",
+      stop: "정지",
+      paths: "동선",
+    },
+    entry: {
+      question: "본인은 누구인가요?",
+      note: "고르면 그 사람만 진하게 나오고 동선도 표시됩니다. 나중에 바꿀 수 있습니다.",
+      position: (name: string) => `${name}의 위치`,
+      pick: "본인을 골라 주세요",
+      pickNamed: (name: string) => `'${name}'(으)로 보기`,
+      skip: "고르지 않고 전체 보기",
+    },
+    music: {
+      pickSame: "같은 곡을 이 기기에서 고르기",
+    },
+  },
+
+  share: {
+    title: "공유",
+    enable: "링크를 아는 사람이 볼 수 있음",
+    enabledNote: "링크를 연 사람에게는 보기 전용 화면이 열립니다",
+    disabledNote: "꺼져 있는 동안에는 링크가 있어도 열리지 않습니다",
+    noKey: "이 작품에는 아직 공유용 키가 없습니다.",
+    noKeyMigration: " 마이그레이션을 실행하면 사용할 수 있습니다.",
+    everyone: "모두에게 줄 링크",
+    copy: "링크 복사",
+    copied: "복사했습니다",
+    perDancer: "한 사람씩 줄 링크",
+    perDancerNote:
+      "열면 그 사람이 선택된 상태로 시작합니다. 볼 수 있는 범위는 같고, 다른 사람의 동선도 볼 수 있습니다.",
+    regenerate: "링크 새로 만들기",
+    regenerateTitle: "링크를 새로 만들까요?",
+    regenerateDescription:
+      "이미 나눠 준 링크는 바로 열리지 않게 됩니다. 새 링크를 다시 보내 주세요.",
+    regenerateConfirm: "새로 만들기",
+    regenerated: "새 링크로 바꿨습니다",
+    regenerateFailed: "링크를 새로 만들지 못했습니다",
+    copyFailed: "복사하지 못했습니다",
+    saveFailed: "공유 설정을 바꾸지 못했습니다",
+    musicNote:
+      "곡은 따라가지 않습니다(음원이 이 기기 밖으로 나가지 않기 때문입니다). 시작 위치는 공유되니 같은 곡만 골라 주면 위치가 맞습니다.",
+    sharing: "공유 중. 링크 열기",
+  },
+
+  review: {
+    errors: {
+      notConfigured: "의견 기능이 설정되어 있지 않습니다",
+      needsSignIn: "로그인한 뒤에 시도해 주세요",
+      unreadable: "읽지 못했습니다",
+      noFormation: "대형이 없습니다",
+      emptyScene: "이 장면에는 아직 아무도 없습니다",
+      unavailable: "의견을 받지 못했습니다. 잠시 후 다시 시도해 주세요",
+      empty: "의견이 비어 있었습니다. 다시 시도해 주세요",
+    },
+    title: "대형 봐 달라고 하기",
+    note: "지금 열려 있는 장면의 위치만 보냅니다. 작품 이름과 댄서의 색은 보내지 않습니다. 돌아오는 것은 판정이 아니라 생각할 재료입니다.",
+    run: "봐 달라고 하기",
+    running: "보고 있습니다...",
+    again: "다시 한번",
+    failed: "의견을 받지 못했습니다",
+    offline: "통신하지 못했습니다",
+  },
+
+  exportVideo: {
+    title: "영상으로 만들기",
+    unsupported:
+      "이 기기의 브라우저에서는 영상을 만들 수 없습니다. PC의 Chrome이나 최신 iPhone의 Safari에서 시도해 주세요.",
+    needsTwoScenes:
+      "장면이 두 개 이상이면 그 사이의 움직임을 영상으로 만들 수 있습니다.",
+    size: "크기",
+    showNames: "이름 표시",
+    showNamesNote: "인원이 많을 때는 끄면 대형이 잘 보입니다",
+    running: (seconds: number) =>
+      `내보내는 중… ${seconds}초 남았습니다. 이 화면을 닫지 말고 기다려 주세요.`,
+    cancel: "중단",
+    note: "내보내기는 작품과 같은 시간이 걸립니다(실제로 재생하면서 녹화하기 때문입니다). 소리는 들어가지 않습니다.",
+    saved: "영상을 저장했습니다",
+    failed: "내보내지 못했습니다",
+  },
+
   music: {
     title: "음악",
     pick: "기기에서 곡 고르기",

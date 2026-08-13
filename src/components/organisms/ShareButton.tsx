@@ -7,6 +7,7 @@ import { PressableButton } from "@/components/atoms/PressableButton";
 import { Tooltip } from "@/components/atoms/Tooltip";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import type { Project } from "@/features/project/types";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   project: Project;
@@ -26,6 +27,7 @@ type Props = {
  * 閉じた入口のままでも分かるようにしておく。
  */
 export function ShareButton({ project }: Props) {
+  const t = useT();
   const [isOpen, setIsOpen] = useState(false);
   const isGuest = useProjectStore((state) => state.isGuest);
   // 保存済みの値の置き場はstoreに一本化する(プロジェクト名と同じ考え方)
@@ -37,10 +39,10 @@ export function ShareButton({ project }: Props) {
 
   return (
     <>
-      <Tooltip label="共有">
+      <Tooltip label={t.share.title}>
         <PressableButton
           kind="icon"
-          aria-label={isShared ? "共有中。リンクを開く" : "共有"}
+          aria-label={isShared ? t.share.sharing : t.share.title}
           onClick={() => setIsOpen(true)}
           className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[calc(var(--radius)*0.8333)] ${
             isShared ? "text-accent-soft" : "text-fg-sub"

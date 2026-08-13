@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import type { Locale } from "@/features/i18n/lib/locale";
+import { getLocale } from "@/features/i18n/server";
+import { messagesFor } from "@/features/i18n/messages";
 import { createClient } from "@/lib/supabase/server";
 import {
   formatSummaryForPrompt,
@@ -36,15 +39,25 @@ const SYSTEM_PROMPT = `あなたはダンスのフォーメーションを見る
 - 指摘は3つまで。良い点を1つ、気になる点を2つまで。
 - 「〜すべき」ではなく「〜すると〜になります」と、理由の形で書く。
   振付の正解は1つではないので、判定ではなく材料を出す。
-- 日本語で、全体で200字程度。箇条書きにする。`;
+- 全体で200字程度。箇条書きにする。`;
+
+/** どの言語で返すか。UIが英語なのに講評だけ日本語、を避ける */
+const REPLY_LANGUAGE: Record<Locale, string> = {
+  ja: "- 日本語で書く。",
+  en: "- Write in English.",
+  ko: "- 한국어로 쓸 것.",
+};
 
 type RequestBody = { summary?: FormationSummary };
 
 export async function POST(request: Request) {
+  // 返す言葉も、エラーの文言も、画面と同じ言語で
+  const locale = await getLocale();
+  const t = messagesFor(locale);
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
-      { error: "診断は設定されていません" },
+      { error: t.review.errors.notConfigured },
       { status: 503 },
     );
   }
@@ -55,7 +68,7 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json(
-      { error: "ログインしてからお試しください" },
+      { error: t.review.errors.needsSignIn },
       { status: 401 },
     );
   }
@@ -64,16 +77,22 @@ export async function POST(request: Request) {
   try {
     body = (await request.json()) as RequestBody;
   } catch {
-    return NextResponse.json({ error: "読み取れませんでした" }, { status: 400 });
+    return NextResponse.json(
+      { error: t.review.errors.unreadable },
+      { status: 400 },
+    );
   }
 
   const summary = body.summary;
   if (!summary || !Array.isArray(summary.dancers)) {
-    return NextResponse.json({ error: "隊形がありません" }, { status: 400 });
+    return NextResponse.json(
+      { error: t.review.errors.noFormation },
+      { status: 400 },
+    );
   }
   if (summary.dancers.length === 0) {
     return NextResponse.json(
-      { error: "このシーンにはまだ誰も居ません" },
+      { error: t.review.errors.emptyScene },
       { status: 400 },
     );
   }
@@ -88,7 +107,14 @@ export async function POST(request: Request) {
           "x-goog-api-key": apiKey,
         },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          systemInstruction: {
+            parts: [
+              {
+                text: `${SYSTEM_PROMPT}
+${REPLY_LANGUAGE[locale]}`,
+              },
+            ],
+          },
           contents: [
             { role: "user", parts: [{ text: formatSummaryForPrompt(summary) }] },
           ],
@@ -102,7 +128,7 @@ export async function POST(request: Request) {
     if (!response.ok) {
       // 相手のエラー本文はそのまま返さない(キーや内部の事情が混ざりうる)
       return NextResponse.json(
-        { error: "診断が取れませんでした。しばらくしてからお試しください" },
+        { error: t.review.errors.unavailable },
         { status: 502 },
       );
     }
@@ -117,7 +143,7 @@ export async function POST(request: Request) {
 
     if (!text) {
       return NextResponse.json(
-        { error: "診断が空でした。もう一度お試しください" },
+        { error: t.review.errors.empty },
         { status: 502 },
       );
     }
@@ -125,7 +151,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ text });
   } catch {
     return NextResponse.json(
-      { error: "診断が取れませんでした。しばらくしてからお試しください" },
+      { error: t.review.errors.unavailable },
       { status: 502 },
     );
   }

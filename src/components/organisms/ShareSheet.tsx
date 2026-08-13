@@ -16,6 +16,7 @@ import { buildShareLink, copyToClipboard } from "@/features/project/lib/shareLin
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { toUserMessage } from "@/lib/supabase/errors";
 import type { Project } from "@/features/project/types";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   project: Project;
@@ -44,6 +45,7 @@ type Props = {
  * ないことを、配る側が誤解しないように書いてあります。
  */
 export function ShareSheet({ project, isOpen, onClose }: Props) {
+  const t = useT();
   const showToast = useUIStore((state) => state.showToast);
   const requestConfirm = useUIStore((state) => state.requestConfirm);
   const dancers = useProjectStore((state) => state.dancers);
@@ -69,7 +71,7 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
   const copy = async (text: string, key: string) => {
     const copied = await copyToClipboard(text);
     if (!copied) {
-      showToast({ message: "コピーできませんでした", type: "error" });
+      showToast({ message: t.share.copyFailed, type: "error" });
       return;
     }
     // 押したことが分かるのは、この画面では色の変化だけ。
@@ -89,7 +91,7 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
     ).catch((error) => {
       setSharing(!next);
       showToast({
-        message: toUserMessage(error, "共有の設定に失敗しました"),
+        message: toUserMessage(error, t.share.saveFailed),
         type: "error",
       });
     });
@@ -97,20 +99,20 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
 
   const rotate = () => {
     requestConfirm({
-      title: "リンクを作り直しますか",
+      title: t.share.regenerateTitle,
       description:
-        "いま配ってあるリンクは、その場で開けなくなります。新しいリンクを配り直してください。",
-      confirmLabel: "作り直す",
+        t.share.regenerateDescription,
+      confirmLabel: t.share.regenerateConfirm,
       onConfirm: async () => {
         try {
           const token = await persist((supabase) =>
             rotateShareToken(supabase, project.id),
           );
           if (token) setShareToken(token);
-          showToast({ message: "新しいリンクにしました", type: "success" });
+          showToast({ message: t.share.regenerated, type: "success" });
         } catch (error) {
           showToast({
-            message: toUserMessage(error, "リンクを作り直せませんでした"),
+            message: toUserMessage(error, t.share.regenerateFailed),
             type: "error",
           });
         }
@@ -119,26 +121,26 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
   };
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose} title="共有">
+    <BottomSheet isOpen={isOpen} onClose={onClose} title={t.share.title}>
       <div className="flex flex-col gap-4 px-3.5 py-3">
         <div>
           <Switch
             checked={stored.isShared}
             onChange={toggleSharing}
-            label="リンクを知っている人が見られる"
+            label={t.share.enable}
             description={
               stored.isShared
-                ? "リンクを開いた人は、見るだけの画面になります"
-                : "オフの間は、リンクを持っていても開けません"
+                ? t.share.enabledNote
+                : t.share.disabledNote
             }
             icon={Link2}
             fullWidth
           />
           {!stored.shareToken && (
             <p className="mt-2 rounded-xl border border-line px-3 py-2.5 text-caption leading-snug text-fg-muted">
-              この作品にはまだ共有用の鍵がありません。
+              {t.share.noKey}
               <span className="font-mono"> 0007 </span>
-              のマイグレーションを実行すると使えるようになります。
+              {t.share.noKeyMigration}
             </p>
           )}
         </div>
@@ -146,7 +148,9 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
         {stored.isShared && link && (
           <>
             <div>
-              <p className="mb-1.5 text-label text-fg-sub">みんなに配るリンク</p>
+              <p className="mb-1.5 text-label text-fg-sub">
+                {t.share.everyone}
+              </p>
               <div className="flex items-center gap-2">
                 <span className="min-w-0 flex-1 truncate rounded-xl border border-line-strong bg-surface-strong px-3 py-2.5 font-mono text-caption text-fg">
                   {link}
@@ -154,7 +158,7 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
                 <PressableButton
                   kind="icon"
                   onClick={() => copy(link, "all")}
-                  aria-label="リンクをコピー"
+                  aria-label={t.share.copy}
                   className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line-strong text-fg-sub"
                 >
                   {copiedKey === "all" ? (
@@ -169,7 +173,7 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
             {Object.keys(dancers).length > 0 && (
               <div>
                 <p className="mb-1.5 text-label text-fg-sub">
-                  一人ひとりに配るリンク
+                  {t.share.perDancer}
                 </p>
                 <ul className="flex flex-col gap-1">
                   {Object.values(dancers).map((dancer) => (
@@ -199,7 +203,7 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
                         {copiedKey === dancer.id ? (
                           <span className="flex shrink-0 items-center gap-1 text-caption text-accent-soft">
                             <Check size={13} />
-                            コピーしました
+                            {t.share.copied}
                           </span>
                         ) : (
                           <Copy size={15} className="shrink-0 text-fg-muted" />
@@ -209,8 +213,8 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
                   ))}
                 </ul>
                 <p className="mt-1.5 text-caption leading-snug text-fg-muted">
-                  開いた時点でその人が選ばれます。見られる範囲は同じで、
-                  他の人の道順も見られます。
+                  {t.share.perDancerNote}
+
                 </p>
               </div>
             )}
@@ -220,15 +224,15 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
               className="flex h-11 items-center justify-center gap-2 rounded-xl border border-line-strong text-label text-fg-sub"
             >
               <RefreshCw size={15} />
-              リンクを作り直す
+              {t.share.regenerate}
             </PressableButton>
           </>
         )}
 
         <p className="text-caption leading-snug text-fg-muted">
-          曲は付いていきません(音源はこの端末から出ないため)。相手の画面では
+          {t.share.musicNote}
           8カウントの縞が地になり、同じ曲を相手の端末で選べば波形になります。
-          曲の開始位置は共有されるので、選んでもらえれば位置は合います。
+
         </p>
       </div>
     </BottomSheet>

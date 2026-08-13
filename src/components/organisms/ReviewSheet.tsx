@@ -8,6 +8,7 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { buildFormationSummary } from "@/features/review/lib/formationSummary";
 import type { Project } from "@/features/project/types";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   project: Project;
@@ -28,6 +29,7 @@ type Props = {
  * 計算したものだけを渡し、AIには数えさせない。
  */
 export function ReviewSheet({ project, isOpen, onClose }: Props) {
+  const t = useT();
   const scenes = useProjectStore((state) => state.scenes);
   const dancers = useProjectStore((state) => state.dancers);
   const positionsBySceneId = useProjectStore(
@@ -73,12 +75,12 @@ export function ReviewSheet({ project, isOpen, onClose }: Props) {
       };
 
       if (!response.ok || !data.text) {
-        setError(data.error ?? "診断が取れませんでした");
+        setError(data.error ?? t.review.failed);
         return;
       }
       setText(data.text);
     } catch {
-      setError("通信できませんでした");
+      setError(t.review.offline);
     } finally {
       setIsRunning(false);
     }
@@ -88,13 +90,13 @@ export function ReviewSheet({ project, isOpen, onClose }: Props) {
     <BottomSheet
       isOpen={isOpen}
       onClose={onClose}
-      title="隊形を見てもらう"
+      title={t.review.title}
       titleRight={scene?.name}
     >
       <div className="flex flex-col gap-3 px-[18px] py-4">
         <p className="text-label leading-[1.65] text-fg-sub">
-          いま開いているシーンの立ち位置だけを送ります。作品名やダンサーの色は
-          送りません。返ってくるのは判定ではなく、考えるための材料です。
+          {t.review.note}
+
         </p>
 
         {text && (
@@ -116,7 +118,7 @@ export function ReviewSheet({ project, isOpen, onClose }: Props) {
           className="flex h-11 items-center justify-center gap-1.5 rounded-[calc(var(--radius)*0.9)] bg-accent text-label font-semibold text-accent-fg shadow-[inset_0_1px_0_rgb(255_255_255/.22)] disabled:opacity-50"
         >
           <Sparkles size={15} />
-          {isRunning ? "見てもらっています..." : text ? "もう一度" : "見てもらう"}
+          {isRunning ? t.review.running : text ? t.review.again : t.review.run}
         </PressableButton>
       </div>
     </BottomSheet>

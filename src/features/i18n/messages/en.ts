@@ -234,6 +234,128 @@ export const en = {
     },
   },
 
+  viewer: {
+    move: {
+      still: "Stay put",
+      to: (direction: string, steps: number) =>
+        `${direction} — about ${steps} steps`,
+      direction: (
+        sideways: "left" | "right" | null,
+        depth: "front" | "back" | null,
+      ) =>
+        [
+          sideways === null ? null : sideways === "left" ? "Left" : "Right",
+          depth === null ? null : depth === "front" ? "downstage" : "upstage",
+        ]
+          .filter(Boolean)
+          .join(" and "),
+      turn: (facing: string) => `＋ ${facing}`,
+    },
+    facing: {
+      0: "facing front",
+      45: "facing front-left",
+      90: "facing left",
+      135: "facing back-left",
+      180: "facing back",
+      225: "facing back-right",
+      270: "facing right",
+      315: "facing front-right",
+    },
+    route: {
+      title: (name: string) => `${name}'s route`,
+      me: "you",
+      everyone: "Everyone",
+      all: "All",
+      summary: (scenes: number, total: string) =>
+        `${scenes} scenes · ${total} end to end`,
+      lastFormation: "This is the last formation",
+      stepsNote: "Steps are an estimate: 60 cm a step, 90 cm a square.",
+      sidesNote: "Left and right are as the audience sees them.",
+      fast: " — quick",
+      hereNow: " · you are here",
+      tooFast: "Too fast to walk",
+      reselect: "Pick a different position",
+      play: "Play it through",
+      stop: "Stop",
+      paths: "Paths",
+    },
+    entry: {
+      question: "Which one are you?",
+      note: "Pick yourself and only you are drawn solid, with your route written out. You can change it later.",
+      position: (name: string) => `${name}'s position`,
+      pick: "Pick yourself",
+      pickNamed: (name: string) => `Watch as ${name}`,
+      skip: "Skip and watch everyone",
+    },
+    music: {
+      pickSame: "Choose the same track on this device",
+    },
+  },
+
+  share: {
+    title: "Share",
+    enable: "Anyone with the link can view",
+    enabledNote: "People who open the link get a view-only screen",
+    disabledNote: "While this is off, the link will not open for anyone",
+    noKey: "This piece does not have a sharing key yet.",
+    noKeyMigration: " — run the migration to enable it.",
+    everyone: "Link for everyone",
+    copy: "Copy the link",
+    copied: "Copied",
+    perDancer: "A link for each dancer",
+    perDancerNote:
+      "Opening it selects that dancer. They see the same thing either way, including everyone else's routes.",
+    regenerate: "Make a new link",
+    regenerateTitle: "Make a new link?",
+    regenerateDescription:
+      "The link you have already handed out stops working immediately. You will need to send the new one.",
+    regenerateConfirm: "Make a new one",
+    regenerated: "The link has been replaced",
+    regenerateFailed: "Could not make a new link",
+    copyFailed: "Could not copy",
+    saveFailed: "Could not change the sharing setting",
+    musicNote:
+      "The track does not travel with it (the audio never leaves this device). The start position is shared, so once they pick the same track it will line up.",
+    sharing: "Shared. Open the link",
+  },
+
+  review: {
+    errors: {
+      notConfigured: "Notes are not set up on this server",
+      needsSignIn: "Please sign in first",
+      unreadable: "Could not read the request",
+      noFormation: "There is no formation to look at",
+      emptyScene: "Nobody is in this scene yet",
+      unavailable: "No notes came back. Please try again in a moment",
+      empty: "The notes came back empty. Please try again",
+    },
+    title: "Ask for notes",
+    note: "Only the positions in the scene you have open are sent. The name of the piece and the dancers' colours are not. What comes back is something to think with, not a verdict.",
+    run: "Ask",
+    running: "Asking…",
+    again: "Ask again",
+    failed: "No notes came back",
+    offline: "Could not reach the service",
+  },
+
+  exportVideo: {
+    title: "Make a video",
+    unsupported:
+      "This browser cannot record video. Try Chrome on a computer, or Safari on a recent iPhone.",
+    needsTwoScenes:
+      "With two or more scenes, the movement between them can be recorded.",
+    size: "Size",
+    showNames: "Show names",
+    showNamesNote:
+      "With a large cast, turning this off keeps the formation readable",
+    running: (seconds: number) =>
+      `Recording… ${seconds}s left. Please keep this screen open.`,
+    cancel: "Stop",
+    note: "Recording takes as long as the piece itself, because it is played through as it records. There is no sound.",
+    saved: "Video saved",
+    failed: "Could not record the video",
+  },
+
   music: {
     title: "Music",
     pick: "Choose a track from this device",

@@ -246,6 +246,122 @@ export const ja = {
     },
   },
 
+  viewer: {
+    move: {
+      still: "その場",
+      to: (direction: string, steps: number) => `${direction}へ 約${steps}歩`,
+      direction: (
+        sideways: "left" | "right" | null,
+        depth: "front" | "back" | null,
+      ) =>
+        `${sideways === null ? "" : sideways === "left" ? "下手" : "上手"}${
+          depth === null ? "" : depth === "front" ? "前" : "奥"
+        }`,
+      turn: (facing: string) => `＋ ${facing}`,
+    },
+    facing: {
+      0: "客席向き",
+      45: "下手前向き",
+      90: "下手向き",
+      135: "下手奥向き",
+      180: "奥向き",
+      225: "上手奥向き",
+      270: "上手向き",
+      315: "上手前向き",
+    },
+    route: {
+      title: (name: string) => `${name} の道順`,
+      me: "自分",
+      everyone: "全員",
+      all: "ぜんぶ",
+      summary: (scenes: number, total: string) =>
+        `${scenes} シーン · 通し ${total}`,
+      lastFormation: "ここが最後の隊形です",
+      stepsNote: "歩数は 1歩 60cm・1マス 90cm で計算した目安です。",
+      sidesNote: "上手／下手は客席から見た向きです。",
+      fast: " — 速め",
+      hereNow: " · いまここ",
+      tooFast: "歩いて間に合わない速さです",
+      reselect: "ポジションを選び直す",
+      play: "通しで再生",
+      stop: "止める",
+      paths: "導線",
+    },
+    entry: {
+      question: "あなたはどれですか",
+      note: "選ぶと、その人だけが濃く出て、道順も出るようになります。あとで変えられます。",
+      position: (name: string) => `${name} の立ち位置`,
+      pick: "自分を選んでください",
+      pickNamed: (name: string) => `「${name}」で見る`,
+      skip: "選ばずに全員を見る",
+    },
+    music: {
+      pickSame: "同じ曲をこの端末で選ぶ",
+    },
+  },
+
+  share: {
+    title: "共有",
+    enable: "リンクを知っている人が見られる",
+    enabledNote: "リンクを開いた人は、見るだけの画面になります",
+    disabledNote: "オフの間は、リンクを持っていても開けません",
+    noKey: "この作品にはまだ共有用の鍵がありません。",
+    noKeyMigration: "のマイグレーションを実行すると使えるようになります。",
+    everyone: "みんなに配るリンク",
+    copy: "リンクをコピー",
+    copied: "コピーしました",
+    perDancer: "一人ひとりに配るリンク",
+    perDancerNote:
+      "開いた時点でその人が選ばれます。見られる範囲は同じで、他の人の道順も見られます。",
+    regenerate: "リンクを作り直す",
+    regenerateTitle: "リンクを作り直しますか",
+    regenerateDescription:
+      "いま配ってあるリンクは、その場で開けなくなります。新しいリンクを配り直してください。",
+    regenerateConfirm: "作り直す",
+    regenerated: "新しいリンクにしました",
+    regenerateFailed: "リンクを作り直せませんでした",
+    copyFailed: "コピーできませんでした",
+    saveFailed: "共有の設定に失敗しました",
+    musicNote:
+      "曲は付いていきません(音源はこの端末から出ないため)。相手の画面では曲の開始位置は共有されるので、選んでもらえれば位置は合います。",
+    sharing: "共有中。リンクを開く",
+  },
+
+  review: {
+    errors: {
+      notConfigured: "診断は設定されていません",
+      needsSignIn: "ログインしてからお試しください",
+      unreadable: "読み取れませんでした",
+      noFormation: "隊形がありません",
+      emptyScene: "このシーンにはまだ誰も居ません",
+      unavailable: "診断が取れませんでした。しばらくしてからお試しください",
+      empty: "診断が空でした。もう一度お試しください",
+    },
+    title: "隊形を見てもらう",
+    note: "いま開いているシーンの立ち位置だけを送ります。作品名やダンサーの色は送りません。返ってくるのは判定ではなく、考えるための材料です。",
+    run: "見てもらう",
+    running: "見てもらっています...",
+    again: "もう一度",
+    failed: "診断が取れませんでした",
+    offline: "通信できませんでした",
+  },
+
+  exportVideo: {
+    title: "動画にする",
+    unsupported:
+      "この端末のブラウザでは動画を書き出せません。パソコンの Chrome か、新しい iPhone の Safari でお試しください。",
+    needsTwoScenes: "シーンが2つ以上あると、その間の動きを動画にできます。",
+    size: "大きさ",
+    showNames: "名前を出す",
+    showNamesNote: "人数が多いときは、切ると隊形が読みやすくなります",
+    running: (seconds: number) =>
+      `書き出し中… 残り ${seconds}秒。この画面を閉じずにお待ちください。`,
+    cancel: "中止する",
+    note: "書き出しには作品と同じだけ時間がかかります(実際に動かしながら録っているため)。音は入りません。",
+    saved: "動画を保存しました",
+    failed: "書き出しに失敗しました",
+  },
+
   music: {
     title: "曲",
     pick: "端末から曲を選ぶ",

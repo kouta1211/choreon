@@ -14,6 +14,7 @@ import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import type { Dancer } from "@/features/dancer/types";
 import type { Project } from "@/features/project/types";
 import type { Position, Scene } from "@/features/scene/types";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   project: Project;
@@ -48,6 +49,7 @@ export function ViewerLayout({
   positions,
   requestedDancerId,
 }: Props) {
+  const t = useT();
   const hydrate = useViewerStore((state) => state.hydrate);
   const hasChosen = useViewerStore((state) => state.hasChosen);
   const focusedDancerId = useViewerStore((state) => state.focusedDancerId);
@@ -106,7 +108,7 @@ export function ViewerLayout({
             入口には二度と戻れなくなる(端末の記憶を消すしかなくなる) */}
         <PressableButton
           onClick={chooseAgain}
-          aria-label="ポジションを選び直す"
+          aria-label={t.viewer.route.reselect}
           className="flex h-8 shrink-0 items-center gap-unit rounded-full bg-surface-raised px-3 font-mono text-mono-m text-fg"
         >
           {dancer ? (
@@ -119,7 +121,7 @@ export function ViewerLayout({
               {dancer.name}
             </>
           ) : (
-            "全員"
+            t.viewer.route.everyone
           )}
         </PressableButton>
       </header>
@@ -161,7 +163,7 @@ export function ViewerLayout({
               if (currentSeconds >= lastSeconds) setCurrentSeconds(0);
               setIsPlaying((playing) => !playing);
             }}
-            aria-label={isPlaying ? "止める" : "通しで再生"}
+            aria-label={isPlaying ? t.viewer.route.stop : t.viewer.route.play}
             /* 主役はスクラブなので、再生は静かなボタンに格下げしてある */
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-raised text-fg"
           >
@@ -186,7 +188,7 @@ export function ViewerLayout({
               }`}
             >
               <Spline size={13} />
-              導線
+              {t.viewer.route.paths}
             </PressableButton>
           )}
         </div>

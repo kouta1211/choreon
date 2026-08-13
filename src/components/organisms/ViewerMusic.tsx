@@ -5,6 +5,7 @@ import { Music, Upload, X } from "lucide-react";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   /** 通し再生の最中か。曲があるときは、この間だけ曲が時計になる */
@@ -31,6 +32,7 @@ type Props = {
  * 引けば「ずれる」という状態自体が起こらない。エディタと同じ考え方。
  */
 export function ViewerMusic({ isPlaying, onEnded }: Props) {
+  const t = useT();
   const project = useViewerStore((state) => state.project);
   const scenes = useViewerStore((state) => state.scenes);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -108,7 +110,7 @@ export function ViewerMusic({ isPlaying, onEnded }: Props) {
           <PressableButton
             kind="icon"
             onClick={() => clearMusic(project.id)}
-            aria-label="曲を外す"
+            aria-label={t.music.remove}
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-muted"
           >
             <X size={14} />
@@ -120,7 +122,7 @@ export function ViewerMusic({ isPlaying, onEnded }: Props) {
           className="flex h-7 items-center gap-1.5 rounded-lg border border-dashed border-line-strong px-2.5 text-caption text-fg-muted"
         >
           <Upload size={12} className="shrink-0" />
-          同じ曲をこの端末で選ぶ
+          {t.viewer.music.pickSame}
         </PressableButton>
       )}
 
@@ -131,7 +133,7 @@ export function ViewerMusic({ isPlaying, onEnded }: Props) {
         type="file"
         accept="audio/*,.mp3,.wav,.m4a,.aac,.flac,.ogg,.opus"
         className="hidden"
-        aria-label="曲のファイル"
+        aria-label={t.music.file}
         onChange={(event) => {
           const file = event.target.files?.[0];
           if (file) loadMusic(file, project.id);

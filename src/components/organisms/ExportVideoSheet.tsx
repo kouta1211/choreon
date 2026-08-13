@@ -15,6 +15,7 @@ import {
 } from "@/features/export/lib/videoFormat";
 import type { FrameColors } from "@/features/export/lib/drawFrame";
 import type { Project } from "@/features/project/types";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   project: Project;
@@ -45,6 +46,7 @@ const SIZES = [
  * 配ることになる。
  */
 export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
+  const t = useT();
   const scenes = useProjectStore((state) => state.scenes);
   const dancers = useProjectStore((state) => state.dancers);
   const positionsBySceneId = useProjectStore(
@@ -88,10 +90,10 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
 
       if (controller.signal.aborted) return;
       download(blob, videoFileName(project.title, format.extension));
-      showToast({ message: "動画を保存しました", type: "success" });
+      showToast({ message: t.exportVideo.saved, type: "success" });
       onClose();
     } catch {
-      showToast({ message: "書き出しに失敗しました", type: "error" });
+      showToast({ message: t.exportVideo.failed, type: "error" });
     } finally {
       abortRef.current = null;
       setProgress(null);
@@ -109,22 +111,24 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
     <BottomSheet
       isOpen={isOpen}
       onClose={isRunning ? cancel : onClose}
-      title="動画にする"
+      title={t.exportVideo.title}
     >
       <div className="flex flex-col gap-4 px-3.5 py-3">
         {!format ? (
           <p className="rounded-xl border border-line px-3 py-2.5 text-label leading-snug text-fg-muted">
-            この端末のブラウザでは動画を書き出せません。パソコンの Chrome か、
-            新しい iPhone の Safari でお試しください。
+            {t.exportVideo.unsupported}
+
           </p>
         ) : scenes.length < 2 ? (
           <p className="rounded-xl border border-line px-3 py-2.5 text-label leading-snug text-fg-muted">
-            シーンが2つ以上あると、その間の動きを動画にできます。
+            {t.exportVideo.needsTwoScenes}
           </p>
         ) : (
           <>
             <div className="flex items-center gap-2.5">
-              <span className="flex-1 text-label text-fg">大きさ</span>
+              <span className="flex-1 text-label text-fg">
+                {t.exportVideo.size}
+              </span>
               <div className="flex shrink-0 overflow-hidden rounded-[calc(var(--radius)*0.8333)] border border-line-strong">
                 {SIZES.map((size) => (
                   <PressableButton
@@ -147,8 +151,8 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
             <Switch
               checked={showNames}
               onChange={() => setShowNames((value) => !value)}
-              label="名前を出す"
-              description="人数が多いときは、切ると隊形が読みやすくなります"
+              label={t.exportVideo.showNames}
+              description={t.exportVideo.showNamesNote}
               fullWidth
             />
 
@@ -178,7 +182,7 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
                   onClick={cancel}
                   className="h-11 rounded-xl border border-line-strong text-label text-fg-sub"
                 >
-                  中止する
+                  {t.exportVideo.cancel}
                 </PressableButton>
               </div>
             ) : (
@@ -193,8 +197,8 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
             )}
 
             <p className="text-caption leading-snug text-fg-muted">
-              書き出しには作品と同じだけ時間がかかります(実際に動かしながら
-              録っているため)。音は入りません。
+              {t.exportVideo.note}
+
             </p>
           </>
         )}

@@ -9,6 +9,8 @@ import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { describeMove } from "@/features/viewer/lib/describeMove";
 import { sceneSpanAt } from "@/features/viewer/lib/interpolate";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
+import { useT } from "@/features/i18n/LocaleProvider";
+import { moveText } from "@/features/i18n/lib/moveText";
 
 type Step = {
   sceneId: string;
@@ -30,6 +32,7 @@ type Step = {
  * ここは並べるだけ。
  */
 export function ViewerRoute() {
+  const t = useT();
   const dancers = useViewerStore((state) => state.dancers);
   const scenes = useViewerStore((state) => state.scenes);
   const positionsBySceneId = useViewerStore(
@@ -58,11 +61,14 @@ export function ViewerRoute() {
         number: index + 1,
         name: scene.name,
         timeSeconds: scene.timeSeconds,
-        ...move,
+        isFast: move.isFast,
+        seconds: move.seconds,
+        // 差分の読み取りと文の組み立ては別。語順は言語で変わる
+        ...moveText(move, t),
       });
     }
     return result;
-  }, [focusedDancerId, scenes, positionsBySceneId]);
+  }, [focusedDancerId, scenes, positionsBySceneId, t]);
 
   if (!focusedDancerId) return null;
 
@@ -96,29 +102,32 @@ export function ViewerRoute() {
               </span>
             </>
           ) : (
-            <span className="text-fg-muted">ここが最後の隊形です</span>
+            <span className="text-fg-muted">{t.viewer.route.lastFormation}</span>
           )}
         </p>
         <PressableButton
           onClick={() => setSheetOpen(true)}
           className="flex h-8 shrink-0 items-center rounded-lg bg-surface-raised px-3 text-label text-fg-sub"
         >
-          ぜんぶ
+          {t.viewer.route.all}
         </PressableButton>
       </div>
 
       <BottomSheet
         isOpen={isSheetOpen}
         onClose={() => setSheetOpen(false)}
-        title={`${dancer?.name ?? "自分"} の道順`}
-        titleRight={`${scenes.length} シーン · 通し ${formatMinutes(totalSeconds)}`}
+        title={t.viewer.route.title(dancer?.name ?? t.viewer.route.me)}
+        titleRight={t.viewer.route.summary(
+          scenes.length,
+          formatMinutes(totalSeconds),
+        )}
         isTall
       >
         {/* 注記は1度だけ。行ごとに書くと、肝心の道順が埋もれる */}
         <p className="border-b border-line px-[18px] py-3 text-caption leading-[1.6] text-fg-muted">
-          歩数は 1歩 60cm・1マス 90cm で計算した目安です。
+          {t.viewer.route.stepsNote}
           <span className="font-semibold text-fg-sub">
-            上手／下手は客席から見た向きです。
+            {t.viewer.route.sidesNote}
           </span>
         </p>
 
@@ -155,13 +164,13 @@ export function ViewerRoute() {
                         <span className="text-fg-sub"> {step.turn}</span>
                       )}
                       {step.isFast && (
-                        <span className="text-fg-sub"> — 速め</span>
+                        <span className="text-fg-sub">{t.viewer.route.fast}</span>
                       )}
                     </span>
                     <span className="mt-0.5 block font-mono text-caption text-fg-muted">
                       {formatClock(step.timeSeconds)} ·{" "}
                       {step.seconds.toFixed(1)}秒かけて
-                      {isHere && " · いまここ"}
+                      {isHere && t.viewer.route.hereNow}
                     </span>
                   </span>
                   {/* 速い移動の印。色ではなく形で示す
@@ -170,7 +179,7 @@ export function ViewerRoute() {
                     <TriangleAlert
                       size={20}
                       className="mt-0.5 shrink-0 text-fg-sub"
-                      aria-label="歩いて間に合わない速さです"
+                      aria-label={t.viewer.route.tooFast}
                     />
                   )}
                 </PressableButton>

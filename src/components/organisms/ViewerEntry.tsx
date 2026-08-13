@@ -4,6 +4,7 @@ import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { formatMinutes } from "@/components/molecules/PlayheadClock";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /** ここでは押す的なので、エディタの26pxより大きい */
 const MARKER_SIZE = 40;
@@ -21,6 +22,7 @@ const MARKER_SIZE = 40;
  * 丸と名前チップの【どちらからでも】選べるようにしてある。
  */
 export function ViewerEntry() {
+  const t = useT();
   const project = useViewerStore((state) => state.project);
   const dancers = useViewerStore((state) => state.dancers);
   const scenes = useViewerStore((state) => state.scenes);
@@ -57,11 +59,11 @@ export function ViewerEntry() {
 
       <div>
         <h2 className="text-body font-semibold text-fg-strong">
-          あなたはどれですか
+          {t.viewer.entry.question}
         </h2>
         <p className="mt-1 text-label leading-[1.6] text-fg-sub">
-          選ぶと、その人だけが濃く出て、道順も出るようになります。
-          あとで変えられます。
+          {t.viewer.entry.note}
+
         </p>
       </div>
 
@@ -92,7 +94,7 @@ export function ViewerEntry() {
               haptic
               // 名前チップと同じ読み上げにすると、2つ同じものが並ぶ。
               // どちらから選んでもよいが、何を押しているかは違う
-              aria-label={`${dancer.name} の立ち位置`}
+              aria-label={t.viewer.entry.position(dancer.name)}
               aria-pressed={isSelected}
               onClick={() => focusDancer(dancer.id)}
               style={{
@@ -155,13 +157,15 @@ export function ViewerEntry() {
           onClick={() => selected && focusDancer(selected.id)}
           className="flex h-[50px] items-center justify-center rounded-[calc(var(--radius)*1.05)] bg-accent text-body font-semibold text-accent-fg shadow-[inset_0_1px_0_rgb(255_255_255/.22)] disabled:opacity-40"
         >
-          {selected ? `「${selected.name}」で見る` : "自分を選んでください"}
+          {selected
+            ? t.viewer.entry.pickNamed(selected.name)
+            : t.viewer.entry.pick}
         </PressableButton>
         <PressableButton
           onClick={() => focusDancer(null)}
           className="flex h-11 items-center justify-center rounded-[calc(var(--radius)*0.9)] border border-line-strong text-label text-fg-sub"
         >
-          選ばずに全員を見る
+          {t.viewer.entry.skip}
         </PressableButton>
       </div>
     </div>

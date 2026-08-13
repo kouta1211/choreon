@@ -6,6 +6,7 @@ import { ReviewSheet } from "@/components/organisms/ReviewSheet";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { Tooltip } from "@/components/atoms/Tooltip";
 import type { Project } from "@/features/project/types";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   project: Project;
@@ -18,14 +19,15 @@ type Props = {
  * だから。診断は頼んだときだけ動くもので、常に見ているものではない。
  */
 export function ReviewButton({ project }: Props) {
+  const t = useT();
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <>
-      <Tooltip label="隊形を見てもらう">
+      <Tooltip label={t.review.title}>
         <PressableButton
           kind="icon"
-          aria-label="隊形を見てもらう"
+          aria-label={t.review.title}
           onClick={() => setIsOpen(true)}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[calc(var(--radius)*0.8333)] text-fg-sub"
         >
