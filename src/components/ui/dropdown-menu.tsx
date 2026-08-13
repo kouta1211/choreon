@@ -67,9 +67,9 @@ export function DropdownMenuItem({
   return (
     <DropdownMenuPrimitive.Item
       className={cn(
-        "flex w-full cursor-pointer items-center gap-2.5 rounded-[calc(var(--radius)*0.6667)] px-2 py-2 text-left text-[13px] text-fg-sub outline-none",
+        "flex w-full cursor-pointer items-center gap-unit rounded-lg px-2 py-2 text-left text-label text-fg-sub outline-none",
         // キーボードで辿っているときの現在地。マウスの hover でも同じ面になる
-        "data-[highlighted]:bg-fg/6 data-[highlighted]:text-fg",
+        "data-[highlighted]:bg-surface-raised data-[highlighted]:text-fg",
         className,
       )}
       {...props}
@@ -85,8 +85,8 @@ export function DropdownMenuCheckboxItem({
   return (
     <DropdownMenuPrimitive.CheckboxItem
       className={cn(
-        "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 py-2 text-left text-sm text-fg outline-none",
-        "data-[highlighted]:bg-fg/6",
+        "flex w-full cursor-pointer items-center gap-unit rounded-lg px-2 py-2 text-left text-label text-fg outline-none",
+        "data-[highlighted]:bg-surface-raised",
         className,
       )}
       {...props}

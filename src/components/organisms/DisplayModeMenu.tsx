@@ -5,8 +5,11 @@ import {
   Film,
   Grid3x3,
   Hand,
+  Music4,
   Palette,
+  Share2,
   SlidersHorizontal,
+  Sparkles,
   EyeOff,
   Spline,
   Target,
@@ -51,7 +54,18 @@ const GRID_MODES: { value: GridMode; label: string }[] = [
   { value: "none", label: "なし" },
 ];
 
-export function DisplayModeMenu() {
+type Props = {
+  /** ヘッダーから畳んだ入口。下書き(ゲスト)には共有が無いので任意 */
+  onOpenMusic?: () => void;
+  onOpenShare?: () => void;
+  onOpenReview?: () => void;
+};
+
+export function DisplayModeMenu({
+  onOpenMusic,
+  onOpenShare,
+  onOpenReview,
+}: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const requestTour = useUIStore((state) => state.requestTour);
   const setExportSheetOpen = useUIStore((state) => state.setExportSheetOpen);
@@ -147,20 +161,18 @@ export function DisplayModeMenu() {
           kind="icon"
           data-tour="display-menu"
           aria-label="表示とモード"
-          className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-[calc(var(--radius)*0.8333)] border transition-colors ${
+          className={`relative flex h-target w-target shrink-0 items-center justify-center rounded-full transition-colors ${
             isOpen
-              ? "border-accent bg-accent/12 text-accent-soft"
-              : "border-line-strong text-fg-sub"
+              ? "bg-surface-strong text-fg-strong"
+              : "text-fg-sub hover:bg-surface hover:text-fg"
           }`}
         >
-          <SlidersHorizontal size={17} />
+          <SlidersHorizontal size={20} />
           {activeCount > 0 && (
             <span
               aria-hidden
-              className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 font-mono text-[9px] font-semibold text-accent-fg"
-            >
-              {activeCount}
-            </span>
+              className="absolute top-1.5 right-1.5 block h-1.5 w-1.5 rounded-full bg-accent"
+            />
           )}
         </PressableButton>
       </DropdownMenuTrigger>
@@ -168,16 +180,16 @@ export function DisplayModeMenu() {
       <DropdownMenuContent align="end" aria-label="表示とモード">
         <DropdownMenuLabel>
           表示とモード
-          <span className="font-mono text-[10px] font-normal tracking-normal">
+          <span className="font-mono text-mono-s font-normal tracking-normal">
             {dancerCount}人 · {sceneCount}シーン
           </span>
         </DropdownMenuLabel>
 
         {/* 目盛りは3択なので、オン/オフではなくラジオで持つ。
             矢印キーで選び替えられ、いまどれかも読み上げられる */}
-        <div className="flex items-center gap-2 px-2 py-1.5">
-          <Grid3x3 size={15} className="shrink-0 text-fg-muted" />
-          <span className="flex-1 text-[12.5px] text-fg">目盛り</span>
+        <div className="flex items-center gap-unit px-2 py-1.5">
+          <Grid3x3 size={16} className="shrink-0 text-fg-muted" />
+          <span className="flex-1 text-label text-fg">目盛り</span>
           <DropdownMenuRadioGroup
             value={gridMode}
             onValueChange={(value) => setGridMode(value as GridMode)}
@@ -218,17 +230,33 @@ export function DisplayModeMenu() {
           </DropdownMenuCheckboxItem>
         ))}
 
-        {/* 使い方の案内をもう一度。初回に飛ばした人と、
-            しばらく空けて戻ってきた人のための入口 */}
+        {/* ここから下は「この作品に対してすること」。表示の切り替えとは
+            性質が違うので、区切って見出しを立てる
+            (ヘッダーに並んでいたアイコンをここへ畳んだ) */}
         <DropdownMenuSeparator />
+        <DropdownMenuLabel>この作品</DropdownMenuLabel>
+        <DropdownMenuItem onSelect={() => onOpenMusic?.()}>
+          <Music4 size={16} className="shrink-0 text-fg-muted" />
+          曲
+        </DropdownMenuItem>
+        {onOpenShare && (
+          <DropdownMenuItem onSelect={() => onOpenShare()}>
+            <Share2 size={16} className="shrink-0 text-fg-muted" />
+            共有
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem onSelect={() => onOpenReview?.()}>
+          <Sparkles size={16} className="shrink-0 text-fg-muted" />
+          隊形を見てもらう
+        </DropdownMenuItem>
         {/* 動画は「アプリを開かない人にも渡せる」形。リンクとは
-            届く相手が違うので、共有とは別の入口にしてある */}
+            届く相手が違うので、共有とは別の項目にしてある */}
         <DropdownMenuItem onSelect={() => setExportSheetOpen(true)}>
-          <Film size={15} className="shrink-0 text-fg-muted" />
+          <Film size={16} className="shrink-0 text-fg-muted" />
           動画にする
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => requestTour()}>
-          <HelpCircle size={15} className="shrink-0 text-fg-muted" />
+          <HelpCircle size={16} className="shrink-0 text-fg-muted" />
           使い方をもう一度見る
         </DropdownMenuItem>
 

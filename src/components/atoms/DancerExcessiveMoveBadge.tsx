@@ -42,7 +42,8 @@ export function DancerExcessiveMoveBadge({ strain, dancerName }: Props) {
       aria-label={description}
       tabIndex={0}
       {...triggerProps}
-      className="absolute top-0 left-0 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-white"
+      /* 色で強さを付けない(顔被りの印と同じ理由)。形と定位置で区別する */
+      className="absolute top-0 left-0 flex h-4 w-4 items-center justify-center rounded-full bg-surface-strong text-fg-strong ring-1 ring-line-strong"
       style={{
         transform: `translate(-50%, -50%) translate(${MARKER_SIZE / 2 - 4}px, ${-MARKER_SIZE / 2 + 4}px)`,
       }}

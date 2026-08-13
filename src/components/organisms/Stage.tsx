@@ -91,8 +91,8 @@ export function Stage({
   const dragSnapLine = useUIStore((state) => state.dragSnapLine);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1.5">
-      <p className="text-center text-[10px] font-semibold tracking-[0.16em] text-fg-muted">
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-unit">
+      <p className="text-center text-caption tracking-[0.16em] text-fg-muted uppercase">
         バックステージ
       </p>
       <div
@@ -104,7 +104,10 @@ export function Stage({
       >
         <div
           ref={ref}
-          className={`relative touch-none rounded-stage border-2 border-accent bg-stage transition-colors ${
+          /* 枠はアクセントで塗らない。ステージは常にそこに在るもので、
+             「いま選んでいるもの」ではない。画面で一番強い線が床の縁だと、
+             視線がダンサーではなく枠に行く */
+          className={`relative touch-none rounded-stage border border-line-strong bg-stage transition-colors ${
             focusedDancerId ? "bg-surface-sunken" : ""
           }`}
           style={{
@@ -178,7 +181,7 @@ export function Stage({
         {scrubIndicator}
       </div>
       <div className="flex w-full items-center justify-center">
-        <p className="text-center text-[10px] font-semibold tracking-[0.16em] text-fg-muted">
+        <p className="text-center text-caption tracking-[0.16em] text-fg-muted uppercase">
           客席側
         </p>
       </div>

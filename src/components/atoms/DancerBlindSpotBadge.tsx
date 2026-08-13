@@ -40,7 +40,10 @@ export function DancerBlindSpotBadge({ dancerName }: Props) {
       aria-label={description}
       tabIndex={0}
       {...triggerProps}
-      className="absolute top-0 left-0 flex h-4 w-4 items-center justify-center rounded-full bg-sky-500 text-white"
+      /* 面にも色を持たせない。青や琥珀で塗ると、ダンサーの6色と
+         同じ強さで画面に並び、どれが警告でどれが人か読めなくなる。
+         無彩色の面 ＋ 形(閉じた目)だけで伝える */
+      className="absolute top-0 left-0 flex h-4 w-4 items-center justify-center rounded-full bg-surface-strong text-fg-strong ring-1 ring-line-strong"
       style={{
         transform: `translate(-50%, -50%) translate(${-MARKER_SIZE / 2 + 4}px, ${-MARKER_SIZE / 2 + 4}px)`,
       }}

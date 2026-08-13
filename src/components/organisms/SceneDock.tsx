@@ -176,31 +176,35 @@ export function SceneDock({ project }: Props) {
   return (
     <div
       ref={dockRef}
-      className="rounded-t-[calc(var(--radius)*1.5)] border-t border-line bg-surface pt-2.5 pb-3 md:rounded-none"
+      /* 常設の板なので、すりガラスは掛けない(ステージのドラッグ中ずっと
+         背後の再合成が走り、指の追従が落ちる)。面と1pxの縁で浮かせる */
+      className="rounded-t-3xl border-t border-line-strong bg-surface pt-unit pb-gutter md:rounded-none"
     >
       {/* 持ち手。シートが下から出てくることを形で示す。狭い画面だけ
           (広い画面では一覧が横に常時出ていて、開く相手が無い) */}
       <PressableButton
         onClick={() => setSceneSheetOpen(true)}
         aria-label="シーン一覧を開く"
-        className="mx-auto mb-2.5 block h-1 w-9 rounded-full bg-line-strong md:hidden"
+        className="mx-auto mb-unit block h-1 w-9 rounded-full bg-line-strong md:hidden"
       />
 
       {/* シーンが1つも無い状態でも、追加と一覧のボタンだけは出す
           (ここから作り始めるため。以前はストリップの中に「+」があった) */}
-      <div className="flex items-center gap-2.5 px-3.5">
+      <div className="flex items-center gap-gutter px-gutter">
         {selectedScene ? (
           <>
+            {/* 再生だけがアクセントで塗られる。ドックの中で
+                「いま押すもの」が1つだと分かる */}
             <PressableButton
               kind="round"
               onClick={handleTogglePlay}
               aria-label={isPlaying ? "再生を停止" : "最後のシーンまで再生"}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-fg"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-accent-fg"
             >
               {isPlaying ? (
-                <Pause size={16} fill="currentColor" />
+                <Pause size={20} fill="currentColor" />
               ) : (
-                <Play size={16} fill="currentColor" />
+                <Play size={20} fill="currentColor" />
               )}
             </PressableButton>
 
@@ -208,26 +212,26 @@ export function SceneDock({ project }: Props) {
                 いる(触ったつもりの無い改名を防ぐ。SceneListのカードと同じ
                 方針)。代わりに鉛筆を隣へ出し、開いているシーンの詳細設定へ
                 一覧を経由せずに入れるようにしている */}
-            <div className="min-w-0 flex-1">
-              <div className="flex items-baseline gap-1.5">
-                <span className="shrink-0 font-mono text-[11px] font-semibold text-accent-soft">
+            <div className="flex min-w-0 flex-1 flex-col gap-base">
+              <div className="flex items-baseline gap-unit">
+                <span className="shrink-0 font-mono text-mono-m text-accent-soft">
                   {String(selectedIndex + 1).padStart(2, "0")}
                 </span>
-                <span className="min-w-0 truncate text-sm font-semibold text-fg-strong">
+                <span className="min-w-0 truncate text-headline text-fg-strong">
                   {selectedScene.name}
                 </span>
                 <PressableButton
                   onClick={() => setSceneSheetOpen(true)}
                   aria-label={`「${selectedScene.name}」の設定を開く`}
-                  className="flex h-6 w-6 shrink-0 translate-y-0.5 items-center justify-center rounded-[calc(var(--radius)*0.5)] border border-line-strong text-fg-muted"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-surface-raised hover:text-fg"
                 >
-                  <Pencil size={11} />
+                  <Pencil size={14} />
                 </PressableButton>
               </div>
               {/* 時刻は【いま再生している位置】。選択中シーンの時刻ではなく
                   再生位置を出すのは、時間軸を触ってシークしたときに
                   どこまで進んだかを読む先がここしか無いため */}
-              <span className="mt-0.5 block truncate font-mono text-[10.5px] text-fg-muted">
+              <span className="block truncate font-mono text-mono-s text-fg-muted">
                 <PlayheadClock
                   totalSeconds={totalSeconds > 0 ? totalSeconds : null}
                   counts={countSetting}
@@ -238,31 +242,34 @@ export function SceneDock({ project }: Props) {
             </div>
           </>
         ) : (
-          <span className="min-w-0 flex-1 text-[13px] text-fg-muted">
+          <span className="min-w-0 flex-1 text-label text-fg-muted">
             シーンがありません
           </span>
         )}
 
-        <PressableButton
-          kind="icon"
-          onClick={handleAddScene}
-          disabled={isCreating}
-          data-tour="add-scene"
-          aria-label="シーンを追加"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[calc(var(--radius)*0.75)] border border-line-strong text-fg-sub disabled:opacity-50"
-        >
-          <Plus size={17} />
-        </PressableButton>
-
-        {/* 以前はここが無地の細いバーで、押せることも、押すと何が出るのかも
-            分からなかった。文字を出して行き先を名指しする */}
-        <PressableButton
-          onClick={() => setSceneSheetOpen(true)}
-          className="flex h-10 shrink-0 items-center gap-1.5 rounded-[calc(var(--radius)*0.75)] border border-line-strong px-2.5 text-[13px] font-medium whitespace-nowrap text-fg-sub md:hidden"
-        >
-          <List size={15} className="shrink-0" />
-          一覧
-        </PressableButton>
+        {/* 追加と一覧は【1つの面にまとめる】。別々に枠を持たせると、
+            再生と並んで押す的が3つ横並びになり、どれが主役か読めなくなる */}
+        <div className="flex shrink-0 items-center gap-base rounded-lg bg-surface-raised p-base">
+          <PressableButton
+            kind="icon"
+            onClick={handleAddScene}
+            disabled={isCreating}
+            data-tour="add-scene"
+            aria-label="シーンを追加"
+            className="flex h-10 w-10 items-center justify-center rounded-md text-fg-sub transition-colors hover:bg-surface-strong hover:text-fg disabled:opacity-50"
+          >
+            <Plus size={20} />
+          </PressableButton>
+          <span aria-hidden className="h-5 w-px bg-line md:hidden" />
+          <PressableButton
+            kind="icon"
+            onClick={() => setSceneSheetOpen(true)}
+            aria-label="シーン一覧を開く"
+            className="flex h-10 w-10 items-center justify-center rounded-md text-fg-sub transition-colors hover:bg-surface-strong hover:text-fg md:hidden"
+          >
+            <List size={20} />
+          </PressableButton>
+        </div>
       </div>
 
       {/* 曲の時間軸。シーンは「曲の何秒目か」の位置に載る */}
