@@ -16,14 +16,14 @@ type Props = {
   heightUnits: number;
   /** ダンサーアイコンを配置するためのスロット */
   children?: ReactNode;
-  /** ステージの内側の隅に重ねるもの(元に戻す/やり直すなど)。
-   * ステージの外に置くと縦を消費してしまうため、余白の少ない
-   * スマートフォンではステージの内側に浮かせる */
-  overlay?: ReactNode;
-  /** 「客席側」ラベルの行の左端に置くもの(テンプレートの入口)。
+  /** ステージ枠のすぐ下、左端に置くもの(テンプレートの入口)。
    * ステージの中には重ねない — 常設のボタンをステージ面に置くと、
    * その下にダンサーが来たときに隠れてしまうため */
   belowStageLeft?: ReactNode;
+  /** 同じく右端に置くもの(元に戻す/やり直す)。
+   * 以前はステージの内側に浮かせていたが、床の目盛りと重なって
+   * 数字が読めず、その位置に立つダンサーも隠していた */
+  belowStageRight?: ReactNode;
   /** ドラッグ量(px)をステージ座標系に換算する際、実際の描画サイズを
    * 読み取れるためのための参照(React 19からforwardRef不要でrefを
    * 通常のpropsとして受け取れる) */
@@ -57,8 +57,8 @@ export function Stage({
   widthUnits,
   heightUnits,
   children,
-  overlay,
   belowStageLeft,
+  belowStageRight,
   ref,
   scrubHandlers,
   isSwipeEnabled = false,
@@ -162,7 +162,6 @@ export function Stage({
             />
           )}
           {children}
-          {overlay}
           {/* ステージの左下の角に、外側から寄せて置く(top-full = 枠のすぐ下)。
               ステージ【面】には重ねない — 常設のボタンを面に置くと、その下に
               ダンサーが来たときに隠れてしまうため。
@@ -173,6 +172,11 @@ export function Stage({
           {belowStageLeft && (
             <span className="absolute top-full left-0 mt-1.5">
               {belowStageLeft}
+            </span>
+          )}
+          {belowStageRight && (
+            <span className="absolute top-full right-0 mt-1.5">
+              {belowStageRight}
             </span>
           )}
         </div>

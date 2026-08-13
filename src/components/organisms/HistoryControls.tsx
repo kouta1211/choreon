@@ -66,11 +66,14 @@ export function HistoryControls() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleUndo, handleRedo]);
 
-  // ステージの内側の右下に浮かせる。ステージの外に1行取ると、そのぶん
-  // ステージ自体が小さくなってしまうため。押せないときも形は残して
-  // 薄くするだけにしているのは、消えると押し場所を覚え直すことになるから
+  // 置き場所はステージ枠のすぐ下、右端(Stage の belowStageRight)。
+  // 以前はステージの内側に浮かせていたが、床の目盛りの数字と重なり、
+  // その位置に立つダンサーも隠していた。テンプレートの入口(左端)と
+  // 対になる位置なので、外に出しても新しく1行は要らない。
+  // 押せないときも形は残して薄くするだけにしているのは、
+  // 消えると押し場所を覚え直すことになるから
   return (
-    <div className="absolute right-2 bottom-2 flex gap-1.5">
+    <div className="flex gap-1.5">
       <Tooltip label="元に戻す (Ctrl+Z)" placement="top">
         <PressableButton
           kind="icon"

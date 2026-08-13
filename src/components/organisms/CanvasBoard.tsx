@@ -495,8 +495,8 @@ export function CanvasBoard({
         scrubIndicator={<ScrubProgressBar />}
         widthUnits={project.stageWidth}
         heightUnits={project.stageHeight}
-        overlay={<HistoryControls />}
         belowStageLeft={<TemplateButton />}
+        belowStageRight={<HistoryControls />}
       >
         <DancerLayer
           stageWidthUnits={project.stageWidth}
