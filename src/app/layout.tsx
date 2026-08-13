@@ -6,6 +6,7 @@ import { ConfirmDialog } from "@/components/organisms/ConfirmDialog";
 import { AuthDialog } from "@/components/organisms/AuthDialog";
 import { THEME_INIT_SCRIPT } from "@/features/theme/themeScript";
 import { ServiceWorkerRegistrar } from "@/components/atoms/ServiceWorkerRegistrar";
+import { SettingsLoader } from "@/components/atoms/SettingsLoader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -67,6 +68,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {/* 圏外でも、一度開いた画面は出るようにする(public/sw.js)。
             画面には何も出さない */}
         <ServiceWorkerRegistrar />
+        {/* 端末に覚えてある設定を読む。画面には何も出さない */}
+        <SettingsLoader />
       </body>
     </html>
   );

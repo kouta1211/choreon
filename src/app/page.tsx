@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { listProjectSummaries } from "@/features/project/api/projects";
 import { ProjectList } from "@/components/organisms/ProjectList";
 import { CreateProjectForm } from "@/components/organisms/CreateProjectForm";
-import { SignOutButton } from "@/components/organisms/SignOutButton";
+import { SettingsButton } from "@/components/organisms/SettingsButton";
 import { GuestEditor } from "@/components/organisms/GuestEditor";
 import { AppHeader } from "@/components/molecules/AppHeader";
 import { ThemeButton } from "@/components/organisms/ThemeButton";
@@ -35,7 +35,7 @@ export default async function Home() {
         <AppHeader>
           <div className="flex items-center gap-unit">
             <ThemeButton />
-            <SignOutButton />
+            <SettingsButton />
           </div>
         </AppHeader>
 
