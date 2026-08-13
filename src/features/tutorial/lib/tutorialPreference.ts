@@ -28,11 +28,3 @@ export function markTutorialSeen(): void {
     // 書けなくても今回の案内は閉じる(次回また出るだけ)
   }
 }
-
-export function forgetTutorial(): void {
-  try {
-    localStorage.removeItem(TUTORIAL_STORAGE_KEY);
-  } catch {
-    // 消せなくても、その場で開き直す道は別にある
-  }
-}
