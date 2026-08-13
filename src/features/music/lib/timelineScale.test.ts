@@ -16,6 +16,7 @@ import {
   scrollForSeconds,
 } from "./timelineScale";
 import { DEFAULT_SEGMENT_SECONDS } from "@/features/scene/lib/sceneTiming";
+import { TIMELINE_LAYOUT } from "@/features/music/lib/timelineLayout";
 
 describe("defaultPxPerSecond", () => {
   // 狙いは「窓に入る秒数を15〜18秒に揃える」こと。
@@ -184,5 +185,16 @@ describe("degradeScenes", () => {
 
   it("シーンが無ければ空", () => {
     expect(degradeScenes([], DEFAULT_PX_PER_SECOND, PHONE_CARD_GAP)).toEqual([]);
+  });
+});
+
+// リグレッションテスト: 以前は 30px の固定値で、選択中のコマ(PC 84px)の
+// 半分に足りず、0秒に置いたコマが左端で切れていた
+describe("LEAD_IN_PX", () => {
+  it("いちばん広いコマの半分より広い", () => {
+    const widest = Math.max(
+      ...Object.values(TIMELINE_LAYOUT).map((l) => l.selectedCardWidth),
+    );
+    expect(LEAD_IN_PX).toBeGreaterThan(widest / 2);
   });
 });

@@ -11,6 +11,8 @@
  * 広げられる。曲の長さは倍率ではなく「軸の長さ」の側で吸収する。
  */
 
+import { TIMELINE_LAYOUT } from "@/features/music/lib/timelineLayout";
+
 /** 引きの限界。1画面(360px)に45秒 */
 export const MIN_PX_PER_SECOND = 8;
 /** 寄りの限界。1画面に3秒。0.1秒(最小の間隔)が12px */
@@ -62,11 +64,19 @@ export const PLAYHEAD_ANCHOR = 0.43;
  * 左半分が切れる。先頭のシーンはどの作品にも必ずあるので、
  * 「いちばん最初の隊形だけ読めない」ことになる。
  *
- * 【軸の座標はこの余白を含む】。0秒は軸の 0px ではなく 30px にある。
+ * 【軸の座標はこの余白を含む】。0秒は軸の 0px ではなく この余白ぶん先にある。
  * 位置の計算は必ず axisX / axisSecondsAt を通し、掛け算を直に書かない
  * (書くと、余白を足し忘れた箇所だけが半コマずれる)。
+ *
+ * 数を直に置かずコマの幅から出しているのは、以前 30px の固定値だったとき、
+ * 選択中のコマ(PC 84px)の半分に足りず、先頭のコマが 12px 切れていたため。
+ * コマの幅を変えるたびにここを直す、という決まりは必ず忘れられる。
+ * 4px は、切れていないことが目で分かるだけの隙間。
  */
-export const LEAD_IN_PX = 30;
+const WIDEST_SELECTED_CARD_PX = Math.max(
+  ...Object.values(TIMELINE_LAYOUT).map((layout) => layout.selectedCardWidth),
+);
+export const LEAD_IN_PX = Math.ceil(WIDEST_SELECTED_CARD_PX / 2) + 4;
 
 /** その時刻が軸の何pxに来るか */
 export function axisX(seconds: number, pxPerSecond: number): number {

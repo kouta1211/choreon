@@ -43,11 +43,23 @@ export type TimelineLayout = {
  */
 export const TIMELINE_LAYOUT: Record<ScreenKind, TimelineLayout> = {
   phone: {
-    bandHeight: 80,
-    scrimHeight: 40,
-    cardWidth: 46,
-    selectedCardWidth: 56,
-    showCardName: false,
+    // ■ スマホの帯を厚くしてある理由
+    // ステージは横幅で頭打ちになる(14:10 の比率を保つため)。390px の
+    // 画面ではステージは 230px にしかならず、その上下に 316px が
+    // 何も置かずに余っていた。余りを帯へ回すと、コマが読める大きさに
+    // なってもステージは 1px も小さくならない。
+    // 帯を厚くしたぶんは、コマの上下に出る波形に回る。曲のどこを見ているかが
+    // 読めるようになる(以前は帯80のうち40が幕で、波形がほとんど見えなかった)
+    bandHeight: 128,
+    scrimHeight: 60,
+    // コマの大きさは【幅】で決まる。高さは幅×ステージの比なので、
+    // 幕を高くしてもコマは大きくならない。PCと同じ大きさまで広げる。
+    // 広げすぎると縮退(コマ→点)が早まる — 76 なら 80px/3.33秒 で、
+    // シーンの既定の間隔(4秒 = 120BPMの8カウント)より内側に収まる
+    cardWidth: 76,
+    selectedCardWidth: 88,
+    // 幅が広がったぶん、番号と名前の帯が載せられるようになった
+    showCardName: true,
     showMinimap: true,
     showZoomButtons: false,
   },
