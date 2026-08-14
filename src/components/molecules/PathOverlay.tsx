@@ -1,19 +1,16 @@
 "use client";
 
-import {
-  useRef,
-  useState,
-  type PointerEvent as ReactPointerEvent,
-} from "react";
-import { clamp } from "@/features/canvas/lib/dragMath";
+import { useRef } from "react";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position } from "@/features/scene/types";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { toScreenY } from "@/features/canvas/lib/stageFlip";
+import {
+  useCurveControlDrag,
+  type StagePoint,
+} from "@/features/canvas/hooks/useCurveControlDrag";
 import { useT } from "@/features/i18n/LocaleProvider";
-
-type StagePoint = { x: number; y: number };
 
 type Props = {
   /** 選択中シーンでの各ダンサーの位置 */
@@ -44,7 +41,6 @@ type Props = {
  * 直線に戻すにはダブルクリックが要る、という分かりにくい状態になる)。
  * ステージ上のダンサードラッグ(8px)より小さめにしているのは、こちらは
  * 誤タップより「曲げたいのに反応しない」方が体験を損ねるため */
-const DRAG_THRESHOLD_PX = 4;
 
 /**
  * 選択中シーン→次のシーンへの移動導線をステージ上に描画するオーバーレイ。
@@ -90,17 +86,21 @@ export function PathOverlay({
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
   const screenY = (value: number) =>
     toScreenY(value, stageHeightUnits, isAudienceOnTop);
-  const [liveControlPoint, setLiveControlPoint] = useState<StagePoint | null>(
-    null,
-  );
-  // ドラッグ開始位置と「しきい値を超えたか」を保持する。再レンダーを起こす
-  // 必要がない(見た目に直接出ない)値なのでstateではなくrefで持つ。
-  // 同時に掴めるハンドルは編集可能な1人ぶんだけなので、1つで足りる
-  const dragRef = useRef<{
-    startX: number;
-    startY: number;
-    hasMoved: boolean;
-  } | null>(null);
+  // 制御点を掴んで動かす操作。引いている間はここが持つ点を出し、
+  // 離した時点で初めて確定する
+  const {
+    liveControlPoint,
+    onPointerDown: handlePointerDown,
+    onPointerMove: handlePointerMove,
+    onPointerUp: handlePointerUp,
+    onPointerCancel: handlePointerCancel,
+  } = useCurveControlDrag({
+    svgRef,
+    stageWidthUnits,
+    stageHeightUnits,
+    screenY,
+    onCommit: (dancerId, point) => onCurveControlPointChange?.(dancerId, point),
+  });
 
   // 現在のシーンと次のシーンの両方に位置があり、かつ実際に移動する
   // ダンサーだけが導線の対象になる(動かない人に線を引いても意味がない)
@@ -148,81 +148,6 @@ export function PathOverlay({
   });
 
   if (segments.length === 0) return null;
-
-  // クライアント座標(px)を、ステージ座標系(0..stageWidthUnits/0..stageHeightUnits)
-  // に変換する。gridSnapModifierのpx⇔ユニット変換と同じ考え方。
-  // SVGはステージいっぱい(absolute inset-0)に敷いてあるため、その矩形が
-  // そのままステージの矩形として使える
-  const toStagePoint = (
-    clientX: number,
-    clientY: number,
-  ): StagePoint | null => {
-    const rect = svgRef.current?.getBoundingClientRect();
-    if (!rect || rect.width === 0 || rect.height === 0) return null;
-    // 指の位置は【画面】のもの。保存するのはステージ座標なので写して戻す
-    const rawY = ((clientY - rect.top) / rect.height) * stageHeightUnits;
-    return {
-      x: clamp(
-        ((clientX - rect.left) / rect.width) * stageWidthUnits,
-        0,
-        stageWidthUnits,
-      ),
-      y: clamp(screenY(rawY), 0, stageHeightUnits),
-    };
-  };
-
-  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    // ステージ上のダンサードラッグ(dnd-kit)へイベントが伝播すると、
-    // ハンドルを掴んだつもりが背後のダンサーの移動として扱われうるため止める
-    // (RotationHandleと同じ理由)
-    event.stopPropagation();
-    try {
-      event.currentTarget.setPointerCapture(event.pointerId);
-    } catch {
-      // 既に指が離れている等でキャプチャできなくても、pointerupの座標計算自体は
-      // できるため致命的ではない
-    }
-    dragRef.current = {
-      startX: event.clientX,
-      startY: event.clientY,
-      hasMoved: false,
-    };
-  };
-
-  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-    const drag = dragRef.current;
-    if (!drag) return;
-
-    if (!drag.hasMoved) {
-      const dx = event.clientX - drag.startX;
-      const dy = event.clientY - drag.startY;
-      if (Math.sqrt(dx * dx + dy * dy) < DRAG_THRESHOLD_PX) return;
-      drag.hasMoved = true;
-    }
-
-    const point = toStagePoint(event.clientX, event.clientY);
-    if (point) setLiveControlPoint(point);
-  };
-
-  const handlePointerUp = (
-    dancerId: string,
-    event: ReactPointerEvent<HTMLDivElement>,
-  ) => {
-    const drag = dragRef.current;
-    dragRef.current = null;
-    setLiveControlPoint(null);
-    // しきい値を超えずに離した＝タップ。何も確定しない(ダブルクリックで
-    // 直線に戻す操作を邪魔しないためでもある)
-    if (!drag?.hasMoved) return;
-
-    const point = toStagePoint(event.clientX, event.clientY);
-    if (point) onCurveControlPointChange?.(dancerId, point);
-  };
-
-  const handlePointerCancel = () => {
-    dragRef.current = null;
-    setLiveControlPoint(null);
-  };
 
   return (
     <>
