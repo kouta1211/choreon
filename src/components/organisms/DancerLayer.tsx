@@ -8,14 +8,9 @@ import { PathTrail } from "@/components/molecules/PathTrail";
 import { DraggableDancerIcon } from "@/components/organisms/DraggableDancerIcon";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import { findExcessiveMoves } from "@/features/canvas/lib/physicalLimits";
-import { findBlockedDancerIds } from "@/features/canvas/lib/blindSpot";
-import {
-  findCollisions,
-  type MoverPath,
-} from "@/features/canvas/lib/collision";
 import { getSceneStep } from "@/features/canvas/lib/sceneStep";
 import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
+import { useSceneWarnings } from "@/features/canvas/hooks/useSceneWarnings";
 import {
   EMPTY_POSITIONS,
   OVERLAY_FADE_IN_SECONDS,
@@ -155,26 +150,21 @@ export function DancerLayer({
   const isTrailAnimating =
     animatingSceneId !== null && animatingSceneId === selectedSceneId;
 
-  // 次のシーンへの移動が速すぎるダンサー(常時判定、トグルなし)。
-  // 判定には「その区間に何秒あるか」が要るので、次のシーンの遷移時間を渡す
-  // 「次のシーンへ移動するのにかかる秒数」= 次の時刻 − 今の時刻
+  // 次のシーンへ移動するのにかかる秒数 = 次の時刻 − 今の時刻。
+  // 速すぎる移動の判定と、各アイコンの補間時間の既定値になる
   const durations = sceneDurations(scenes);
   const nextSceneSeconds = durations[selectedSceneIndex + 1] ?? 1;
-  const excessiveMoves = useMemo(
-    () => findExcessiveMoves(positions, nextPositions, nextSceneSeconds),
-    [positions, nextPositions, nextSceneSeconds],
-  );
 
-  // 客席から見えなくなる人。いま見えている隊形だけを見る
-  // (移動の途中は調べない。何も起きていない隊形の上に印が出て、
-  // 画面を見ても理由が見つからないため)
-  const blockedDancerIds = useMemo(
-    () =>
-      isBlindSpotCheckVisible
-        ? findBlockedDancerIds(positions)
-        : new Set<string>(),
-    [isBlindSpotCheckVisible, positions],
-  );
+  // ダンサーに付ける3つの印(速すぎる移動・顔被り・衝突)。
+  // 出す条件がそれぞれ違うので、判定はまとめて useSceneWarnings が持つ
+  const { excessiveMoves, blockedDancerIds, collisions } = useSceneWarnings({
+    positions,
+    nextPositions,
+    nextSceneId,
+    nextSceneSeconds,
+    isPathVisible,
+    isBlindSpotCheckVisible,
+  });
 
   // シーン移動のアニメーションが走っている間に印を立てる。掴ませない
   // ようにするのはDraggableDancerIcon側で、ここは「いま動いているか」を
@@ -196,37 +186,6 @@ export function DancerLayer({
       setIsTransitioning(false);
     };
   }, [movingSceneId, movingSeconds, setIsTransitioning]);
-
-  // 次のシーンへ移動する途中でぶつかる人。
-  //
-  // 導線を出している間だけ調べる。ぶつかると言われても、どの線とどの線が
-  // 問題なのかが見えていなければ直せない(DancerCollisionBadge参照)。
-  //
-  // 判定に渡すのは【実際の移動】そのもの: 曲線の制御点と、ダンサーごとの
-  // 秒数の上書きを含めて、DraggableDancerIcon が動かすのと同じ道と速さ。
-  // 線が交差していても時刻がずれていれば当たらない、を成立させるために、
-  // ここを画面の見た目と一致させておく必要がある
-  const collisions = useMemo(() => {
-    if (!isPathVisible || !nextSceneId) return new Map();
-
-    const movers: MoverPath[] = [];
-    for (const position of Object.values(positions)) {
-      const to = nextPositions[position.dancerId];
-      if (!to) continue;
-      // 曲線と個別秒数は「区間の後ろ側のシーン」= 次のシーンの行にある
-      const hasCurve = to.curveControlX != null && to.curveControlY != null;
-      movers.push({
-        dancerId: position.dancerId,
-        from: { x: position.xCoordinate, y: position.yCoordinate },
-        to: { x: to.xCoordinate, y: to.yCoordinate },
-        control: hasCurve
-          ? { x: to.curveControlX as number, y: to.curveControlY as number }
-          : null,
-        seconds: to.dancerTransitionDurationSeconds ?? nextSceneSeconds,
-      });
-    }
-    return findCollisions(movers);
-  }, [isPathVisible, nextSceneId, positions, nextPositions, nextSceneSeconds]);
 
   // 描くダンサー。通常は選択中シーンに座標を持つ人だけだが、スクラブ中は
   // 移動先にしか居ない人も描き始める(そうしないと、指で half まで引いた時点で
