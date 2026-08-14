@@ -10,6 +10,7 @@ import { formatClock } from "@/components/molecules/PlayheadClock";
 import { TimelineWaveform } from "@/components/molecules/TimelineWaveform";
 import { useWaveformPeaks } from "@/features/music/hooks/useWaveformPeaks";
 import { axisX, LEAD_IN_PX } from "@/features/music/lib/timelineScale";
+import { rulerTicks } from "@/features/viewer/lib/rulerTicks";
 
 /** エディタの帯(80px)より低い。コマを小さくできるぶん */
 const BAND_HEIGHT = 56;
@@ -21,10 +22,7 @@ const PLAYHEAD_RATIO = 0.5;
 /** 見るだけなので、エディタより引き気味の縮尺で十分 */
 const PX_PER_SECOND = 24;
 
-/** 目盛りの刻みの候補。ラベルが重ならない最小の刻みを選ぶ */
-const RULER_STEPS = [1, 2, 5, 10, 15, 30, 60];
 /** 時刻のラベル同士を、これ以上は近づけない(px) */
-const RULER_MIN_GAP_PX = 56;
 
 /**
  * ビューアのスクラブ帯。この画面の主操作。
@@ -256,7 +254,7 @@ export function ViewerScrub() {
         style={{ height: RULER_HEIGHT }}
         className="relative overflow-hidden"
       >
-        {rulerTicks(scrollX, viewport).map((seconds) => (
+        {rulerTicks(scrollX, viewport, PX_PER_SECOND, LEAD_IN_PX).map((seconds) => (
           <span
             key={seconds}
             style={{ left: axisX(seconds, PX_PER_SECOND) - scrollX }}
@@ -275,33 +273,4 @@ export function ViewerScrub() {
       </div>
     </div>
   );
-}
-
-/**
- * 窓に入っている目盛りの時刻。
- *
- * ラベルが重ならない最小の刻みを選び、その倍数だけを返す。
- * 曲の頭より手前(負の時刻)は出さない — 「曲が始まる前」という
- * 意味になってしまう。
- */
-function rulerTicks(scrollX: number, viewport: number): number[] {
-  if (viewport <= 0) return [];
-
-  const step =
-    RULER_STEPS.find(
-      (candidate) => candidate * PX_PER_SECOND >= RULER_MIN_GAP_PX,
-    ) ?? RULER_STEPS[RULER_STEPS.length - 1];
-
-  const fromSeconds = Math.max(0, (scrollX - LEAD_IN_PX) / PX_PER_SECOND);
-  const toSeconds = (scrollX + viewport - LEAD_IN_PX) / PX_PER_SECOND;
-
-  const ticks: number[] = [];
-  for (
-    let seconds = Math.ceil(fromSeconds / step) * step;
-    seconds <= toSeconds;
-    seconds += step
-  ) {
-    ticks.push(seconds);
-  }
-  return ticks;
 }

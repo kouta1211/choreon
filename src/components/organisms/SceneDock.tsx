@@ -13,14 +13,9 @@ import {
 } from "@/features/music/hooks/useMusicPlayback";
 import { useSilentClock } from "@/features/music/hooks/useSilentClock";
 import { useMetronome } from "@/features/music/hooks/useMetronome";
-import { useCountIn } from "@/features/music/hooks/useCountIn";
-import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { useBpm } from "@/features/music/hooks/useBpm";
-import {
-  nearestSceneIndexAtSeconds,
-  sceneStartSeconds,
-} from "@/features/music/lib/musicTimeline";
-import { playbackStartIndex } from "@/features/music/lib/playbackStart";
+import { usePlaybackToggle } from "@/features/music/hooks/usePlaybackToggle";
+import { useToastOffset } from "@/components/hooks/useToastOffset";
 import { SceneListSheet } from "@/components/organisms/SceneListSheet";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
 import type { Project } from "@/features/project/types";
@@ -68,14 +63,8 @@ export function SceneDock({ project }: Props) {
   const { addScene: handleAddScene, isCreating } = useAddScene(project);
   const scenes = useProjectStore((state) => state.scenes);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
-  const selectScene = useUIStore((state) => state.selectScene);
   const isPlaying = useUIStore((state) => state.isPlaying);
-  const setIsPlaying = useUIStore((state) => state.setIsPlaying);
   const setSceneSheetOpen = useUIStore((state) => state.setSceneSheetOpen);
-  const playbackStartSceneId = useUIStore((state) => state.playbackStartSceneId);
-  const setPlaybackStartScene = useUIStore(
-    (state) => state.setPlaybackStartScene,
-  );
   const musicUrl = useMusicStore((state) => state.objectUrl);
   const musicFileName = useMusicStore((state) => state.fileName);
   const setMusicDuration = useMusicStore((state) => state.setDurationSeconds);
@@ -87,7 +76,6 @@ export function SceneDock({ project }: Props) {
     (state) => state.project?.musicOffsetSeconds ?? project.musicOffsetSeconds,
   );
   const isMetronomeEnabled = useMusicStore((state) => state.isMetronomeEnabled);
-  const setCurrentTime = useMusicStore((state) => state.setCurrentTime);
   const musicDuration = useMusicStore((state) => state.durationSeconds);
   const hasMusic = musicUrl !== null;
   const audioRef = useMusicPlayback();
@@ -112,8 +100,13 @@ export function SceneDock({ project }: Props) {
   // (useMusicPlayback)。どちらのモードでも「時刻 → シーン」と一方向に
   // 流れるので、時計は常に1つだけになる
   useSilentClock();
-  const countIn = useSettingsStore((state) => state.countIn);
-  const { isCountingIn, remainingBeats, start, cancel } = useCountIn(bpm);
+  // 再生ボタンの中身(どこから流すか・止めるときにどこへ寄せるか・
+  // スペースキーからの合図)は usePlaybackToggle が持つ
+  const {
+    toggle: handleTogglePlay,
+    isCountingIn,
+    remainingBeats,
+  } = usePlaybackToggle({ scenes, bpm, hasMusic, audioRef });
   useMetronome({
     // 予備拍の間は曲の有無に関わらず鳴らす。音の出ないカウントインは
     // ただの遅れで、構えるための合図にならない
@@ -122,27 +115,8 @@ export function SceneDock({ project }: Props) {
     beatsPerBar,
   });
 
-  // トーストはドックの直上に出す。ドックの高さは曲の有無や画面の段で
-  // 変わるので、実測してCSS変数へ流す。ドックの無い画面(作品一覧など)では
-  // 変数が無く、Toast側の既定値が効く
-  useEffect(() => {
-    const dock = dockRef.current;
-    if (!dock) return;
-
-    const publish = () => {
-      document.documentElement.style.setProperty(
-        "--toast-bottom",
-        `${dock.offsetHeight + 12}px`,
-      );
-    };
-    const observer = new ResizeObserver(publish);
-    observer.observe(dock);
-    publish();
-    return () => {
-      observer.disconnect();
-      document.documentElement.style.removeProperty("--toast-bottom");
-    };
-  }, []);
+  // トーストはドックの直上に出す(高さを測ってCSS変数へ流す)
+  useToastOffset(dockRef);
 
   // 手でシーンを選んだら曲もその位置へ飛ばす。再生中は曲の側が
   // シーンを決めているので、止まっているときだけ動かす
@@ -150,78 +124,6 @@ export function SceneDock({ project }: Props) {
     if (isPlaying) return;
     seekToSelectedScene(audioRef.current);
   }, [isPlaying, selectedSceneId, audioRef]);
-
-  const handleTogglePlay = () => {
-    // 数えている最中にもう一度押したら、始まる前に取り消す
-    if (isCountingIn) {
-      cancel();
-      return;
-    }
-
-    if (!isPlaying) {
-      // どこから流すか。ふだんは選択中のシーンだが、最後まで流し終えた
-      // 状態で押されたときだけ、前回始めた場所へ戻る(playbackStart.ts)
-      const from = playbackStartIndex(
-        scenes,
-        selectedSceneId,
-        playbackStartSceneId,
-      );
-      if (from === -1) return;
-
-      // 曲があるときの時刻の正は<audio>側で、鳴り出す位置は
-      // 「isPlayingが立った時点で選ばれているシーン」から決まる
-      // (useMusicPlayback)。先に選び直しておけば曲も付いてくる
-      if (scenes[from].id !== selectedSceneId) selectScene(scenes[from].id);
-      setPlaybackStartScene(scenes[from].id);
-
-      if (!hasMusic) {
-        setCurrentTime(sceneStartSeconds(scenes)[from] ?? 0);
-      }
-      // 予備拍を数えてから動き出す(設定が0なら、その場で始まる)
-      start(countIn, () => setIsPlaying(true));
-      return;
-    }
-
-    // 止めるときは、いちばん近いシーンへ寄せてから止める。
-    // 押した瞬間の時刻は区間の途中であることが多く、そこで止めると
-    // 「シーン2と3のあいだ」という、隊形としては存在しない状態で残る。
-    // 次に押したときにどこから続くのかも分からなくなる
-    if (scenes.length > 0) {
-      const audio = audioRef.current;
-      const offset =
-        useProjectStore.getState().project?.musicOffsetSeconds ?? 0;
-      const elapsed = hasMusic
-        ? (audio?.currentTime ?? 0) - offset
-        : useMusicStore.getState().currentTime;
-
-      const index = nearestSceneIndexAtSeconds(scenes, elapsed);
-      const scene = scenes[index];
-      if (scene) {
-        selectScene(scene.id);
-        const start = sceneStartSeconds(scenes)[index];
-        if (hasMusic && audio) audio.currentTime = offset + start;
-        else setCurrentTime(start);
-      }
-    }
-    setIsPlaying(false);
-  };
-
-  // スペースキーからの合図。「押された」ことだけが届くので、ボタンを
-  // 押したときと同じ処理へ通す。こうしておかないと、予備拍を設定している人の
-  // スペースキーだけが数えずに始まる。
-  // 最新の関数をrefに写してから読むのは、handleTogglePlayが毎レンダー
-  // 作り直されるため(依存に入れると押していないのに走ってしまう)
-  const playToggleRequestedAt = useUIStore(
-    (state) => state.playToggleRequestedAt,
-  );
-  const togglePlayRef = useRef(handleTogglePlay);
-  useEffect(() => {
-    togglePlayRef.current = handleTogglePlay;
-  });
-  useEffect(() => {
-    if (playToggleRequestedAt === null) return;
-    togglePlayRef.current();
-  }, [playToggleRequestedAt]);
 
   return (
     <div
