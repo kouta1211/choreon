@@ -6,6 +6,7 @@ import { ConfirmDialog } from "@/components/organisms/ConfirmDialog";
 import { AuthDialog } from "@/components/organisms/AuthDialog";
 import { THEME_INIT_SCRIPT } from "@/features/theme/themeScript";
 import { ServiceWorkerRegistrar } from "@/components/atoms/ServiceWorkerRegistrar";
+import { SplashScreen } from "@/components/organisms/SplashScreen";
 import { SettingsLoader } from "@/components/atoms/SettingsLoader";
 import { LocaleProvider } from "@/features/i18n/LocaleProvider";
 import { getLocale, getMessages } from "@/features/i18n/server";
@@ -105,6 +106,10 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="min-h-full flex flex-col">
         <LocaleProvider locale={locale}>
+          {/* 名乗る一拍。children より先に書いてあるのは順序の意味ではなく
+              (fixed で全面を覆うので位置は関係ない)、読んだときに
+              「まずこれが出る」と分かるようにするため */}
+          <SplashScreen />
           {children}
           {/* 画面をまたいで使う重ね物はここで1回だけ描く。
               以前はエディタ画面だけがToastを持っていたため、プロジェクト一覧の

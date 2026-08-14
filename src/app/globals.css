@@ -234,3 +234,79 @@ body::before {
   box-shadow: var(--overlay-sheen), var(--overlay-shadow);
   color: var(--fg);
 }
+
+/* ─────────────────────────────────────────────────────────
+   起動アニメーション(SplashScreen.tsx / BrandMark.tsx)
+
+   ■ 消えるところまでCSSに閉じている
+   終端を forwards で固定してあるので、**JSが読み込まれなくても
+   スプラッシュがアプリを覆ったままにならない**。React は終わった
+   ノードを外すだけで、消す責任は持たない。地味だが、通信の悪い
+   実機で「タイトルから先に進まない」が起きないのはこの形のため。
+
+   ■ 座標ではなく transform で動かす
+   点は left/top で最終位置に置き、そこからの相対で transform を
+   動かす。left/top を動かすと毎フレーム再レイアウトが走る。
+   ───────────────────────────────────────────────────────── */
+
+/* 外から集まって隊形が組まれる。開始位置は要素ごとに
+   --brand-dot-dx / --brand-dot-dy で渡される */
+@keyframes brand-dot-in {
+  from {
+    opacity: 0;
+    transform: translate(var(--brand-dot-dx), var(--brand-dot-dy)) scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+/* 隊形が決まってから名乗る */
+@keyframes splash-title-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* visibility は「終わる瞬間まで visible のまま」という決まりなので、
+   透明になりきってから初めて操作を通すようになる */
+@keyframes splash-out {
+  from {
+    opacity: 1;
+    visibility: visible;
+  }
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+.brand-dot-in {
+  /* both: 待っている間も from の状態(=外側・透明)でいる */
+  animation: brand-dot-in 0.5s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+
+.splash-title-in {
+  animation: splash-title-in 0.36s ease-out 0.62s both;
+}
+
+.splash {
+  animation: splash-out 0.32s ease-in 1s forwards;
+}
+
+/* 動きを減らす設定のとき、上の @media は再生時間だけを潰して
+   **待ち時間(animation-delay)には触らない**。そのままだと
+   止まった絵を1秒見せられることになるので、待ちも0にする */
+@media (prefers-reduced-motion: reduce) {
+  .brand-dot-in,
+  .splash-title-in,
+  .splash {
+    animation-delay: 0s !important;
+  }
+}

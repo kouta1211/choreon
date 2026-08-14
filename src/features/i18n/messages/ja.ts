@@ -263,6 +263,8 @@ export const ja = {
   app: {
     description: "スマートフォンで作る、ダンスのフォーメーション",
     ogLocale: "ja_JP",
+    /** 起動画面とログイン画面で名乗るときの一言。description より情緒寄り */
+    tagline: "紙のフォーメーション図を、動く絵コンテに。",
   },
 
   auth: {
@@ -292,6 +294,13 @@ export const ja = {
     draftSaved: "登録すると、そのまま保存されます。",
     draftPending:
       "確認が済むまで作品は保存されません。このタブを閉じずに、メールのリンクを開いてから戻ってください。",
+  },
+
+  /** 未ログインで開いたときに最初に出る、始め方を選ぶ画面 */
+  welcome: {
+    guestStart: "ゲストで始める",
+    guestNote: "登録は要りません。作ったものはこの端末にだけ残ります。",
+    or: "または",
   },
 
   projects: {

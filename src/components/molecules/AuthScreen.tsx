@@ -1,14 +1,9 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { PressableButton } from "@/components/atoms/PressableButton";
-
-/** ブランドマークのドット。山型に並べて「隊形が組まれる瞬間」を表す */
-const BRAND_DOTS = [
-  { left: 0, top: 22, color: "var(--dancer-1)" },
-  { left: 22, top: 11, color: "var(--dancer-3)" },
-  { left: 44, top: 0, color: "var(--dancer-6)" },
-  { left: 66, top: 11, color: "var(--dancer-4)" },
-  { left: 88, top: 22, color: "var(--dancer-5)" },
-];
+import { BrandMark } from "@/components/atoms/BrandMark";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   children: ReactNode;
@@ -23,6 +18,8 @@ type Props = {
  * ブランドマークもロゴタイプではなく、5人が山型に並んだ隊形そのもの。
  */
 export function AuthScreen({ children }: Props) {
+  const t = useT();
+
   return (
     <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden px-4">
       {/* 舞台の床。perspectiveで奥へ倒して遠近を付ける */}
@@ -41,23 +38,9 @@ export function AuthScreen({ children }: Props) {
             画面の高さによって伸び縮みして、置き場所が定まらない */}
         <div className="overlay-panel flex flex-col gap-gutter-lg rounded-2xl p-8">
           <div className="flex flex-col items-center gap-base">
-            <span aria-hidden className="relative mb-2 block h-[31px] w-[97px]">
-              {BRAND_DOTS.map((dot) => (
-                <span
-                  key={dot.left}
-                  className="absolute block h-[9px] w-[9px] rounded-full"
-                  style={{
-                    left: dot.left,
-                    top: dot.top,
-                    backgroundColor: dot.color,
-                  }}
-                />
-              ))}
-            </span>
+            <BrandMark className="mb-2" />
             <h1 className="text-display text-fg-strong">Choreon</h1>
-            <p className="text-body text-fg-sub">
-              紙のフォーメーション図を、動く絵コンテに。
-            </p>
+            <p className="text-body text-fg-sub">{t.app.tagline}</p>
           </div>
 
           {children}

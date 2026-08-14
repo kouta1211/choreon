@@ -251,6 +251,7 @@ export const en = {
   app: {
     description: "Dance formations, made on your phone",
     ogLocale: "en_US",
+    tagline: "Paper formation charts, turned into a moving storyboard.",
   },
 
   auth: {
@@ -280,6 +281,12 @@ export const en = {
     draftSaved: "Create an account and it is kept as it is.",
     draftPending:
       "Nothing is saved until the address is confirmed. Keep this tab open, follow the link in the email, and come back.",
+  },
+
+  welcome: {
+    guestStart: "Start as a guest",
+    guestNote: "No account needed. What you make stays on this device.",
+    or: "or",
   },
 
   projects: {
