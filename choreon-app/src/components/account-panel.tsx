@@ -14,6 +14,7 @@ import {
 } from '@/features/project/api/load';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
+import { useT } from '@/features/i18n/store/useLocaleStore';
 
 type Props = {
   /** 作品を読み込んだあとに呼ぶ。仮のサンプルから本物へ切り替わったことを画面へ伝える */
@@ -34,6 +35,7 @@ type Props = {
  * メール確認が要る設定なら、その旨を出して止まる（Web版 AuthForm と同じ）。
  */
 export function AccountPanel({ onProjectLoaded }: Props) {
+  const t = useT();
   const email = useSessionStore((state) => state.email);
   const isLoaded = useSessionStore((state) => state.isLoaded);
   const start = useSessionStore((state) => state.start);
@@ -43,7 +45,8 @@ export function AccountPanel({ onProjectLoaded }: Props) {
   return (
     <View className="gap-3 rounded-2xl border border-line bg-surface p-4">
       <Text className="text-xs uppercase tracking-widest text-fg-muted">
-        アカウント{isLoaded ? '' : '（確かめています）'}
+        {t.account.section}
+        {isLoaded ? '' : t.account.checking}
       </Text>
 
       {email ? (
@@ -56,6 +59,7 @@ export function AccountPanel({ onProjectLoaded }: Props) {
 }
 
 function SignInForm() {
+  const t = useT();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -72,7 +76,7 @@ function SignInForm() {
       // 「どちらが違うか」は出さない（登録済みのメールを当てられるため）。
       // Web版と同じ文言
       if (signInError || !data.user) {
-        setError('メールアドレスまたはパスワードが正しくありません');
+        setError(t.account.wrongCredentials);
       }
       setIsBusy(false);
       return;
@@ -82,15 +86,15 @@ function SignInForm() {
     if (signUpError) {
       setError(
         signUpError.message === 'User already registered'
-          ? 'このメールアドレスはすでに登録されています'
-          : '登録できませんでした',
+          ? t.account.alreadyRegistered
+          : t.account.signUpFailed,
       );
       setIsBusy(false);
       return;
     }
     // メール確認を切ってある設定なら、この時点でログイン済みになる
     if (!data.session) {
-      setNotice('確認のメールを送りました。メールのリンクを開いてから、ログインしてください');
+      setNotice(t.account.confirmSent);
     }
     setIsBusy(false);
   };
@@ -100,7 +104,7 @@ function SignInForm() {
       <TextInput
         value={email}
         onChangeText={setEmail}
-        placeholder="メールアドレス"
+        placeholder={t.account.email}
         placeholderTextColor="#8a8a8f"
         autoCapitalize="none"
         autoCorrect={false}
@@ -111,7 +115,7 @@ function SignInForm() {
       <TextInput
         value={password}
         onChangeText={setPassword}
-        placeholder="パスワード"
+        placeholder={t.account.password}
         placeholderTextColor="#8a8a8f"
         autoCapitalize="none"
         autoCorrect={false}
@@ -125,34 +129,30 @@ function SignInForm() {
           onPress={() => void run('login')}
           disabled={isBusy || email === '' || password === ''}
           accessibilityRole="button"
-          accessibilityLabel="ログイン"
+          accessibilityLabel={t.account.signIn}
           className={`flex-1 items-center rounded-xl bg-accent py-3 active:opacity-80 ${
             isBusy || email === '' || password === '' ? 'opacity-40' : ''
           }`}
         >
-          <Text className="text-base font-semibold text-accent-fg">ログイン</Text>
+          <Text className="text-base font-semibold text-accent-fg">{t.account.signIn}</Text>
         </Pressable>
         <Pressable
           onPress={() => void run('signup')}
           disabled={isBusy || email === '' || password === ''}
           accessibilityRole="button"
-          accessibilityLabel="新規登録"
+          accessibilityLabel={t.account.signUp}
           className={`items-center rounded-xl border border-line-strong px-4 py-3 active:opacity-80 ${
             isBusy || email === '' || password === '' ? 'opacity-40' : ''
           }`}
         >
-          <Text className="text-base text-fg">新規登録</Text>
+          <Text className="text-base text-fg">{t.account.signUp}</Text>
         </Pressable>
       </View>
 
       {error ? <Text className="text-sm text-[#f87171]">{error}</Text> : null}
       {notice ? <Text className="text-sm text-accent-soft">{notice}</Text> : null}
 
-      <Text className="text-xs leading-5 text-fg-muted">
-        Web版と同じアカウントです。ここで開いた作品は
-        <Text className="text-fg-sub">この端末からも保存されます</Text>。
-        実機での確認はこれからなので、まずは捨ててよい作品で試してください。
-      </Text>
+      <Text className="text-xs leading-5 text-fg-muted">{t.account.note}</Text>
     </View>
   );
 }
@@ -164,6 +164,7 @@ function SignedIn({
   email: string;
   onProjectLoaded: (stage: { width: number; height: number }) => void;
 }) {
+  const t = useT();
   const [projects, setProjects] = useState<ProjectListItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [openingId, setOpeningId] = useState<string | null>(null);
@@ -177,7 +178,7 @@ function SignedIn({
         const list = await listMyProjects();
         if (alive) setProjects(list);
       } catch {
-        if (alive) setError('作品の一覧を読めませんでした（通信か権限の問題です）');
+        if (alive) setError(t.account.listFailed);
       }
     })();
     return () => {
@@ -191,7 +192,7 @@ function SignedIn({
     try {
       const loaded = await loadProject(item.id);
       if (!loaded) {
-        setError('その作品は見つかりませんでした');
+        setError(t.account.notFound);
         return;
       }
       hydrate({ ...loaded, isGuest: false });
@@ -207,7 +208,7 @@ function SignedIn({
         height: loaded.project.stageHeight,
       });
     } catch {
-      setError('作品を読めませんでした');
+      setError(t.account.openFailed);
     } finally {
       setOpeningId(null);
     }
@@ -222,23 +223,23 @@ function SignedIn({
         <Pressable
           onPress={() => void signOut()}
           accessibilityRole="button"
-          accessibilityLabel="ログアウト"
+          accessibilityLabel={t.account.signOut}
           className="rounded-lg border border-line-strong px-3 py-1.5 active:opacity-80"
         >
-          <Text className="text-sm text-fg">ログアウト</Text>
+          <Text className="text-sm text-fg">{t.account.signOut}</Text>
         </Pressable>
       </View>
 
       {openedTitle ? (
         <Text className="text-xs text-accent-soft">
-          「{openedTitle}」を開いています（この端末での変更も保存されます）
+          {t.account.opened(openedTitle)}
         </Text>
       ) : null}
 
       {projects === null ? (
         <ActivityIndicator />
       ) : projects.length === 0 ? (
-        <Text className="text-sm text-fg-muted">まだ作品がありません</Text>
+        <Text className="text-sm text-fg-muted">{t.account.empty}</Text>
       ) : (
         <View className="gap-2">
           {projects.map((item) => (
@@ -255,7 +256,7 @@ function SignedIn({
               {openingId === item.id ? (
                 <ActivityIndicator />
               ) : (
-                <Text className="text-xs text-fg-muted">開く</Text>
+                <Text className="text-xs text-fg-muted">{t.account.open}</Text>
               )}
             </Pressable>
           ))}

@@ -5,6 +5,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useMusicStore } from '@/features/music/store/useMusicStore';
 import { usePlaybackStore } from '@/features/music/store/usePlaybackStore';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
+import { useT } from '@/features/i18n/store/useLocaleStore';
 
 /**
  * 曲を選ぶ。
@@ -24,6 +25,7 @@ import { useUIStore } from '@/features/canvas/store/useUIStore';
  * 秒を書くので、画面側は何も変わらない。
  */
 export function MusicPicker() {
+  const t = useT();
   const uri = useMusicStore((state) => state.uri);
   const name = useMusicStore((state) => state.name);
   const setMusic = useMusicStore((state) => state.setMusic);
@@ -51,7 +53,7 @@ export function MusicPicker() {
       setCurrentTime(0);
       setMusic({ uri: file.uri, name: file.name });
     } catch {
-      setError('曲を読み込めませんでした');
+      setError(t.music.failed);
     }
   };
 
@@ -63,7 +65,7 @@ export function MusicPicker() {
 
   return (
     <View className="gap-3 rounded-2xl border border-line bg-surface p-4">
-      <Text className="text-xs uppercase tracking-widest text-fg-muted">曲</Text>
+      <Text className="text-xs uppercase tracking-widest text-fg-muted">{t.music.section}</Text>
 
       {uri ? (
         <View className="flex-row items-center gap-3">
@@ -73,29 +75,27 @@ export function MusicPicker() {
           <Pressable
             onPress={clear}
             accessibilityRole="button"
-            accessibilityLabel="曲を外す"
+            accessibilityLabel={t.music.clear}
             className="rounded-lg border border-line-strong px-3 py-1.5 active:opacity-80"
           >
-            <Text className="text-sm text-fg">外す</Text>
+            <Text className="text-sm text-fg">{t.music.clear}</Text>
           </Pressable>
         </View>
       ) : (
         <Pressable
           onPress={() => void pick()}
           accessibilityRole="button"
-          accessibilityLabel="曲を選ぶ"
+          accessibilityLabel={t.music.pick}
           className="items-center rounded-xl bg-accent py-3 active:opacity-80"
         >
-          <Text className="text-base font-semibold text-accent-fg">♪ 曲を選ぶ</Text>
+          <Text className="text-base font-semibold text-accent-fg">{t.music.pick}</Text>
         </Pressable>
       )}
 
       {error ? <Text className="text-sm text-[#f87171]">{error}</Text> : null}
 
       <Text className="text-xs leading-5 text-fg-muted">
-        {uri
-          ? '「通しで見る」を押すと、いま選んでいるシーンの秒から鳴ります。曲がある間は、時計は曲そのものです（ずれません）。'
-          : '曲を入れると、通し再生の時計が曲になります。入れなくても秒だけで通せます。アプリを開き直すと選び直しです。'}
+        {uri ? t.music.withMusic : t.music.withoutMusic}
       </Text>
     </View>
   );

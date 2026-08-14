@@ -12,6 +12,7 @@ import type { Dancer } from '@/features/dancer/types';
 import type { MoveStrain } from '@/features/canvas/lib/physicalLimits';
 import { themedDancerColor } from '@/features/dancer/lib/themedColor';
 import { useThemeStore } from '@/features/theme/store/useThemeStore';
+import { useT } from '@/features/i18n/store/useLocaleStore';
 
 /**
  * 格子への吸着が効き始める許容範囲（ステージ座標系のユニット）。
@@ -115,6 +116,8 @@ export function DraggableDancer({
   isBlocked = false,
   excessiveMove = null,
 }: Props) {
+  const t = useT();
+
   /** 回している最中の見た目だけの角度。離すまで確定しない */
   const [liveAngle, setLiveAngle] = useState<number | null>(null);
 
@@ -366,7 +369,7 @@ export function DraggableDancer({
           className="absolute flex-row gap-0.5"
           style={{ top: -8, left: DOT - 6 }}
         >
-          {isBlocked ? <Badge text="顔" tone="warn" /> : null}
+          {isBlocked ? <Badge text={t.stage.blockedBadge} tone="warn" /> : null}
           {excessiveMove ? (
             <Badge text={`${excessiveMove.speedMetersPerSecond.toFixed(1)}`} tone="alert" />
           ) : null}

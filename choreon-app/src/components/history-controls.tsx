@@ -2,6 +2,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { useHistoryActions } from '@/features/canvas/hooks/useHistoryActions';
 import { useHistoryStore } from '@/features/canvas/store/useHistoryStore';
+import { useT } from '@/features/i18n/store/useLocaleStore';
 
 /**
  * 元に戻す／やり直す。
@@ -11,6 +12,7 @@ import { useHistoryStore } from '@/features/canvas/store/useHistoryStore';
  * 大事なので、押せないときもボタンごと消さずに薄く残す。
  */
 export function HistoryControls() {
+  const t = useT();
   const { undo, redo } = useHistoryActions();
   const canUndo = useHistoryStore((state) => state.past.length > 0);
   const canRedo = useHistoryStore((state) => state.future.length > 0);
@@ -21,25 +23,25 @@ export function HistoryControls() {
         onPress={undo}
         disabled={!canUndo}
         accessibilityRole="button"
-        accessibilityLabel="元に戻す"
+        accessibilityLabel={t.history.undo}
         accessibilityState={{ disabled: !canUndo }}
         className={`flex-1 items-center rounded-xl border border-line-strong py-2.5 active:opacity-80 ${
           canUndo ? '' : 'opacity-35'
         }`}
       >
-        <Text className="text-sm text-fg">↩ 元に戻す</Text>
+        <Text className="text-sm text-fg">{t.history.undo}</Text>
       </Pressable>
       <Pressable
         onPress={redo}
         disabled={!canRedo}
         accessibilityRole="button"
-        accessibilityLabel="やり直す"
+        accessibilityLabel={t.history.redo}
         accessibilityState={{ disabled: !canRedo }}
         className={`flex-1 items-center rounded-xl border border-line-strong py-2.5 active:opacity-80 ${
           canRedo ? '' : 'opacity-35'
         }`}
       >
-        <Text className="text-sm text-fg">↪ やり直す</Text>
+        <Text className="text-sm text-fg">{t.history.redo}</Text>
       </Pressable>
     </View>
   );

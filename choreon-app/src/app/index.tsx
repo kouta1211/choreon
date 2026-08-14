@@ -6,6 +6,7 @@ import { AccountPanel } from '@/components/account-panel';
 import { DancerSheet } from '@/components/dancer-sheet';
 import { FormationSheet } from '@/components/formation-sheet';
 import { HistoryControls } from '@/components/history-controls';
+import { LanguagePicker } from '@/components/language-picker';
 import { MusicPicker } from '@/components/music-picker';
 import { PlaybackControls } from '@/components/playback-controls';
 import { SceneDock } from '@/components/scene-dock';
@@ -17,6 +18,7 @@ import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
 import { useSessionStore } from '@/features/auth/store/useSessionStore';
+import { getT, useLocaleStore, useT } from '@/features/i18n/store/useLocaleStore';
 
 /**
  * 見た目と操作を確かめるための仮データ（まだ Supabase から読んでいない）。
@@ -57,6 +59,7 @@ const SAMPLE = {
  * （読むだけ。書き込みはまだ通していない — `account-panel.tsx` 参照）。
  */
 export default function FoundationScreen() {
+  const t = useT();
   const platform = Platform.OS === 'web' ? 'Web (react-native-web)' : Platform.OS;
 
   // ステージの広さ。仮のサンプルで始まり、本物の作品を開いたら
@@ -69,12 +72,14 @@ export default function FoundationScreen() {
   // 端末に覚えてあるものを読む（どちらも Promise。Web版は同期だった）
   const loadSettings = useSettingsStore((state) => state.load);
   const loadView = useUIStore((state) => state.loadViewPreference);
+  const loadLocale = useLocaleStore((state) => state.load);
   const isLoaded = useSettingsStore((state) => state.isLoaded);
 
   useEffect(() => {
     void loadSettings();
     void loadView();
-  }, [loadSettings, loadView]);
+    void loadLocale();
+  }, [loadSettings, loadView, loadLocale]);
 
   // 設定と表示のトグル
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
@@ -154,9 +159,11 @@ export default function FoundationScreen() {
           `${process.env.EXPO_PUBLIC_SUPABASE_URL}/auth/v1/health`,
           { headers: { apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '' } },
         );
-        if (alive) setReach(response.ok ? '届いた' : `届かない（${response.status}）`);
+        if (alive) {
+          setReach(response.ok ? getT().supabase.reached : getT().supabase.failed(response.status));
+        }
       } catch {
-        if (alive) setReach('届かない（通信できませんでした）');
+        if (alive) setReach(getT().supabase.offline);
       }
     })();
     return () => {
@@ -168,8 +175,10 @@ export default function FoundationScreen() {
     <SafeAreaView className="flex-1 bg-page">
       <ScrollView contentContainerClassName="gap-5 p-5">
         <View className="gap-1">
-          <Text className="text-3xl font-bold tracking-tight text-fg-strong">Choreon</Text>
-          <Text className="text-sm text-fg-muted">ネイティブ版の土台</Text>
+          <Text className="text-3xl font-bold tracking-tight text-fg-strong">
+            {t.app.title}
+          </Text>
+          <Text className="text-sm text-fg-muted">{t.app.subtitle}</Text>
         </View>
 
         <StageView stageWidthUnits={stage.width} stageHeightUnits={stage.height} />
@@ -195,72 +204,76 @@ export default function FoundationScreen() {
 
         <ThemePicker />
 
+        <LanguagePicker />
+
         {/* 端末に覚えるもの。切り替えてから再読み込みしても残る */}
         <View className="gap-3 rounded-2xl border border-line bg-surface p-4">
           <Text className="text-xs uppercase tracking-widest text-fg-muted">
-            端末に覚える{isLoaded ? '' : '（読み込み中）'}
+            {t.settings.section}
+            {isLoaded ? '' : t.settings.loading}
           </Text>
 
           <Toggle
-            label="客席を上にする"
-            value={isAudienceOnTop ? 'オン' : 'オフ'}
+            label={t.settings.audienceOnTop}
+            value={isAudienceOnTop ? t.common.on : t.common.off}
             onPress={() => update('isAudienceOnTop', !isAudienceOnTop)}
           />
           <Toggle
-            label="ダンサー名"
-            value={dancerNameDisplay === 'always' ? '常に' : '出さない'}
+            label={t.settings.dancerName}
+            value={
+              dancerNameDisplay === 'always'
+                ? t.settings.dancerNameAlways
+                : t.settings.dancerNameNever
+            }
             onPress={() =>
               update('dancerNameDisplay', dancerNameDisplay === 'always' ? 'never' : 'always')
             }
           />
           <Toggle
-            label="目盛り"
-            value={gridMode === 'square' ? '格子' : 'なし'}
+            label={t.settings.grid}
+            value={gridMode === 'square' ? t.settings.gridSquare : t.settings.gridNone}
             onPress={() => setGridMode(gridMode === 'square' ? 'none' : 'square')}
           />
           {/* 指のある端末では既定でオン、マウスでは既定でオフ
               (Web版 defaultViewPreference と同じ判断) */}
           <Toggle
-            label="払ってシーンを送る"
-            value={isSwipeEnabled ? 'オン' : 'オフ'}
+            label={t.settings.swipe}
+            value={isSwipeEnabled ? t.common.on : t.common.off}
             onPress={toggleSwipe}
           />
           <Toggle
-            label="導線を出す"
-            value={isPathVisible ? 'オン' : 'オフ'}
+            label={t.settings.path}
+            value={isPathVisible ? t.common.on : t.common.off}
             onPress={togglePathVisible}
           />
           <Toggle
-            label="バミリ（客席側の目盛り）"
-            value={isStageMarksVisible ? 'オン' : 'オフ'}
+            label={t.settings.marks}
+            value={isStageMarksVisible ? t.common.on : t.common.off}
             onPress={toggleStageMarks}
           />
           <Toggle
-            label="顔被りを見つける"
-            value={isBlindSpotVisible ? 'オン' : 'オフ'}
+            label={t.settings.blindSpot}
+            value={isBlindSpotVisible ? t.common.on : t.common.off}
             onPress={toggleBlindSpotCheck}
           />
 
-          <Text className="text-xs leading-5 text-fg-muted">
-            丸の肩に付く印: <Text className="text-fg-sub">顔</Text>＝手前の人に隠れている／
-            <Text className="text-fg-sub">数字</Text>＝次のシーンへの移動が速すぎる（m/s。
-            3.5 を超えると付く）。速さの印は<Text className="text-fg-sub">常に</Text>出ます。
-          </Text>
+          <Text className="text-xs leading-5 text-fg-muted">{t.settings.badgeNote}</Text>
 
-          <Text className="text-xs leading-5 text-fg-muted">
-            上2つは設定（settings）、目盛りは「表示とモード」（viewPreference）。
-            どちらも Web は localStorage、iOS/Android は AsyncStorage へ書いています。
-          </Text>
+          <Text className="text-xs leading-5 text-fg-muted">{t.settings.storageNote}</Text>
         </View>
 
         <View className="gap-1 rounded-2xl border border-line bg-surface p-4">
-          <Text className="text-xs uppercase tracking-widest text-fg-muted">Supabase</Text>
+          <Text className="text-xs uppercase tracking-widest text-fg-muted">
+            {t.supabase.section}
+          </Text>
           <Text className="text-base text-fg-strong">
             {reach === null
-              ? '確かめています…'
-              : `${reach}（${signedInEmail ? 'ログイン中' : '未ログイン'}）`}
+              ? t.supabase.checking
+              : `${reach}（${signedInEmail ? t.supabase.signedIn : t.supabase.signedOut}）`}
           </Text>
-          <Text className="text-xs text-fg-muted">環境: {platform}</Text>
+          <Text className="text-xs text-fg-muted">
+            {t.supabase.platform}: {platform}
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>

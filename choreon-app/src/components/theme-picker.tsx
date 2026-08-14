@@ -1,24 +1,11 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { vars } from 'nativewind';
 
-import { THEMES, type ThemeId } from '@/features/theme/catalog';
+import { THEMES } from '@/features/theme/catalog';
 import { THEME_VARS } from '@/features/theme/themeVars.generated';
 import { useThemeStore } from '@/features/theme/store/useThemeStore';
+import { useT } from '@/features/i18n/store/useLocaleStore';
 
-/** 一覧に出す名前。Web版は i18n の辞書から引くが、ネイティブ版はまだ
- * 辞書を持っていないので、ここに日本語だけ置く（辞書を移すときに消す） */
-const LABELS: Record<ThemeId, string> = {
-  midnight: 'ミッドナイト',
-  neon: 'ネオン',
-  amber: 'アンバー',
-  mono: 'モノ',
-  chalk: 'チョーク',
-  paper: '紙',
-  gridnote: '方眼ノート',
-  kraft: 'クラフト',
-  tracing: 'トレーシング',
-  whiteboard: 'ホワイトボード',
-};
 
 /**
  * テーマを選ぶ。
@@ -33,6 +20,7 @@ const LABELS: Record<ThemeId, string> = {
  * 持ってこられない。テーマ10種だけ先に出す。
  */
 export function ThemePicker() {
+  const t = useT();
   const current = useThemeStore((state) => state.preference.theme);
   const setTheme = useThemeStore((state) => state.setTheme);
   const isLoaded = useThemeStore((state) => state.isLoaded);
@@ -40,7 +28,8 @@ export function ThemePicker() {
   return (
     <View className="gap-3 rounded-2xl border border-line bg-surface p-4">
       <Text className="text-xs uppercase tracking-widest text-fg-muted">
-        テーマ{isLoaded ? '' : '（読み込み中）'}
+        {t.themeSection.title}
+        {isLoaded ? '' : t.themeSection.loading}
       </Text>
 
       <ScrollView
@@ -55,7 +44,7 @@ export function ThemePicker() {
               key={theme.id}
               onPress={() => setTheme(theme.id)}
               accessibilityRole="button"
-              accessibilityLabel={LABELS[theme.id]}
+              accessibilityLabel={t.themes[theme.id]}
               accessibilityState={{ selected: isCurrent }}
               className="w-24 gap-1.5 active:opacity-80"
             >
@@ -74,18 +63,14 @@ export function ThemePicker() {
                 className={`text-xs ${isCurrent ? 'text-fg-strong' : 'text-fg-muted'}`}
                 numberOfLines={1}
               >
-                {LABELS[theme.id]}
+                {t.themes[theme.id]}
               </Text>
             </Pressable>
           );
         })}
       </ScrollView>
 
-      <Text className="text-xs leading-5 text-fg-muted">
-        色は Web版の themes.css から機械的に写しています（
-        <Text className="text-fg-sub">scripts/generate-theme-vars.mjs</Text>）。
-        選んだテーマは端末に残ります。
-      </Text>
+      <Text className="text-xs leading-5 text-fg-muted">{t.themeSection.note}</Text>
     </View>
   );
 }

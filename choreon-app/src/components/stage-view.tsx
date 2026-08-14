@@ -13,6 +13,7 @@ import { upsertPositions } from '@/features/scene/api/positions';
 import type { Position } from '@/features/scene/types';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
+import { getT, useT } from '@/features/i18n/store/useLocaleStore';
 import {
   AXIS_LOCK_THRESHOLD_PX,
   applyRubberBand,
@@ -44,6 +45,7 @@ type Props = {
  * 数値がWebとスマホでずれない**ようにするため。
  */
 export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
+  const t = useT();
   const dancers = useProjectStore((state) => state.dancers);
   const scenes = useProjectStore((state) => state.scenes);
   const positionsBySceneId = useProjectStore((state) => state.positionsBySceneId);
@@ -95,10 +97,10 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
       //    動かしたのに保存されていない、がいちばん困る
       updateDancerPosition(targetSceneId, dancerId, before);
       useUIStore.getState().showToast({
-        message: '保存できませんでした。位置を元に戻しました',
+        message: getT().positions.saveFailed,
         type: 'error',
         action: {
-          label: '再試行',
+          label: getT().common.retry,
           onAction: () => void commit(targetSceneId, dancerId, kind, next),
         },
       });
@@ -221,7 +223,7 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
   return (
     <View className="gap-2">
       <Text className="text-center text-xs uppercase tracking-widest text-fg-muted">
-        {isAudienceOnTop ? '客席側' : 'バックステージ'}
+        {isAudienceOnTop ? t.stage.audience : t.stage.backstage}
       </Text>
 
       <View
@@ -319,7 +321,7 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
       </View>
 
       <Text className="text-center text-xs uppercase tracking-widest text-fg-muted">
-        {isAudienceOnTop ? 'バックステージ' : '客席側'}
+        {isAudienceOnTop ? t.stage.backstage : t.stage.audience}
       </Text>
     </View>
   );

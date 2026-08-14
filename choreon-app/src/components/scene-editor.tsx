@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 
 import { useUIStore } from '@/features/canvas/store/useUIStore';
+import { useT } from '@/features/i18n/store/useLocaleStore';
 import { persist } from '@/features/project/lib/persistence';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import {
@@ -39,6 +40,7 @@ const STEP_SECONDS = 0.5;
  * ダンサーと同じ形。`Alert.alert` は Web で何も出ないため、確認は画面の中。
  */
 export function SceneEditor() {
+  const t = useT();
   const scenes = useProjectStore((state) => state.scenes);
   const positionsBySceneId = useProjectStore((state) => state.positionsBySceneId);
   const renameScene = useProjectStore((state) => state.renameScene);
@@ -65,7 +67,7 @@ export function SceneEditor() {
   if (!scene) {
     return (
       <View className="rounded-2xl border border-line bg-surface p-4">
-        <Text className="text-xs text-fg-muted">シーンを1つ選ぶと、ここで直せます</Text>
+        <Text className="text-xs text-fg-muted">{t.scenes.pickOne}</Text>
       </View>
     );
   }
@@ -95,7 +97,7 @@ export function SceneEditor() {
       await persist((client) => updateSceneTimes(client, changed));
     } catch {
       applySceneTimes(previous);
-      showToast({ message: '秒数を保存できませんでした。元に戻しました', type: 'error' });
+      showToast({ message: t.scenes.retimeFailed, type: 'error' });
     }
   };
 
@@ -109,7 +111,7 @@ export function SceneEditor() {
       await persist((client) => renameSceneApi(client, scene.id, name));
     } catch {
       renameScene(scene.id, previousName);
-      showToast({ message: '名前を保存できませんでした。元に戻しました', type: 'error' });
+      showToast({ message: t.scenes.renameFailed, type: 'error' });
     }
   };
 
@@ -125,7 +127,7 @@ export function SceneEditor() {
     try {
       await persist((client) => deleteSceneApi(client, scene.id));
     } catch {
-      showToast({ message: 'シーンを消せませんでした', type: 'error' });
+      showToast({ message: t.scenes.removeFailed, type: 'error' });
       return;
     }
     const remaining = scenes.filter((other) => other.id !== scene.id);
@@ -139,7 +141,7 @@ export function SceneEditor() {
   return (
     <View className="gap-3 rounded-2xl border border-line bg-surface p-4">
       <Text className="text-xs uppercase tracking-widest text-fg-muted">
-        シーン {String(index + 1).padStart(2, '0')} を直す
+        {t.scenes.editTitle(String(index + 1).padStart(2, '0'))}
       </Text>
 
       <TextInput
@@ -150,23 +152,22 @@ export function SceneEditor() {
         onBlur={() => void commitName(name)}
         onSubmitEditing={() => void commitName(name)}
         returnKeyType="done"
-        accessibilityLabel="シーンの名前"
+        accessibilityLabel={t.scenes.nameLabel}
         className="rounded-xl border border-line bg-surface-raised px-4 py-3 text-base text-fg-strong"
       />
 
       {isFirst ? (
         <Text className="text-xs leading-5 text-fg-muted">
-          先頭のシーンには「入ってくる時間」がありません（前の隊形が無いため）。
-          曲の何秒目かは {scene.timeSeconds.toFixed(1)} 秒です。
+          {t.scenes.firstNote(scene.timeSeconds.toFixed(1))}
         </Text>
       ) : (
         <View className="gap-2">
           <View className="flex-row items-center justify-between gap-3">
-            <Text className="flex-1 text-sm text-fg">前の隊形から入ってくる時間</Text>
+            <Text className="flex-1 text-sm text-fg">{t.scenes.segment}</Text>
             <Pressable
               onPress={() => void changeSegment(-STEP_SECONDS)}
               accessibilityRole="button"
-              accessibilityLabel="入ってくる時間を短く"
+              accessibilityLabel={t.scenes.shorter}
               className="h-10 w-10 items-center justify-center rounded-xl border border-line-strong active:opacity-80"
             >
               <Text className="text-lg text-fg">−</Text>
@@ -177,7 +178,7 @@ export function SceneEditor() {
             <Pressable
               onPress={() => void changeSegment(STEP_SECONDS)}
               accessibilityRole="button"
-              accessibilityLabel="入ってくる時間を長く"
+              accessibilityLabel={t.scenes.longer}
               className="h-10 w-10 items-center justify-center rounded-xl border border-line-strong active:opacity-80"
             >
               <Text className="text-lg text-fg">＋</Text>
@@ -187,18 +188,17 @@ export function SceneEditor() {
           <Pressable
             onPress={() => setRipple(!ripple)}
             accessibilityRole="button"
-            accessibilityLabel="以降のシーンもずらす"
+            accessibilityLabel={t.scenes.ripple}
             accessibilityState={{ selected: ripple }}
             className="flex-row items-center justify-between rounded-xl bg-surface-raised px-4 py-3 active:opacity-80"
           >
-            <Text className="flex-1 text-sm text-fg">以降のシーンもずらす</Text>
+            <Text className="flex-1 text-sm text-fg">{t.scenes.ripple}</Text>
             <Text className="text-sm font-semibold text-accent-soft">
-              {ripple ? 'オン' : 'オフ'}
+              {ripple ? t.common.on : t.common.off}
             </Text>
           </Pressable>
           <Text className="text-xs leading-5 text-fg-muted">
-            オフのときは次のシーンを押しのけず、手前の余地いっぱいで止まります。
-            曲の {scene.timeSeconds.toFixed(1)} 秒目。
+            {t.scenes.rippleNote(scene.timeSeconds.toFixed(1))}
           </Text>
         </View>
       )}
@@ -210,8 +210,8 @@ export function SceneEditor() {
       >
         <Text className="text-sm text-fg">
           {isConfirmingDelete
-            ? `本当に「${scene.name}」を消す（${dancerCount}人ぶんの立ち位置も消えます）`
-            : 'このシーンを消す'}
+            ? t.scenes.removeConfirm(scene.name, dancerCount)
+            : t.scenes.remove}
         </Text>
       </Pressable>
     </View>

@@ -6,6 +6,7 @@ import { createScene } from '@/features/scene/api/scenes';
 import { upsertPositions } from '@/features/scene/api/positions';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
+import { getT, useT } from '@/features/i18n/store/useLocaleStore';
 import { duplicateTimeSeconds } from '@/features/scene/lib/sceneTiming';
 import { randomId } from '@/lib/randomId';
 
@@ -23,6 +24,7 @@ import { randomId } from '@/lib/randomId';
  * 隣」に入る。
  */
 export function SceneDock() {
+  const t = useT();
   const scenes = useProjectStore((state) => state.scenes);
   const positionsBySceneId = useProjectStore((state) => state.positionsBySceneId);
   const addScene = useProjectStore((state) => state.addScene);
@@ -40,7 +42,7 @@ export function SceneDock() {
     const created = {
       id,
       projectId: source.projectId,
-      name: `シーン${scenes.length + 1}`,
+      name: t.scenes.newName(scenes.length + 1),
       orderIndex: scenes.length,
       // 並び順の正は時刻。選んでいるシーンの隣へ入れる
       timeSeconds: duplicateTimeSeconds(scenes, source, defaultSegmentSeconds),
@@ -74,13 +76,13 @@ export function SceneDock() {
       selectScene(source.id);
       useUIStore
         .getState()
-        .showToast({ message: 'シーンを追加できませんでした', type: 'error' });
+        .showToast({ message: getT().scenes.addFailed, type: 'error' });
     }
   };
 
   return (
     <View className="gap-2 rounded-2xl border border-line bg-surface p-3">
-      <Text className="text-xs uppercase tracking-widest text-fg-muted">シーン</Text>
+      <Text className="text-xs uppercase tracking-widest text-fg-muted">{t.scenes.section}</Text>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2">
         {scenes.map((scene, index) => {

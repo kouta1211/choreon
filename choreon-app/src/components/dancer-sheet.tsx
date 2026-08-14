@@ -9,6 +9,7 @@ import {
 } from '@/features/dancer/lib/newDancers';
 import { themedDancerColor } from '@/features/dancer/lib/themedColor';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
+import { useT } from '@/features/i18n/store/useLocaleStore';
 import { persist } from '@/features/project/lib/persistence';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { createDancers, deleteDancer, updateDancerColor } from '@/features/dancer/api/dancers';
@@ -50,6 +51,7 @@ type Props = {
  * 全シーンぶん画面へ戻す羽目になる。
  */
 export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
+  const t = useT();
   const dancers = useProjectStore((state) => state.dancers);
   const scenes = useProjectStore((state) => state.scenes);
   const positionsBySceneId = useProjectStore((state) => state.positionsBySceneId);
@@ -128,7 +130,7 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
     } catch {
       removeDancer(id);
       selectDancer(null);
-      showToast({ message: 'ダンサーを追加できませんでした', type: 'error' });
+      showToast({ message: t.dancers.addFailed, type: 'error' });
     }
   };
 
@@ -149,7 +151,7 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
     try {
       await persist((client) => deleteDancer(client, dancerId));
     } catch {
-      showToast({ message: 'この人を消せませんでした', type: 'error' });
+      showToast({ message: t.dancers.removeFailed, type: 'error' });
       return;
     }
     removeDancer(dancerId);
@@ -166,7 +168,7 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
       await persist((client) => updateDancerColor(client, dancerId, color));
     } catch {
       addDancer(before);
-      showToast({ message: '色を保存できませんでした。元に戻しました', type: 'error' });
+      showToast({ message: t.dancers.colorFailed, type: 'error' });
     }
   };
 
@@ -174,15 +176,15 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
     <View className="gap-3 rounded-2xl border border-line bg-surface p-4">
       <View className="flex-row items-center justify-between">
         <Text className="text-xs uppercase tracking-widest text-fg-muted">
-          ダンサー（{list.length}人）
+          {t.dancers.section(list.length)}
         </Text>
         <Pressable
           onPress={() => void handleAdd()}
           accessibilityRole="button"
-          accessibilityLabel="ダンサーを追加"
+          accessibilityLabel={t.dancers.addLabel}
           className="rounded-full bg-accent px-4 py-1.5 active:opacity-80"
         >
-          <Text className="text-sm font-semibold text-accent-fg">＋ 追加</Text>
+          <Text className="text-sm font-semibold text-accent-fg">{t.dancers.add}</Text>
         </Pressable>
       </View>
 
@@ -218,7 +220,7 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
       {selected ? (
         <View className="gap-3 rounded-xl bg-surface-raised p-3">
           <Text className="text-xs text-fg-muted">
-            選んでいるのは <Text className="text-fg-strong">{selected.name}</Text>
+            {t.dancers.selected} <Text className="text-fg-strong">{selected.name}</Text>
           </Text>
 
           <View className="flex-row flex-wrap gap-2">
@@ -227,7 +229,7 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
                 key={color}
                 onPress={() => void changeColor(selected.id, color)}
                 accessibilityRole="button"
-                accessibilityLabel={`色を ${color} にする`}
+                accessibilityLabel={t.dancers.colorLabel(color)}
                 className={`h-9 w-9 rounded-full ${
                   selected.color === color ? 'border-2 border-fg-strong' : 'border border-line'
                 }`}
@@ -243,14 +245,14 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
           >
             <Text className="text-sm text-fg">
               {pendingDeleteId === selected.id
-                ? `本当に ${selected.name} を消す`
-                : 'この人を消す'}
+                ? t.dancers.removeConfirm(selected.name)
+                : t.dancers.remove}
             </Text>
           </Pressable>
         </View>
       ) : (
         <Text className="text-xs leading-5 text-fg-muted">
-          ステージか上の一覧で1人選ぶと、色を変えたり消したりできます
+          {t.dancers.hint}
         </Text>
       )}
     </View>

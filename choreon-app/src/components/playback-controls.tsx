@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 
 import { useUIStore } from '@/features/canvas/store/useUIStore';
+import { useT } from '@/features/i18n/store/useLocaleStore';
 import { useMusicPlayback } from '@/features/music/hooks/useMusicPlayback';
 import { useSilentClock } from '@/features/music/hooks/useSilentClock';
 import {
@@ -34,6 +35,7 @@ import { useProjectStore } from '@/features/project/store/useProjectStore';
  * 別に要る（曲を鳴らすのとは別の音源）。
  */
 export function PlaybackControls() {
+  const t = useT();
   // 時計はここで回す（再生中だけ動く）。曲があれば曲が時計、無ければ秒を数える。
   // どちらも同じ場所（usePlaybackStore）へ書くので、下の表示は変わらない
   useSilentClock();
@@ -83,20 +85,20 @@ export function PlaybackControls() {
         onPress={toggle}
         disabled={scenes.length === 0}
         accessibilityRole="button"
-        accessibilityLabel={isPlaying ? '止める' : '通しで見る'}
+        accessibilityLabel={isPlaying ? t.playback.stop : t.playback.play}
         className={`flex-1 items-center rounded-xl bg-accent py-3 active:opacity-80 ${
           scenes.length === 0 ? 'opacity-35' : ''
         }`}
       >
         <Text className="text-base font-semibold text-accent-fg">
-          {isPlaying ? '■ 止める' : '▶ 通しで見る'}
+          {isPlaying ? t.playback.stop : t.playback.play}
         </Text>
       </Pressable>
 
       <Pressable
         onPress={rewind}
         accessibilityRole="button"
-        accessibilityLabel="頭に戻す"
+        accessibilityLabel={t.playback.rewind}
         className="rounded-xl border border-line-strong px-4 py-3 active:opacity-80"
       >
         <Text className="text-base text-fg">⏮</Text>

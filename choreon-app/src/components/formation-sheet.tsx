@@ -17,6 +17,8 @@ import { useHistoryStore } from '@/features/canvas/store/useHistoryStore';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { persist } from '@/features/project/lib/persistence';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
+import { getT, useT } from '@/features/i18n/store/useLocaleStore';
+import type { Messages } from '@/features/i18n/messages/ja';
 import { upsertPositions } from '@/features/scene/api/positions';
 
 type Props = {
@@ -40,6 +42,7 @@ type Props = {
  * 一度に全員が動く操作なので、戻すときも一度で戻せないと使えない。
  */
 export function FormationSheet({ stageWidthUnits, stageHeightUnits }: Props) {
+  const t = useT();
   const positionsBySceneId = useProjectStore((state) => state.positionsBySceneId);
   const updateDancerPosition = useProjectStore((state) => state.updateDancerPosition);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
@@ -98,17 +101,18 @@ export function FormationSheet({ stageWidthUnits, stageHeightUnits }: Props) {
         useHistoryStore.getState().push({ kind: 'template', changes });
 
         const leftOut = dancers.length - changes.length;
+        const name = formationName(formation.label, t);
         setApplied(
           leftOut > 0
-            ? `${formationName(formation.label)} にしました（余る${leftOut}人はそのまま）`
-            : `${formationName(formation.label)} にしました`,
+            ? t.formations.appliedPartial(name, leftOut)
+            : t.formations.applied(name),
         );
       } catch {
         for (const change of changes) {
           updateDancerPosition(selectedSceneId, change.dancerId, change.before);
         }
         useUIStore.getState().showToast({
-          message: '隊形を保存できませんでした。元に戻しました',
+          message: getT().formations.failed,
           type: 'error',
         });
       }
@@ -118,40 +122,39 @@ export function FormationSheet({ stageWidthUnits, stageHeightUnits }: Props) {
   return (
     <View className="gap-3 rounded-2xl border border-line bg-surface p-4">
       <Text className="text-xs uppercase tracking-widest text-fg-muted">
-        フォーメーション{templates.length > 0 ? `（${templates.length}種）` : ''}
+        {t.formations.section}
+        {templates.length > 0 ? t.formations.count(templates.length) : ''}
       </Text>
 
       {positions.length < 2 ? (
-        <Text className="text-xs leading-5 text-fg-muted">
-          隊形を選ぶには、このシーンに<Text className="text-fg-sub">2人以上</Text>
-          立っている必要があります。
-        </Text>
+        <Text className="text-xs leading-5 text-fg-muted">{t.formations.needsTwo}</Text>
       ) : templates.length === 0 ? (
         <Text className="text-xs leading-5 text-fg-muted">
-          {positions.length}人ぶんの形はまだ用意していません（2〜10人ぶんがあります）。
+          {t.formations.noneForCount(positions.length)}
         </Text>
       ) : (
         <>
           {/* 変形。当てはめる前に決めておく（Web版と同じ並び） */}
           <View className="flex-row flex-wrap gap-2">
             <Toggle
-              label="左右反転"
+              label={t.formations.flipX}
               value={transform.flipX}
               onPress={() => setTransform({ ...transform, flipX: !transform.flipX })}
             />
             <Toggle
-              label="前後反転"
+              label={t.formations.flipY}
               value={transform.flipY}
               onPress={() => setTransform({ ...transform, flipY: !transform.flipY })}
             />
             <Toggle
-              label="90度回す"
+              label={t.formations.rotate}
               value={transform.rotate}
               onPress={() => setTransform({ ...transform, rotate: !transform.rotate })}
             />
             <Spacing
               value={transform.spacing}
               onChange={(spacing) => setTransform({ ...transform, spacing })}
+              t={t}
             />
           </View>
 
@@ -165,18 +168,18 @@ export function FormationSheet({ stageWidthUnits, stageHeightUnits }: Props) {
                 key={formationKey(formation.label)}
                 onPress={() => apply(formation)}
                 accessibilityRole="button"
-                accessibilityLabel={formationName(formation.label)}
+                accessibilityLabel={formationName(formation.label, t)}
                 className="rounded-xl border border-line bg-surface-raised px-3 py-2 active:opacity-80"
               >
                 <Text className="text-sm text-fg-strong">
-                  {formationName(formation.label)}
+                  {formationName(formation.label, t)}
                 </Text>
               </Pressable>
             ))}
           </ScrollView>
 
           <Text className="text-xs leading-5 text-fg-muted">
-            {applied ?? 'いまの位置からいちばん近い点へ入ります。戻すときは「元に戻す」で一度に戻せます'}
+            {applied ?? t.formations.hint}
           </Text>
         </>
       )}
@@ -210,28 +213,31 @@ function Toggle({
   );
 }
 
-const SPACING_LABELS: Record<FormationSpacing, string> = {
-  narrow: '狭め',
-  normal: 'ふつう',
-  wide: '広め',
-};
-
 function Spacing({
   value,
   onChange,
+  t,
 }: {
   value: FormationSpacing;
   onChange: (next: FormationSpacing) => void;
+  t: Messages;
 }) {
+  const labels: Record<FormationSpacing, string> = {
+    narrow: t.formations.spacingNarrow,
+    normal: t.formations.spacingNormal,
+    wide: t.formations.spacingWide,
+  };
   const order: FormationSpacing[] = ['narrow', 'normal', 'wide'];
   return (
     <Pressable
       onPress={() => onChange(order[(order.indexOf(value) + 1) % order.length])}
       accessibilityRole="button"
-      accessibilityLabel="間隔"
+      accessibilityLabel={t.formations.spacing}
       className="rounded-lg border border-line px-3 py-1.5 active:opacity-80"
     >
-      <Text className="text-xs text-fg-muted">間隔: {SPACING_LABELS[value]}</Text>
+      <Text className="text-xs text-fg-muted">
+        {t.formations.spacing}: {labels[value]}
+      </Text>
     </Pressable>
   );
 }
@@ -240,64 +246,10 @@ function Spacing({
  * 隊形の呼び名。
  *
  * テンプレートは**名前ではなく鍵**（形＋人数の内訳）で持っている。
- * Web版はそれを i18n の辞書で引くが、ネイティブ版はまだ辞書を持って
- * いないので、ここに日本語だけ置く（**Web版 ja.ts と同じ文言**）。
- * 辞書を移すときにこの関数は消す。
+ * ここで辞書を引くので、言語を変えれば隊形名も一緒に変わる
+ * （Web版 formationName.ts と同じ作り）。
  */
-function formationName(label: FormationLabel): string {
-  const rows = label.rows ?? [];
-  switch (label.shape) {
-    case 'row':
-      return '横1列';
-    case 'rowPair':
-      return '横並び';
-    case 'rowFront':
-      return '前寄せ横並び';
-    case 'rowBack':
-      return '奥寄せ横並び';
-    case 'column':
-      return '縦1列';
-    case 'columnPair':
-      return '縦1列（前後）';
-    case 'diagonal':
-      return '斜め';
-    case 'diagonalLine':
-      return '斜め列';
-    case 'lShape':
-      return 'L字';
-    case 'xShape':
-      return 'X字';
-    case 'wShape':
-      return 'W字（ジグザグ）';
-    case 'diamond':
-      return 'ダイヤ';
-    case 'circle':
-      return '円（サークル）';
-    case 'circleCenter':
-      return '円＋センター';
-    case 'arc':
-      return '弧（アーチ）';
-    case 'wedgeIn':
-      return 'ハの字（後狭・前広）';
-    case 'wedgeOut':
-      return 'くさび（後広・前狭）';
-    case 'triangle':
-      return `三角（後${rows[0]}・前${rows[1]}）`;
-    case 'triangleDown':
-      return `逆三角（後${rows[0]}・前${rows[1]}）`;
-    case 'v':
-      return `V字（後${rows.join('-')}前）`;
-    case 'vDown':
-      return `逆V字（後${rows.join('-')}前）`;
-    case 'twoRows':
-      return `2列（${rows.join('-')}）`;
-    case 'twoColumns':
-      return `縦2列（${rows.join('-')}）`;
-    case 'stagger':
-      return `千鳥（${rows.join('-')}）`;
-    case 'arcRows':
-      return `弧2列（${rows.join('-')}）`;
-    case 'grid':
-      return `${rows[0]}×${rows[1]} グリッド`;
-  }
+function formationName(label: FormationLabel, t: Messages): string {
+  const name = t.formationNames[label.shape];
+  return typeof name === 'function' ? name(label.rows ?? []) : name;
 }
