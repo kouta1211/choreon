@@ -1,5 +1,6 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { SceneThumbnail } from '@/components/scene-thumbnail';
 import { persist } from '@/features/project/lib/persistence';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { createScene } from '@/features/scene/api/scenes';
@@ -32,9 +33,15 @@ type Props = {
    * **押せるものが2つの意味を持つと、どちらが起きるか押すまで分からない。**
    */
   onEditScene?: () => void;
+  /** ステージの広さ。カードのミニチュアを同じ形で描くために要る */
+  stageWidthUnits: number;
+  stageHeightUnits: number;
 };
 
-export function SceneDock({ onEditScene }: Props = {}) {
+/** カードの中のミニチュアの幅（px）。Web版のストリップは74px */
+const THUMBNAIL_WIDTH = 74;
+
+export function SceneDock({ onEditScene, stageWidthUnits, stageHeightUnits }: Props) {
   const t = useT();
   const scenes = useProjectStore((state) => state.scenes);
   const positionsBySceneId = useProjectStore((state) => state.positionsBySceneId);
@@ -114,28 +121,52 @@ export function SceneDock({ onEditScene }: Props = {}) {
             <Pressable
               key={scene.id}
               onPress={() => selectScene(scene.id)}
-              className={`min-w-24 rounded-xl px-3 py-2 active:opacity-80 ${
+              accessibilityRole="button"
+              accessibilityLabel={scene.name}
+              accessibilityState={{ selected: isSelected }}
+              className={`gap-1 rounded-xl p-2 active:opacity-80 ${
                 isSelected ? 'border-2 border-accent bg-accent-row' : 'border border-line bg-surface-raised'
               }`}
             >
-              <Text
-                className={`font-mono text-[10px] ${
-                  isSelected ? 'text-accent-soft' : 'text-fg-muted'
-                }`}
-              >
-                {String(index + 1).padStart(2, '0')}
-              </Text>
-              <Text className="text-sm text-fg-strong">{scene.name}</Text>
-              <Text className="font-mono text-[10px] text-fg-muted">
-                {scene.timeSeconds.toFixed(1)}s
-              </Text>
+              {/* 隊形のミニチュア。番号と名前だけだと、探しているシーンが
+                  どれかは名前を付けた人にしか分からない */}
+              <SceneThumbnail
+                sceneId={scene.id}
+                stageWidthUnits={stageWidthUnits}
+                stageHeightUnits={stageHeightUnits}
+                widthPx={THUMBNAIL_WIDTH}
+              />
+              <View style={{ width: THUMBNAIL_WIDTH }}>
+                <View className="flex-row items-baseline justify-between gap-1">
+                  <Text
+                    numberOfLines={1}
+                    className={`min-w-0 flex-1 text-xs ${
+                      isSelected ? 'font-semibold text-accent-soft' : 'text-fg-sub'
+                    }`}
+                  >
+                    {scene.name}
+                  </Text>
+                  <Text
+                    className={`shrink-0 font-mono text-[10px] ${
+                      isSelected ? 'font-semibold text-accent-soft' : 'text-fg-muted'
+                    }`}
+                  >
+                    {String(index + 1).padStart(2, '0')}
+                  </Text>
+                </View>
+                <Text className="font-mono text-[10px] text-fg-muted">
+                  {scene.timeSeconds.toFixed(1)}s
+                </Text>
+              </View>
             </Pressable>
           );
         })}
 
         <Pressable
           onPress={() => void handleAdd()}
-          className="min-w-14 items-center justify-center rounded-xl border border-dashed border-line-strong px-3 py-2 active:opacity-80"
+          accessibilityRole="button"
+          accessibilityLabel={t.scenes.add}
+          className="min-w-14 items-center justify-center rounded-xl border border-dashed border-line-strong px-3 active:opacity-80"
         >
           <Text className="text-lg text-fg-sub">＋</Text>
         </Pressable>

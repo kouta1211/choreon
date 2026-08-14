@@ -58,6 +58,7 @@ export const ko: Messages = {
 
   scenes: {
     section: '장면',
+    add: '장면 추가',
     newName: (index: number) => `장면${index}`,
     editTitle: (number: string) => `장면 ${number} 수정`,
     nameLabel: '장면 이름',

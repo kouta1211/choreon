@@ -68,6 +68,7 @@ export const ja = {
 
   scenes: {
     section: 'シーン',
+    add: 'シーンを足す',
     newName: (index: number) => `シーン${index}`,
     editTitle: (number: string) => `シーン ${number} を直す`,
     nameLabel: 'シーンの名前',

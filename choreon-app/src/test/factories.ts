@@ -1,3 +1,4 @@
+import type { Dancer } from '@/features/dancer/types';
 import type { Position, Scene } from '@/features/scene/types';
 
 /**
@@ -12,6 +13,18 @@ export function makeScene(overrides: Partial<Scene> = {}): Scene {
     name: 'シーン1',
     orderIndex: 0,
     timeSeconds: 0,
+    ...overrides,
+  };
+}
+
+export function makeDancer(overrides: Partial<Dancer> = {}): Dancer {
+  return {
+    id: 'dancer-1',
+    projectId: 'project-1',
+    name: 'あいり',
+    color: '#3b82f6',
+    initialDirection: 0,
+    createdAt: '2026-01-01T00:00:00.000Z',
     ...overrides,
   };
 }

@@ -164,7 +164,11 @@ export default function EditorScreen() {
         <Toast />
         <PlaybackControls />
         <HistoryControls />
-        <SceneDock onEditScene={() => setOpenSheet('scene')} />
+        <SceneDock
+          onEditScene={() => setOpenSheet('scene')}
+          stageWidthUnits={stage.width}
+          stageHeightUnits={stage.height}
+        />
       </View>
 
       {/* どれも中身の高さぶんだけ下に貼り付く（`isTall` を付けない）。

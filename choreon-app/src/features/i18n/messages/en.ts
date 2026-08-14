@@ -58,6 +58,7 @@ export const en: Messages = {
 
   scenes: {
     section: 'Scenes',
+    add: 'Add a scene',
     newName: (index: number) => `Scene ${index}`,
     editTitle: (number: string) => `Edit scene ${number}`,
     nameLabel: 'Scene name',
