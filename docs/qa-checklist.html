@@ -388,6 +388,38 @@
   .report .said { font-size: 0.82rem; color: var(--ok); }
   /* 失敗を成功と同じ色で出さない（引き継ぎの取り込みで使う） */
   .report .said.bad { color: var(--warn); }
+
+  /* 手で読んで、手で打つためのコード。読み違えが起きない大きさで出す */
+  .code-out {
+    display: block;
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    font-size: 1.15rem;
+    letter-spacing: 0.08em;
+    line-height: 1.7;
+    word-break: break-all;
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0.7rem 0.8rem;
+    color: var(--fg);
+    user-select: all;
+  }
+  input.code-in {
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    font-size: 1rem;
+    letter-spacing: 0.06em;
+    min-height: 48px;
+    text-transform: uppercase;
+  }
+  .fold { border-top: 1px solid var(--line); padding-top: 0.85rem; }
+  .fold summary {
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--fg-mute);
+    min-height: 32px;
+  }
+  .fold summary:hover { color: var(--fg-sub); }
+  .fold > *:not(summary) { margin-top: 0.7rem; }
   textarea.out {
     width: 100%;
     min-height: 14rem;
@@ -498,35 +530,58 @@
     <h2>別の端末へ引き継ぐ</h2>
     <p class="why">
       チェックとメモは<b>この端末のブラウザにだけ</b>残ります。
-      PCを操作しながらスマホで台本を読みたいときは、ここで進捗を文字列にして、
-      もう片方の端末へ貼ってください（メール・メモアプリ・チャット、何でも構いません）。
-      <b>取り込むと、その文字列を作った側の端末の台本に切り替わります。</b>
+      PCを操作しながらスマホで台本を読みたいときは、ここでチェックを短いコードにして、
+      もう片方の端末で<b>手で打ち込んで</b>ください。
+      取り込むと、そのコードを作った側の端末の台本に切り替わります。
     </p>
-    <div class="actions">
-      <button type="button" id="make-handoff">この端末の進捗をコピー</button>
-      <span class="said" id="handoff-copied" hidden>コピーしました</span>
-    </div>
-    <textarea
-      id="handoff-out"
-      class="out"
-      readonly
-      hidden
-      style="min-height: 6rem"
-    ></textarea>
 
-    <label for="handoff-in" class="why">
-      <b>受け取った文字列を貼る</b>
-    </label>
-    <textarea
-      id="handoff-in"
-      class="memo"
-      rows="3"
-      placeholder="もう片方の端末でコピーした文字列をここへ貼って、下のボタンを押してください"
-    ></textarea>
     <div class="actions">
-      <button type="button" class="ghost" id="apply-handoff">取り込む</button>
-      <span class="said" id="handoff-said" hidden></span>
+      <button type="button" id="make-short">チェックを短いコードにする</button>
     </div>
+    <output id="short-out" class="code-out" hidden></output>
+    <p class="why" id="short-note" hidden>
+      これをもう片方の端末の欄に打ち込んでください。
+      <b>大文字・小文字とハイフンは気にしなくて構いません。</b>
+    </p>
+
+    <label for="short-in" class="why">
+      <b>受け取ったコードを打ち込む</b>
+    </label>
+    <input id="short-in" class="memo code-in" placeholder="例）C-8F3M-92KP-…" />
+    <div class="actions">
+      <button type="button" class="ghost" id="apply-short">取り込む</button>
+      <span class="said" id="short-said" hidden></span>
+    </div>
+
+    <details class="fold">
+      <summary>メモごと移したいとき（長い文字列）</summary>
+      <p class="why">
+        気づきのメモも一緒に運びます。手では打てない長さなので、
+        メール・メモアプリ・チャットなど、文字を貼れる手段が要ります。
+      </p>
+      <div class="actions">
+        <button type="button" class="ghost" id="make-handoff">メモごとコピー</button>
+        <span class="said" id="handoff-copied" hidden>コピーしました</span>
+      </div>
+      <textarea
+        id="handoff-out"
+        class="out"
+        readonly
+        hidden
+        style="min-height: 6rem"
+      ></textarea>
+      <label for="handoff-in" class="why"><b>受け取った文字列を貼る</b></label>
+      <textarea
+        id="handoff-in"
+        class="memo"
+        rows="3"
+        placeholder="もう片方の端末でコピーした文字列をここへ貼って、下のボタンを押してください"
+      ></textarea>
+      <div class="actions">
+        <button type="button" class="ghost" id="apply-handoff">取り込む</button>
+        <span class="said" id="handoff-said" hidden></span>
+      </div>
+    </details>
   </section>
 
   <footer class="end">
@@ -550,7 +605,7 @@
       ["最初にすること", "ページを開いたら一度タブを閉じて、開き直す。今日の変更が入っていない古い画面のまま確認してしまうのを防ぎます"],
       ["ログイン", "自分のアカウントでログインした状態にする"],
       ["注意", "設定は端末ごとに覚えます。PCで変えた設定はスマホには来ません（それが正しい動作です）"],
-      ["途中から続けるとき", "チェックとメモはこの端末にだけ残ります。もう片方の端末で進めた続きをやるなら、<b>いちばん下の「別の端末へ引き継ぐ」</b>から文字列を渡してください"],
+      ["途中から続けるとき", "チェックはこの端末にだけ残ります。PCで進めた続きをここでやるなら、PC側の<b>いちばん下「別の端末へ引き継ぐ」</b>で30文字ほどのコードを出し、ここへ打ち込んでください"],
     ],
     pc: [
       ["開く場所", '<a href="https://choreon.vercel.app" target="_blank" rel="noopener">choreon.vercel.app</a>　または <code>npm run dev</code> → <code>localhost:3000</code>'],
@@ -559,7 +614,7 @@
       ["ログイン", "自分のアカウントでログインした状態にする"],
       ["窓の幅", "最大化して始めてください。狭いとスマホ用の見た目に切り替わります"],
       ["ついでに", "ブラウザのコンソール（F12）を開いたまま一巡すると、赤いエラーが出たとき拾えます"],
-      ["スマホで読みながらやる", "この台本をスマホでも開き、PC側の<b>いちばん下「別の端末へ引き継ぐ」</b>で進捗をコピーしてスマホへ貼ると、続きから読めます"],
+      ["スマホで読みながらやる", "この台本をスマホでも開き、<b>いちばん下「別の端末へ引き継ぐ」</b>で出る30文字ほどのコードをスマホに打ち込むと、チェックごと続きから読めます（PCを操作しながらスマホでチェックを付けていけます）"],
     ],
   };
 
@@ -1874,6 +1929,126 @@
       $copied.textContent = "選択しました。手でコピーしてください";
       $copied.hidden = false;
     }
+  });
+
+  // ── 短いコード（チェックだけ） ──
+  // メモを外すと、運ぶものは項目ごとの「付いた/付いてない」1ビットだけになる。
+  // 158項目でも20バイト＝33文字なので、**手で打てる**。長い文字列を
+  // どうやってスマホへ送るか、という問題そのものが消える。
+  //
+  // 使う文字は Crockford の32文字。I / L / O / U を外してあるので、
+  // 1とI、0とO の読み違えが起きない（打つ側で I→1、O→0 に直しても受ける）。
+  const B32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+
+  /** その台本の項目を、先頭から順に1本の並びにする。コードの桁の順はこれ */
+  function itemIds(target) {
+    const ids = [];
+    DATA[target].acts.forEach((act, ai) => {
+      act.items.forEach((_, ii) => ids.push(`${ai}-${ii}`));
+    });
+    return ids;
+  }
+
+  function checksToCode(target, checks) {
+    const ids = itemIds(target);
+    const bytes = new Uint8Array(Math.ceil(ids.length / 8));
+    ids.forEach((id, i) => {
+      if (checks[id] === true) bytes[i >> 3] |= 1 << (7 - (i & 7));
+    });
+
+    let out = "";
+    let buffer = 0;
+    let bits = 0;
+    for (const byte of bytes) {
+      buffer = (buffer << 8) | byte;
+      bits += 8;
+      while (bits >= 5) {
+        out += B32[(buffer >> (bits - 5)) & 31];
+        bits -= 5;
+      }
+    }
+    if (bits > 0) out += B32[(buffer << (5 - bits)) & 31];
+
+    // 先頭の1文字がどちらの台本か。P=スマホ / C=PC
+    const code = (target === "pc" ? "C" : "P") + out;
+    // 4文字ずつ区切って読みやすくする。打つ側では無視される
+    return code.match(/.{1,4}/g).join("-");
+  }
+
+  function codeToChecks(raw) {
+    const cleaned = raw
+      .trim()
+      .toUpperCase()
+      .replace(/[\s-]/g, "")
+      .replace(/O/g, "0")
+      .replace(/[IL]/g, "1");
+    const head = cleaned.slice(0, 1);
+    if (head !== "P" && head !== "C") throw new Error("head");
+
+    const target = head === "C" ? "pc" : "phone";
+    let buffer = 0;
+    let bits = 0;
+    const bytes = [];
+    for (const char of cleaned.slice(1)) {
+      const value = B32.indexOf(char);
+      if (value < 0) throw new Error("char");
+      buffer = (buffer << 5) | value;
+      bits += 5;
+      if (bits >= 8) {
+        bytes.push((buffer >> (bits - 8)) & 255);
+        bits -= 8;
+      }
+    }
+
+    const ids = itemIds(target);
+    if (bytes.length < Math.ceil(ids.length / 8)) throw new Error("short");
+
+    const checks = {};
+    ids.forEach((id, i) => {
+      if ((bytes[i >> 3] >> (7 - (i & 7))) & 1) checks[id] = true;
+    });
+    return { target, checks, count: Object.keys(checks).length };
+  }
+
+  const $shortOut = document.getElementById("short-out");
+  const $shortNote = document.getElementById("short-note");
+  const $shortIn = document.getElementById("short-in");
+  const $shortSaid = document.getElementById("short-said");
+
+  document.getElementById("make-short").addEventListener("click", () => {
+    $shortOut.textContent = checksToCode(device, state);
+    $shortOut.hidden = false;
+    $shortNote.hidden = false;
+  });
+
+  document.getElementById("apply-short").addEventListener("click", () => {
+    const say = (message, isBad = false) => {
+      $shortSaid.textContent = message;
+      $shortSaid.classList.toggle("bad", isBad);
+      $shortSaid.hidden = false;
+    };
+
+    let decoded;
+    try {
+      decoded = codeToChecks($shortIn.value);
+    } catch {
+      say("読み取れませんでした。打ち間違いか、途中で切れています", true);
+      return;
+    }
+
+    // チェックだけを入れ替える。メモはこの端末のものを残す
+    try {
+      localStorage.setItem(KEY(decoded.target), JSON.stringify(decoded.checks));
+    } catch {
+      say("この端末に保存できませんでした（プライベートモードかもしれません）", true);
+      return;
+    }
+
+    switchDevice(decoded.target, { scroll: false });
+    $shortIn.value = "";
+    say(
+      `取り込みました（${decoded.target === "pc" ? "PC" : "スマホ"}／チェック ${decoded.count} 件）`,
+    );
   });
 
   // ── 別の端末へ引き継ぐ ──
