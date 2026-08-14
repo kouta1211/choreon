@@ -1,5 +1,3 @@
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { X } from "lucide-react";
 import type { Scene } from "@/features/scene/types";
 import { PressableButton } from "@/components/atoms/PressableButton";
@@ -40,14 +38,12 @@ const DEFAULT_SIZE_PX = 74;
  * 描くだけの簡易版(名前や向きまでは出さない。小さすぎて読めないため、
  * 「どんな配置か」がひと目で分かれば十分)。
  *
- * useSortable(dnd-kitの並び替え)でドラッグして順番を入れ替えられる。
- * 親のDndContext側でactivationConstraint(一定距離動くまでドラッグ扱いに
- * しない)を設定しているため、軽くクリックしただけならonClick(選択)が
- * ちゃんと発火する。
+ * 【並び替えのつまみではない】。以前はここに useSortable が付いていて、
+ * 一覧の行を並び替えるにはこの小さな四角を掴むしかなかった。掴む役目は
+ * 行そのもの(SceneList)へ移したので、ここは「選ぶボタン」に戻っている。
  *
  * 外枠が<div>で、その中に「選ぶボタン」と「×ボタン」が並んでいるのは、
- * <button>の入れ子が不正なHTMLだから。並び替えのつまみ(listeners)は
- * 選ぶボタン側に付けてあり、×の上から掴んでも動き出さない。
+ * <button>の入れ子が不正なHTMLだから。
  */
 export function SceneThumbnail({
   scene,
@@ -63,45 +59,22 @@ export function SceneThumbnail({
   onDelete,
 }: Props) {
   const t = useT();
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: scene.id });
 
   return (
     <div
-      ref={setNodeRef}
       data-scene-id={scene.id}
-      style={{
-        width: sizePx,
-        transform: CSS.Transform.toString(transform),
-        transition,
-      }}
-      className={`relative shrink-0 ${isDragging ? "z-10 opacity-70" : ""}`}
+      style={{ width: sizePx }}
+      className="relative shrink-0"
     >
-      {/* 掴んで並び替えるものなので、押しても沈めずに持ち上げる。
-          並び替えのつまみ(listeners)はここに付いていて、
-          PressableButton はその onPointerDown を消さずに足す */}
-      <PressableButton
-        kind="lift"
-        onClick={onClick}
-        className="flex w-full touch-none flex-col"
-        {...attributes}
-        {...listeners}
-      >
+      <PressableButton onClick={onClick} className="flex w-full flex-col">
         {/* 選択中は縁の色だけでなく、一回り持ち上げて手前に出す。
-          コマが小さく密に並ぶので、色の差だけでは横目で追えない。
-          並び替えドラッグ中は拡大しない(掴んでいるコマが隣に重なるため) */}
+          コマが小さく密に並ぶので、色の差だけでは横目で追えない */}
         <div
           className={`relative w-full overflow-hidden rounded-md bg-surface-sunken transition-[transform,box-shadow,border-color] duration-200 ease-[cubic-bezier(.2,.7,.2,1)] ${
             isSelected
-              ? "border-2 border-accent shadow-[0_14px_34px_-18px_color-mix(in_oklab,var(--accent)_80%,transparent)]"
+              ? "border-2 border-accent shadow-[0_14px_34px_-18px_color-mix(in_oklab,var(--accent)_80%,transparent)] scale-105"
               : "border border-line-strong"
-          } ${isSelected && !isDragging ? "scale-105" : ""}`}
+          }`}
           style={{ aspectRatio: `${stageWidthUnits} / ${stageHeightUnits}` }}
         >
           {showGrid && (

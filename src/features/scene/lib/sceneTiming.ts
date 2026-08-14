@@ -262,19 +262,25 @@ export function sortScenes<T extends TimedScene & { orderIndex: number }>(
 }
 
 /**
- * 複製したシーンを置く時刻。元のシーンと、その次のシーンの中間。
- * 次が無ければ既定の移動時間ぶん後ろへ置く。
+ * あるシーンの【すぐ後ろ】へ差し込む時刻。元のシーンと、その次のシーンの
+ * 中間。次が無ければ既定の移動時間ぶん後ろへ置く。
  *
  * 中間に置くのは、複製が「元のすぐ後ろ」に並ぶ操作だから。
- * 末尾へ足すと、順番(order_index)と時刻の並びが食い違う
+ * 末尾へ足すと、順番(order_index)と時刻の並びが食い違う。
+ *
+ * 複製(useDuplicateScene)と、【曲が無いときの追加】(useAddScene)が使う。
+ * 曲が無いときは「聞いている位置」が無いので、選んでいるシーンの隣が
+ * 「ここに足す」のいちばん近い意味になる。
  */
 export function duplicateTimeSeconds(
   scenes: TimedScene[],
   source: TimedScene,
+  /** 次が無いときに空ける秒数。設定から渡す(既定は1つの8カウント) */
+  segmentSeconds: number = DEFAULT_SEGMENT_SECONDS,
 ): number {
   const index = scenes.findIndex((scene) => scene.id === source.id);
   const next = index >= 0 ? scenes[index + 1] : undefined;
-  if (!next) return roundSeconds(source.timeSeconds + DEFAULT_SEGMENT_SECONDS);
+  if (!next) return roundSeconds(source.timeSeconds + segmentSeconds);
 
   const middle = (source.timeSeconds + next.timeSeconds) / 2;
   // 元と次が既に詰まっている場合は、最低限だけ空けて割り込む

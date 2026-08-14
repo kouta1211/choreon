@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_SEGMENT_SECONDS,
+  duplicateTimeSeconds,
   insertTimeSeconds,
   MIN_SEGMENT_SECONDS,
   moveSceneTo,
@@ -185,6 +186,42 @@ describe("insertTimeSeconds", () => {
 
   it("シーンが無ければその時刻のまま", () => {
     expect(insertTimeSeconds([], 12)).toBe(12);
+  });
+});
+
+// 複製と、【曲が無いときの追加】が通る道。曲が無いと再生位置が
+// 動かないので、置き場所は「選んでいるシーンの隣」で決まる
+describe("duplicateTimeSeconds", () => {
+  it("元のシーンと、次のシーンの中間へ置く", () => {
+    expect(duplicateTimeSeconds(SCENES, SCENES[1])).toBe(3.5);
+  });
+
+  it("次が無ければ既定の間隔ぶん後ろへ置く", () => {
+    expect(duplicateTimeSeconds(SCENES, SCENES[3])).toBe(
+      7 + DEFAULT_SEGMENT_SECONDS,
+    );
+  });
+
+  // 設定の「シーンの間隔」を渡せる。曲が無いときの追加はここを通るので、
+  // 2秒に設定していれば2秒ずつ並ぶ
+  it("末尾へ足すときの間隔は指定できる", () => {
+    expect(duplicateTimeSeconds(SCENES, SCENES[3], 2)).toBe(9);
+  });
+
+  // 先に詰め込んでしまった作品を開いたときの道。中間が取れなくても
+  // 同じ時刻には重ねない
+  it("元と次が詰まっていても、最低限は空けて割り込む", () => {
+    const crammed = [
+      { id: "a", timeSeconds: 0 },
+      { id: "b", timeSeconds: 0.1 },
+    ];
+    expect(duplicateTimeSeconds(crammed, crammed[0])).toBe(MIN_SEGMENT_SECONDS);
+  });
+
+  it("知らないシーンを渡されたら、その時刻の後ろへ置く", () => {
+    expect(duplicateTimeSeconds(SCENES, { id: "x", timeSeconds: 3 })).toBe(
+      3 + DEFAULT_SEGMENT_SECONDS,
+    );
   });
 });
 
