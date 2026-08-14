@@ -236,6 +236,7 @@ export const en = {
 
   common: {
     close: "Close",
+    back: "Back",
     loading: "Loading",
     rename: (label: string) => `Change the ${label}`,
     saveToCloud: "Save",
@@ -609,6 +610,7 @@ export const en = {
 
     stage: {
       title: "Stage",
+      summary: "Audience side, size of new pieces",
       description:
         "Flipping the view never moves a saved position. Only the direction things are drawn, and the words used for it, swap over.",
       audienceOnTop: {
@@ -625,6 +627,7 @@ export const en = {
 
     grid: {
       title: "Grid",
+      summary: "Snapping, centre line",
       snap: {
         label: "Snap to the grid",
         description: "Turn it off to place anyone anywhere.",
@@ -637,6 +640,7 @@ export const en = {
 
     playback: {
       title: "Playback",
+      summary: "Count-in, default tempo, scene gap",
       countIn: {
         label: "Count-in",
         description:
@@ -660,6 +664,7 @@ export const en = {
 
     display: {
       title: "Display",
+      summary: "Names, paths, floor marks, blind spots, swipe",
       description:
         "The four below are the same switches as in the editor's View and modes. Either way in points at the same state.",
       dancerName: {
@@ -691,6 +696,7 @@ export const en = {
 
     app: {
       title: "App",
+      summary: "Language, look, autosave",
       description:
         "Light gives you the look of a paper chart. For a finer choice, use the palette on the home screen.",
       colorScheme: {
@@ -709,6 +715,7 @@ export const en = {
 
     data: {
       title: "Data",
+      summary: "Export, import, empty this piece",
       description:
         "Music is not included — the audio never leaves this device. Importing makes a separate piece rather than overwriting this one.",
       export: {
@@ -724,6 +731,7 @@ export const en = {
 
     account: {
       title: "Account",
+      summary: "Another account, sign out, reset settings",
       switch: {
         label: "Sign in with another account",
         description: "Signs out of this account and goes to the sign-in screen.",

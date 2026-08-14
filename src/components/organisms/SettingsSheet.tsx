@@ -1,11 +1,25 @@
 "use client";
 
-import { Download, LogOut, RotateCcw, Upload, UserRoundCog } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import {
+  Database,
+  Download,
+  Eye,
+  Frame,
+  Grid2x2,
+  LogOut,
+  Play,
+  RotateCcw,
+  Settings2,
+  Upload,
+  UserRoundCog,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { BottomSheet } from "@/components/molecules/BottomSheet";
 import {
   SettingsActionRow,
   SettingsGroup,
+  SettingsNavRow,
   SettingsNumberRow,
   SettingsSegmentRow,
   SettingsSwitchRow,
@@ -44,6 +58,25 @@ type Props = {
   onResetProject?: () => void;
 };
 
+/** 束の名前。開いている束をこれで覚える */
+type SectionId =
+  | "stage"
+  | "grid"
+  | "playback"
+  | "display"
+  | "app"
+  | "data"
+  | "account";
+
+type Section = {
+  id: SectionId;
+  title: string;
+  /** 一覧に添える「中に何があるか」 */
+  summary: string;
+  icon: ReactNode;
+  body: ReactNode;
+};
+
 /**
  * アプリの設定。
  *
@@ -53,9 +86,11 @@ type Props = {
  * 作品と一緒に共有されるものなので、曲のシートやインスペクターに残してある。
  * 同じ名前が2箇所に見えるが、効く相手が違う。
  *
- * ■ カテゴリごとに角丸の面で束ねる
- * 設定は「1つずつ意味のある選択」が縦に並ぶ画面で、区切りが無いと
- * どこまでが同じ話なのか読めない。
+ * ■ 2階層にする
+ * 以前は7つの束・22行を1枚に積んでいた。束ねてはあったが、目的の行に着くまで
+ * スクロールで探すことになっていた。1枚目は【何が設定できるか】の一覧にして、
+ * 選んだ束だけを見せる。一覧の行に中身の名前を添えているのは、
+ * 「どの束に入っているか」を開かずに見分けられるようにするため。
  */
 export function SettingsSheet({
   isOpen,
@@ -67,6 +102,23 @@ export function SettingsSheet({
   const router = useRouter();
   const t = useT();
   const locale = useLocale();
+
+  const [openSection, setOpenSection] = useState<SectionId | null>(null);
+
+  // 開き直したら必ず一覧から始める。前に見ていた束が出ると、
+  // 「探す」ために開いた人が同じ場所に戻される。
+  //
+  // useEffect で setState する形は使わない。描画が終わってからもう一度
+  // 描き直すことになるため。**描画の途中で前回の値と比べて直す**のが
+  // React の言う正しい形で、追加の描画は同じ処理の中で片付く
+  // (SettingsNumberRow の lastValue と同じ書き方)
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  if (isOpen !== wasOpen) {
+    setWasOpen(isOpen);
+    // 閉じるときには戻さない。退場のアニメーションの最中に中身が
+    // 一覧へ入れ替わるのが見えてしまう
+    if (isOpen) setOpenSection(null);
+  }
 
   /** 言語を選んだとき。Cookie を書いてから描き直す —
    * サーバーが出す文字(`<html lang>` など)も一緒に変わってほしい */
@@ -142,13 +194,20 @@ export function SettingsSheet({
     router.refresh();
   };
 
-  return (
-    <BottomSheet isOpen={isOpen} onClose={onClose} title={t.settings.title} isTall>
-      <div className="flex flex-col gap-gutter-lg px-gutter py-gutter">
-        <SettingsGroup
-          title={t.settings.stage.title}
-          description={t.settings.stage.description}
-        >
+  const hasProjectData = Boolean(onExport || onImport || onResetProject);
+
+  // 束の中身(body)は毎回ここで組む。React の要素を作るだけでは中の行は
+  // 動かないので、開いていない束のぶんは何もしない。部品として切り出さない
+  // のは、切り出すと state と handler を配り直すことになり、行の実装
+  // (SettingsNumberRow が打ちかけの文字列を持っている等)に手が入るため
+  const sections: Section[] = [
+    {
+      id: "stage",
+      title: t.settings.stage.title,
+      summary: t.settings.stage.summary,
+      icon: <Frame size={20} />,
+      body: (
+        <SettingsGroup description={t.settings.stage.description}>
           <SettingsSwitchRow
             label={t.settings.stage.audienceOnTop.label}
             description={t.settings.stage.audienceOnTop.description}
@@ -175,8 +234,15 @@ export function SettingsSheet({
             onChange={(value) => update("defaultStageHeight", value)}
           />
         </SettingsGroup>
-
-        <SettingsGroup title={t.settings.grid.title}>
+      ),
+    },
+    {
+      id: "grid",
+      title: t.settings.grid.title,
+      summary: t.settings.grid.summary,
+      icon: <Grid2x2 size={20} />,
+      body: (
+        <SettingsGroup>
           {/* 「格子の間隔」はここにあったが消した。線を間引いても吸着は
               1マスのままで、線の無いところに吸い付く — 格子が「どこに
               置けるか」を指さなくなっていた。細かすぎるときは
@@ -196,8 +262,15 @@ export function SettingsSheet({
             }
           />
         </SettingsGroup>
-
-        <SettingsGroup title={t.settings.playback.title}>
+      ),
+    },
+    {
+      id: "playback",
+      title: t.settings.playback.title,
+      summary: t.settings.playback.summary,
+      icon: <Play size={20} />,
+      body: (
+        <SettingsGroup>
           <SettingsSegmentRow
             label={t.settings.playback.countIn.label}
             description={t.settings.playback.countIn.description}
@@ -229,11 +302,15 @@ export function SettingsSheet({
             onChange={(value) => update("defaultSegmentSeconds", value)}
           />
         </SettingsGroup>
-
-        <SettingsGroup
-          title={t.settings.display.title}
-          description={t.settings.display.description}
-        >
+      ),
+    },
+    {
+      id: "display",
+      title: t.settings.display.title,
+      summary: t.settings.display.summary,
+      icon: <Eye size={20} />,
+      body: (
+        <SettingsGroup description={t.settings.display.description}>
           <SettingsSegmentRow
             label={t.settings.display.dancerName.label}
             description={t.settings.display.dancerName.description}
@@ -273,11 +350,15 @@ export function SettingsSheet({
             onChange={toggleSwipeSceneChange}
           />
         </SettingsGroup>
-
-        <SettingsGroup
-          title={t.settings.app.title}
-          description={t.settings.app.description}
-        >
+      ),
+    },
+    {
+      id: "app",
+      title: t.settings.app.title,
+      summary: t.settings.app.summary,
+      icon: <Settings2 size={20} />,
+      body: (
+        <SettingsGroup description={t.settings.app.description}>
           {/* 言語だけは、どの言語で見ていてもそれぞれの言葉で出す。
               間違えて知らない言語にしても、自分の言葉を探して戻れる */}
           <SettingsSegmentRow
@@ -307,40 +388,55 @@ export function SettingsSheet({
             onChange={() => void handleAutoSave(!settings.isAutoSaveEnabled)}
           />
         </SettingsGroup>
-
-        {(onExport || onImport || onResetProject) && (
-          <SettingsGroup
-            title={t.settings.data.title}
-            description={t.settings.data.description}
-          >
-            {onExport && (
-              <SettingsActionRow
-                label={t.settings.data.export.label}
-                description={t.settings.data.export.description}
-                icon={<Download size={20} />}
-                onClick={onExport}
-              />
-            )}
-            {onImport && (
-              <SettingsActionRow
-                label={t.settings.data.import}
-                icon={<Upload size={20} />}
-                onClick={onImport}
-              />
-            )}
-            {onResetProject && (
-              <SettingsActionRow
-                label={t.settings.data.reset.label}
-                description={t.settings.data.reset.description}
-                icon={<RotateCcw size={20} />}
-                isDangerous
-                onClick={onResetProject}
-              />
-            )}
-          </SettingsGroup>
-        )}
-
-        <SettingsGroup title={t.settings.account.title}>
+      ),
+    },
+    // データは作品を開いているときだけ。一覧に行そのものを出さない
+    // (開いても何も無い羽を見せない)
+    ...(hasProjectData
+      ? [
+          {
+            id: "data" as const,
+            title: t.settings.data.title,
+            summary: t.settings.data.summary,
+            icon: <Database size={20} />,
+            body: (
+              <SettingsGroup description={t.settings.data.description}>
+                {onExport && (
+                  <SettingsActionRow
+                    label={t.settings.data.export.label}
+                    description={t.settings.data.export.description}
+                    icon={<Download size={20} />}
+                    onClick={onExport}
+                  />
+                )}
+                {onImport && (
+                  <SettingsActionRow
+                    label={t.settings.data.import}
+                    icon={<Upload size={20} />}
+                    onClick={onImport}
+                  />
+                )}
+                {onResetProject && (
+                  <SettingsActionRow
+                    label={t.settings.data.reset.label}
+                    description={t.settings.data.reset.description}
+                    icon={<RotateCcw size={20} />}
+                    isDangerous
+                    onClick={onResetProject}
+                  />
+                )}
+              </SettingsGroup>
+            ),
+          },
+        ]
+      : []),
+    {
+      id: "account",
+      title: t.settings.account.title,
+      summary: t.settings.account.summary,
+      icon: <UserRoundCog size={20} />,
+      body: (
+        <SettingsGroup>
           <SettingsActionRow
             label={t.settings.account.switch.label}
             description={t.settings.account.switch.description}
@@ -369,6 +465,37 @@ export function SettingsSheet({
             onClick={reset}
           />
         </SettingsGroup>
+      ),
+    },
+  ];
+
+  const current = sections.find((section) => section.id === openSection);
+
+  return (
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      // 束を開いているときだけ戻る矢印を出す。閉じるのは幕・引き下げ・Escape
+      onBack={current ? () => setOpenSection(null) : undefined}
+      title={current ? current.title : t.settings.title}
+      isTall
+    >
+      <div className="flex flex-col gap-gutter-lg px-gutter py-gutter">
+        {current ? (
+          current.body
+        ) : (
+          <div className="divide-y divide-line overflow-hidden rounded-2xl bg-surface">
+            {sections.map((section) => (
+              <SettingsNavRow
+                key={section.id}
+                label={section.title}
+                summary={section.summary}
+                icon={section.icon}
+                onClick={() => setOpenSection(section.id)}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </BottomSheet>
   );

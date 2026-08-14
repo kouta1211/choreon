@@ -248,6 +248,7 @@ export const ja = {
 
   common: {
     close: "閉じる",
+    back: "戻る",
     loading: "読み込み中",
     rename: (label: string) => `${label}を変更`,
     saveToCloud: "保存",
@@ -615,6 +616,7 @@ export const ja = {
 
     stage: {
       title: "舞台",
+      summary: "客席の向き・新しい作品の広さ",
       description:
         "向きを変えても、保存されている立ち位置は動きません。描く向きと、道順の言葉づかいだけが入れ替わります。",
       audienceOnTop: {
@@ -631,6 +633,7 @@ export const ja = {
 
     grid: {
       title: "目盛り",
+      summary: "格子への吸着・センターライン",
       snap: {
         label: "格子に吸着させる",
         description: "切ると、どこにでも置けます",
@@ -643,6 +646,7 @@ export const ja = {
 
     playback: {
       title: "再生",
+      summary: "カウントイン・既定の速さ・シーンの間隔",
       countIn: {
         label: "カウントイン",
         description: "再生を押してから、実際に動き出すまでに鳴らす拍",
@@ -664,6 +668,7 @@ export const ja = {
 
     display: {
       title: "表示",
+      summary: "ダンサー名・導線・バミリ・顔被り・払って送る",
       description:
         "下の4つは、エディタの「表示とモード」と同じスイッチです。どちらから変えても同じ状態を指します。",
       dancerName: {
@@ -693,6 +698,7 @@ export const ja = {
 
     app: {
       title: "アプリ",
+      summary: "言語・見た目・自動保存",
       description:
         "「明るい」は紙の隊形図の見た目になります。細かく選ぶときはホームのパレットから。",
       colorScheme: {
@@ -710,6 +716,7 @@ export const ja = {
 
     data: {
       title: "データ",
+      summary: "書き出し・取り込み・この作品を空にする",
       description:
         "曲は入りません(音源はこの端末から出ないため)。取り込みは、いまの作品を上書きせず別の作品として作ります。",
       export: {
@@ -725,6 +732,7 @@ export const ja = {
 
     account: {
       title: "アカウント",
+      summary: "別のアカウントで入る・ログアウト・設定を戻す",
       switch: {
         label: "別のアカウントでログイン",
         description:

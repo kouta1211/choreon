@@ -7,6 +7,8 @@ import {
   useMotionValue,
   useTransform,
 } from "motion/react";
+import { ChevronLeft } from "lucide-react";
+import { PressableButton } from "@/components/atoms/PressableButton";
 import { useIsWideScreen } from "@/components/hooks/useIsWideScreen";
 import { useT } from "@/features/i18n/LocaleProvider";
 
@@ -15,6 +17,9 @@ type Props = {
   onClose: () => void;
   /** シートの見出し。読み上げ用のラベルも兼ねる */
   title: string;
+  /** 中で段を潜っているときに渡す。見出しの左に戻る矢印が出る。
+   * 閉じる(Escape・幕・引き下げ)とは別の役で、こちらは1段だけ戻る */
+  onBack?: () => void;
   /** 見出しの右に添える補足(「5件 · 合計 7.4s」など) */
   titleRight?: ReactNode;
   /** trueなら画面の大部分を占める高さにする(一覧のように件数が伸びるもの)。
@@ -53,6 +58,7 @@ const DISMISS_VELOCITY = 0.5;
 export function BottomSheet({
   isOpen,
   onClose,
+  onBack,
   title,
   titleRight,
   isTall = false,
@@ -62,6 +68,7 @@ export function BottomSheet({
   const t = useT();
   const isWide = useIsWideScreen();
   const panelRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const dragY = useMotionValue(0);
   // 引き下げた量に応じて幕を薄くする。板と幕が連動していると
   // 「1枚めくっている」感じになる
@@ -76,6 +83,14 @@ export function BottomSheet({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose, dragY]);
+
+  // 中身が入れ替わったら先頭から見せる。見出しが変わるのは段を潜った/戻った
+  // ときで、そのまま前のスクロール位置を引き継ぐと、開いた先が途中から見える
+  useEffect(() => {
+    // scrollTo ではなく scrollTop。滑らせる必要が無く、こちらは
+    // どの環境にもある(jsdom の要素は scrollTo を持たない)
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [title]);
 
   return (
     <AnimatePresence>
@@ -135,15 +150,32 @@ export function BottomSheet({
               aria-hidden
               className="mx-auto mb-3 block h-1 w-9 shrink-0 rounded-full bg-line-strong min-[1200px]:hidden"
             />
-            <div className="flex shrink-0 items-baseline justify-between gap-unit border-b border-line px-gutter pb-gutter">
-              <span className="text-headline text-fg-strong">{title}</span>
+            <div className="flex shrink-0 items-center justify-between gap-unit border-b border-line px-gutter pb-gutter">
+              <span className="flex min-w-0 items-center gap-base">
+                {onBack && (
+                  <PressableButton
+                    onClick={onBack}
+                    aria-label={t.common.back}
+                    /* 見出しの左。行の高さは変えたくないので、負の余白で
+                       文字の並びに矢印を割り込ませる */
+                    className="-ml-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-fg-sub"
+                  >
+                    <ChevronLeft size={22} />
+                  </PressableButton>
+                )}
+                <span className="truncate text-headline text-fg-strong">
+                  {title}
+                </span>
+              </span>
               {titleRight && (
                 <span className="shrink-0 font-mono text-mono-s text-fg-muted">
                   {titleRight}
                 </span>
               )}
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+            <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+              {children}
+            </div>
           </motion.div>
         </div>
       )}

@@ -235,6 +235,7 @@ export const ko = {
 
   common: {
     close: "닫기",
+    back: "뒤로",
     loading: "불러오는 중",
     rename: (label: string) => `${label} 변경`,
     saveToCloud: "저장",
@@ -603,6 +604,7 @@ export const ko = {
 
     stage: {
       title: "무대",
+      summary: "객석 방향 · 새 작품의 크기",
       description:
         "방향을 바꿔도 저장된 위치는 움직이지 않습니다. 그리는 방향과 안내 문구만 바뀝니다.",
       audienceOnTop: {
@@ -619,6 +621,7 @@ export const ko = {
 
     grid: {
       title: "눈금",
+      summary: "격자 흡착 · 센터 라인",
       snap: {
         label: "격자에 붙이기",
         description: "끄면 어디에나 놓을 수 있습니다.",
@@ -631,6 +634,7 @@ export const ko = {
 
     playback: {
       title: "재생",
+      summary: "카운트인 · 기본 속도 · 장면 간격",
       countIn: {
         label: "카운트인",
         description: "재생을 누른 뒤 실제로 움직이기까지 울리는 박입니다.",
@@ -653,6 +657,7 @@ export const ko = {
 
     display: {
       title: "표시",
+      summary: "이름 · 이동선 · 바닥 표시 · 가림 · 스와이프",
       description:
         "아래 네 가지는 편집 화면의 '표시와 모드'와 같은 스위치입니다. 어느 쪽에서 바꿔도 같은 상태를 가리킵니다.",
       dancerName: {
@@ -684,6 +689,7 @@ export const ko = {
 
     app: {
       title: "앱",
+      summary: "언어 · 화면 모양 · 자동 저장",
       description:
         "'밝게'는 종이 대형도 같은 화면이 됩니다. 자세히 고르려면 홈의 팔레트에서 선택하세요.",
       colorScheme: {
@@ -702,6 +708,7 @@ export const ko = {
 
     data: {
       title: "데이터",
+      summary: "내보내기 · 가져오기 · 작품 비우기",
       description:
         "음악은 포함되지 않습니다(음원은 이 기기 밖으로 나가지 않습니다). 가져오기는 지금 작품을 덮어쓰지 않고 별도의 작품으로 만듭니다.",
       export: {
@@ -717,6 +724,7 @@ export const ko = {
 
     account: {
       title: "계정",
+      summary: "다른 계정으로 로그인 · 로그아웃 · 설정 되돌리기",
       switch: {
         label: "다른 계정으로 로그인",
         description: "지금 계정에서 로그아웃하고 로그인 화면으로 이동합니다.",

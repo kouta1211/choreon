@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { ChevronRight } from "lucide-react";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { SwitchTrack } from "@/components/atoms/Switch";
 import { usePressable } from "@/components/hooks/usePressable";
@@ -21,15 +22,19 @@ export function SettingsGroup({
   description,
   children,
 }: {
-  title: string;
+  /** 省略できる。設定は束ごとに1画面ずつ見せるので、シートの見出しが
+   * 束の名前になっている。そこで同じ言葉を2度出さないため */
+  title?: string;
   description?: string;
   children: ReactNode;
 }) {
   return (
     <section className="flex flex-col gap-unit">
-      <h2 className="px-base text-caption tracking-[0.14em] text-fg-muted uppercase">
-        {title}
-      </h2>
+      {title && (
+        <h2 className="px-base text-caption tracking-[0.14em] text-fg-muted uppercase">
+          {title}
+        </h2>
+      )}
       {/* 面は1枚。行の間は1pxの線だけで割る(枠を重ねない) */}
       <div className="divide-y divide-line overflow-hidden rounded-2xl bg-surface">
         {children}
@@ -225,6 +230,41 @@ export function SettingsNumberRow({
         <p className="text-caption leading-snug text-fg-muted">{description}</p>
       )}
     </div>
+  );
+}
+
+/**
+ * 押すと1段潜る行(設定の1枚目に並ぶ「舞台」「目盛り」…)。
+ *
+ * 中に何が入っているかを2段目に添える。名前だけを並べると、探している項目が
+ * どの束にあるかを開いて確かめることになり、1枚に全部並べていたときと
+ * 手数が変わらない。
+ */
+export function SettingsNavRow({
+  label,
+  summary,
+  icon,
+  onClick,
+}: {
+  label: string;
+  summary: string;
+  icon: ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <PressableButton
+      onClick={onClick}
+      className="flex min-h-target w-full items-center gap-gutter px-gutter py-unit text-left"
+    >
+      <span className="shrink-0 text-fg-muted">{icon}</span>
+      <span className="flex min-w-0 flex-1 flex-col gap-base">
+        <span className="text-body text-fg-strong">{label}</span>
+        <span className="text-caption leading-snug text-fg-muted">
+          {summary}
+        </span>
+      </span>
+      <ChevronRight size={18} aria-hidden className="shrink-0 text-fg-muted" />
+    </PressableButton>
   );
 }
 
