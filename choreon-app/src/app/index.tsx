@@ -83,6 +83,10 @@ export default function FoundationScreen() {
   const isSwipeEnabled = useUIStore((state) => state.isSwipeSceneChangeEnabled);
   const toggleSwipe = useUIStore((state) => state.toggleSwipeSceneChange);
   const isBlindSpotVisible = useUIStore((state) => state.isBlindSpotCheckVisible);
+  const isPathVisible = useUIStore((state) => state.isPathVisible);
+  const togglePathVisible = useUIStore((state) => state.togglePathVisible);
+  const isStageMarksVisible = useUIStore((state) => state.isStageMarksVisible);
+  const toggleStageMarks = useUIStore((state) => state.toggleStageMarks);
   const toggleBlindSpotCheck = useUIStore((state) => state.toggleBlindSpotCheck);
 
   // 仮の隊形をストアへ入れる（Web版と同じ hydrate を通す）
@@ -213,6 +217,16 @@ export default function FoundationScreen() {
             label="払ってシーンを送る"
             value={isSwipeEnabled ? 'オン' : 'オフ'}
             onPress={toggleSwipe}
+          />
+          <Toggle
+            label="導線を出す"
+            value={isPathVisible ? 'オン' : 'オフ'}
+            onPress={togglePathVisible}
+          />
+          <Toggle
+            label="バミリ（客席側の目盛り）"
+            value={isStageMarksVisible ? 'オン' : 'オフ'}
+            onPress={toggleStageMarks}
           />
           <Toggle
             label="顔被りを見つける"

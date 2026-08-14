@@ -2,6 +2,8 @@ import { useMemo, useRef, useState } from 'react';
 import { PanResponder, View, Text, type LayoutChangeEvent } from 'react-native';
 
 import { DraggableDancer } from '@/components/draggable-dancer';
+import { PathOverlay } from '@/components/path-overlay';
+import { StageMarks } from '@/components/stage-marks';
 import { getSceneStep } from '@/features/canvas/lib/sceneStep';
 import { useSceneWarnings } from '@/features/canvas/hooks/useSceneWarnings';
 import { useHistoryStore } from '@/features/canvas/store/useHistoryStore';
@@ -50,6 +52,8 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
   const selectDancer = useUIStore((state) => state.selectDancer);
   const selectScene = useUIStore((state) => state.selectScene);
   const gridMode = useUIStore((state) => state.gridMode);
+  const isPathVisible = useUIStore((state) => state.isPathVisible);
+  const isStageMarksVisible = useUIStore((state) => state.isStageMarksVisible);
   const isSwipeEnabled = useUIStore((state) => state.isSwipeSceneChangeEnabled);
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
   const isSnapEnabled = useSettingsStore((state) => state.isSnapEnabled);
@@ -207,6 +211,25 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
       >
         {gridMode === 'square' && (
           <GridLines widthUnits={stageWidthUnits} heightUnits={stageHeightUnits} />
+        )}
+
+        {isStageMarksVisible && (
+          <StageMarks
+            stageWidthUnits={stageWidthUnits}
+            stageHeightUnits={stageHeightUnits}
+          />
+        )}
+
+        {/* 導線はダンサーより下に描く。線の上に丸が乗る方が、
+            誰の線かを追いやすい */}
+        {isPathVisible && nextScene && !scrub && (
+          <PathOverlay
+            currentPositions={positions}
+            nextPositions={positionsBySceneId[nextScene.id] ?? {}}
+            dancers={dancers}
+            stageWidthUnits={stageWidthUnits}
+            stageHeightUnits={stageHeightUnits}
+          />
         )}
 
         {/* 払っている間は、移動先にしか居ない人も描き始める。そうしないと
