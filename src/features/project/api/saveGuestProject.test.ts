@@ -16,10 +16,15 @@ const GUEST_WORDS = {
 
 const supabase = {} as SupabaseClient<Database>;
 
-function stubAll() {
+function stubAll(existingTitles: string[] = []) {
   const insertProject = vi
     .spyOn(projectsApi, "insertProject")
     .mockImplementation(async (_client, project) => project);
+  // 名前がぶつかっていないかを見に行く。偽のクライアントには .from が無いので、
+  // ここを塞がないと本物の問い合わせに落ちる
+  const listProjectTitles = vi
+    .spyOn(projectsApi, "listProjectTitles")
+    .mockResolvedValue(existingTitles);
   const createDancers = vi
     .spyOn(dancersApi, "createDancers")
     .mockResolvedValue([]);
@@ -35,6 +40,7 @@ function stubAll() {
 
   return {
     insertProject,
+    listProjectTitles,
     createDancers,
     createScenes,
     upsertPositions,
@@ -70,6 +76,26 @@ describe("saveGuestProject", () => {
     const second = api.insertProject.mock.calls[1][1].id;
     expect(first).not.toBe(snapshot.project.id);
     expect(first).not.toBe(second);
+  });
+
+  // 同じファイルを2回取り込むと、同じ名前の作品が2つ並んでいた。
+  // 取り込みも保存もこの関数を通るので、ここで番号を足す
+  it("同じ名前が既にあれば、番号を足した名前で入れる", async () => {
+    const api = stubAll([GUEST_WORDS.title]);
+
+    await saveGuestProject(supabase, "user-1", createGuestProject(GUEST_WORDS));
+
+    expect(api.insertProject.mock.calls[0][1].title).toBe(
+      `${GUEST_WORDS.title} (2)`,
+    );
+  });
+
+  it("ぶつかっていなければ、下書きの名前のまま入れる", async () => {
+    const api = stubAll(["ほかの作品"]);
+
+    await saveGuestProject(supabase, "user-1", createGuestProject(GUEST_WORDS));
+
+    expect(api.insertProject.mock.calls[0][1].title).toBe(GUEST_WORDS.title);
   });
 
   it("ログインしたユーザーを持ち主にする", async () => {

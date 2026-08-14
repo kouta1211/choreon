@@ -43,8 +43,6 @@ export type Settings = {
   /** 新しい作品のステージの広さ(1マス=90cm) */
   defaultStageWidth: number;
   defaultStageHeight: number;
-  /** 格子を何マスおきに引くか。1なら全部、2なら1本おき */
-  gridInterval: number;
   /** ドラッグを格子へ吸着させるか */
   isSnapEnabled: boolean;
   /** センターライン(0の列)を強調するか */
@@ -80,7 +78,6 @@ export const DEFAULT_SETTINGS: Settings = {
   isAudienceOnTop: false,
   defaultStageWidth: 14,
   defaultStageHeight: 10,
-  gridInterval: 1,
   isSnapEnabled: true,
   isCenterLineVisible: true,
   countIn: 0,
@@ -146,7 +143,6 @@ export function parseSettings(raw: string | null): Settings {
       MAX_STAGE_UNITS,
       DEFAULT_SETTINGS.defaultStageHeight,
     ),
-    gridInterval: clampInt(record.gridInterval, 1, 4, DEFAULT_SETTINGS.gridInterval),
     isSnapEnabled: boolean(record.isSnapEnabled, DEFAULT_SETTINGS.isSnapEnabled),
     isCenterLineVisible: boolean(
       record.isCenterLineVisible,

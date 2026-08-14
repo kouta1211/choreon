@@ -297,6 +297,8 @@ export const ko = {
     newName: "새 작품 이름",
     create: "작품 만들기",
     createFailed: "작품을 만들지 못했습니다",
+    renamedForClash: (title: string) =>
+      `같은 이름이 있어서 '${title}'으로 만들었습니다`,
     tapToStart: "눌러서 첫 장면 만들기",
     noScenes: "장면 0",
     remove: (title: string) => `${title} 삭제`,
@@ -617,12 +619,6 @@ export const ko = {
 
     grid: {
       title: "눈금",
-      interval: {
-        label: "격자 간격",
-        description:
-          "인원이 많으면 격자가 너무 촘촘해서 점이 묻힙니다. 간격을 넓히면 대형만 남습니다.",
-        squares: (n: number) => `${n}칸`,
-      },
       snap: {
         label: "격자에 붙이기",
         description: "끄면 어디에나 놓을 수 있습니다.",

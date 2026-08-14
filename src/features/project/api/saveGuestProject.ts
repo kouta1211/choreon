@@ -1,6 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
-import { deleteProject, insertProject } from "@/features/project/api/projects";
+import {
+  deleteProject,
+  insertProject,
+  listProjectTitles,
+} from "@/features/project/api/projects";
+import { nextAvailableTitle } from "@/features/project/lib/projectTitle";
 import { createDancers } from "@/features/dancer/api/dancers";
 import { createScenes } from "@/features/scene/api/scenes";
 import { upsertPositions } from "@/features/scene/api/positions";
@@ -25,6 +30,10 @@ import type { Project } from "@/features/project/types";
  *
  * IDは保存の直前に採り直す(withFreshIds)。下書きのIDは固定値のため、
  * そのまま入れると2回目の保存で主キーが衝突する。
+ *
+ * 名前も同じ理由でここで見る。この道は【ファイルからの取り込み】も通り
+ * (useProjectData)、取り込みは常に新しい作品として作るので、同じファイルを
+ * 2回取り込むと同じ名前が2つ並ぶ。既にある名前なら (2)、(3) と番号を足す。
  */
 export async function saveGuestProject(
   supabase: SupabaseClient<Database>,
@@ -32,8 +41,12 @@ export async function saveGuestProject(
   snapshot: ProjectSnapshot,
 ): Promise<Project> {
   const fresh = withFreshIds(snapshot, userId);
+  const title = nextAvailableTitle(
+    await listProjectTitles(supabase, userId),
+    fresh.project.title,
+  );
 
-  const project = await insertProject(supabase, fresh.project);
+  const project = await insertProject(supabase, { ...fresh.project, title });
 
   try {
     await Promise.all([

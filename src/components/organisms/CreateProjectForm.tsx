@@ -36,6 +36,16 @@ export function CreateProjectForm({ userId }: Props) {
         stageHeight: settings.defaultStageHeight,
         bpm: settings.defaultBpm,
       });
+
+      // 同じ名前があると createProject が (2) を足す。黙って変えると
+      // 「打った名前と違う」が不具合に見えるので、移る前に断っておく
+      // (トーストはストアに載っているので、移動先の画面で出る)
+      if (project.title !== title.trim()) {
+        showToast({
+          message: t.projects.renamedForClash(project.title),
+          type: "success",
+        });
+      }
       router.push(`/projects/${project.id}`);
       router.refresh();
     } catch (error) {

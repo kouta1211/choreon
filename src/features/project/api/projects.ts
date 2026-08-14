@@ -4,6 +4,7 @@ import type { Project, ProjectSummary } from "@/features/project/types";
 import { listPositionsByScenes } from "@/features/scene/api/positions";
 import { totalSeconds } from "@/features/scene/lib/sceneTiming";
 import { DEFAULT_BPM } from "@/features/music/lib/metronomePreference";
+import { nextAvailableTitle } from "@/features/project/lib/projectTitle";
 
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
 
@@ -321,10 +322,31 @@ export async function insertProject(
 }
 
 /**
+ * その人の作品の名前だけを読む。ぶつからない名前を決めるためにだけ使う
+ * (一覧の描画には listProjectSummaries を使う。あちらはシーンまで引く)。
+ */
+export async function listProjectTitles(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("projects")
+    .select("title")
+    .eq("user_id", userId);
+
+  if (error) throw error;
+  return (data ?? []).map((row) => row.title);
+}
+
+/**
  * 新しい作品を作る。
  *
  * ステージの広さと速さは【設定の初期値】を受け取る。作品が持つ値なので
  * 一度作ったあとは作品側が正で、設定を変えても既存の作品は動かない。
+ *
+ * 同じ名前が既にあれば (2)、(3) … と番号を足す(nextAvailableTitle)。
+ * 付いた番号は返り値の title に入っているので、呼び出し側はそれを見て
+ * 「名前を変えた」と伝えられる。
  */
 export async function createProject(
   supabase: SupabaseClient<Database>,
@@ -332,11 +354,16 @@ export async function createProject(
   title: string,
   defaults?: { stageWidth: number; stageHeight: number; bpm: number },
 ): Promise<Project> {
+  const uniqueTitle = nextAvailableTitle(
+    await listProjectTitles(supabase, userId),
+    title,
+  );
+
   const { data, error } = await supabase
     .from("projects")
     .insert({
       user_id: userId,
-      title,
+      title: uniqueTitle,
       ...(defaults
         ? {
             stage_width: defaults.stageWidth,

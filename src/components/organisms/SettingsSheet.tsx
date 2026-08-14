@@ -177,16 +177,10 @@ export function SettingsSheet({
         </SettingsGroup>
 
         <SettingsGroup title={t.settings.grid.title}>
-          <SettingsSegmentRow
-            label={t.settings.grid.interval.label}
-            description={t.settings.grid.interval.description}
-            value={settings.gridInterval}
-            options={[1, 2, 4].map((value) => ({
-              value,
-              label: t.settings.grid.interval.squares(value),
-            }))}
-            onChange={(value) => update("gridInterval", value)}
-          />
+          {/* 「格子の間隔」はここにあったが消した。線を間引いても吸着は
+              1マスのままで、線の無いところに吸い付く — 格子が「どこに
+              置けるか」を指さなくなっていた。細かすぎるときは
+              表示とモードで目盛りごと消せる */}
           <SettingsSwitchRow
             label={t.settings.grid.snap.label}
             description={t.settings.grid.snap.description}

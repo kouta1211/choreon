@@ -56,7 +56,6 @@ describe("parseSettings", () => {
         defaultStageHeight: 1,
         defaultBpm: 0,
         defaultSegmentSeconds: 100,
-        gridInterval: 9,
       }),
     );
 
@@ -64,10 +63,9 @@ describe("parseSettings", () => {
     expect(parsed.defaultStageHeight).toBe(MIN_STAGE_UNITS);
     expect(parsed.defaultBpm).toBe(40);
     expect(parsed.defaultSegmentSeconds).toBe(16);
-    expect(parsed.gridInterval).toBe(4);
   });
 
-  it("小数で来たマス数は整数へ寄せる(格子の間隔として使うため)", () => {
+  it("小数で来たマス数は整数へ寄せる(ステージの広さはマス目で数えるため)", () => {
     const parsed = parseSettings(JSON.stringify({ defaultStageWidth: 12.6 }));
     expect(parsed.defaultStageWidth).toBe(13);
   });

@@ -298,6 +298,8 @@ export const en = {
     newName: "Name for the new piece",
     create: "Create the piece",
     createFailed: "Could not create the piece",
+    renamedForClash: (title: string) =>
+      `That name was taken, so this one is “${title}”`,
     tapToStart: "Tap to make the first scene",
     noScenes: "no scenes",
     remove: (title: string) => `Delete ${title}`,
@@ -623,12 +625,6 @@ export const en = {
 
     grid: {
       title: "Grid",
-      interval: {
-        label: "Grid spacing",
-        description:
-          "With a large cast the lines get so fine that the dancers sink into them. Thin them out and only the formation is left.",
-        squares: (n: number) => (n === 1 ? "1 sq" : `${n} sq`),
-      },
       snap: {
         label: "Snap to the grid",
         description: "Turn it off to place anyone anywhere.",

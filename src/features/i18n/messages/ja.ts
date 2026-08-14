@@ -311,6 +311,8 @@ export const ja = {
     newName: "新しいプロジェクト名",
     create: "プロジェクトを作成",
     createFailed: "プロジェクトの作成に失敗しました",
+    renamedForClash: (title: string) =>
+      `同じ名前があったので「${title}」で作りました`,
     tapToStart: "タップして最初のシーンを作る",
     noScenes: "シーン 0",
     remove: (title: string) => `${title}を削除`,
@@ -629,11 +631,6 @@ export const ja = {
 
     grid: {
       title: "目盛り",
-      interval: {
-        label: "格子の間隔",
-        description: "人数が多いと格子が細かすぎて点が沈む。間引くと隊形だけが残る",
-        squares: (n: number) => `${n}マス`,
-      },
       snap: {
         label: "格子に吸着させる",
         description: "切ると、どこにでも置けます",

@@ -69,7 +69,6 @@ export function Stage({
   const gridMode = useUIStore((state) => state.gridMode);
   const focusedDancerId = useUIStore((state) => state.focusedDancerId);
   const dragSnapLine = useUIStore((state) => state.dragSnapLine);
-  const gridInterval = useSettingsStore((state) => state.gridInterval);
   const isCenterLineVisible = useSettingsStore(
     (state) => state.isCenterLineVisible,
   );
@@ -110,11 +109,11 @@ export function Stage({
                 focusedDancerId ? "opacity-40" : ""
               }`}
               style={{
-                /* 間隔は設定で間引ける。人数が多いと1マスごとの線が細かすぎて、
-                   点(ダンサー)が線に沈む */
-                backgroundSize: `${(100 * gridInterval) / widthUnits}% ${
-                  (100 * gridInterval) / heightUnits
-                }%`,
+                /* 1マスごとに引く。吸着(dragMath の snapToGrid)が寄せる先は
+                   常に整数=1マスなので、線を間引くと「線の無いところに
+                   吸い付く」ことになり、格子が置ける場所を指さなくなる。
+                   細かすぎるときは 表示とモード で目盛りごと消せる */
+                backgroundSize: `${100 / widthUnits}% ${100 / heightUnits}%`,
               }}
             />
           )}
