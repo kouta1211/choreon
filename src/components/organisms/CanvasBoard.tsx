@@ -15,9 +15,11 @@ import { HistoryControls } from "@/components/organisms/HistoryControls";
 import { TemplateButton } from "@/components/organisms/TemplateButton";
 import { DancerLayer } from "@/components/organisms/DancerLayer";
 import { ScrubProgressBar } from "@/components/molecules/ScrubProgressBar";
-import { useProjectStore } from "@/features/project/store/useProjectStore";
+import {
+  positionAt,
+  useProjectStore,
+} from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import { useHistoryStore } from "@/features/canvas/store/useHistoryStore";
 import {
   clamp,
   isCloseToInteger,
@@ -28,18 +30,11 @@ import {
   createGridSnapModifier,
   GRID_SNAP_TOLERANCE,
 } from "@/features/canvas/lib/gridSnapModifier";
-import {
-  discardPendingWrites,
-  persist,
-} from "@/features/project/lib/persistence";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { stageYSign, toScreenY } from "@/features/canvas/lib/stageFlip";
-import { toUserMessage } from "@/lib/supabase/errors";
-import {
-  upsertPosition,
-  upsertPositions,
-} from "@/features/scene/api/positions";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
+import { usePositionCommit } from "@/features/scene/hooks/usePositionCommit";
+import { useHydrateProject } from "@/features/project/hooks/useHydrateProject";
 import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
 import { useStageScrubGesture } from "@/features/canvas/hooks/useStageScrubGesture";
 import type { Project } from "@/features/project/types";
@@ -81,8 +76,11 @@ function dndAccessibility(t: Messages) {
 /**
  * Stage + トグル行 + dnd-kitのDndContextをまとめたClient Component。
  * ステージ上に何を描画するか(導線・ダンサーアイコン・警告判定)は
- * DancerLayerに委譲し、ここではドラッグ/回転の確定処理
- * (楽観的更新→Supabase保存→失敗時ロールバック)に専念する。
+ * DancerLayerに委譲し、ここではドラッグ/回転の確定処理に専念する。
+ *
+ * 確定は4通り(掴んで置く・回す・矢印キー・曲線の制御点)あるが、
+ * 「楽観的更新 → 保存 → 失敗したら戻す」の道は1つ(usePositionCommit)。
+ * ここに書くのは【何がどう変わったか】だけになる。
  *
  * ドラッグ中はDraggableDancerIcon側がCSS transformだけで見た目を動かし、
  * ここではonDragEndで1回だけstoreにコミットする(キャンバス全体の再描画を
@@ -143,15 +141,11 @@ export function CanvasBoard({
   const isSnapEnabled = useSettingsStore((state) => state.isSnapEnabled);
   // ステージ面を上下の鏡にして描いているか。指の動きの向きだけを揃える
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
-  const hydrate = useProjectStore((state) => state.hydrate);
-  const updateDancerPosition = useProjectStore(
-    (state) => state.updateDancerPosition,
-  );
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const selectScene = useUIStore((state) => state.selectScene);
   const selectDancer = useUIStore((state) => state.selectDancer);
   const setDragSnapLine = useUIStore((state) => state.setDragSnapLine);
-  const showToast = useUIStore((state) => state.showToast);
+  const commitPositions = usePositionCommit();
 
   // ステージを横に払って前後のシーンへ移るジェスチャ。ダンサーのドラッグ
   // (dnd-kit)とは掴む対象で住み分けており、ダンサーとボタンの上から
@@ -172,29 +166,13 @@ export function CanvasBoard({
     scrub,
   });
 
-  // サーバーから取得済みのデータ(props)をZustand storeへ同期する。
-  // 「Reactの外にある別のシステム(ここではグローバルなstore)にデータを渡す」
-  // ケースなので、これはuseEffectの正当な用途にあたる
-  // (単なるprops→state変換ならuseEffect無しで済むケースが多いが、今回は違う)
-  useEffect(() => {
-    hydrate({
-      project,
-      dancers: initialDancers,
-      scenes: initialScenes,
-      positions: initialPositions,
-      isGuest,
-    });
-    if (initialScenes.length > 0) {
-      selectScene(initialScenes[0].id);
-    }
-    // 別プロジェクトの編集履歴を持ち越すと、存在しないシーン・ダンサーへ
-    // 書き戻そうとすることになるため捨てる。自動保存を切っている間に
-    // 貯めた書き込みも同じ理由で捨てる
-    useHistoryStore.getState().clear();
-    discardPendingWrites();
-    // 別プロジェクトに切り替わったときだけ入れ直せば十分なため、project.idのみを依存にする
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project.id]);
+  useHydrateProject({
+    project,
+    dancers: initialDancers,
+    scenes: initialScenes,
+    positions: initialPositions,
+    isGuest,
+  });
 
   // ドラッグ中、格子線・交差点のごく近くまで来たらdragSnapLineを更新し、
   // Stage側でその格子線をハイライト表示させる。見た目の吸着自体は
@@ -205,10 +183,7 @@ export function CanvasBoard({
     (event: DragMoveEvent) => {
       if (!selectedSceneId) return;
       const dancerId = String(event.active.id);
-      const before =
-        useProjectStore.getState().positionsBySceneId[selectedSceneId]?.[
-          dancerId
-        ];
+      const before = positionAt(selectedSceneId, dancerId);
       const stageEl = stageRef.current;
       if (!before || !stageEl) return;
 
@@ -254,9 +229,7 @@ export function CanvasBoard({
       if (!selectedSceneId) return;
 
       const dancerId = String(event.active.id);
-      const currentPositions =
-        useProjectStore.getState().positionsBySceneId[selectedSceneId] ?? {};
-      const before = currentPositions[dancerId];
+      const before = positionAt(selectedSceneId, dancerId);
       const stageEl = stageRef.current;
       if (!before || !stageEl) return;
 
@@ -271,157 +244,99 @@ export function CanvasBoard({
         stageYSign(isAudienceOnTop) *
         pixelDeltaToUnitDelta(event.delta.y, height, project.stageHeight);
 
-      const nextX = clamp(before.xCoordinate + deltaX, 0, project.stageWidth);
-      const nextY = clamp(before.yCoordinate + deltaY, 0, project.stageHeight);
-
       const after = {
         sceneId: selectedSceneId,
         dancerId,
-        xCoordinate: nextX,
-        yCoordinate: nextY,
+        xCoordinate: clamp(before.xCoordinate + deltaX, 0, project.stageWidth),
+        yCoordinate: clamp(before.yCoordinate + deltaY, 0, project.stageHeight),
         rotationAngle: before.rotationAngle,
       };
 
-      // 楽観的更新: 先に見た目を確定させ、保存に失敗したらdrag前の値に戻す
-      updateDancerPosition(after.sceneId, after.dancerId, after);
-
-      const changes = [{ sceneId: selectedSceneId, dancerId, before, after }];
-
-      // 保存だけを切り出しているのは、失敗したときにトーストの「再試行」から
-      // もう一度呼べるようにするため。通信が一瞬切れただけのことが多く、
-      // 同じ場所へ置き直す操作をやり直させるのは無駄が大きい
-      const save = async () => {
-        try {
-          await persist((supabase) =>
-            upsertPositions(
-              supabase,
-              changes.map((change) => change.after),
-            ),
-          );
-          // 保存が確定してから履歴に積む(失敗した操作は「元に戻す」対象に
-          // ならない=見た目もロールバック済みなので、積むと辻褄が合わなくなる)
-          useHistoryStore.getState().push({ kind: "move", changes });
-        } catch (error) {
-          for (const change of changes) {
-            updateDancerPosition(
-              change.sceneId,
-              change.dancerId,
-              change.before,
-            );
-          }
-          showToast({
-            message: toUserMessage(error, t.editor.errors.position),
-            type: "error",
-            action: {
-              label: t.editor.errors.retry,
-              onAction: () => {
-                // 見た目を動かし直してから、もう一度保存する
-                for (const change of changes) {
-                  updateDancerPosition(
-                    change.sceneId,
-                    change.dancerId,
-                    change.after,
-                  );
-                }
-                void save();
-              },
-            },
-          });
-        }
-      };
-
-      await save();
+      await commitPositions({
+        changes: [{ sceneId: selectedSceneId, dancerId, before, after }],
+        kind: "move",
+        errorMessage: t.editor.errors.position,
+        // 掴んで置き直させるのは無駄が大きいので、ここだけ再試行を出す
+        canRetry: true,
+      });
     },
     [
       selectedSceneId,
       project.stageWidth,
       project.stageHeight,
       setDragSnapLine,
-      updateDancerPosition,
-      showToast,
+      commitPositions,
       isAudienceOnTop,
       t,
     ],
   );
 
-  // 回転ハンドルで指を離したときに1回だけ呼ばれる。位置移動(handleDragEnd)と
-  // 同じ「楽観的更新→Supabase保存→失敗時ロールバック」パターンで、
-  // x/yはそのままにrotationAngleだけ差し替える
+  // 回転ハンドルで指を離したときに1回だけ呼ばれる。x/yはそのままに
+  // rotationAngleだけ差し替える
   const handleRotateEnd = useCallback(
     async (dancerId: string, rotationAngle: number) => {
       if (!selectedSceneId) return;
-      const before =
-        useProjectStore.getState().positionsBySceneId[selectedSceneId]?.[
-          dancerId
-        ];
+      const before = positionAt(selectedSceneId, dancerId);
       if (!before) return;
 
-      const after = { ...before, rotationAngle };
-      updateDancerPosition(selectedSceneId, dancerId, after);
-
-      try {
-        await persist((supabase) => upsertPosition(supabase, after));
-        useHistoryStore.getState().push({
-          kind: "rotate",
-          changes: [{ sceneId: selectedSceneId, dancerId, before, after }],
-        });
-      } catch (error) {
-        updateDancerPosition(selectedSceneId, dancerId, before);
-        showToast({
-          message: toUserMessage(error, t.editor.errors.rotation),
-          type: "error",
-        });
-      }
+      await commitPositions({
+        changes: [
+          {
+            sceneId: selectedSceneId,
+            dancerId,
+            before,
+            after: { ...before, rotationAngle },
+          },
+        ],
+        kind: "rotate",
+        errorMessage: t.editor.errors.rotation,
+      });
     },
-    [selectedSceneId, updateDancerPosition, showToast, t],
+    [selectedSceneId, commitPositions, t],
   );
 
   // フォーカス中のダンサーを矢印キーで動かした時に呼ばれる。dx/dyは呼び出し側
   // (DraggableDancerIcon)がキーの種類とShift押下の有無から計算済みのもの。
-  // dnd-kitのドラッグを経由しないため、位置移動(handleDragEnd)と同じ
-  // 「楽観的更新→Supabase保存→失敗時ロールバック」パターンをここで直接行う。
   // 格子スナップ(gridSnapModifierと同じtolerance)は適用するが、シンメトリー
   // ペアの連動はここでは行わない(1回の矢印キー操作ごとに毎回ペア計算まで
   // 行うと過剰なので、ペア連動が必要な細かい位置調整はドラッグに任せる)
   const handleNudge = useCallback(
     async (dancerId: string, dx: number, dy: number) => {
       if (!selectedSceneId) return;
-      const before =
-        useProjectStore.getState().positionsBySceneId[selectedSceneId]?.[
-          dancerId
-        ];
+      const before = positionAt(selectedSceneId, dancerId);
       if (!before) return;
 
       const snap = (value: number) =>
         isSnapEnabled ? snapToGrid(value, GRID_SNAP_TOLERANCE) : value;
-      const nextX = snap(clamp(before.xCoordinate + dx, 0, project.stageWidth));
-      const nextY = snap(clamp(before.yCoordinate + dy, 0, project.stageHeight));
 
-      const after = { ...before, xCoordinate: nextX, yCoordinate: nextY };
-      updateDancerPosition(selectedSceneId, dancerId, after);
-
-      try {
-        await persist((supabase) => upsertPosition(supabase, after));
+      await commitPositions({
+        changes: [
+          {
+            sceneId: selectedSceneId,
+            dancerId,
+            before,
+            after: {
+              ...before,
+              xCoordinate: snap(
+                clamp(before.xCoordinate + dx, 0, project.stageWidth),
+              ),
+              yCoordinate: snap(
+                clamp(before.yCoordinate + dy, 0, project.stageHeight),
+              ),
+            },
+          },
+        ],
         // 矢印キーの微調整は連打されるため、useHistoryStore側で同じダンサーへの
         // 連続操作を1ステップに畳んでいる(kind: "nudge"がその目印)
-        useHistoryStore.getState().push({
-          kind: "nudge",
-          changes: [{ sceneId: selectedSceneId, dancerId, before, after }],
-        });
-      } catch (error) {
-        updateDancerPosition(selectedSceneId, dancerId, before);
-        showToast({
-          message: toUserMessage(error, t.editor.errors.position),
-          type: "error",
-        });
-      }
+        kind: "nudge",
+        errorMessage: t.editor.errors.position,
+      });
     },
     [
       selectedSceneId,
       project.stageWidth,
       project.stageHeight,
-      updateDancerPosition,
-      showToast,
+      commitPositions,
       isSnapEnabled,
       t,
     ],
@@ -429,46 +344,34 @@ export function CanvasBoard({
 
   // 導線(PathOverlay)の曲線制御点をドラッグで確定した時に呼ばれる。
   // 制御点は「そこへ遷移してくるシーン」のpositionに保存する(遷移時間の
-  // dancerTransitionDurationSecondsと同じ考え方)。位置移動(handleDragEnd)と
-  // 同じ「楽観的更新→Supabase保存→失敗時ロールバック」パターン
+  // dancerTransitionDurationSecondsと同じ考え方)
   const handleCurveControlPointChange = useCallback(
     async (
       dancerId: string,
       sceneId: string,
       point: { x: number; y: number } | null,
     ) => {
-      const before =
-        useProjectStore.getState().positionsBySceneId[sceneId]?.[dancerId];
+      const before = positionAt(sceneId, dancerId);
       if (!before) return;
 
-      const after = {
-        ...before,
-        curveControlX: point?.x ?? null,
-        curveControlY: point?.y ?? null,
-      };
-      updateDancerPosition(sceneId, dancerId, {
-        curveControlX: after.curveControlX,
-        curveControlY: after.curveControlY,
+      await commitPositions({
+        changes: [
+          {
+            sceneId,
+            dancerId,
+            before,
+            after: {
+              ...before,
+              curveControlX: point?.x ?? null,
+              curveControlY: point?.y ?? null,
+            },
+          },
+        ],
+        kind: "curve",
+        errorMessage: t.editor.errors.curve,
       });
-
-      try {
-        await persist((supabase) => upsertPosition(supabase, after));
-        useHistoryStore.getState().push({
-          kind: "curve",
-          changes: [{ sceneId, dancerId, before, after }],
-        });
-      } catch (error) {
-        updateDancerPosition(sceneId, dancerId, {
-          curveControlX: before.curveControlX,
-          curveControlY: before.curveControlY,
-        });
-        showToast({
-          message: toUserMessage(error, t.editor.errors.curve),
-          type: "error",
-        });
-      }
     },
-    [updateDancerPosition, showToast, t],
+    [commitPositions, t],
   );
 
   if (!selectedSceneId) {

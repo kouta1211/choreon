@@ -276,3 +276,18 @@ export const useProjectStore = create<ProjectState>((set) => ({
       };
     }),
 }));
+
+/**
+ * いまの立ち位置を1件だけ、その瞬間の値として読む。
+ *
+ * 購読(useProjectStore(selector))ではないので**再描画を起こさない**。
+ * ドラッグや回転を確定する場面で、ハンドラの中から「動かす前は何だったか」を
+ * 取りにいくための読み方。ここを購読にすると、誰か1人が動くたびに
+ * キャンバス全体が描き直され、memo が効かなくなる(CanvasBoard のコメント参照)。
+ */
+export function positionAt(
+  sceneId: string,
+  dancerId: string,
+): Position | undefined {
+  return useProjectStore.getState().positionsBySceneId[sceneId]?.[dancerId];
+}
