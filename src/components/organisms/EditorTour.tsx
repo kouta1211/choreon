@@ -80,7 +80,14 @@ export function EditorTour() {
   const tourRequestedAt = useUIStore((state) => state.tourRequestedAt);
 
   useEffect(() => {
-    if (hasSeenTutorial()) return;
+    // ゲストで始めるときに選んでいれば、それに従う。選んでいない
+    // (ログイン済みの経路)なら、いままでどおり初回だけ自動で出す。
+    // 購読せず getState で1回だけ読むのは、この判断がマウント時に
+    // 一度決まればよく、途中で変わっても始め直す意味が無いため
+    const intent = useUIStore.getState().guestTourIntent;
+    if (intent === "skip") return;
+    if (intent !== "show" && hasSeenTutorial()) return;
+
     const timer = setTimeout(() => setAutoStarted(true), 500);
     return () => clearTimeout(timer);
   }, []);
@@ -141,7 +148,24 @@ export function EditorTour() {
         zIndex: 70,
       }}
       styles={{
-        tooltip: { borderRadius: 14, padding: 14, fontSize: 12.5 },
+        tooltip: {
+          borderRadius: 14,
+          padding: 14,
+          fontSize: 12.5,
+          /**
+           * 後ろが透けないようにする。
+           *
+           * 地の色(--overlay-bg)は84%で、他の板はぼかしで沈めているが、
+           * **ここではぼかしが使えない** — 親の .react-joyride__floater が
+           * drop-shadow を持っており、filter を持つ祖先があると
+           * backdrop-filter の対象が背後のページから外れる(指定しても
+           * 何も起きない)。透かすのをやめ、地の色の上に板の色を重ねて
+           * 不透明にする。色はトークンのままなので10テーマに追従する。
+           */
+          backgroundColor: "var(--bg)",
+          backgroundImage:
+            "linear-gradient(var(--overlay-bg), var(--overlay-bg))",
+        },
         tooltipTitle: {
           fontSize: 13.5,
           fontWeight: 600,

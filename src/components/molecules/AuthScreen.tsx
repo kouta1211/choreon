@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { BrandMark } from "@/components/atoms/BrandMark";
 import { LocaleSwitch } from "@/components/molecules/LocaleSwitch";
-import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   children: ReactNode;
@@ -19,29 +18,33 @@ type Props = {
  * ブランドマークもロゴタイプではなく、5人が山型に並んだ隊形そのもの。
  */
 export function AuthScreen({ children }: Props) {
-  const t = useT();
-
   return (
     <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden px-4">
-      {/* 舞台の床。perspectiveで奥へ倒して遠近を付ける */}
+      {/* 舞台の床。perspectiveで奥へ倒して遠近を付ける。
+          薄すぎて「何も無い黒地」に見えていたので、線を1段強い方
+          (--line-strong)にして、透かしも浅くした */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-[-10%] top-[-20%] bottom-[44%] bg-[linear-gradient(to_right,var(--line)_1px,transparent_1px),linear-gradient(to_bottom,var(--line)_1px,transparent_1px)] bg-[length:48px_48px] opacity-60 [transform:perspective(600px)_rotateX(52deg)]"
+        className="pointer-events-none absolute inset-x-[-10%] top-[-20%] bottom-[44%] bg-[linear-gradient(to_right,var(--line-strong)_1px,transparent_1px),linear-gradient(to_bottom,var(--line-strong)_1px,transparent_1px)] bg-[length:48px_48px] opacity-90 [transform:perspective(600px)_rotateX(52deg)]"
       />
-      {/* 上手からの照明 */}
+      {/* 上手からの照明。床が見えるようになったぶん、光も届く範囲を
+          広げて、床の奥から手前へ落ちてくるように見せる */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-[110px] h-[130px] bg-[radial-gradient(60%_100%_at_50%_100%,color-mix(in_oklab,var(--accent)_18%,transparent),transparent_70%)]"
+        className="pointer-events-none absolute inset-x-0 top-[60px] h-[260px] bg-[radial-gradient(70%_100%_at_50%_100%,color-mix(in_oklab,var(--accent)_30%,transparent),transparent_72%)]"
       />
 
       <div className="relative w-full max-w-sm">
         {/* 板の中に入れる。ブランドを外に置くと、カードとの間隔が
             画面の高さによって伸び縮みして、置き場所が定まらない */}
         <div className="overlay-panel flex flex-col gap-gutter-lg rounded-2xl p-8">
-          <div className="flex flex-col items-center gap-base">
-            <BrandMark className="mb-2" />
+          {/* キャッチコピーを外した。その空きをマークとタイトルに回す。
+              **文字の大きさは増やさない** — text-display はタイポの8段の
+              最上段で、ここに一点物を足すと「同じ役割の文字が画面ごとに
+              違う」が戻る。代わりにマークを大きくして重心を上げている */}
+          <div className="flex flex-col items-center gap-unit py-unit">
+            <BrandMark className="mb-gutter scale-125" />
             <h1 className="text-display text-fg-strong">Choreon</h1>
-            <p className="text-body text-fg-sub">{t.app.tagline}</p>
           </div>
 
           {children}

@@ -250,7 +250,6 @@ export const ko = {
   app: {
     description: "스마트폰으로 만드는 댄스 포메이션",
     ogLocale: "ko_KR",
-    tagline: "종이 포메이션 도면을 움직이는 콘티로.",
   },
 
   auth: {
@@ -284,6 +283,7 @@ export const ko = {
 
   welcome: {
     guestStart: "게스트로 시작하기",
+    withTour: "사용법 안내부터 시작하기",
     guestNote: "가입하지 않아도 됩니다. 만든 것은 이 기기에만 남습니다.",
     or: "또는",
   },

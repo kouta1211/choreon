@@ -88,6 +88,15 @@ type UIState = {
   isSceneSheetOpen: boolean;
   /** 使い方の案内を頼まれた時刻。まだなら null */
   tourRequestedAt: number | null;
+  /**
+   * ゲストで始めるときに選んだ、案内を見るかどうか。
+   *
+   * 選択画面(WelcomeScreen)が書き、エディタの EditorTour が読む。
+   * プロップで EditorLayout を貫通させると、**ログイン済みでも使う
+   * 共通の器に、ゲスト専用の引数が生える**ので、ここを経由させている。
+   * null は「選んでいない」= 従来どおり初回だけ自動で出す。
+   */
+  guestTourIntent: "show" | "skip" | null;
   /** ダンサー追加シートを開いているか */
   isAddDancerSheetOpen: boolean;
   /** フォーメーションのテンプレートシートを開いているか */
@@ -121,6 +130,7 @@ type UIState = {
   /** 使い方の案内を出し直す。押した時刻を入れるだけの合図で、
    * 同じ操作を繰り返しても値が変わるので毎回反応する */
   requestTour: () => void;
+  setGuestTourIntent: (intent: "show" | "skip" | null) => void;
   setAddDancerSheetOpen: (isOpen: boolean) => void;
   setTemplateSheetOpen: (isOpen: boolean) => void;
   setExportSheetOpen: (isOpen: boolean) => void;
@@ -184,6 +194,7 @@ export const useUIStore = create<UIState>((set) => ({
   playbackStartSceneId: null,
   isSceneSheetOpen: false,
   tourRequestedAt: null,
+  guestTourIntent: null,
   isAddDancerSheetOpen: false,
   isTemplateSheetOpen: false,
   isExportSheetOpen: false,
@@ -261,6 +272,7 @@ export const useUIStore = create<UIState>((set) => ({
   setSceneSheetOpen: (isOpen) => set({ isSceneSheetOpen: isOpen }),
 
   requestTour: () => set({ tourRequestedAt: Date.now() }),
+  setGuestTourIntent: (intent) => set({ guestTourIntent: intent }),
   setAddDancerSheetOpen: (isOpen) => set({ isAddDancerSheetOpen: isOpen }),
   setTemplateSheetOpen: (isOpen) => set({ isTemplateSheetOpen: isOpen }),
   setExportSheetOpen: (isOpen) => set({ isExportSheetOpen: isOpen }),

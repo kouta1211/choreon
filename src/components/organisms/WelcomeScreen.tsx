@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { AuthScreen } from "@/components/molecules/AuthScreen";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useT } from "@/features/i18n/LocaleProvider";
 
@@ -30,6 +32,21 @@ type Props = {
 export function WelcomeScreen({ onGuestStart }: Props) {
   const t = useT();
   const openAuthDialog = useUIStore((state) => state.openAuthDialog);
+  const setGuestTourIntent = useUIStore((state) => state.setGuestTourIntent);
+
+  /**
+   * 既定は「案内から始める」。
+   *
+   * 端末に覚えてある「もう見た」(hasSeenTutorial)を初期値にはしない。
+   * localStorage はサーバー描画の時点で読めず、初期値に使うと最初の
+   * 描画と食い違う。要らない人が1回外す、という形に倒してある。
+   */
+  const [wantsTour, setWantsTour] = useState(true);
+
+  const handleGuestStart = () => {
+    setGuestTourIntent(wantsTour ? "show" : "skip");
+    onGuestStart();
+  };
 
   return (
     <AuthScreen>
@@ -37,11 +54,23 @@ export function WelcomeScreen({ onGuestStart }: Props) {
         <div className="flex flex-col gap-unit">
           <PressableButton
             kind="primary"
-            onClick={onGuestStart}
+            onClick={handleGuestStart}
             className="h-target-lg w-full rounded-lg bg-accent text-headline text-accent-fg"
           >
             {t.welcome.guestStart}
           </PressableButton>
+
+          {/* 案内を見るかどうかは、押す前に見えているところで選ばせる。
+              押したあとに「見ますか?」を出すと、面食らったという今回の
+              話の通り、通る門が1枚増えるだけになる。
+              ラベルまで含めて44px以上の的にするのは SceneTimeField と同じ */}
+          <label className="flex min-h-11 items-center gap-2.5 text-label text-fg-sub">
+            <Checkbox
+              checked={wantsTour}
+              onCheckedChange={(checked) => setWantsTour(checked === true)}
+            />
+            <span>{t.welcome.withTour}</span>
+          </label>
           {/* 「登録なしで始められる」ことと「消えること」は同じ重さで
               伝える。後者を伏せると、作った後で裏切ることになる。
               添え物の色(fg-muted)ではなく fg-sub なのはそのため —
