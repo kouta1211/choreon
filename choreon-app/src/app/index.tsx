@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DancerInspector } from '@/components/dancer-inspector';
 import { DancerSheet } from '@/components/dancer-sheet';
 import { EditorHeader } from '@/components/editor-header';
+import { EditorSidePanel } from '@/components/editor-side-panel';
 import { FormationSheet } from '@/components/formation-sheet';
 import { HistoryControls } from '@/components/history-controls';
 import { MusicPicker } from '@/components/music-picker';
@@ -49,6 +50,12 @@ const SAMPLE = {
 type OpenSheet = 'dancers' | 'formations' | 'music' | 'scene' | 'settings' | null;
 
 /**
+ * ステージの横にパネルを常設する境目。**Web版と同じ 768px。**
+ * タブレット・スマートフォンの横向き・ブラウザの窓がこれを超える。
+ */
+const WIDE_SCREEN = 768;
+
+/**
  * エディタの画面。
  *
  * ■ 縦積みをやめて、画面の高さに収めた
@@ -85,6 +92,9 @@ export default function EditorScreen() {
 
   const [openSheet, setOpenSheet] = useState<OpenSheet>(null);
   const close = () => setOpenSheet(null);
+
+  const { width } = useWindowDimensions();
+  const isWide = width >= WIDE_SCREEN;
 
   // 端末に覚えてあるものを読む（どれも Promise。Web版は同期だった）
   const loadSettings = useSettingsStore((state) => state.load);
@@ -156,8 +166,20 @@ export default function EditorScreen() {
         onOpenSettings={() => setOpenSheet('settings')}
       />
 
-      <View className="min-h-0 flex-1 px-3">
-        <StageView stageWidthUnits={stage.width} stageHeightUnits={stage.height} />
+      {/* 広い画面ではステージの横にパネルを常設する。狭い画面では
+          その場所ぶんステージが小さくなるだけなので出さない */}
+      <View className="min-h-0 flex-1 flex-row gap-3 px-3">
+        <View className="min-h-0 min-w-0 flex-1">
+          <StageView stageWidthUnits={stage.width} stageHeightUnits={stage.height} />
+        </View>
+
+        {isWide ? (
+          <EditorSidePanel
+            stageWidthUnits={stage.width}
+            stageHeightUnits={stage.height}
+            onEditScene={() => setOpenSheet('scene')}
+          />
+        ) : null}
       </View>
 
       {/* 下端。帯はここに貼り付き、ステージがどれだけ縮んでも動かない。
@@ -171,11 +193,17 @@ export default function EditorScreen() {
         <Toast />
         <PlaybackControls />
         <HistoryControls />
-        <SceneDock
-          onEditScene={() => setOpenSheet('scene')}
-          stageWidthUnits={stage.width}
-          stageHeightUnits={stage.height}
-        />
+
+        {/* 帯は狭い画面だけ。**広い画面では横のパネルが同じ役をしていて、
+            同じものが2つ並ぶ**（Web版は両方出しているが、あちらは
+            マウスで一覧を、指でドックを、と使い分けが立つ画面幅がある） */}
+        {isWide ? null : (
+          <SceneDock
+            onEditScene={() => setOpenSheet('scene')}
+            stageWidthUnits={stage.width}
+            stageHeightUnits={stage.height}
+          />
+        )}
       </View>
 
       {/* どれも中身の高さぶんだけ下に貼り付く（`isTall` を付けない）。

@@ -1,15 +1,10 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { SceneThumbnail } from '@/components/scene-thumbnail';
-import { persist } from '@/features/project/lib/persistence';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
-import { createScene } from '@/features/scene/api/scenes';
-import { upsertPositions } from '@/features/scene/api/positions';
+import { useAddScene } from '@/features/scene/hooks/useAddScene';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
-import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
-import { getT, useT } from '@/features/i18n/store/useLocaleStore';
-import { duplicateTimeSeconds } from '@/features/scene/lib/sceneTiming';
-import { randomId } from '@/lib/randomId';
+import { useT } from '@/features/i18n/store/useLocaleStore';
 
 /**
  * 画面下の、シーンを行き来する帯。
@@ -44,59 +39,10 @@ const THUMBNAIL_WIDTH = 74;
 export function SceneDock({ onEditScene, stageWidthUnits, stageHeightUnits }: Props) {
   const t = useT();
   const scenes = useProjectStore((state) => state.scenes);
-  const positionsBySceneId = useProjectStore((state) => state.positionsBySceneId);
-  const addScene = useProjectStore((state) => state.addScene);
-  const removeScene = useProjectStore((state) => state.removeScene);
-  const updateDancerPosition = useProjectStore((state) => state.updateDancerPosition);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const selectScene = useUIStore((state) => state.selectScene);
-  const defaultSegmentSeconds = useSettingsStore((state) => state.defaultSegmentSeconds);
-
-  const handleAdd = async () => {
-    const source = scenes.find((scene) => scene.id === selectedSceneId) ?? scenes[scenes.length - 1];
-    if (!source) return;
-
-    const id = randomId();
-    const created = {
-      id,
-      projectId: source.projectId,
-      name: t.scenes.newName(scenes.length + 1),
-      orderIndex: scenes.length,
-      // 並び順の正は時刻。選んでいるシーンの隣へ入れる
-      timeSeconds: duplicateTimeSeconds(scenes, source, defaultSegmentSeconds),
-    };
-    addScene(created);
-
-    // いまの配置をそのままコピーする
-    const copied = Object.values(positionsBySceneId[source.id] ?? {}).map((position) => ({
-      sceneId: id,
-      dancerId: position.dancerId,
-      xCoordinate: position.xCoordinate,
-      yCoordinate: position.yCoordinate,
-      rotationAngle: position.rotationAngle,
-    }));
-    for (const position of copied) {
-      updateDancerPosition(id, position.dancerId, position);
-    }
-    selectScene(id);
-
-    try {
-      // シーンを作ってから立ち位置を入れる（外部キーの順番）。
-      // まとめて並列に投げられないのはこのため
-      await persist(async (client) => {
-        await createScene(client, created);
-        await upsertPositions(client, copied);
-      });
-    } catch {
-      // 作れなかったら画面からも消す。**中途半端に残さない** —
-      // 画面にあるのにサーバーに無いシーンは、次に開いたときに消えて見える
-      removeScene(id);
-      selectScene(source.id);
-      useUIStore
-        .getState()
-        .showToast({ message: getT().scenes.addFailed, type: 'error' });
-    }
-  };
+  // 足す処理は一覧（広い画面）と共通。フックへ切り出してある
+  const handleAdd = useAddScene();
 
   return (
     <View className="gap-2 rounded-2xl border border-line bg-surface p-3">
