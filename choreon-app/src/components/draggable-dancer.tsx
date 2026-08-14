@@ -9,6 +9,8 @@ import {
 import { mirrorAngle } from '@/features/canvas/lib/stageFlip';
 import { RotationHandle } from '@/components/rotation-handle';
 import type { Dancer } from '@/features/dancer/types';
+import { themedDancerColor } from '@/features/dancer/lib/themedColor';
+import { useThemeStore } from '@/features/theme/store/useThemeStore';
 
 /**
  * 格子への吸着が効き始める許容範囲（ステージ座標系のユニット）。
@@ -102,6 +104,11 @@ export function DraggableDancer({
 }: Props) {
   /** 回している最中の見た目だけの角度。離すまで確定しない */
   const [liveAngle, setLiveAngle] = useState<number | null>(null);
+
+  // 保存されている6色を、いまのテーマの6色へ読み替える(紙のテーマでは
+  // 沈んだ色になる)。保存の値そのものは変えない
+  const theme = useThemeStore((state) => state.preference.theme);
+  const color = themedDancerColor(dancer.color, theme);
   const offset = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
 
   // 最新の props を掴んでおく。PanResponder は作り直さない(作り直すと
@@ -301,7 +308,7 @@ export function DraggableDancer({
       >
         <View
           className="rounded-full"
-          style={{ width: DOT, height: DOT, backgroundColor: dancer.color }}
+          style={{ width: DOT, height: DOT, backgroundColor: color }}
         />
         {/* 0度＝客席側＝画面の下。鼻先も下へ出す */}
         <View
@@ -310,7 +317,7 @@ export function DraggableDancer({
             width: 4,
             height: 9,
             bottom: -5,
-            backgroundColor: dancer.color,
+            backgroundColor: color,
           }}
         />
       </View>

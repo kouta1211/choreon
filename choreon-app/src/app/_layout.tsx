@@ -7,6 +7,7 @@ import { useColorScheme } from 'react-native';
 import '@/global.css';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { AppearanceProvider } from '@/components/appearance-provider';
 import AppTabs from '@/components/app-tabs';
 
 SplashScreen.preventAutoHideAsync();
@@ -16,7 +17,10 @@ export default function TabLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AnimatedSplashOverlay />
-      <AppTabs />
+      {/* テーマの変数を載せた1枚。この下のクラスが色をここから読む */}
+      <AppearanceProvider>
+        <AppTabs />
+      </AppearanceProvider>
     </ThemeProvider>
   );
 }

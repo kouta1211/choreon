@@ -7,8 +7,10 @@ import {
   nextDancerNames,
   pickDancerColors,
 } from '@/features/dancer/lib/newDancers';
+import { themedDancerColor } from '@/features/dancer/lib/themedColor';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
+import { useThemeStore } from '@/features/theme/store/useThemeStore';
 import { randomId } from '@/lib/randomId';
 
 type Props = {
@@ -54,6 +56,10 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
 
   // 「消す」を押したあとの確認待ち。誰の確認かを持つ（別の人を選び直したら消える）
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
+  // 見せる色はテーマ側の6色。**選び方の判定は保存されている値のまま**
+  // 行う（読み替えた色で照合すると、紙のテーマで全部が「選択中」に見える）
+  const theme = useThemeStore((state) => state.preference.theme);
 
   const list = Object.values(dancers);
   const selected = selectedDancerId ? dancers[selectedDancerId] : undefined;
@@ -154,7 +160,7 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
             >
               <View
                 className="h-4 w-4 rounded-full"
-                style={{ backgroundColor: dancer.color }}
+                style={{ backgroundColor: themedDancerColor(dancer.color, theme) }}
               />
               <Text className="text-sm text-fg-strong">{dancer.name}</Text>
             </Pressable>
@@ -178,7 +184,7 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
                 className={`h-9 w-9 rounded-full ${
                   selected.color === color ? 'border-2 border-fg-strong' : 'border border-line'
                 }`}
-                style={{ backgroundColor: color }}
+                style={{ backgroundColor: themedDancerColor(color, theme) }}
               />
             ))}
           </View>

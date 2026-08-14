@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { DancerSheet } from '@/components/dancer-sheet';
 import { SceneDock } from '@/components/scene-dock';
 import { StageView } from '@/components/stage-view';
+import { ThemePicker } from '@/components/theme-picker';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
@@ -162,6 +163,8 @@ export default function FoundationScreen() {
           stageWidthUnits={SAMPLE.stageWidth}
           stageHeightUnits={SAMPLE.stageHeight}
         />
+
+        <ThemePicker />
 
         {/* 端末に覚えるもの。切り替えてから再読み込みしても残る */}
         <View className="gap-3 rounded-2xl border border-line bg-surface p-4">
