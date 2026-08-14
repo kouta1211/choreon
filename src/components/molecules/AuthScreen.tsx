@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { BrandMark } from "@/components/atoms/BrandMark";
+import { LocaleSwitch } from "@/components/molecules/LocaleSwitch";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
@@ -44,6 +45,14 @@ export function AuthScreen({ children }: Props) {
           </div>
 
           {children}
+
+          {/* アプリへ入る前に言語を選べるようにする。設定シートの中にも
+              同じものがあるが、そこへ行くには読めない画面を進む必要が
+              あった。区切り線で本題から離してあるのは、ここが「始め方」
+              ではなく、始める前に直せる設定だから */}
+          <div className="flex justify-center border-t border-line pt-gutter">
+            <LocaleSwitch />
+          </div>
         </div>
       </div>
     </div>
