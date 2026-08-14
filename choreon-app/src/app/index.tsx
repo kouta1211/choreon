@@ -2,22 +2,34 @@ import { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { SceneDock } from '@/components/scene-dock';
 import { StageView } from '@/components/stage-view';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
 import { supabase } from '@/lib/supabase/client';
 
-/** 見た目を確かめるための仮の隊形(まだ Supabase から読んでいない) */
+/**
+ * 見た目と操作を確かめるための仮データ（まだ Supabase から読んでいない）。
+ * シーンを3つ用意してあるのは、**切り替えたときに隊形が動くか**を見るため。
+ */
 const SAMPLE = {
   stageWidth: 14,
   stageHeight: 10,
   dancers: [
-    { id: 'd1', name: 'あかり', color: '#3b82f6', x: 3, y: 7 },
-    { id: 'd2', name: 'ゆい', color: '#ef4444', x: 5.5, y: 7 },
-    { id: 'd3', name: 'かな', color: '#10b981', x: 8.5, y: 7 },
-    { id: 'd4', name: 'みお', color: '#f59e0b', x: 11, y: 7 },
-    { id: 'd5', name: 'りん', color: '#8b5cf6', x: 7, y: 4 },
+    { id: 'd1', name: 'あかり', color: '#3b82f6' },
+    { id: 'd2', name: 'ゆい', color: '#ef4444' },
+    { id: 'd3', name: 'かな', color: '#10b981' },
+    { id: 'd4', name: 'みお', color: '#f59e0b' },
+    { id: 'd5', name: 'りん', color: '#8b5cf6' },
+  ],
+  scenes: [
+    // 横1列＋1人前
+    { name: 'シーン1', seconds: 0, at: [[3, 7], [5.5, 7], [8.5, 7], [11, 7], [7, 4]] },
+    // V字
+    { name: 'シーン2', seconds: 4, at: [[3, 3], [5, 5], [7, 7], [9, 5], [11, 3]] },
+    // 円
+    { name: 'シーン3', seconds: 8, at: [[7, 2], [10, 5], [8.5, 8], [5.5, 8], [4, 5]] },
   ],
 };
 
@@ -83,22 +95,22 @@ export default function FoundationScreen() {
         orderIndex: index,
         createdAt: now,
       })),
-      scenes: [
-        {
-          id: 'scene-1',
-          projectId: 'local',
-          name: 'シーン1',
-          orderIndex: 0,
-          timeSeconds: 0,
-        },
-      ],
-      positions: SAMPLE.dancers.map((dancer) => ({
-        sceneId: 'scene-1',
-        dancerId: dancer.id,
-        xCoordinate: dancer.x,
-        yCoordinate: dancer.y,
-        rotationAngle: 0,
+      scenes: SAMPLE.scenes.map((scene, index) => ({
+        id: `scene-${index + 1}`,
+        projectId: 'local',
+        name: scene.name,
+        orderIndex: index,
+        timeSeconds: scene.seconds,
       })),
+      positions: SAMPLE.scenes.flatMap((scene, index) =>
+        SAMPLE.dancers.map((dancer, dancerIndex) => ({
+          sceneId: `scene-${index + 1}`,
+          dancerId: dancer.id,
+          xCoordinate: scene.at[dancerIndex][0],
+          yCoordinate: scene.at[dancerIndex][1],
+          rotationAngle: 0,
+        })),
+      ),
       isGuest: true,
     });
     useUIStore.getState().selectScene('scene-1');
@@ -140,6 +152,8 @@ export default function FoundationScreen() {
           stageWidthUnits={SAMPLE.stageWidth}
           stageHeightUnits={SAMPLE.stageHeight}
         />
+
+        <SceneDock />
 
         {/* 端末に覚えるもの。切り替えてから再読み込みしても残る */}
         <View className="gap-3 rounded-2xl border border-line bg-surface p-4">

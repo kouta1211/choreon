@@ -1,5 +1,5 @@
-import { useMemo, useRef } from 'react';
-import { Animated, PanResponder, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef } from 'react';
+import { Animated, Easing, PanResponder, Platform, Text, View } from 'react-native';
 
 import {
   clamp,
@@ -64,6 +64,9 @@ const DOT = 28;
  * **1文字も変えずにコピー**して呼んでいる。ここが環境で変わると、
  * 同じ作品を Web とスマホで開いたときに置ける場所がずれる。
  */
+/** シーンを移るときに、次の隊形へ動いていく時間。Web版の既定と同じ0.3秒 */
+const SCENE_TRANSITION_MS = 300;
+
 export function DraggableDancer({
   dancer,
   x,
@@ -101,6 +104,60 @@ export function DraggableDancer({
    * 控えて足し戻す(dnd-kit は押した位置からの総量を返すので、Web版と揃う)。
    */
   const beforeGrant = useRef({ dx: 0, dy: 0 });
+
+  /**
+   * シーンを移ったときに、前の位置から滑らせる。
+   *
+   * left/top は確定した位置なので、そのままだと瞬間移動になる。**先に
+   * 「前の位置との差」を transform に入れてから 0 へ animate する**と、
+   * 見た目だけが前の位置から滑ってくる(left/top は動かさない)。
+   *
+   * ■ 自分のドラッグで動いたときは滑らせない
+   * 置いた瞬間に「掴む前の位置から滑る」と、指の下から本体が逃げて見える。
+   * Web版も同じ理由で、ドロップ直後だけアニメーションを飛ばしている。
+   */
+  const previous = useRef({ x, y });
+  const justDragged = useRef(false);
+
+  useEffect(() => {
+    const from = previous.current;
+    previous.current = { x, y };
+
+    if (justDragged.current) {
+      justDragged.current = false;
+      return;
+    }
+    if (from.x === x && from.y === y) return;
+    if (stageSize.width === 0 || stageSize.height === 0) return;
+
+    const unitX = stageSize.width / stageWidthUnits;
+    const unitY = stageSize.height / stageHeightUnits;
+    // 画面の向きで数える(客席を上にしているときは上下が逆)
+    const sign = isAudienceOnTop ? -1 : 1;
+    offset.setValue({
+      x: (from.x - x) * unitX,
+      y: (from.y - y) * unitY * sign,
+    });
+    const animation = Animated.timing(offset, {
+      toValue: { x: 0, y: 0 },
+      duration: SCENE_TRANSITION_MS,
+      easing: Easing.out(Easing.cubic),
+      // ネイティブでは別スレッドで動かす。Web にはその仕組みが無く、
+      // true のままだと毎回警告が出て JS 側へ落ちる
+      useNativeDriver: Platform.OS !== 'web',
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [
+    x,
+    y,
+    offset,
+    stageSize.width,
+    stageSize.height,
+    stageWidthUnits,
+    stageHeightUnits,
+    isAudienceOnTop,
+  ]);
 
   const responder = useMemo(
     () =>
@@ -141,6 +198,8 @@ export function DraggableDancer({
             const snap = (value: number) =>
               current.isSnapEnabled ? snapToGrid(value, GRID_SNAP_TOLERANCE) : value;
 
+            // 自分で置いた結果の位置変化は、滑らせずにその場で確定させる
+            justDragged.current = true;
             current.onDragEnd({
               x: snap(clamp(current.x + deltaX, 0, stageWidthUnits)),
               y: snap(clamp(current.y + deltaY, 0, stageHeightUnits)),
