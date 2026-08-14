@@ -17,6 +17,10 @@ export const en: Messages = {
     formations: 'Formations',
     music: 'Music',
     editScene: 'Edit scene',
+    menu: 'View and modes',
+    menuView: 'View',
+    menuOpen: 'Open',
+    menuBadge: (count: number) => `${count}`,
   },
 
   common: {

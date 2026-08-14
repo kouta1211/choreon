@@ -17,6 +17,10 @@ export const ko: Messages = {
     formations: '대형',
     music: '곡',
     editScene: '장면 수정',
+    menu: '표시와 모드',
+    menuView: '보기',
+    menuOpen: '열기',
+    menuBadge: (count: number) => `${count}`,
   },
 
   common: {

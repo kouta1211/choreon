@@ -26,6 +26,12 @@ export const ja = {
     formations: '隊形',
     music: '曲',
     editScene: 'シーンを直す',
+    /** 畳んだ入口（ヘッダー右端） */
+    menu: '表示とモード',
+    menuView: '見え方',
+    menuOpen: '開く',
+    /** オンになっている見え方の数。畳むと状態が見えなくなるので、印で出す */
+    menuBadge: (count: number) => `${count}`,
   },
 
   common: {
