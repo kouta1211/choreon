@@ -6,6 +6,7 @@ import { AccountPanel } from '@/components/account-panel';
 import { DancerSheet } from '@/components/dancer-sheet';
 import { FormationSheet } from '@/components/formation-sheet';
 import { HistoryControls } from '@/components/history-controls';
+import { MusicPicker } from '@/components/music-picker';
 import { PlaybackControls } from '@/components/playback-controls';
 import { SceneDock } from '@/components/scene-dock';
 import { SceneEditor } from '@/components/scene-editor';
@@ -175,6 +176,8 @@ export default function FoundationScreen() {
         <PlaybackControls />
 
         <HistoryControls />
+
+        <MusicPicker />
 
         <SceneDock />
 

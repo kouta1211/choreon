@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 
 import { useUIStore } from '@/features/canvas/store/useUIStore';
+import { useMusicPlayback } from '@/features/music/hooks/useMusicPlayback';
 import { useSilentClock } from '@/features/music/hooks/useSilentClock';
 import {
   nearestSceneIndexAtSeconds,
@@ -23,13 +24,20 @@ import { useProjectStore } from '@/features/project/store/useProjectStore';
  * あいだ」という、隊形としては存在しない状態で残る（Web版 usePlaybackToggle
  * と同じ）。
  *
+ * ■ 時計は2つあって、動くのは片方だけ
+ * 曲があれば音の再生位置（`useMusicPlayback`）、無ければ秒を数える
+ * （`useSilentClock`）。**どちらも同じ場所へ秒を書く**ので、ここから下は
+ * 曲の有無を知らなくてよい。
+ *
  * ■ まだ無いもの
- * 曲・メトロノーム・予備拍（カウントイン）。予備拍は設定にはあるが、音を
- * 出す仕組みが要るので曲と一緒に入れる。
+ * メトロノームと予備拍（カウントイン）。どちらも「拍を鳴らす」仕組みが
+ * 別に要る（曲を鳴らすのとは別の音源）。
  */
 export function PlaybackControls() {
-  // 時計はここで回す（再生中だけ動く）
+  // 時計はここで回す（再生中だけ動く）。曲があれば曲が時計、無ければ秒を数える。
+  // どちらも同じ場所（usePlaybackStore）へ書くので、下の表示は変わらない
   useSilentClock();
+  useMusicPlayback();
 
   const scenes = useProjectStore((state) => state.scenes);
   const isPlaying = useUIStore((state) => state.isPlaying);

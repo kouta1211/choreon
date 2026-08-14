@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
+import { useMusicStore } from '@/features/music/store/useMusicStore';
 import { usePlaybackStore } from '@/features/music/store/usePlaybackStore';
 import {
   sceneIndexAtSeconds,
@@ -9,8 +10,8 @@ import {
 } from '@/features/music/lib/musicTimeline';
 
 /**
- * 曲が入っていないときの時計。**いまのネイティブ版は常にこちら**
- * （曲はまだ扱わない）。
+ * 曲が入っていないときの時計。曲があるときは `useMusicPlayback` が
+ * 同じ場所（usePlaybackStore）へ秒を書く。
  *
  * Web版 `useSilentClock` と同じ作りで、`requestAnimationFrame` で時刻を
  * 自分で進め、**時刻からシーンを決める**。曲を入れたときに進み方が
@@ -22,10 +23,13 @@ import {
  */
 export function useSilentClock() {
   const isPlaying = useUIStore((state) => state.isPlaying);
+  const hasMusic = useMusicStore((state) => state.uri !== null);
   const setCurrentTime = usePlaybackStore((state) => state.setCurrentTime);
 
   useEffect(() => {
-    if (!isPlaying) return;
+    // 曲があるときの時計は曲（useMusicPlayback）。2つ動かすと同じ場所を
+    // 取り合って、秒が行ったり来たりする
+    if (!isPlaying || hasMusic) return;
 
     let frame = 0;
     let previous = now();
@@ -57,7 +61,7 @@ export function useSilentClock() {
 
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
-  }, [isPlaying, setCurrentTime]);
+  }, [isPlaying, hasMusic, setCurrentTime]);
 }
 
 /**
