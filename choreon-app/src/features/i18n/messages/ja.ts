@@ -18,6 +18,16 @@ export const ja = {
     subtitle: 'ネイティブ版の土台',
   },
 
+  /** エディタの骨格（ヘッダーと、そこから開くシート） */
+  editor: {
+    /** 作品を開いていないとき、ヘッダーに出す名前 */
+    draft: 'ネイティブ版の下書き',
+    dancers: 'ダンサー',
+    formations: '隊形',
+    music: '曲',
+    editScene: 'シーンを直す',
+  },
+
   common: {
     on: 'オン',
     off: 'オフ',

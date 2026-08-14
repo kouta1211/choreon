@@ -23,7 +23,18 @@ import { randomId } from '@/lib/randomId';
  * (duplicateTimeSeconds)を使う。曲がまだ無いので、常に「選んでいるシーンの
  * 隣」に入る。
  */
-export function SceneDock() {
+type Props = {
+  /**
+   * 「直す」を押したとき。シーンの名前・時刻・削除はシートへ移したので、
+   * ここがその入口になる（渡さなければボタンは出ない）。
+   *
+   * 選んでいるカードをもう一度押す、という形にはしなかった。
+   * **押せるものが2つの意味を持つと、どちらが起きるか押すまで分からない。**
+   */
+  onEditScene?: () => void;
+};
+
+export function SceneDock({ onEditScene }: Props = {}) {
   const t = useT();
   const scenes = useProjectStore((state) => state.scenes);
   const positionsBySceneId = useProjectStore((state) => state.positionsBySceneId);
@@ -82,7 +93,19 @@ export function SceneDock() {
 
   return (
     <View className="gap-2 rounded-2xl border border-line bg-surface p-3">
-      <Text className="text-xs uppercase tracking-widest text-fg-muted">{t.scenes.section}</Text>
+      <View className="flex-row items-center justify-between">
+        <Text className="text-xs uppercase tracking-widest text-fg-muted">{t.scenes.section}</Text>
+        {onEditScene ? (
+          <Pressable
+            onPress={onEditScene}
+            accessibilityRole="button"
+            accessibilityLabel={t.editor.editScene}
+            className="-my-1 rounded-lg px-2 py-1 active:opacity-70"
+          >
+            <Text className="text-xs text-accent-soft">{t.editor.editScene}</Text>
+          </Pressable>
+        ) : null}
+      </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2">
         {scenes.map((scene, index) => {

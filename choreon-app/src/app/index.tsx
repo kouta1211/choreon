@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Platform, ScrollView, Text, View } from 'react-native';
+import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DancerSheet } from '@/components/dancer-sheet';
+import { EditorHeader } from '@/components/editor-header';
 import { FormationSheet } from '@/components/formation-sheet';
 import { HistoryControls } from '@/components/history-controls';
 import { MusicPicker } from '@/components/music-picker';
@@ -12,12 +13,11 @@ import { SceneEditor } from '@/components/scene-editor';
 import { SettingsSheet } from '@/components/settings-sheet';
 import { StageView } from '@/components/stage-view';
 import { Toast } from '@/components/toast';
-import { Button } from '@/components/ui/button';
+import { Sheet } from '@/components/ui/sheet';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
-import { useSessionStore } from '@/features/auth/store/useSessionStore';
-import { getT, useLocaleStore, useT } from '@/features/i18n/store/useLocaleStore';
+import { useLocaleStore, useT } from '@/features/i18n/store/useLocaleStore';
 
 /**
  * 見た目と操作を確かめるための仮データ（まだ Supabase から読んでいない）。
@@ -43,23 +43,36 @@ const SAMPLE = {
   ],
 };
 
+/** どのシートが開いているか。一度に1つしか開かない */
+type OpenSheet = 'dancers' | 'formations' | 'music' | 'scene' | 'settings' | null;
+
 /**
- * ネイティブ版の最初の画面。
+ * エディタの画面。
  *
- * **土台が生きているかを見る盤**と、**最初のステージ1枚**。
- * 確かめているのは:
+ * ■ 縦積みをやめて、画面の高さに収めた
+ * これまでは全部を1本のスクロールに積んでいた。**ステージを見ると
+ * シーンの帯が画面の外にあり、帯を見るとステージが外にある**という状態で、
+ * このアプリの主目的である「時間軸と空間を同時に見る」ができていなかった
+ * （Web版 EditorLayout が同じ理由で組み直されている）。
  *
- *   1. NativeWind ＋ テーマのトークン（Web版と同じクラス名で同じ色が出るか）
- *   2. ストレージ（設定と「表示とモード」が端末に残るか）
- *   3. Supabase（同じ鍵で本物のプロジェクトに届くか）
- *   4. Zustand（Web版からコピーしたストアが動くか）
+ *   ヘッダー          高さ固定
+ *   ステージ          flex-1（余った高さを全部もらう）
+ *   再生 / 元に戻す
+ *   シーンの帯        高さ固定、下端に貼り付く
  *
- * 始めは手書きの仮データで、ログインすると本物の作品に入れ替わる
- * （読むだけ。書き込みはまだ通していない — `account-panel.tsx` 参照）。
+ * `min-h-0` が随所に入っているのは、flex の子が既定で
+ * 「中身より小さくならない」ため。これが無いとステージが帯を画面外へ押し出す。
+ *
+ * ■ パネルはシートで開く
+ * ダンサー・隊形・曲・シーンを直す の4つ。どれも「開いて決めたら閉じる」
+ * 類のもので、ステージを触っている最中は場所を取らない方がよい。
+ * 中身の部品（DancerSheet など）は**1行も変えずに**シートの中へ入れている。
+ *
+ * ■ 仮データで始まる
+ * ログインして作品を開くと本物に入れ替わる（設定 → アカウント）。
  */
-export default function FoundationScreen() {
+export default function EditorScreen() {
   const t = useT();
-  const platform = Platform.OS === 'web' ? 'Web (react-native-web)' : Platform.OS;
 
   // ステージの広さ。仮のサンプルで始まり、本物の作品を開いたら
   // その作品の広さに入れ替わる（作品ごとに違う）
@@ -68,7 +81,10 @@ export default function FoundationScreen() {
     height: SAMPLE.stageHeight,
   });
 
-  // 端末に覚えてあるものを読む（どちらも Promise。Web版は同期だった）
+  const [openSheet, setOpenSheet] = useState<OpenSheet>(null);
+  const close = () => setOpenSheet(null);
+
+  // 端末に覚えてあるものを読む（どれも Promise。Web版は同期だった）
   const loadSettings = useSettingsStore((state) => state.load);
   const loadView = useUIStore((state) => state.loadViewPreference);
   const loadLocale = useLocaleStore((state) => state.load);
@@ -78,10 +94,6 @@ export default function FoundationScreen() {
     void loadView();
     void loadLocale();
   }, [loadSettings, loadView, loadLocale]);
-
-  // 設定は【シートの中】。トグルをここへ直に並べていたのをやめた
-  // （束ごとに1画面。settings-sheet.tsx を参照）
-  const [isSettingsOpen, setSettingsOpen] = useState(false);
 
   // 仮の隊形をストアへ入れる（Web版と同じ hydrate を通す）
   const hydrate = useProjectStore((state) => state.hydrate);
@@ -133,85 +145,50 @@ export default function FoundationScreen() {
     useUIStore.getState().selectScene('scene-1');
   }, [hydrate]);
 
-  // Supabase に届くか。ログインしているかは【ストアから】読む —
-  // ここで getSession() を1回だけ呼ぶと、あとでログインしても表示が
-  // 「未ログイン」のまま古くなる
-  const signedInEmail = useSessionStore((state) => state.email);
-  const [reach, setReach] = useState<string | null>(null);
-  useEffect(() => {
-    let alive = true;
-    void (async () => {
-      try {
-        const response = await fetch(
-          `${process.env.EXPO_PUBLIC_SUPABASE_URL}/auth/v1/health`,
-          { headers: { apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '' } },
-        );
-        if (alive) {
-          setReach(response.ok ? getT().supabase.reached : getT().supabase.failed(response.status));
-        }
-      } catch {
-        if (alive) setReach(getT().supabase.offline);
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
-
   return (
     <SafeAreaView className="flex-1 bg-page">
-      <ScrollView contentContainerClassName="gap-5 p-5">
-        <View className="flex-row items-center justify-between gap-3">
-          <View className="min-w-0 flex-1 gap-1">
-            <Text className="text-3xl font-bold tracking-tight text-fg-strong">
-              {t.app.title}
-            </Text>
-            <Text className="text-sm text-fg-muted">{t.app.subtitle}</Text>
-          </View>
-          <Button
-            icon="sliders"
-            onPress={() => setSettingsOpen(true)}
-            accessibilityLabel={t.settings.title}
-          />
-        </View>
+      <EditorHeader
+        onOpenDancers={() => setOpenSheet('dancers')}
+        onOpenFormations={() => setOpenSheet('formations')}
+        onOpenMusic={() => setOpenSheet('music')}
+        onOpenSettings={() => setOpenSheet('settings')}
+      />
 
+      <View className="min-h-0 flex-1 px-3">
         <StageView stageWidthUnits={stage.width} stageHeightUnits={stage.height} />
+      </View>
 
-        {/* 保存に失敗したときの知らせ。ステージのすぐ下に出す */}
+      {/* 下端。帯はここに貼り付き、ステージがどれだけ縮んでも動かない */}
+      <View className="shrink-0 gap-2 px-3 pt-2">
+        {/* 保存に失敗したときの知らせ。押せるもののすぐ上に出す */}
         <Toast />
-
         <PlaybackControls />
-
         <HistoryControls />
+        <SceneDock onEditScene={() => setOpenSheet('scene')} />
+      </View>
 
-        <MusicPicker />
-
-        <SceneDock />
-
-        <SceneEditor />
-
+      {/* どれも中身の高さぶんだけ下に貼り付く（`isTall` を付けない）。
+          ダンサーも隊形も横に流す一覧なので縦には伸びず、高さを決め打ちに
+          すると空いた面ばかりが目に入る。伸びるのは設定だけ */}
+      <Sheet isOpen={openSheet === 'dancers'} onClose={close} title={t.editor.dancers}>
         <DancerSheet stageWidthUnits={stage.width} stageHeightUnits={stage.height} />
+      </Sheet>
 
+      <Sheet isOpen={openSheet === 'formations'} onClose={close} title={t.editor.formations}>
         <FormationSheet stageWidthUnits={stage.width} stageHeightUnits={stage.height} />
+      </Sheet>
 
-        <View className="gap-1 rounded-2xl border border-line bg-surface p-4">
-          <Text className="text-xs uppercase tracking-widest text-fg-muted">
-            {t.supabase.section}
-          </Text>
-          <Text className="text-base text-fg-strong">
-            {reach === null
-              ? t.supabase.checking
-              : `${reach}（${signedInEmail ? t.supabase.signedIn : t.supabase.signedOut}）`}
-          </Text>
-          <Text className="text-xs text-fg-muted">
-            {t.supabase.platform}: {platform}
-          </Text>
-        </View>
-      </ScrollView>
+      <Sheet isOpen={openSheet === 'music'} onClose={close} title={t.editor.music}>
+        <MusicPicker />
+      </Sheet>
+
+      <Sheet isOpen={openSheet === 'scene'} onClose={close} title={t.editor.editScene}>
+        <SceneEditor />
+      </Sheet>
 
       <SettingsSheet
-        isOpen={isSettingsOpen}
-        onClose={() => setSettingsOpen(false)}
+        isOpen={openSheet === 'settings'}
+        onClose={close}
         onProjectLoaded={setStage}
       />
     </SafeAreaView>

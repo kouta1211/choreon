@@ -11,6 +11,14 @@ export const ko: Messages = {
     subtitle: '네이티브 버전',
   },
 
+  editor: {
+    draft: '네이티브 초안',
+    dancers: '댄서',
+    formations: '대형',
+    music: '곡',
+    editScene: '장면 수정',
+  },
+
   common: {
     on: '켬',
     off: '끔',

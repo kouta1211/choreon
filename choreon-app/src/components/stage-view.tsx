@@ -113,6 +113,22 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
     setStageSize({ width, height });
   };
 
+  /**
+   * ステージを置ける枠の広さ。**寸法は自分で計算する。**
+   *
+   * `flex-1` と `aspectRatio` を組み合わせて「高さから幅を決める」形は
+   * 当てにできない（ブラウザで測ったら 14:10 を渡しているのに 0.96 になった）。
+   * 枠だけを flex で取り、その中に収まる最大の長方形を自分で出す。
+   * これなら Web・iOS・Android で同じ寸法になる。
+   */
+  const [box, setBox] = useState({ width: 0, height: 0 });
+  const ratio = stageWidthUnits / stageHeightUnits;
+  // 上下の札（バックステージ／客席側）と、その間の隙間ぶん。
+  // これを引いておかないと、札のぶんだけステージがはみ出す
+  const LABEL_ALLOWANCE = 48;
+  const fitWidth = Math.max(0, Math.min(box.width, (box.height - LABEL_ALLOWANCE) * ratio));
+  const fitHeight = fitWidth / ratio;
+
   const sceneIndex = scenes.findIndex((scene) => scene.id === selectedSceneId);
   const sceneId = scenes[sceneIndex]?.id ?? scenes[0]?.id ?? '';
   const positions = positionsBySceneId[sceneId] ?? {};
@@ -221,7 +237,23 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
   const targetPositions = scrub ? (positionsBySceneId[scrub.targetSceneId] ?? {}) : {};
 
   return (
-    <View className="gap-2">
+    /**
+     * ■ 高さに合わせて縮む
+     * 以前は幅いっぱい（`w-full`）に広げて、高さは形から決まるままだった。
+     * 画面全体が縦にスクロールしていたので、はみ出しても下へ伸びるだけで
+     * 済んでいた。**画面の高さに収める骨格に変えたので、余った高さの中へ
+     * 収まってもらう必要がある。**
+     */
+    /* 枠。ここが余った高さを受け取り、中のステージは自分で寸法を決める。
+       札はステージと一緒に中央へ寄る（離して置くと、どちらの縁の札なのか
+       読み取れなくなる） */
+    <View
+      className="min-h-0 flex-1 items-center justify-center gap-2"
+      onLayout={(event) => {
+        const { width, height } = event.nativeEvent.layout;
+        setBox({ width, height });
+      }}
+    >
       <Text className="text-center text-xs uppercase tracking-widest text-fg-muted">
         {isAudienceOnTop ? t.stage.audience : t.stage.backstage}
       </Text>
@@ -229,8 +261,8 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
       <View
         {...responder.panHandlers}
         onLayout={handleLayout}
-        className="w-full overflow-hidden rounded-stage border border-line-strong bg-stage"
-        style={{ aspectRatio: stageWidthUnits / stageHeightUnits }}
+        className="overflow-hidden rounded-stage border border-line-strong bg-stage"
+        style={{ width: fitWidth, height: fitHeight }}
       >
         {gridMode === 'square' && (
           <GridLines widthUnits={stageWidthUnits} heightUnits={stageHeightUnits} />

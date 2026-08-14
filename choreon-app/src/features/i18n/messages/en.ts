@@ -11,6 +11,14 @@ export const en: Messages = {
     subtitle: 'Native build',
   },
 
+  editor: {
+    draft: 'Native draft',
+    dancers: 'Dancers',
+    formations: 'Formations',
+    music: 'Music',
+    editScene: 'Edit scene',
+  },
+
   common: {
     on: 'On',
     off: 'Off',
