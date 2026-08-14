@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AccountPanel } from '@/components/account-panel';
 import { DancerSheet } from '@/components/dancer-sheet';
 import { SceneDock } from '@/components/scene-dock';
 import { StageView } from '@/components/stage-view';
@@ -9,7 +10,7 @@ import { ThemePicker } from '@/components/theme-picker';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
-import { supabase } from '@/lib/supabase/client';
+import { useSessionStore } from '@/features/auth/store/useSessionStore';
 
 /**
  * 見た目と操作を確かめるための仮データ（まだ Supabase から読んでいない）。
@@ -46,10 +47,18 @@ const SAMPLE = {
  *   3. Supabase（同じ鍵で本物のプロジェクトに届くか）
  *   4. Zustand（Web版からコピーしたストアが動くか）
  *
- * 隊形はまだ手書きの仮データ。Supabase から読むのは、認証を移してから。
+ * 始めは手書きの仮データで、ログインすると本物の作品に入れ替わる
+ * （読むだけ。書き込みはまだ通していない — `account-panel.tsx` 参照）。
  */
 export default function FoundationScreen() {
   const platform = Platform.OS === 'web' ? 'Web (react-native-web)' : Platform.OS;
+
+  // ステージの広さ。仮のサンプルで始まり、本物の作品を開いたら
+  // その作品の広さに入れ替わる（作品ごとに違う）
+  const [stage, setStage] = useState({
+    width: SAMPLE.stageWidth,
+    height: SAMPLE.stageHeight,
+  });
 
   // 端末に覚えてあるものを読む（どちらも Promise。Web版は同期だった）
   const loadSettings = useSettingsStore((state) => state.load);
@@ -120,21 +129,20 @@ export default function FoundationScreen() {
     useUIStore.getState().selectScene('scene-1');
   }, [hydrate]);
 
-  // Supabase に届くか
-  const [reach, setReach] = useState('確かめています…');
+  // Supabase に届くか。ログインしているかは【ストアから】読む —
+  // ここで getSession() を1回だけ呼ぶと、あとでログインしても表示が
+  // 「未ログイン」のまま古くなる
+  const signedInEmail = useSessionStore((state) => state.email);
+  const [reach, setReach] = useState<string | null>(null);
   useEffect(() => {
     let alive = true;
     void (async () => {
-      const { data } = await supabase.auth.getSession();
-      const session = data.session ? 'ログイン中' : '未ログイン';
       try {
         const response = await fetch(
           `${process.env.EXPO_PUBLIC_SUPABASE_URL}/auth/v1/health`,
           { headers: { apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '' } },
         );
-        if (alive) {
-          setReach(response.ok ? `届いた（${session}）` : `届かない（${response.status}）`);
-        }
+        if (alive) setReach(response.ok ? '届いた' : `届かない（${response.status}）`);
       } catch {
         if (alive) setReach('届かない（通信できませんでした）');
       }
@@ -152,17 +160,13 @@ export default function FoundationScreen() {
           <Text className="text-sm text-fg-muted">ネイティブ版の土台</Text>
         </View>
 
-        <StageView
-          stageWidthUnits={SAMPLE.stageWidth}
-          stageHeightUnits={SAMPLE.stageHeight}
-        />
+        <StageView stageWidthUnits={stage.width} stageHeightUnits={stage.height} />
 
         <SceneDock />
 
-        <DancerSheet
-          stageWidthUnits={SAMPLE.stageWidth}
-          stageHeightUnits={SAMPLE.stageHeight}
-        />
+        <DancerSheet stageWidthUnits={stage.width} stageHeightUnits={stage.height} />
+
+        <AccountPanel onProjectLoaded={setStage} />
 
         <ThemePicker />
 
@@ -205,7 +209,11 @@ export default function FoundationScreen() {
 
         <View className="gap-1 rounded-2xl border border-line bg-surface p-4">
           <Text className="text-xs uppercase tracking-widest text-fg-muted">Supabase</Text>
-          <Text className="text-base text-fg-strong">{reach}</Text>
+          <Text className="text-base text-fg-strong">
+            {reach === null
+              ? '確かめています…'
+              : `${reach}（${signedInEmail ? 'ログイン中' : '未ログイン'}）`}
+          </Text>
           <Text className="text-xs text-fg-muted">環境: {platform}</Text>
         </View>
       </ScrollView>
