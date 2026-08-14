@@ -1,5 +1,7 @@
-import { View, Text } from 'react-native';
+import { useState } from 'react';
+import { View, Text, type LayoutChangeEvent } from 'react-native';
 
+import { DraggableDancer } from '@/components/draggable-dancer';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
@@ -12,32 +14,36 @@ type Props = {
 /**
  * ステージ1枚。**ネイティブ版で最初の「Choreonらしい画面」**。
  *
- * ■ Web版との違いは、寸法の決め方だけ
- * Web版(Stage.tsx)は CSS の aspect-ratio と container query で、
- * 「幅いっぱい／高さいっぱいのうち、収まる方」を CSS に決めさせている。
- * React Native に aspect-ratio はある(style の aspectRatio)ので、
- * **同じ考え方をそのまま持ってこられる**。格子は Web が
- * linear-gradient の繰り返しで描いていたが、こちらは背景画像が使えないので
- * 線を View で並べる。
+ * ■ Web版との違いは、寸法の決め方と指の扱い
+ * 形は CSS と同じ考え方（aspectRatio）でそのまま持ってこられた。格子は
+ * Web が linear-gradient の繰り返しで描いていたが、背景画像が使えないので
+ * 線を View で並べる。指の扱いは dnd-kit ではなく Gesture Handler
+ * （DraggableDancer 参照）。
  *
  * ■ 色は Web版と同じクラス名
  * `bg-stage` `border-line-strong` `bg-stage-grid` は tailwind.config.js が
- * CSS 変数へ結び付けている(global.css)。**画面のコードはクラス名の
- * 書き換え無しで行き来できる。**
+ * CSS 変数へ結び付けている。画面のコードは書き換えずに行き来できる。
  *
- * ■ まだ持ってきていないもの
- * ドラッグ・回転・導線・バミリ・顔被り。これらは dnd-kit と SVG に
- * 依存していて、React Native では別の作り(Reanimated / react-native-svg)に
- * なる。まずは「置いてあるものが同じに見えるか」だけを確かめる。
+ * ■ ステージの実寸を測る理由
+ * 指の移動量は px で来る。ステージ座標(ユニット)へ直すには、いま画面上で
+ * ステージが何 px なのかが要る。onLayout で1回測って持っておく。
  */
 export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
   const dancers = useProjectStore((state) => state.dancers);
   const scenes = useProjectStore((state) => state.scenes);
   const positionsBySceneId = useProjectStore((state) => state.positionsBySceneId);
+  const updateDancerPosition = useProjectStore((state) => state.updateDancerPosition);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const gridMode = useUIStore((state) => state.gridMode);
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
+  const isSnapEnabled = useSettingsStore((state) => state.isSnapEnabled);
   const dancerNameDisplay = useSettingsStore((state) => state.dancerNameDisplay);
+
+  const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
+  const handleLayout = (event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout;
+    setStageSize({ width, height });
+  };
 
   const sceneId = selectedSceneId ?? scenes[0]?.id ?? '';
   const positions = positionsBySceneId[sceneId] ?? {};
@@ -49,6 +55,7 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
       </Text>
 
       <View
+        onLayout={handleLayout}
         className="w-full overflow-hidden rounded-stage border border-line-strong bg-stage"
         style={{ aspectRatio: stageWidthUnits / stageHeightUnits }}
       >
@@ -67,23 +74,26 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
             : position.yCoordinate;
 
           return (
-            <View
+            <DraggableDancer
               key={position.dancerId}
-              className="absolute items-center"
-              style={{
-                left: `${(position.xCoordinate / stageWidthUnits) * 100}%`,
-                top: `${(screenY / stageHeightUnits) * 100}%`,
-                transform: [{ translateX: -14 }, { translateY: -14 }],
-              }}
-            >
-              <View
-                className="h-7 w-7 rounded-full"
-                style={{ backgroundColor: dancer.color }}
-              />
-              {dancerNameDisplay === 'always' && dancer.name ? (
-                <Text className="mt-0.5 text-[10px] text-fg-strong">{dancer.name}</Text>
-              ) : null}
-            </View>
+              dancer={dancer}
+              x={position.xCoordinate}
+              y={position.yCoordinate}
+              screenY={screenY}
+              stageWidthUnits={stageWidthUnits}
+              stageHeightUnits={stageHeightUnits}
+              stageSize={stageSize}
+              isAudienceOnTop={isAudienceOnTop}
+              isSnapEnabled={isSnapEnabled}
+              showName={dancerNameDisplay === 'always'}
+              onDragEnd={({ x, y }) =>
+                // いまは端末の中だけ。Supabase への保存は、認証を移してから
+                updateDancerPosition(sceneId, position.dancerId, {
+                  xCoordinate: x,
+                  yCoordinate: y,
+                })
+              }
+            />
           );
         })}
       </View>
