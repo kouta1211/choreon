@@ -34,6 +34,10 @@ type Props = {
   isAudienceOnTop: boolean;
   isSnapEnabled: boolean;
   showName: boolean;
+  /** 払っている最中の濃さ。片側のシーンにしか居ない人が出入りする */
+  opacity?: number;
+  /** ステージ全体を払っている間は、その人だけを掴めないようにする */
+  isDraggable?: boolean;
   /** 指を離した時に1回だけ呼ばれる。保存はここではなく呼び出し側 */
   onDragEnd: (next: { x: number; y: number }) => void;
 };
@@ -78,6 +82,8 @@ export function DraggableDancer({
   isAudienceOnTop,
   isSnapEnabled,
   showName,
+  opacity = 1,
+  isDraggable = true,
   onDragEnd,
 }: Props) {
   const offset = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
@@ -94,6 +100,9 @@ export function DraggableDancer({
     onDragEnd,
   });
   latest.current = { x, y, stageSize, isAudienceOnTop, isSnapEnabled, onDragEnd };
+
+  const draggable = useRef(isDraggable);
+  draggable.current = isDraggable;
 
   /**
    * 掴んだと判定するまでに指が動いていたぶん。
@@ -127,6 +136,10 @@ export function DraggableDancer({
       justDragged.current = false;
       return;
     }
+    // 払っている最中は、指の進み具合が毎フレーム位置を決めている。
+    // ここで時間ベースのアニメーションを重ねると、2つが同じ値を取り合う
+    // (Web版 useDancerMotion と同じ理由)
+    if (!isDraggable) return;
     if (from.x === x && from.y === y) return;
     if (stageSize.width === 0 || stageSize.height === 0) return;
 
@@ -157,6 +170,7 @@ export function DraggableDancer({
     stageWidthUnits,
     stageHeightUnits,
     isAudienceOnTop,
+    isDraggable,
   ]);
 
   const responder = useMemo(
@@ -165,6 +179,7 @@ export function DraggableDancer({
         // 押しただけでは掴まない。8px 動いて初めてドラッグとみなす
         // (でないと、選ぶつもりの一押しが移動になる)
         onMoveShouldSetPanResponder: (_event, gesture) => {
+          if (!draggable.current) return false;
           const shouldGrab =
             Math.abs(gesture.dx) > DRAG_THRESHOLD_PX ||
             Math.abs(gesture.dy) > DRAG_THRESHOLD_PX;
@@ -229,6 +244,7 @@ export function DraggableDancer({
         marginLeft: -DOT / 2,
         marginTop: -DOT / 2,
         alignItems: 'center',
+        opacity,
         transform: offset.getTranslateTransform(),
       }}
     >

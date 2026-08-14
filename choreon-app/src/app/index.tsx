@@ -65,6 +65,8 @@ export default function FoundationScreen() {
   const update = useSettingsStore((state) => state.update);
   const gridMode = useUIStore((state) => state.gridMode);
   const setGridMode = useUIStore((state) => state.setGridMode);
+  const isSwipeEnabled = useUIStore((state) => state.isSwipeSceneChangeEnabled);
+  const toggleSwipe = useUIStore((state) => state.toggleSwipeSceneChange);
 
   // 仮の隊形をストアへ入れる（Web版と同じ hydrate を通す）
   const hydrate = useProjectStore((state) => state.hydrate);
@@ -177,6 +179,13 @@ export default function FoundationScreen() {
             label="目盛り"
             value={gridMode === 'square' ? '格子' : 'なし'}
             onPress={() => setGridMode(gridMode === 'square' ? 'none' : 'square')}
+          />
+          {/* 指のある端末では既定でオン、マウスでは既定でオフ
+              (Web版 defaultViewPreference と同じ判断) */}
+          <Toggle
+            label="払ってシーンを送る"
+            value={isSwipeEnabled ? 'オン' : 'オフ'}
+            onPress={toggleSwipe}
           />
 
           <Text className="text-xs leading-5 text-fg-muted">

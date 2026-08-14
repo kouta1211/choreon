@@ -1,10 +1,17 @@
-import { useState } from 'react';
-import { View, Text, type LayoutChangeEvent } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { PanResponder, View, Text, type LayoutChangeEvent } from 'react-native';
 
 import { DraggableDancer } from '@/components/draggable-dancer';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
+import {
+  AXIS_LOCK_THRESHOLD_PX,
+  applyRubberBand,
+  interpolateDancerPoint,
+  scrubProgress,
+  shouldCommitScrub,
+} from '@/features/canvas/lib/sceneScrub';
 
 type Props = {
   stageWidthUnits: number;
@@ -12,21 +19,20 @@ type Props = {
 };
 
 /**
- * ステージ1枚。**ネイティブ版で最初の「Choreonらしい画面」**。
+ * ステージ1枚。置いてある隊形を描き、指の操作を受ける。
  *
- * ■ Web版との違いは、寸法の決め方と指の扱い
- * 形は CSS と同じ考え方（aspectRatio）でそのまま持ってこられた。格子は
- * Web が linear-gradient の繰り返しで描いていたが、背景画像が使えないので
- * 線を View で並べる。指の扱いは dnd-kit ではなく Gesture Handler
- * （DraggableDancer 参照）。
+ * ■ 2種類の指の操作が同居する
+ *   - ダンサーの上から始まった指 … その人を動かす(DraggableDancer)
+ *   - 何も無いところから始まった指 … 横に払って前後のシーンへ(ここ)
+ * 先に子(ダンサー)へ聞かれるので、住み分けは React Native の
+ * 責任者(responder)の仕組みがそのまま面倒を見てくれる。Web版が
+ * 「ダンサーとボタンの上から始まった指は拾わない」と自前で除外していた
+ * ぶんが要らない。
  *
- * ■ 色は Web版と同じクラス名
- * `bg-stage` `border-line-strong` `bg-stage-grid` は tailwind.config.js が
- * CSS 変数へ結び付けている。画面のコードは書き換えずに行き来できる。
- *
- * ■ ステージの実寸を測る理由
- * 指の移動量は px で来る。ステージ座標(ユニット)へ直すには、いま画面上で
- * ステージが何 px なのかが要る。onLayout で1回測って持っておく。
+ * ■ 判断は Web版と同じ関数
+ * 確定するかどうか(距離22% or フリック)・端でのゴム・進捗・片側にしか
+ * 居ない人の出入りは `sceneScrub.ts` をコピーして使っている。**触り心地の
+ * 数値がWebとスマホでずれない**ようにするため。
  */
 export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
   const dancers = useProjectStore((state) => state.dancers);
@@ -34,7 +40,9 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
   const positionsBySceneId = useProjectStore((state) => state.positionsBySceneId);
   const updateDancerPosition = useProjectStore((state) => state.updateDancerPosition);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
+  const selectScene = useUIStore((state) => state.selectScene);
   const gridMode = useUIStore((state) => state.gridMode);
+  const isSwipeEnabled = useUIStore((state) => state.isSwipeSceneChangeEnabled);
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
   const isSnapEnabled = useSettingsStore((state) => state.isSnapEnabled);
   const dancerNameDisplay = useSettingsStore((state) => state.dancerNameDisplay);
@@ -45,8 +53,81 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
     setStageSize({ width, height });
   };
 
-  const sceneId = selectedSceneId ?? scenes[0]?.id ?? '';
+  const sceneIndex = scenes.findIndex((scene) => scene.id === selectedSceneId);
+  const sceneId = scenes[sceneIndex]?.id ?? scenes[0]?.id ?? '';
   const positions = positionsBySceneId[sceneId] ?? {};
+
+  /** 払っている最中の進み具合。触っていなければ null */
+  const [scrub, setScrub] = useState<{ targetSceneId: string; progress: number } | null>(
+    null,
+  );
+
+  // PanResponder の中から最新の状態を読む(作り直すと払っている最中に
+  // 掴んでいる相手が入れ替わるため、閉じ込めずに ref 経由で読む)
+  const latest = useRef({ scenes, sceneIndex, stageSize, isSwipeEnabled, selectScene });
+  latest.current = { scenes, sceneIndex, stageSize, isSwipeEnabled, selectScene };
+  const startedAt = useRef(0);
+
+  const responder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_event, gesture) => {
+          if (!latest.current.isSwipeEnabled) return false;
+          // 縦に払ったのならページのスクロールに譲る。横だけを受け取る
+          const absX = Math.abs(gesture.dx);
+          const absY = Math.abs(gesture.dy);
+          if (Math.max(absX, absY) < AXIS_LOCK_THRESHOLD_PX) return false;
+          return absX > absY;
+        },
+
+        onPanResponderGrant: () => {
+          startedAt.current = Date.now();
+        },
+
+        onPanResponderMove: (_event, gesture) => {
+          const { scenes: list, sceneIndex: index, stageSize: size } = latest.current;
+          if (size.width === 0) return;
+
+          // 左へ払う = 次のシーンへ進む
+          const direction = gesture.dx < 0 ? 1 : -1;
+          const target = list[index + direction];
+          const moved = applyRubberBand(gesture.dx, Boolean(target));
+
+          if (!target) {
+            // 端。少しだけ動かして「これ以上先は無い」を指に返す
+            setScrub(null);
+            return;
+          }
+          setScrub({
+            targetSceneId: target.id,
+            progress: scrubProgress(moved, size.width),
+          });
+        },
+
+        onPanResponderRelease: (_event, gesture) => {
+          const { scenes: list, sceneIndex: index, stageSize: size } = latest.current;
+          const direction = gesture.dx < 0 ? 1 : -1;
+          const target = list[index + direction];
+
+          const commit = shouldCommitScrub({
+            deltaPx: gesture.dx,
+            spanPx: size.width,
+            elapsedMs: Date.now() - startedAt.current,
+            hasTarget: Boolean(target),
+          });
+
+          if (commit && target) latest.current.selectScene(target.id);
+          // 確定してもしなくても、指の進捗は畳む。確定した場合は
+          // 選び直したシーンの位置へ、各ダンサーが自分で滑っていく
+          setScrub(null);
+        },
+
+        onPanResponderTerminate: () => setScrub(null),
+      }),
+    [],
+  );
+
+  const targetPositions = scrub ? (positionsBySceneId[scrub.targetSceneId] ?? {}) : {};
 
   return (
     <View className="gap-2">
@@ -55,6 +136,7 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
       </Text>
 
       <View
+        {...responder.panHandlers}
         onLayout={handleLayout}
         className="w-full overflow-hidden rounded-stage border border-line-strong bg-stage"
         style={{ aspectRatio: stageWidthUnits / stageHeightUnits }}
@@ -63,23 +145,42 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
           <GridLines widthUnits={stageWidthUnits} heightUnits={stageHeightUnits} />
         )}
 
-        {Object.values(positions).map((position) => {
-          const dancer = dancers[position.dancerId];
+        {/* 払っている間は、移動先にしか居ない人も描き始める。そうしないと
+            半分まで引いた時点で「これから出てくる人」が居らず、確定した
+            瞬間に唐突に現れる */}
+        {Array.from(
+          new Set([...Object.keys(positions), ...Object.keys(targetPositions)]),
+        ).map((dancerId) => {
+          const dancer = dancers[dancerId];
           if (!dancer) return null;
+
+          const here = positions[dancerId];
+          const there = targetPositions[dancerId];
+
+          const point = scrub
+            ? interpolateDancerPoint(
+                here && { x: here.xCoordinate, y: here.yCoordinate },
+                there && { x: there.xCoordinate, y: there.yCoordinate },
+                scrub.progress,
+              )
+            : here && { x: here.xCoordinate, y: here.yCoordinate, opacity: 1 };
+          if (!point) return null;
 
           // 客席を上にして描くときは、保存された座標は動かさず【描く向きだけ】
           // 上下を鏡にする(Web版 stageFlip.ts と同じ考え方)
-          const screenY = isAudienceOnTop
-            ? stageHeightUnits - position.yCoordinate
-            : position.yCoordinate;
+          const screenY = isAudienceOnTop ? stageHeightUnits - point.y : point.y;
 
           return (
             <DraggableDancer
-              key={position.dancerId}
+              key={dancerId}
               dancer={dancer}
-              x={position.xCoordinate}
-              y={position.yCoordinate}
+              x={point.x}
+              y={point.y}
               screenY={screenY}
+              opacity={point.opacity}
+              // 払っている最中は、その人だけを掴めないようにする
+              // (指はステージ全体の操作に使われている)
+              isDraggable={!scrub}
               stageWidthUnits={stageWidthUnits}
               stageHeightUnits={stageHeightUnits}
               stageSize={stageSize}
@@ -88,7 +189,7 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
               showName={dancerNameDisplay === 'always'}
               onDragEnd={({ x, y }) =>
                 // いまは端末の中だけ。Supabase への保存は、認証を移してから
-                updateDancerPosition(sceneId, position.dancerId, {
+                updateDancerPosition(sceneId, dancerId, {
                   xCoordinate: x,
                   yCoordinate: y,
                 })
