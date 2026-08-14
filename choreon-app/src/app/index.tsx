@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DancerSheet } from '@/components/dancer-sheet';
 import { SceneDock } from '@/components/scene-dock';
 import { StageView } from '@/components/stage-view';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
@@ -156,6 +157,11 @@ export default function FoundationScreen() {
         />
 
         <SceneDock />
+
+        <DancerSheet
+          stageWidthUnits={SAMPLE.stageWidth}
+          stageHeightUnits={SAMPLE.stageHeight}
+        />
 
         {/* 端末に覚えるもの。切り替えてから再読み込みしても残る */}
         <View className="gap-3 rounded-2xl border border-line bg-surface p-4">
