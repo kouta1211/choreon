@@ -158,24 +158,94 @@ export const ja = {
     whiteboard: 'ホワイトボード＋マーカー',
   },
 
+  /**
+   * 設定シート。**Web版と同じ入れ子の形**にしてある（束ごとに1画面）。
+   *
+   * ネイティブ版にまだ無い機能の行は置いていない — カウントイン・自動保存・
+   * センターライン・新しい作品の広さ。押しても何も起きない設定を並べると、
+   * 「動かない」という報告になって返ってくる。実装したときにここへ足す。
+   */
   settings: {
-    section: '端末に覚える',
+    title: '設定',
     loading: '（読み込み中）',
-    audienceOnTop: '客席を上にする',
-    dancerName: 'ダンサー名',
-    dancerNameAlways: '常に',
-    dancerNameNever: '出さない',
-    grid: '目盛り',
-    gridSquare: '格子',
-    gridNone: 'なし',
-    swipe: '払ってシーンを送る',
-    path: '導線を出す',
-    marks: 'バミリ（客席側の目盛り）',
-    blindSpot: '顔被りを見つける',
-    badgeNote:
-      '丸の肩に付く印: 顔＝手前の人に隠れている／数字＝次のシーンへの移動が速すぎる（m/s。3.5 を超えると付く）。速さの印は常に出ます。',
     storageNote:
-      '上2つは設定（settings）、目盛りは「表示とモード」（viewPreference）。どちらも Web は localStorage、iOS/Android は AsyncStorage へ書いています。',
+      'ここでの選択はこの端末だけに残ります（Web は localStorage、iOS/Android は AsyncStorage）。作品そのものには入りません。',
+
+    stage: {
+      title: '舞台',
+      summary: '客席の向き',
+      description:
+        '向きを変えても、保存されている立ち位置は動きません。描く向きと、道順の言葉づかいだけが入れ替わります。',
+      audienceOnTop: {
+        label: '客席を上にする',
+        description: '既定は上がバックステージ。稽古場で鏡を見ながら組むときに入れ替える',
+      },
+    },
+
+    grid: {
+      title: '目盛り',
+      summary: '格子の出し方・吸着',
+      mode: {
+        label: '格子',
+        square: '格子',
+        none: 'なし',
+      },
+      snap: {
+        label: '格子に吸着させる',
+        description: '切ると、どこにでも置けます',
+      },
+    },
+
+    playback: {
+      title: '再生',
+      summary: 'シーンを足す間隔',
+      segment: {
+        label: 'シーンの間隔',
+        description:
+          'シーンを足したとき、いまの位置から何秒後に置くか。120BPMなら4秒が1つの8カウント',
+        unit: '秒',
+      },
+    },
+
+    display: {
+      title: '表示',
+      summary: 'ダンサー名・導線・バミリ・顔被り・払って送る',
+      description:
+        '丸の肩に付く印: 顔＝手前の人に隠れている／数字＝次のシーンへの移動が速すぎる（m/s。3.5 を超えると付く）。速さの印は常に出ます。',
+      dancerName: {
+        label: 'ダンサー名',
+        description: '人数が多いと名前で埋まる。選択時だけにすると隊形が読みやすい',
+        always: '常に',
+        selected: '選択時',
+        never: '出さない',
+      },
+      path: {
+        label: '導線',
+        description: '次のシーンへの動きを線で描きます',
+      },
+      stageMarks: {
+        label: 'バミリ',
+        description: '客席側の床に、中央からの目盛りを並べます',
+      },
+      blindSpot: {
+        label: '顔被りチェック',
+        description: '手前の人の真後ろに入って、客席から見えない人に印を付けます',
+      },
+      swipe: {
+        label: '払ってシーンを送る',
+        description: 'ステージを横になぞると、前後のシーンへ移ります',
+      },
+    },
+
+    app: {
+      title: 'アプリ',
+      summary: 'テーマ・言語',
+    },
+
+    account: {
+      title: 'アカウント',
+      summary: 'ログイン・作品を開く',
+    },
   },
 
   language: {

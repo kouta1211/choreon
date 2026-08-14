@@ -1,19 +1,18 @@
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Platform, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AccountPanel } from '@/components/account-panel';
 import { DancerSheet } from '@/components/dancer-sheet';
 import { FormationSheet } from '@/components/formation-sheet';
 import { HistoryControls } from '@/components/history-controls';
-import { LanguagePicker } from '@/components/language-picker';
 import { MusicPicker } from '@/components/music-picker';
 import { PlaybackControls } from '@/components/playback-controls';
 import { SceneDock } from '@/components/scene-dock';
 import { SceneEditor } from '@/components/scene-editor';
+import { SettingsSheet } from '@/components/settings-sheet';
 import { StageView } from '@/components/stage-view';
-import { ThemePicker } from '@/components/theme-picker';
 import { Toast } from '@/components/toast';
+import { Button } from '@/components/ui/button';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
@@ -73,7 +72,6 @@ export default function FoundationScreen() {
   const loadSettings = useSettingsStore((state) => state.load);
   const loadView = useUIStore((state) => state.loadViewPreference);
   const loadLocale = useLocaleStore((state) => state.load);
-  const isLoaded = useSettingsStore((state) => state.isLoaded);
 
   useEffect(() => {
     void loadSettings();
@@ -81,20 +79,9 @@ export default function FoundationScreen() {
     void loadLocale();
   }, [loadSettings, loadView, loadLocale]);
 
-  // 設定と表示のトグル
-  const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
-  const dancerNameDisplay = useSettingsStore((state) => state.dancerNameDisplay);
-  const update = useSettingsStore((state) => state.update);
-  const gridMode = useUIStore((state) => state.gridMode);
-  const setGridMode = useUIStore((state) => state.setGridMode);
-  const isSwipeEnabled = useUIStore((state) => state.isSwipeSceneChangeEnabled);
-  const toggleSwipe = useUIStore((state) => state.toggleSwipeSceneChange);
-  const isBlindSpotVisible = useUIStore((state) => state.isBlindSpotCheckVisible);
-  const isPathVisible = useUIStore((state) => state.isPathVisible);
-  const togglePathVisible = useUIStore((state) => state.togglePathVisible);
-  const isStageMarksVisible = useUIStore((state) => state.isStageMarksVisible);
-  const toggleStageMarks = useUIStore((state) => state.toggleStageMarks);
-  const toggleBlindSpotCheck = useUIStore((state) => state.toggleBlindSpotCheck);
+  // 設定は【シートの中】。トグルをここへ直に並べていたのをやめた
+  // （束ごとに1画面。settings-sheet.tsx を参照）
+  const [isSettingsOpen, setSettingsOpen] = useState(false);
 
   // 仮の隊形をストアへ入れる（Web版と同じ hydrate を通す）
   const hydrate = useProjectStore((state) => state.hydrate);
@@ -174,11 +161,18 @@ export default function FoundationScreen() {
   return (
     <SafeAreaView className="flex-1 bg-page">
       <ScrollView contentContainerClassName="gap-5 p-5">
-        <View className="gap-1">
-          <Text className="text-3xl font-bold tracking-tight text-fg-strong">
-            {t.app.title}
-          </Text>
-          <Text className="text-sm text-fg-muted">{t.app.subtitle}</Text>
+        <View className="flex-row items-center justify-between gap-3">
+          <View className="min-w-0 flex-1 gap-1">
+            <Text className="text-3xl font-bold tracking-tight text-fg-strong">
+              {t.app.title}
+            </Text>
+            <Text className="text-sm text-fg-muted">{t.app.subtitle}</Text>
+          </View>
+          <Button
+            icon="sliders"
+            onPress={() => setSettingsOpen(true)}
+            accessibilityLabel={t.settings.title}
+          />
         </View>
 
         <StageView stageWidthUnits={stage.width} stageHeightUnits={stage.height} />
@@ -200,68 +194,6 @@ export default function FoundationScreen() {
 
         <FormationSheet stageWidthUnits={stage.width} stageHeightUnits={stage.height} />
 
-        <AccountPanel onProjectLoaded={setStage} />
-
-        <ThemePicker />
-
-        <LanguagePicker />
-
-        {/* 端末に覚えるもの。切り替えてから再読み込みしても残る */}
-        <View className="gap-3 rounded-2xl border border-line bg-surface p-4">
-          <Text className="text-xs uppercase tracking-widest text-fg-muted">
-            {t.settings.section}
-            {isLoaded ? '' : t.settings.loading}
-          </Text>
-
-          <Toggle
-            label={t.settings.audienceOnTop}
-            value={isAudienceOnTop ? t.common.on : t.common.off}
-            onPress={() => update('isAudienceOnTop', !isAudienceOnTop)}
-          />
-          <Toggle
-            label={t.settings.dancerName}
-            value={
-              dancerNameDisplay === 'always'
-                ? t.settings.dancerNameAlways
-                : t.settings.dancerNameNever
-            }
-            onPress={() =>
-              update('dancerNameDisplay', dancerNameDisplay === 'always' ? 'never' : 'always')
-            }
-          />
-          <Toggle
-            label={t.settings.grid}
-            value={gridMode === 'square' ? t.settings.gridSquare : t.settings.gridNone}
-            onPress={() => setGridMode(gridMode === 'square' ? 'none' : 'square')}
-          />
-          {/* 指のある端末では既定でオン、マウスでは既定でオフ
-              (Web版 defaultViewPreference と同じ判断) */}
-          <Toggle
-            label={t.settings.swipe}
-            value={isSwipeEnabled ? t.common.on : t.common.off}
-            onPress={toggleSwipe}
-          />
-          <Toggle
-            label={t.settings.path}
-            value={isPathVisible ? t.common.on : t.common.off}
-            onPress={togglePathVisible}
-          />
-          <Toggle
-            label={t.settings.marks}
-            value={isStageMarksVisible ? t.common.on : t.common.off}
-            onPress={toggleStageMarks}
-          />
-          <Toggle
-            label={t.settings.blindSpot}
-            value={isBlindSpotVisible ? t.common.on : t.common.off}
-            onPress={toggleBlindSpotCheck}
-          />
-
-          <Text className="text-xs leading-5 text-fg-muted">{t.settings.badgeNote}</Text>
-
-          <Text className="text-xs leading-5 text-fg-muted">{t.settings.storageNote}</Text>
-        </View>
-
         <View className="gap-1 rounded-2xl border border-line bg-surface p-4">
           <Text className="text-xs uppercase tracking-widest text-fg-muted">
             {t.supabase.section}
@@ -276,26 +208,12 @@ export default function FoundationScreen() {
           </Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
-  );
-}
 
-function Toggle({
-  label,
-  value,
-  onPress,
-}: {
-  label: string;
-  value: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      className="flex-row items-center justify-between rounded-xl bg-surface-raised px-4 py-3 active:opacity-80"
-    >
-      <Text className="text-base text-fg">{label}</Text>
-      <Text className="text-base font-semibold text-accent-soft">{value}</Text>
-    </Pressable>
+      <SettingsSheet
+        isOpen={isSettingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onProjectLoaded={setStage}
+      />
+    </SafeAreaView>
   );
 }

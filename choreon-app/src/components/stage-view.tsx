@@ -298,7 +298,12 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
               stageSize={stageSize}
               isAudienceOnTop={isAudienceOnTop}
               isSnapEnabled={isSnapEnabled}
-              showName={dancerNameDisplay === 'always'}
+              // 「選択時」は選んでいる人だけ。設定に3つ目の選択肢を出した
+              // 以上、ここが 'always' しか見ないと押しても何も起きない
+              showName={
+                dancerNameDisplay === 'always' ||
+                (dancerNameDisplay === 'selected' && dancerId === selectedDancerId)
+              }
               transitionSeconds={transitionSeconds}
               isBlocked={blockedDancerIds.has(dancerId)}
               excessiveMove={excessiveMoves.get(dancerId) ?? null}

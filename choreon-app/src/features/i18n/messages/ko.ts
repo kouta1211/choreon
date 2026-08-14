@@ -150,23 +150,86 @@ export const ko: Messages = {
   },
 
   settings: {
-    section: '기기에 저장',
+    title: '설정',
     loading: '(불러오는 중)',
-    audienceOnTop: '객석을 위로',
-    dancerName: '댄서 이름',
-    dancerNameAlways: '항상',
-    dancerNameNever: '표시 안 함',
-    grid: '눈금',
-    gridSquare: '격자',
-    gridNone: '없음',
-    swipe: '밀어서 장면 넘기기',
-    path: '동선 표시',
-    marks: '바미리(객석 쪽 눈금)',
-    blindSpot: '얼굴 가림 찾기',
-    badgeNote:
-      '동그라미 어깨의 표시: 얼굴＝앞사람에게 가려짐 / 숫자＝다음 장면으로의 이동이 너무 빠름(m/s, 3.5 초과 시 표시). 속도 표시는 항상 나옵니다.',
     storageNote:
-      '위 두 가지는 설정, 눈금은 「표시와 모드」입니다. 웹은 localStorage, iOS/Android는 AsyncStorage에 저장합니다.',
+      '여기서 고른 것은 이 기기에만 남습니다(웹은 localStorage, iOS/Android는 AsyncStorage). 작품 자체에는 들어가지 않습니다.',
+
+    stage: {
+      title: '무대',
+      summary: '객석 방향',
+      description:
+        '방향을 바꿔도 저장된 위치는 움직이지 않습니다. 그리는 방향과 앞뒤를 가리키는 말만 바뀝니다.',
+      audienceOnTop: {
+        label: '객석을 위로',
+        description: '기본은 위가 백스테이지. 거울을 보며 짤 때 바꿔 쓰세요',
+      },
+    },
+
+    grid: {
+      title: '눈금',
+      summary: '격자 표시·자석',
+      mode: {
+        label: '격자',
+        square: '격자',
+        none: '없음',
+      },
+      snap: {
+        label: '격자에 붙이기',
+        description: '끄면 어디에나 놓을 수 있습니다',
+      },
+    },
+
+    playback: {
+      title: '재생',
+      summary: '장면을 추가하는 간격',
+      segment: {
+        label: '장면 간격',
+        description:
+          '장면을 추가할 때 현재 위치에서 몇 초 뒤에 놓을지. 120BPM이면 4초가 8카운트 하나',
+        unit: '초',
+      },
+    },
+
+    display: {
+      title: '표시',
+      summary: '댄서 이름·동선·바미리·얼굴 가림·밀어서 넘기기',
+      description:
+        '동그라미 어깨의 표시: 얼굴＝앞사람에게 가려짐 / 숫자＝다음 장면으로의 이동이 너무 빠름(m/s, 3.5 초과 시 표시). 속도 표시는 항상 나옵니다.',
+      dancerName: {
+        label: '댄서 이름',
+        description: '인원이 많으면 이름으로 가득 찹니다. 선택한 사람만 보이면 대형이 읽기 쉬워요',
+        always: '항상',
+        selected: '선택 시',
+        never: '표시 안 함',
+      },
+      path: {
+        label: '동선',
+        description: '다음 장면으로의 움직임을 선으로 그립니다',
+      },
+      stageMarks: {
+        label: '바미리',
+        description: '객석 쪽 바닥에 중앙에서부터의 눈금을 놓습니다',
+      },
+      blindSpot: {
+        label: '얼굴 가림 확인',
+        description: '앞사람 바로 뒤에 들어가 객석에서 보이지 않는 사람을 표시합니다',
+      },
+      swipe: {
+        label: '밀어서 장면 넘기기',
+        description: '무대를 옆으로 쓸면 앞뒤 장면으로 이동합니다',
+      },
+    },
+
+    app: {
+      title: '앱',
+      summary: '테마·언어',
+    },
+
+    account: {
+      title: '계정',
+      summary: '로그인·작품 열기',
+    },
   },
 
   language: {

@@ -150,23 +150,88 @@ export const en: Messages = {
   },
 
   settings: {
-    section: 'Kept on this device',
+    title: 'Settings',
     loading: ' (loading)',
-    audienceOnTop: 'Audience at the top',
-    dancerName: 'Dancer names',
-    dancerNameAlways: 'Always',
-    dancerNameNever: 'Never',
-    grid: 'Grid',
-    gridSquare: 'Squares',
-    gridNone: 'None',
-    swipe: 'Swipe to change scene',
-    path: 'Show paths',
-    marks: 'Spike marks (downstage ruler)',
-    blindSpot: 'Find hidden faces',
-    badgeNote:
-      'Badges on a dancer: H = hidden behind someone downstage / a number = the move to the next scene is too fast (m/s; shown above 3.5). The speed badge is always on.',
     storageNote:
-      'The first two are settings; the grid is a view preference. Both go to localStorage on the web and AsyncStorage on iOS/Android.',
+      'These choices stay on this device only (localStorage on the web, AsyncStorage on iOS/Android). They are not part of the piece itself.',
+
+    stage: {
+      title: 'Stage',
+      summary: 'Which way the audience sits',
+      description:
+        'Flipping the view does not move any saved position. Only the drawing direction and the words for upstage/downstage swap over.',
+      audienceOnTop: {
+        label: 'Audience at the top',
+        description:
+          'By default the top is backstage. Flip it when you are building in front of a mirror',
+      },
+    },
+
+    grid: {
+      title: 'Grid',
+      summary: 'How the grid is drawn, and snapping',
+      mode: {
+        label: 'Grid',
+        square: 'Squares',
+        none: 'None',
+      },
+      snap: {
+        label: 'Snap to the grid',
+        description: 'Turn it off to place dancers anywhere',
+      },
+    },
+
+    playback: {
+      title: 'Playback',
+      summary: 'Gap when adding a scene',
+      segment: {
+        label: 'Scene gap',
+        description:
+          'How many seconds after the current scene a new one is placed. At 120 BPM, 4 seconds is one 8-count',
+        unit: 's',
+      },
+    },
+
+    display: {
+      title: 'Display',
+      summary: 'Names, paths, spike marks, hidden faces, swipe',
+      description:
+        'Badges on a dancer: H = hidden behind someone downstage / a number = the move to the next scene is too fast (m/s; shown above 3.5). The speed badge is always on.',
+      dancerName: {
+        label: 'Dancer names',
+        description:
+          'With a large cast the stage fills up with names. Showing only the selected one keeps the formation readable',
+        always: 'Always',
+        selected: 'Selected',
+        never: 'Never',
+      },
+      path: {
+        label: 'Paths',
+        description: 'Draws the move to the next scene as a line',
+      },
+      stageMarks: {
+        label: 'Spike marks',
+        description: 'Lays a ruler along the downstage edge, measured from centre',
+      },
+      blindSpot: {
+        label: 'Hidden faces',
+        description: 'Marks anyone standing directly behind someone downstage of them',
+      },
+      swipe: {
+        label: 'Swipe to change scene',
+        description: 'Drag sideways across the stage to move between scenes',
+      },
+    },
+
+    app: {
+      title: 'App',
+      summary: 'Theme and language',
+    },
+
+    account: {
+      title: 'Account',
+      summary: 'Sign in, open a piece',
+    },
   },
 
   language: {

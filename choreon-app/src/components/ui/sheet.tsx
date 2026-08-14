@@ -79,7 +79,10 @@ export function Sheet({
           onPress={onClose}
           accessibilityRole="button"
           accessibilityLabel={t.common.close}
-          className="absolute inset-0 bg-scrim/60"
+          // 濃さは `opacity` で。**`bg-scrim/60` とは書けない** —
+          // 色が `var(--scrim)` なので、Tailwind v3 はそこへ透明度を
+          // 合成できず、`/60` が黙って無視される（幕が出ないように見える）
+          className="absolute inset-0 bg-scrim opacity-60"
         />
 
         <View
