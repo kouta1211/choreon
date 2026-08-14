@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { PanResponder, View, Text, type LayoutChangeEvent } from 'react-native';
 
 import { DraggableDancer } from '@/components/draggable-dancer';
+import { getSceneStep } from '@/features/canvas/lib/sceneStep';
 import { useHistoryStore } from '@/features/canvas/store/useHistoryStore';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import type { Position } from '@/features/scene/types';
@@ -14,6 +15,7 @@ import {
   scrubProgress,
   shouldCommitScrub,
 } from '@/features/canvas/lib/sceneScrub';
+import { sceneDurations } from '@/features/scene/lib/sceneTiming';
 
 type Props = {
   stageWidthUnits: number;
@@ -42,6 +44,7 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
   const positionsBySceneId = useProjectStore((state) => state.positionsBySceneId);
   const updateDancerPosition = useProjectStore((state) => state.updateDancerPosition);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
+  const previousSceneId = useUIStore((state) => state.previousSceneId);
   const selectedDancerId = useUIStore((state) => state.selectedDancerId);
   const selectDancer = useUIStore((state) => state.selectDancer);
   const selectScene = useUIStore((state) => state.selectScene);
@@ -84,6 +87,27 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
   const sceneIndex = scenes.findIndex((scene) => scene.id === selectedSceneId);
   const sceneId = scenes[sceneIndex]?.id ?? scenes[0]?.id ?? '';
   const positions = positionsBySceneId[sceneId] ?? {};
+
+  /**
+   * 次の隊形まで動くのにかける秒数。**区間の実際の長さ**を渡す。
+   *
+   * 区間の長さは「区間の後ろ側のシーン」が持っている（時刻の差）。1つ戻った
+   * ときは、いま選んでいるシーンではなく**さっきまでいたシーン**の側が
+   * その区間にあたる（Web版 DancerLayer と同じ判定を `getSceneStep` で行う）。
+   * 隣り合わないシーンへ飛んだときは 0 = 瞬間移動。通っていない区間を、
+   * 通ったように見せない。
+   */
+  const step = getSceneStep(
+    scenes.map((scene) => scene.id),
+    previousSceneId,
+    selectedSceneId,
+  );
+  const durations = sceneDurations(scenes);
+  const segmentIndex =
+    step === 'backward'
+      ? scenes.findIndex((scene) => scene.id === previousSceneId)
+      : sceneIndex;
+  const transitionSeconds = step === 'jump' ? 0 : (durations[segmentIndex] ?? 0);
 
   /** 払っている最中の進み具合。触っていなければ null */
   const [scrub, setScrub] = useState<{ targetSceneId: string; progress: number } | null>(
@@ -217,6 +241,7 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
               isAudienceOnTop={isAudienceOnTop}
               isSnapEnabled={isSnapEnabled}
               showName={dancerNameDisplay === 'always'}
+              transitionSeconds={transitionSeconds}
               // 押しただけなら選ぶ。もう一度押すと外れる
               onTap={() => selectDancer(dancerId === selectedDancerId ? null : dancerId)}
               onRotateEnd={(rotationAngle) =>

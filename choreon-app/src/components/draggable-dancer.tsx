@@ -52,6 +52,14 @@ type Props = {
   isDraggable?: boolean;
   /** 指を離した時に1回だけ呼ばれる。保存はここではなく呼び出し側 */
   onDragEnd: (next: { x: number; y: number }) => void;
+  /**
+   * シーンが変わったときに、次の隊形まで動くのにかける秒数。
+   *
+   * **区間の実際の長さ**（次のシーンの時刻 − このシーンの時刻）を渡す。
+   * Web版もそうしていて、通しで見たときに「4秒かけて移動する」が
+   * そのまま4秒かかる。0 を渡すと瞬間移動（隣り合わないシーンへ飛んだとき）。
+   */
+  transitionSeconds: number;
 };
 
 const DOT = 28;
@@ -80,9 +88,6 @@ const DOT = 28;
  * **1文字も変えずにコピー**して呼んでいる。ここが環境で変わると、
  * 同じ作品を Web とスマホで開いたときに置ける場所がずれる。
  */
-/** シーンを移るときに、次の隊形へ動いていく時間。Web版の既定と同じ0.3秒 */
-const SCENE_TRANSITION_MS = 300;
-
 export function DraggableDancer({
   dancer,
   x,
@@ -101,6 +106,7 @@ export function DraggableDancer({
   onTap,
   onRotateEnd,
   onDragEnd,
+  transitionSeconds,
 }: Props) {
   /** 回している最中の見た目だけの角度。離すまで確定しない */
   const [liveAngle, setLiveAngle] = useState<number | null>(null);
@@ -166,6 +172,9 @@ export function DraggableDancer({
     if (!isDraggable) return;
     if (from.x === x && from.y === y) return;
     if (stageSize.width === 0 || stageSize.height === 0) return;
+    // 隣り合わないシーンへ飛んだときは 0 が来る。滑らせずに移す
+    // (通っていない区間を、あたかも通ったように見せない)
+    if (transitionSeconds <= 0) return;
 
     const unitX = stageSize.width / stageWidthUnits;
     const unitY = stageSize.height / stageHeightUnits;
@@ -177,7 +186,7 @@ export function DraggableDancer({
     });
     const animation = Animated.timing(offset, {
       toValue: { x: 0, y: 0 },
-      duration: SCENE_TRANSITION_MS,
+      duration: transitionSeconds * 1000,
       easing: Easing.out(Easing.cubic),
       // ネイティブでは別スレッドで動かす。Web にはその仕組みが無く、
       // true のままだと毎回警告が出て JS 側へ落ちる
@@ -195,6 +204,7 @@ export function DraggableDancer({
     stageHeightUnits,
     isAudienceOnTop,
     isDraggable,
+    transitionSeconds,
   ]);
 
   const responder = useMemo(
