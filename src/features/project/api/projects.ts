@@ -14,15 +14,15 @@ function toProject(row: ProjectRow): Project {
     title: row.title,
     stageWidth: row.stage_width,
     stageHeight: row.stage_height,
-    // migration 0003 を当てる前のDBには、この列がまだ無い。undefinedのまま
+    // 頭出しの列を足す前のスキーマのままのDBには、この列がまだ無い。undefinedのまま
     // 通すと秒数の計算がNaNになり、曲を鳴らしていなくてもシーンの選択が
     // おかしくなる。既定値(0)はDB側のdefaultと同じなので、無ければ0に落とす
     musicOffsetSeconds: row.music_offset_seconds ?? 0,
-    // migration 0005 を当てる前のDBには、この2つの列がまだ無い。
+    // 速さ・拍子を足す前のスキーマのままのDBには、この2つの列がまだ無い。
     // 既定値はDB側のdefaultと同じ
     bpm: row.bpm ?? DEFAULT_BPM,
     beatsPerBar: row.beats_per_bar ?? 4,
-    // migration 0007 を当てる前のDBには、この2つの列がまだ無い。
+    // 共有リンクを足す前のスキーマのままのDBには、この2つの列がまだ無い。
     // トークンが無ければ共有の口は出せないので null / false に落とす
     shareToken: row.share_token ?? null,
     isShared: row.is_shared ?? false,
@@ -78,10 +78,10 @@ export async function rotateShareToken(
 /**
  * 曲の速さ(BPM)を保存する。
  *
- * migration 0005 を当てていないDBでは列が無く、Supabaseが
+ * 速さ・拍子を足す前のスキーマのままのDBでは列が無く、Supabaseが
  * 「そんな列は無い」(PGRST204)を返す。BPMは端末側の表示にもう反映されて
  * いるので、その1件だけは【黙って流す】。ここで例外にすると、
- * マイグレーション前のDBでスライダーを触るたびにエラーが出る。
+ * 古いスキーマのDBでスライダーを触るたびにエラーが出る。
  */
 export async function updateProjectBpm(
   supabase: SupabaseClient<Database>,
@@ -305,7 +305,7 @@ export async function insertProject(
       stage_width: project.stageWidth,
       stage_height: project.stageHeight,
       // 頭出しが既定(0)のままなら、この列を送らない。DB側のdefaultも0なので
-      // 保存される値は変わらず、migration 0003 を当てる前のDBでも
+      // 保存される値は変わらず、頭出しの列が無い古いDBでも
       // 下書きの保存が通る。頭出しを設定した下書きを保存する場合だけは
       // 列が要るので、そのときは素直に送って失敗させる
       // (黙って捨てると、設定したはずの位置が次に開いたとき消えている)

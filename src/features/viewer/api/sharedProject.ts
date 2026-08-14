@@ -14,7 +14,7 @@ import { DEFAULT_BPM } from "@/features/music/lib/metronomePreference";
  * 渡すと、【全員の作品】が読める口を開けることになる。
  *
  * そこで、トークンを受け取る関数を1つだけ開放している
- * (public.shared_project / migration 0007)。共有がオンで、トークンが
+ * (public.shared_project / schema.sql)。共有がオンで、トークンが
  * 一致する作品だけを返す関数で、テーブルそのものは閉じたまま。
  *
  * ■ 1回で全部返してもらう
@@ -88,7 +88,7 @@ export async function getSharedProject(
 
   const { data, error } = await supabase.rpc("shared_project", { token });
 
-  // 関数がまだ無いDB(migration 0007 未適用)でも、画面は404で静かに閉じる。
+  // 関数がまだ無いDB(スキーマが古い)でも、画面は404で静かに閉じる。
   // ここで例外にすると、共有していない作品を開いたときとの区別が
   // 外から付いてしまう
   if (error) return null;

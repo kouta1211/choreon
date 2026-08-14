@@ -11,7 +11,7 @@ function toPosition(row: PositionRow): Position {
     xCoordinate: row.x_coordinate,
     yCoordinate: row.y_coordinate,
     rotationAngle: row.rotation_angle,
-    // マイグレーション未適用のSupabaseプロジェクトではrowにこれらのキー自体が
+    // スキーマが古いSupabaseプロジェクトではrowにこれらのキー自体が
     // 存在せずundefinedになる(select("*")は実在する列しか返さないため)。
     // Position型側もoptionalにしてあるので、そのまま渡して問題ない
     dancerTransitionDurationSeconds: row.dancer_transition_duration_seconds,
@@ -41,14 +41,14 @@ export async function listPositionsByScenes(
  * dancer_transition_duration_seconds/curve_control_x/yは、positionが
  * それらの値を持っていない(undefined)場合はペイロードに含めない
  * (JSON.stringifyはundefinedのキーを自動的に落とすため、書き込みリクエスト
- * 自体にキーが現れない)。これにより、マイグレーション未適用のSupabase
+ * 自体にキーが現れない)。これにより、スキーマが古いSupabase
  * プロジェクトに対しても、これらの機能を使っていない限りは通常の位置・
  * 向きの保存(ドラッグ・回転)が引き続き問題なく動く
  * (存在しない列への書き込みを試みないため)。
  */
 /**
  * 複数のpositionをまとめて保存する。upsertPositionと同じ考え方で、
- * undefinedのフィールドはペイロードに現れない(マイグレーション未適用の
+ * undefinedのフィールドはペイロードに現れない(スキーマが古い
  * プロジェクトでも、その機能を使っていない限り書き込みが通る)
  */
 export async function upsertPositions(

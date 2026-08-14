@@ -139,8 +139,6 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
           {!stored.shareToken && (
             <p className="mt-2 rounded-xl border border-line px-3 py-2.5 text-caption leading-snug text-fg-muted">
               {t.share.noKey}
-              <span className="font-mono"> 0007 </span>
-              {t.share.noKeyMigration}
             </p>
           )}
         </div>

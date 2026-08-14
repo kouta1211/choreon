@@ -173,7 +173,7 @@ export type Database = {
     Views: Record<string, never>;
     Functions: {
       /**
-       * 共有リンクで開いたときの読み取り口(migration 0007)。
+       * 共有リンクで開いたときの読み取り口(schema.sql)。
        * テーブルは持ち主にしか開いていないので、リンクで来た人は
        * この関数だけを通る。トークンが合わない・共有がオフなら null。
        */

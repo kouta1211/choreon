@@ -378,7 +378,7 @@ export const en = {
 
   dbErrors: {
     missingColumn:
-      "The database migrations have not been applied. Run the SQL in supabase/migrations/ from the Supabase SQL Editor.",
+      "The database schema looks out of date. Run supabase/schema.sql from the Supabase SQL Editor.",
     insufficientPrivilege:
       "Not permitted. Check the table's GRANTs and RLS policies.",
   },
@@ -446,8 +446,8 @@ export const en = {
     enable: "Anyone with the link can view",
     enabledNote: "People who open the link get a view-only screen",
     disabledNote: "While this is off, the link will not open for anyone",
-    noKey: "This piece does not have a sharing key yet.",
-    noKeyMigration: " — run the migration to enable it.",
+    noKey:
+      "This piece does not have a sharing key yet. Run supabase/schema.sql from the Supabase SQL Editor to enable it.",
     everyone: "Link for everyone",
     copy: "Copy the link",
     copied: "Copied",

@@ -21,7 +21,7 @@ export type ProjectSnapshot = {
   positions: Position[];
 };
 
-/** DBのdefaultと同じ(migration 0002)。ゲストの下書きでも同じ広さにしておく */
+/** DBのdefaultと同じ(schema.sql)。ゲストの下書きでも同じ広さにしておく */
 const STAGE_WIDTH = 14;
 const STAGE_HEIGHT = 10;
 

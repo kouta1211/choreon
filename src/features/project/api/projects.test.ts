@@ -47,8 +47,8 @@ function fakeSelectClient(row: unknown) {
 }
 
 /**
- * 曲の頭出し(music_offset_seconds)は migration 0003 で足した列。
- * その migration をまだ当てていないDBに対しても、下書きの保存と
+ * 曲の頭出し(music_offset_seconds)は後から足した列。
+ * その列がまだ無い古いスキーマのDBに対しても、下書きの保存と
  * 読み込みだけは通るようにしてある。
  */
 describe("insertProject", () => {
@@ -131,7 +131,7 @@ describe("listProjectSummaries", () => {
 
 describe("getProject", () => {
   it("列がまだ無いDBから読んでも、頭出しは0になる", async () => {
-    // migration 前の行。music_offset_seconds が存在しない
+    // 列を足す前の行。music_offset_seconds が存在しない
     const { music_offset_seconds: _omitted, ...legacyRow } = ROW;
     void _omitted;
 

@@ -377,7 +377,7 @@ export const ko = {
 
   dbErrors: {
     missingColumn:
-      "DB 마이그레이션이 적용되지 않았습니다. supabase/migrations/ 의 SQL을 Supabase SQL Editor에서 실행해 주세요",
+      "DB 스키마가 오래된 것 같습니다. supabase/schema.sql 을 Supabase SQL Editor에서 실행해 주세요",
     insufficientPrivilege:
       "권한이 없습니다. 테이블의 GRANT와 RLS 정책을 확인해 주세요",
   },
@@ -442,8 +442,8 @@ export const ko = {
     enable: "링크를 아는 사람이 볼 수 있음",
     enabledNote: "링크를 연 사람에게는 보기 전용 화면이 열립니다",
     disabledNote: "꺼져 있는 동안에는 링크가 있어도 열리지 않습니다",
-    noKey: "이 작품에는 아직 공유용 키가 없습니다.",
-    noKeyMigration: " 마이그레이션을 실행하면 사용할 수 있습니다.",
+    noKey:
+      "이 작품에는 아직 공유용 키가 없습니다. Supabase SQL Editor에서 supabase/schema.sql 을 실행하면 사용할 수 있습니다.",
     everyone: "모두에게 줄 링크",
     copy: "링크 복사",
     copied: "복사했습니다",

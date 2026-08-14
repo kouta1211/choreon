@@ -46,15 +46,18 @@ git diff --stat "HEAD@{78 hours ago}" HEAD 2>/dev/null || git diff --stat HEAD~5
 
 ### Supabase の権限（最優先）
 
-新しいテーブルやマイグレーションが増えた日は必ず見る。`supabase/migrations/` の差分に
-`create table` があれば、そのテーブルについて次の2点が満たされているかを確認する。
+スキーマが動いた日は必ず見る。`supabase/schema.sql` の差分に `create table` があれば、
+そのテーブルについて次の2点が満たされているかを確認する。
+
+（以前は `supabase/migrations/` に「既存のDBへ後から足す」SQLを番号順に置いていたが、
+すべて適用済みになったため削除した。いまは schema.sql 1本が正。）
 
 Supabase は `public` スキーマの新しいテーブルへ `anon` / `authenticated` / `service_role` の
 3ロール全部に全権限を自動で付ける既定（`ALTER DEFAULT PRIVILEGES`）を持っている。
 **明示的に `GRANT` していなくても `anon` に権限が付いている。**
 
 - **個人データ**（ユーザーごとに分離すべきもの。このアプリのテーブルはほぼ全部これ）:
-  `anon` の権限は剥奪されているか。マイグレーションに
+  `anon` の権限は剥奪されているか。schema.sql に
   `revoke all on public.<table> from anon;` があるか
 - **RLS**: `alter table ... enable row level security;` と、
   `auth.uid() = user_id` を `using` と `with check` の両方に持つポリシーがあるか

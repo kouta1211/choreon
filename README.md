@@ -21,30 +21,18 @@ npm run dev
 
 ### Supabaseのスキーマ
 
-**新規にDBを作る場合**は [supabase/schema.sql](supabase/schema.sql) を
-SQL Editorで実行する(RLSポリシー込み)。適用後はファイル末尾の確認クエリで、
-GRANT状況とRLSポリシーが意図通りであることを必ず確認すること。
+[supabase/schema.sql](supabase/schema.sql) をSQL Editorで実行する
+(RLSポリシー込み)。適用後はファイル末尾の確認クエリで、GRANT状況とRLSポリシーが
+意図通りであることを必ず確認すること。
 
-**既にテーブルがあるプロジェクトに後から列を足す場合**は、schema.sqlではなく
-[supabase/migrations/](supabase/migrations) 配下のSQLを番号順にSQL Editorで
-実行する。
+このファイルが**いまのスキーマの正**で、これ1本で作り直せる。以前は
+`supabase/migrations/` に「既存のDBへ後から列を足す」ためのSQLを番号順に
+置いていたが、すべて適用済みになったため削除した。列を足したときは
+schema.sql を書き換える。
 
-```
-supabase/migrations/0000_bounds_and_stage_defaults.sql
-supabase/migrations/0001_transition_and_curve.sql
-supabase/migrations/0002_stage_width_14.sql
-supabase/migrations/0003_music_offset.sql
-```
-
-どのファイルも「何度実行しても安全」に書いてあるため、適用済みか分からない
-場合はとりあえず流してよい。各ファイル末尾に、意図した列が揃ったかを確認する
-クエリが付いている。
-
-> マイグレーションが未適用のままだと、遷移時間の変更や導線の曲線編集、
-> 曲の頭出しの保存がPostgRESTのエラー(`PGRST204`)で失敗する。その場合アプリは
-> 「DBのマイグレーションが未適用です。〜」というトーストを表示する。
-> なお0003については、頭出しを既定(0秒)のままにしているかぎり読み書きとも
-> 未適用のDBで通るようにしてあるので、曲を使わない作品は影響を受けない。
+> スキーマが古いままだと、遷移時間の変更や導線の曲線編集、曲の頭出しの保存が
+> PostgRESTのエラー(`PGRST204`)で失敗する。その場合アプリは
+> 「DBのスキーマが古いようです。〜」というトーストを表示する。
 
 ### 環境変数
 

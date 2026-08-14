@@ -392,7 +392,7 @@ export const ja = {
 
   dbErrors: {
     missingColumn:
-      "DBのマイグレーションが未適用です。supabase/migrations/ のSQLをSupabaseのSQL Editorで実行してください",
+      "DBのスキーマが古いようです。supabase/schema.sql をSupabaseのSQL Editorで実行してください",
     insufficientPrivilege:
       "権限がありません。テーブルのGRANT・RLSポリシーを確認してください",
   },
@@ -456,8 +456,8 @@ export const ja = {
     enable: "リンクを知っている人が見られる",
     enabledNote: "リンクを開いた人は、見るだけの画面になります",
     disabledNote: "オフの間は、リンクを持っていても開けません",
-    noKey: "この作品にはまだ共有用の鍵がありません。",
-    noKeyMigration: "のマイグレーションを実行すると使えるようになります。",
+    noKey:
+      "この作品にはまだ共有用の鍵がありません。supabase/schema.sql をSupabaseのSQL Editorで実行すると使えるようになります。",
     everyone: "みんなに配るリンク",
     copy: "リンクをコピー",
     copied: "コピーしました",

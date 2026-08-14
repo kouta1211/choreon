@@ -2,14 +2,14 @@
  * Supabase(PostgREST)から返ってきたエラーを、画面に出す日本語メッセージへ変換する。
  *
  * これまで各コンポーネントのcatch節は `catch { showToast("〜に失敗しました") }` と
- * エラーの中身を捨てていた。そのため「マイグレーションを当て忘れている」のように
+ * エラーの中身を捨てていた。そのため「スキーマを当て忘れている」のように
  * 原因がはっきりしていて対処法もある失敗まで、原因不明の失敗と同じ文言になって
  * しまっていた。ここで代表的な原因だけは具体的な文言に振り分ける。
  */
 
 /** PostgRESTが「そのテーブルにその列は存在しない」と判断した時に返すコード。
- * スキーマキャッシュに列が無い＝supabase/migrations 配下の
- * マイグレーションが未適用、というのが実際上ほぼ唯一の原因になる */
+ * スキーマキャッシュに列が無い＝DBに supabase/schema.sql が当たっていない、
+ * というのが実際上ほぼ唯一の原因になる */
 const MISSING_COLUMN_CODE = "PGRST204";
 
 /** RLSポリシー・GRANT不足で弾かれた場合のPostgreSQLエラーコード */
@@ -38,7 +38,7 @@ function asPostgrestError(error: unknown): PostgrestLikeError | null {
  */
 let dbErrorMessages = {
   missingColumn:
-    "DBのマイグレーションが未適用です。supabase/migrations/ のSQLをSupabaseのSQL Editorで実行してください",
+    "DBのスキーマが古いようです。supabase/schema.sql をSupabaseのSQL Editorで実行してください",
   insufficientPrivilege:
     "権限がありません。テーブルのGRANT・RLSポリシーを確認してください",
 };
