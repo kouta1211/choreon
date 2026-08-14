@@ -22,6 +22,9 @@ export const ja = {
     on: 'オン',
     off: 'オフ',
     retry: '再試行',
+    close: '閉じる',
+    back: '戻る',
+    done: '完了',
   },
 
   stage: {

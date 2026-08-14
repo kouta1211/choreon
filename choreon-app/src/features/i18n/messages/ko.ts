@@ -15,6 +15,9 @@ export const ko: Messages = {
     on: '켬',
     off: '끔',
     retry: '다시 시도',
+    close: '닫기',
+    back: '뒤로',
+    done: '완료',
   },
 
   stage: {

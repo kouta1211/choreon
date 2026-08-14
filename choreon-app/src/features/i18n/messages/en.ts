@@ -15,6 +15,9 @@ export const en: Messages = {
     on: 'On',
     off: 'Off',
     retry: 'Try again',
+    close: 'Close',
+    back: 'Back',
+    done: 'Done',
   },
 
   stage: {
