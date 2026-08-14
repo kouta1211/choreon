@@ -4,6 +4,7 @@ import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
 import { duplicateTimeSeconds } from '@/features/scene/lib/sceneTiming';
+import { randomId } from '@/lib/randomId';
 
 /**
  * 画面下の、シーンを行き来する帯。
@@ -31,7 +32,7 @@ export function SceneDock() {
     const source = scenes.find((scene) => scene.id === selectedSceneId) ?? scenes[scenes.length - 1];
     if (!source) return;
 
-    const id = `scene-${Date.now()}`;
+    const id = randomId();
     addScene({
       id,
       projectId: source.projectId,
