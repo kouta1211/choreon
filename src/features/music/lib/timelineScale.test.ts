@@ -14,6 +14,7 @@ import {
   PLAYHEAD_ANCHOR,
   scrollAfterZoom,
   scrollForSeconds,
+  zoomForCluster,
 } from "./timelineScale";
 import { DEFAULT_SEGMENT_SECONDS } from "@/features/scene/lib/sceneTiming";
 import { TIMELINE_LAYOUT } from "@/features/music/lib/timelineLayout";
@@ -185,6 +186,48 @@ describe("degradeScenes", () => {
 
   it("シーンが無ければ空", () => {
     expect(degradeScenes([], DEFAULT_PX_PER_SECOND, PHONE_CARD_GAP)).toEqual([]);
+  });
+});
+
+/**
+ * 束ねを押したときの寄り先。「押しても何も起きない」を作らないための計算。
+ */
+describe("zoomForCluster", () => {
+  const GAP_PX = 60;
+
+  it("いちばん狭い間隔がコマの最小間隔になる倍率まで寄る", () => {
+    // 0 / 1 / 1.5秒 の3つ。狭いのは0.5秒なので 60px / 0.5秒 = 120px/秒
+    const zoom = zoomForCluster([0, 1, 1.5], [0, 1, 2], GAP_PX, 24);
+    expect(zoom.pxPerSecond).toBe(120);
+    // 寄せ先は最初と最後の中間
+    expect(zoom.middleSeconds).toBe(0.75);
+  });
+
+  it("寄りの限界は超えない", () => {
+    // 0.1秒間隔なら 600px/秒 が要るが、上限は 120px/秒
+    const zoom = zoomForCluster([0, 0.1], [0, 1], GAP_PX, 24);
+    expect(zoom.pxPerSecond).toBe(MAX_PX_PER_SECOND);
+  });
+
+  // 同じ時刻に重なっている束ねは、いくら寄っても離れない。
+  // それでも倍率を上げるのは、押した手応えを返すため(選択は呼び出し側が進める)
+  it("間隔が0なら、いまの倍率の倍まで寄る", () => {
+    expect(zoomForCluster([2, 2], [0, 1], GAP_PX, 24).pxPerSecond).toBe(48);
+    expect(zoomForCluster([2, 2], [0, 1], GAP_PX, 24).middleSeconds).toBe(2);
+  });
+
+  it("倍にしても限界は超えない", () => {
+    expect(zoomForCluster([2, 2], [0, 1], GAP_PX, 96).pxPerSecond).toBe(
+      MAX_PX_PER_SECOND,
+    );
+  });
+
+  // 束ねの中では、飛び飛びの番号も来る(縮退は左隣との距離で決まるため)
+  it("渡された番号だけを見る", () => {
+    const times = [0, 10, 10.5, 30];
+    const zoom = zoomForCluster(times, [1, 2], GAP_PX, 24);
+    expect(zoom.pxPerSecond).toBe(120);
+    expect(zoom.middleSeconds).toBe(10.25);
   });
 });
 

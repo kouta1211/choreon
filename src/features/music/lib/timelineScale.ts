@@ -157,6 +157,39 @@ export function scrollAfterZoom(
   return Math.max(0, axisX(seconds, nextPxPerSecond) - anchorX);
 }
 
+/**
+ * 束ねを押したときに、どこまで寄れば中身がコマとして読めるか。
+ *
+ * いちばん狭い間隔が `minGapPx` になる倍率まで寄る。全部が同じ時刻に
+ * 重なっている(間隔が0)束ねだけは、寄っても離れないので倍率を倍にする
+ * — 【押しても何も起きない行き止まり】にしないため。実際に離れるかは
+ * ここでは保証できないので、選択を1つ進めるのは呼び出し側の仕事。
+ *
+ * 寄せ先は束ねの中央(最初と最後の中間)。押した場所が窓の中に残る。
+ */
+export function zoomForCluster(
+  times: number[],
+  indexes: number[],
+  minGapPx: number,
+  currentPxPerSecond: number,
+): { pxPerSecond: number; middleSeconds: number } {
+  let narrowest = Infinity;
+  for (let i = 1; i < indexes.length; i += 1) {
+    const gap = times[indexes[i]] - times[indexes[i - 1]];
+    if (gap > 0 && gap < narrowest) narrowest = gap;
+  }
+
+  const middleSeconds =
+    (times[indexes[0]] + times[indexes[indexes.length - 1]]) / 2;
+
+  return {
+    pxPerSecond: clampPxPerSecond(
+      narrowest === Infinity ? currentPxPerSecond * 2 : minGapPx / narrowest,
+    ),
+    middleSeconds,
+  };
+}
+
 /** シーンを軸の上でどう見せるか */
 export type TimelineItemKind = "card" | "flag" | "cluster";
 
