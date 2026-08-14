@@ -3,26 +3,20 @@
 import {
   memo,
   useCallback,
-  useEffect,
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { animate, motion, useMotionValue, useTransform } from "motion/react";
+import { motion } from "motion/react";
 import { DancerMarker } from "@/components/molecules/DancerIcon";
 import { RotationHandle } from "@/components/atoms/RotationHandle";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import { quadraticBezierAt } from "@/features/canvas/lib/curvePath";
-import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
-import { interpolateDancerPoint } from "@/features/canvas/lib/sceneScrub";
+import { useDancerMotion } from "@/features/canvas/hooks/useDancerMotion";
+import { nudgeForKey } from "@/features/canvas/lib/nudgeKey";
 import type { Collision } from "@/features/canvas/lib/collision";
-import {
-  DEFAULT_TRANSITION_DURATION_SECONDS,
-  resolveTransitionDuration,
-  SCENE_TRANSITION_EASE,
-} from "@/features/canvas/constants";
+import { DEFAULT_TRANSITION_DURATION_SECONDS } from "@/features/canvas/constants";
 import type { Dancer } from "@/features/dancer/types";
 import type { MoveStrain } from "@/features/canvas/lib/physicalLimits";
 import {
@@ -31,11 +25,6 @@ import {
   toScreenY,
 } from "@/features/canvas/lib/stageFlip";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
-
-/** 選択中のダンサーを矢印キーで動かす際の1回あたりの移動量(ステージ座標系のユニット)。
- * Shiftキーを押しながらだとNUDGE_STEP_LARGEを使い、大きく移動できる */
-const NUDGE_STEP_SMALL = 0.25;
-const NUDGE_STEP_LARGE = 1;
 
 type Props = {
   dancer: Dancer;
@@ -80,24 +69,9 @@ type Props = {
  * そのままCSSに反映するだけで、Zustandへのコミットはしない。位置の確定は
  * 呼び出し側がDndContextのonDragEndで1回だけ行う(このコンポーネントは関与しない)。
  *
- * left/topはuseMotionValueで保持し、通常はanimate()でtransitionDurationSeconds
- * (省略時0.3秒)かけて補間する(シーン切り替えや保存失敗時のロールバックで
- * 滑らかに移動させるため。シーンごとに設定した遷移時間がここに反映されるので、
- * タイムライン再生中もこの同じ仕組みでダンサーが動く)。移動先のシーンに
- * 曲線制御点(curveControlX/Y)が設定されている場合は、left/topを別々に
- * 補間するのではなく進捗を1本だけ動かして二次ベジェ上の座標を求めることで、
- * PathOverlayが描いている曲線の通りに動かす。
- * ただし「自分をドラッグしていた→ドラッグが終わった」瞬間だけは例外で、
- * left/topをアニメーションさせずMotionValue.set()で即座に確定値へ合わせる。
- * ドラッグ中はdnd-kitのtransform(px)だけで見た目を動かしており、left/top自体は
- * ドラッグ前の値のまま止まっているため、ドロップの瞬間に「transformが消える」
- * のと「left/topが新しい値になる」のを同時に起こす必要があるが、後者を
- * animate()の宣言的な`animate`propで行うと、直後に起きる無関係な再レンダー
- * (他ダンサーの警告判定の再計算など)がtransition設定を上書きしてしまい、
- * 0.3秒版のtweenで再スタートしてしまう競合が起きる(実機で確認済み: 一瞬
- * ドラッグ開始位置まで巻き戻ってからスライドし直すように見える)。
- * MotionValue.set()による命令的なジャンプはこの競合と無縁なため、
- * ドロップ直後だけこちらを使う。
+ * 位置と濃さの【動き】は useDancerMotion が持つ(シーン切り替えの補間・
+ * 曲線に沿った移動・払っている間の補間・薄くする、の4つ)。ここが持つのは
+ * 掴む・選ぶ・フォーカス・見た目。
  *
  * 選択中は本体の外側に回転ハンドル(RotationHandle)を表示する。ハンドルの
  * ドラッグ中は見た目だけをliveRotationで即時更新し、指を離した時点で
@@ -113,7 +87,7 @@ type Props = {
  * キーボードでの移動は、dnd-kitのKeyboardSensor(「スペースで掴む→矢印で
  * 動かす→スペースで離す」という2段階操作)を使わず、素のonKeyDownで直接
  * 実装している。フォーカスが当たっている状態で矢印キーを押すとその場で
- * すぐ動く(Shiftキー併用で大きく移動)。
+ * すぐ動く(Shiftキー併用で大きく移動。読み替えは nudgeForKey)。
  *
  * Tabキーでの巡回は無効にしている(tabIndex: -1、useDraggable参照)。
  * ダンサーの数だけTabを押させるのは操作性が悪く、またフォーカスが
@@ -224,7 +198,9 @@ function DraggableDancerIconImpl({
       setLiveRotation(null);
       onRotateEnd?.(dancer.id, angle);
     },
-    [dancer.id, onRotateEnd],
+    // setLiveRotation は useState の setter で参照が変わらないが、
+    // React Compiler は依存として推論するため明記しておく(挙動は同じ)
+    [dancer.id, onRotateEnd, setLiveRotation],
   );
 
   // 矢印キーで直接移動させる(dnd-kitのドラッグは経由しない)。
@@ -232,28 +208,11 @@ function DraggableDancerIconImpl({
   // スクロールする」挙動が先に効いてしまい、ダンサーが動かないまま
   // 画面だけがスクロールしてしまう
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    const step = event.shiftKey ? NUDGE_STEP_LARGE : NUDGE_STEP_SMALL;
-    let dx = 0;
-    let dy = 0;
-    switch (event.key) {
-      case "ArrowLeft":
-        dx = -step;
-        break;
-      case "ArrowRight":
-        dx = step;
-        break;
-      case "ArrowUp":
-        dy = -step;
-        break;
-      case "ArrowDown":
-        dy = step;
-        break;
-      default:
-        return;
-    }
+    const delta = nudgeForKey(event.key, event.shiftKey);
+    if (!delta) return;
     event.preventDefault();
     // 上下を鏡にしているときは、上キーが画面の上=ステージでは客席側になる
-    onNudge?.(dancer.id, dx, stageYSign(isAudienceOnTop) * dy);
+    onNudge?.(dancer.id, delta.dx, stageYSign(isAudienceOnTop) * delta.dy);
   };
 
   const leftPercent = (x / stageWidthUnits) * 100;
@@ -265,174 +224,31 @@ function DraggableDancerIconImpl({
     ? mirrorAngle(displayRotation)
     : displayRotation;
 
-  // 位置は「%の数値」としてMotionValueに保持し、CSSへ渡す直前にuseTransformで
-  // 単位付きの文字列("54.9%")へ変換する。CSSのleft/topは単位付きでないと
-  // 無効になる(数値のままだとunitless扱いで反映されない)一方、曲線移動では
-  // 「今どこにいるか」を数値として読み取ってベジェ計算の始点にする必要が
-  // あるため、保持は数値・出力は文字列と役割を分けている
-  const leftPct = useMotionValue(leftPercent);
-  const topPct = useMotionValue(topPercent);
-  const left = useTransform(leftPct, (value) => `${value}%`);
-  const top = useTransform(topPct, (value) => `${value}%`);
-  const wasDraggingRef = useRef(isDragging);
-
-  // 濃さもMotionValueに一本化している。誰かにフォーカスが当たっている間の
-  // 「自分以外を薄くする」と、スクラブ中の「片側のシーンにしか居ない人を
-  // 出入りさせる」が同じopacityを取り合うため、宣言的なanimate propと
-  // MotionValueを混ぜると、どちらが勝つかがレンダーの順番に左右される
-  const dimmedOpacity = isDimmed ? 0.3 : 1;
-  const opacity = useMotionValue(dimmedOpacity);
-
-  const scrub = useSceneScrub();
-  const scrubProgressValue = scrub?.progress;
-  const isScrubbing = scrub?.targetSceneId != null;
-
   // 制御点もステージ座標系から%へ直しておく(x/yと同じ土俵に乗せる)。
   // 片方だけ設定されている状態は曲線として意味を成さないので直線扱いにする
   const hasCurve = curveControlX != null && curveControlY != null;
-  const controlLeftPercent = hasCurve
-    ? (curveControlX / stageWidthUnits) * 100
-    : null;
-  const controlTopPercent = hasCurve
-    ? (curveControlY / stageHeightUnits) * 100
-    : null;
+  const toPoint = (
+    pointX: number | null,
+    pointY: number | null,
+  ): { x: number; y: number } | null =>
+    pointX == null || pointY == null
+      ? null
+      : {
+          x: (pointX / stageWidthUnits) * 100,
+          y: (pointY / stageHeightUnits) * 100,
+        };
 
-  useEffect(() => {
-    const justFinishedDragging = wasDraggingRef.current && !isDragging;
-    wasDraggingRef.current = isDragging;
-    // ドラッグ中はleft/topを動かさない(dnd-kitのtransformだけで見た目を動かす)
-    if (isDragging) return;
-    // スクラブ中は下のuseEffectが指の位置から毎フレームleft/topを決めている。
-    // ここで時間ベースのアニメーションを走らせると、両者が同じ値を取り合う。
-    // 指を離してこのフラグが下りた時に、改めてこの効果が走り、
-    // 「途中まで動かした位置」から本来の位置へ戻る/進むアニメーションになる
-    if (isScrubbing) return;
-    if (justFinishedDragging) {
-      leftPct.set(leftPercent);
-      topPct.set(topPercent);
-      return;
-    }
-
-    // 曲線制御点があるシーンへ移動する時は、left/topをそれぞれ独立に補間する
-    // (=結果として直線になる)のではなく、進捗t(0→1)を1本だけ動かし、そこから
-    // 毎フレーム二次ベジェ上の座標を求める。PathOverlayがSVGで描いている曲線と
-    // 同じ式・同じ制御点を使うため、表示されている線の通りに動く。
-    // 始点は「今この瞬間、画面上でどこにいるか」(=直前のシーンの位置)を
-    // MotionValueから読む。propsのx/yは既に移動先の値になっているため使えない
-    if (controlLeftPercent !== null && controlTopPercent !== null) {
-      const fromLeft = leftPct.get();
-      const fromTop = topPct.get();
-      // 位置が変わらないダンサーにまで曲線補間を走らせると、制御点の方向へ
-      // 膨らんでから元の位置へ戻るという不自然な動きになるため、何もしない
-      // (PathOverlayも位置が変わらないダンサーには線を引かないので、
-      // 見えていない曲線に沿って動くこともなくなる)
-      if (fromLeft === leftPercent && fromTop === topPercent) return;
-      const curveAnimation = animate(0, 1, {
-        duration: resolveTransitionDuration(transitionDurationSeconds),
-        ease: SCENE_TRANSITION_EASE,
-        onUpdate: (progress) => {
-          leftPct.set(
-            quadraticBezierAt(
-              fromLeft,
-              controlLeftPercent,
-              leftPercent,
-              progress,
-            ),
-          );
-          topPct.set(
-            quadraticBezierAt(fromTop, controlTopPercent, topPercent, progress),
-          );
-        },
-      });
-      return () => curveAnimation.stop();
-    }
-
-    const duration = resolveTransitionDuration(transitionDurationSeconds);
-    const leftAnimation = animate(leftPct, leftPercent, {
-      duration,
-      ease: SCENE_TRANSITION_EASE,
-    });
-    const topAnimation = animate(topPct, topPercent, {
-      duration,
-      ease: SCENE_TRANSITION_EASE,
-    });
-    return () => {
-      leftAnimation.stop();
-      topAnimation.stop();
-    };
-  }, [
-    isDragging,
-    isScrubbing,
+  const { left, top, opacity } = useDancerMotion({
     leftPercent,
     topPercent,
-    leftPct,
-    topPct,
-    transitionDurationSeconds,
-    controlLeftPercent,
-    controlTopPercent,
-  ]);
-
-  // スクラブ中の位置。指の進捗(0〜1)を購読して、今のシーンの位置と
-  // 移動先の位置のあいだを線形に結ぶ。ここでは曲線(制御点)を使わない:
-  // 曲線は「何秒でどう動くか」という時間の話で、指で前後に往復できる
-  // スクラブでは行きと帰りで違う道を通ってしまうため
-  useEffect(() => {
-    if (!isScrubbing || !scrubProgressValue) return;
-    if (isDragging) return;
-
-    // %へ直してから補間する。区間の両端はステージ座標系で渡ってくるが、
-    // left/topは%で持っているため(このファイル冒頭のコメント参照)
-    const from =
-      scrubFromX == null || scrubFromY == null
-        ? null
-        : {
-            x: (scrubFromX / stageWidthUnits) * 100,
-            y: (scrubFromY / stageHeightUnits) * 100,
-          };
-    const to =
-      scrubToX == null || scrubToY == null
-        ? null
-        : {
-            x: (scrubToX / stageWidthUnits) * 100,
-            y: (scrubToY / stageHeightUnits) * 100,
-          };
-
-    const apply = (progress: number) => {
-      const point = interpolateDancerPoint(from, to, progress);
-      if (!point) return;
-      leftPct.set(point.x);
-      topPct.set(point.y);
-      opacity.set(point.opacity * dimmedOpacity);
-    };
-
-    apply(scrubProgressValue.get());
-    return scrubProgressValue.on("change", apply);
-  }, [
-    isScrubbing,
+    controlLeftPercent: hasCurve ? (curveControlX / stageWidthUnits) * 100 : null,
+    controlTopPercent: hasCurve ? (curveControlY / stageHeightUnits) * 100 : null,
     isDragging,
-    scrubProgressValue,
-    scrubFromX,
-    scrubFromY,
-    scrubToX,
-    scrubToY,
-    stageWidthUnits,
-    stageHeightUnits,
-    leftPct,
-    topPct,
-    opacity,
-    dimmedOpacity,
-  ]);
-
-  // スクラブしていない間の濃さ。以前はmotion.divのanimate propで
-  // 宣言的に書いていたぶんを、MotionValueへ移して同じ秒数で再現している
-  useEffect(() => {
-    if (isScrubbing) return;
-    const animation = animate(opacity, dimmedOpacity, {
-      duration: 0.3,
-      ease: "easeOut",
-    });
-    return () => animation.stop();
-  }, [isScrubbing, opacity, dimmedOpacity]);
+    transitionDurationSeconds,
+    scrubFrom: toPoint(scrubFromX, scrubFromY),
+    scrubTo: toPoint(scrubToX, scrubToY),
+    dimmedOpacity: isDimmed ? 0.3 : 1,
+  });
 
   return (
     <motion.div
