@@ -114,6 +114,20 @@ export const ja = {
     addFailed: 'ダンサーを追加できませんでした',
     removeFailed: 'この人を消せませんでした',
     colorFailed: '色を保存できませんでした。元に戻しました',
+
+    /** ステージの直上に出る帯（選んでいる人の操作） */
+    inspector: {
+      name: '名前',
+      nameFailed: '名前を保存できませんでした。元に戻しました',
+      focus: 'この人に注目',
+      focusOn: '注目中',
+      deselect: '選択をやめる',
+      ownDuration: 'この人だけの移動時間',
+      ownDurationFailed: '移動時間を保存できませんでした。元に戻しました',
+      seconds: '秒',
+      /** 空欄のときに薄く出す値＝シーンの区間の長さ */
+      inherit: (seconds: string) => `${seconds}`,
+    },
   },
 
   formations: {

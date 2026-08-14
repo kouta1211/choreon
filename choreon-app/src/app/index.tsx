@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ConfirmDialog } from '@/components/confirm-dialog';
+import { DancerInspector } from '@/components/dancer-inspector';
 import { DancerSheet } from '@/components/dancer-sheet';
 import { EditorHeader } from '@/components/editor-header';
 import { FormationSheet } from '@/components/formation-sheet';
@@ -159,8 +160,13 @@ export default function EditorScreen() {
         <StageView stageWidthUnits={stage.width} stageHeightUnits={stage.height} />
       </View>
 
-      {/* 下端。帯はここに貼り付き、ステージがどれだけ縮んでも動かない */}
-      <View className="shrink-0 gap-2 px-3 pt-2">
+      {/* 下端。帯はここに貼り付き、ステージがどれだけ縮んでも動かない。
+          インスペクターはこの上辺に浮かせるので、位置の基準として
+          `relative` が要る */}
+      <View className="relative shrink-0 gap-2 px-3 pt-2">
+        {/* 選んでいる人の操作。高さを取らないので、選んでも画面が揺れない */}
+        <DancerInspector />
+
         {/* 保存に失敗したときの知らせ。押せるもののすぐ上に出す */}
         <Toast />
         <PlaybackControls />

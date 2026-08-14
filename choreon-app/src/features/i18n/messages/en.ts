@@ -103,6 +103,18 @@ export const en: Messages = {
     addFailed: 'Could not add the dancer',
     removeFailed: 'Could not remove that dancer',
     colorFailed: 'Could not save the colour. Put it back.',
+
+    inspector: {
+      name: 'Name',
+      nameFailed: 'Could not save the name. Put it back.',
+      focus: 'Focus on this dancer',
+      focusOn: 'Focused',
+      deselect: 'Deselect',
+      ownDuration: 'Travel time for this dancer only',
+      ownDurationFailed: 'Could not save the travel time. Put it back.',
+      seconds: 's',
+      inherit: (seconds: string) => `${seconds}`,
+    },
   },
 
   formations: {

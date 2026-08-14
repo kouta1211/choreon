@@ -103,6 +103,18 @@ export const ko: Messages = {
     addFailed: '댄서를 추가하지 못했습니다',
     removeFailed: '이 사람을 삭제하지 못했습니다',
     colorFailed: '색을 저장하지 못해 되돌렸습니다',
+
+    inspector: {
+      name: '이름',
+      nameFailed: '이름을 저장하지 못해 되돌렸습니다',
+      focus: '이 사람에 주목',
+      focusOn: '주목 중',
+      deselect: '선택 해제',
+      ownDuration: '이 사람만의 이동 시간',
+      ownDurationFailed: '이동 시간을 저장하지 못해 되돌렸습니다',
+      seconds: '초',
+      inherit: (seconds: string) => `${seconds}`,
+    },
   },
 
   formations: {

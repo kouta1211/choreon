@@ -32,7 +32,9 @@ export type IconName =
   | 'music'
   | 'users'
   | 'layout'
-  | 'list';
+  | 'list'
+  | 'focus'
+  | 'trash';
 
 /** lucide（24×24, stroke-width 2）と同じ座標。形が揃っていないと並べたときに浮く */
 const SHAPES: Record<IconName, ReactNode> = {
@@ -128,6 +130,24 @@ const SHAPES: Record<IconName, ReactNode> = {
       <Path d="M3 6h.01" />
       <Path d="M3 12h.01" />
       <Path d="M3 18h.01" />
+    </>
+  ),
+  focus: (
+    <>
+      <Circle cx={12} cy={12} r={3} />
+      <Path d="M3 7V5a2 2 0 0 1 2-2h2" />
+      <Path d="M17 3h2a2 2 0 0 1 2 2v2" />
+      <Path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+      <Path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+    </>
+  ),
+  trash: (
+    <>
+      <Path d="M3 6h18" />
+      <Path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <Path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <Path d="M10 11v6" />
+      <Path d="M14 11v6" />
     </>
   ),
 };

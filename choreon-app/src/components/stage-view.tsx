@@ -62,6 +62,7 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
   const isSnapEnabled = useSettingsStore((state) => state.isSnapEnabled);
   const isBlindSpotCheckVisible = useUIStore((state) => state.isBlindSpotCheckVisible);
+  const focusedDancerId = useUIStore((state) => state.focusedDancerId);
   const dancerNameDisplay = useSettingsStore((state) => state.dancerNameDisplay);
 
   /**
@@ -321,7 +322,11 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
               screenY={screenY}
               rotationAngle={here?.rotationAngle ?? 0}
               isSelected={dancerId === selectedDancerId}
-              opacity={point.opacity}
+              // 誰かに「注目」しているときは、その人以外を薄くする。
+              // 払っている最中の濃さと掛け合わせる（両方が効く場面がある）
+              opacity={
+                point.opacity * (focusedDancerId && focusedDancerId !== dancerId ? 0.25 : 1)
+              }
               // 払っている最中は、その人だけを掴めないようにする
               // (指はステージ全体の操作に使われている)
               isDraggable={!scrub}
@@ -336,7 +341,18 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
                 dancerNameDisplay === 'always' ||
                 (dancerNameDisplay === 'selected' && dancerId === selectedDancerId)
               }
-              transitionSeconds={transitionSeconds}
+              // この人だけ短く動く設定があれば、そちらが勝つ（区間より
+              // 短い＝早く着いて残りは立って待つ、という意味）。
+              // 区間そのものが 0（隣り合わないシーンへ飛んだ）ときは
+              // 上書きも効かせない — 通っていない区間を通ったように見せない
+              transitionSeconds={
+                transitionSeconds === 0
+                  ? 0
+                  : Math.min(
+                      transitionSeconds,
+                      here?.dancerTransitionDurationSeconds ?? transitionSeconds,
+                    )
+              }
               isBlocked={blockedDancerIds.has(dancerId)}
               excessiveMove={excessiveMoves.get(dancerId) ?? null}
               // 押しただけなら選ぶ。もう一度押すと外れる
