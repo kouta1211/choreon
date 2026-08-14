@@ -2,7 +2,9 @@ import { useMemo, useRef, useState } from 'react';
 import { PanResponder, View, Text, type LayoutChangeEvent } from 'react-native';
 
 import { DraggableDancer } from '@/components/draggable-dancer';
+import { useHistoryStore } from '@/features/canvas/store/useHistoryStore';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
+import type { Position } from '@/features/scene/types';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
 import {
@@ -48,6 +50,30 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
   const isSnapEnabled = useSettingsStore((state) => state.isSnapEnabled);
   const dancerNameDisplay = useSettingsStore((state) => state.dancerNameDisplay);
+
+  /**
+   * 動かした結果をストアへ入れ、**戻せるように履歴へ積む**。
+   *
+   * 積むのは「操作前」と「操作後」の立ち位置まるごと（Web版
+   * `usePositionCommit` と同じ形）。どのフィールドが変わった操作なのかを
+   * 履歴側が知らなくてよくなる。
+   */
+  const commit = (
+    targetSceneId: string,
+    dancerId: string,
+    kind: 'move' | 'rotate',
+    next: Partial<Position>,
+  ) => {
+    const before = positionsBySceneId[targetSceneId]?.[dancerId];
+    if (!before) return;
+    const after = { ...before, ...next };
+
+    updateDancerPosition(targetSceneId, dancerId, next);
+    useHistoryStore.getState().push({
+      kind,
+      changes: [{ sceneId: targetSceneId, dancerId, before, after }],
+    });
+  };
 
   const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
   const handleLayout = (event: LayoutChangeEvent) => {
@@ -194,11 +220,12 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
               // 押しただけなら選ぶ。もう一度押すと外れる
               onTap={() => selectDancer(dancerId === selectedDancerId ? null : dancerId)}
               onRotateEnd={(rotationAngle) =>
-                updateDancerPosition(sceneId, dancerId, { rotationAngle })
+                commit(sceneId, dancerId, 'rotate', { rotationAngle })
               }
               onDragEnd={({ x, y }) =>
-                // いまは端末の中だけ。Supabase への保存は、認証を移してから
-                updateDancerPosition(sceneId, dancerId, {
+                // いまは端末の中だけ。Supabase への保存は、実機で1周
+                // 確かめてから（account-panel.tsx 参照）
+                commit(sceneId, dancerId, 'move', {
                   xCoordinate: x,
                   yCoordinate: y,
                 })
