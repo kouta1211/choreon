@@ -21,13 +21,13 @@ type Props = {
 };
 
 /**
- * ログインして、自分の作品を **開く（読むだけ）**。
+ * ログインして、自分の作品を開く。
  *
- * ■ 書き込みはまだ通していない
- * ここで開いた作品を動かしても、Supabase へは1文字も書かない。ネイティブ版は
- * まだ実機で1周も確認できていないので、確認できていないコードに本物の作品を
- * 書き換えさせない。**画面にもそう書いてある**（黙って保存されないのが
- * いちばん困る）。
+ * ■ 開いた作品は【保存される】
+ * 立ち位置・シーン・ダンサーの変更は Supabase へ書く（各画面が persist を
+ * 通す）。**実機での確認はこれから**なので、画面にも「まずは捨ててよい
+ * 作品で」と出している。保存に失敗したら見た目を元へ戻して知らせるので、
+ * 黙って消えることはない。
  *
  * ■ 登録もここから出せるようにした
  * 確認用のアカウントを作れないと、本物の作品を触るしか試しようが無くなる。
@@ -149,8 +149,9 @@ function SignInForm() {
       {notice ? <Text className="text-sm text-accent-soft">{notice}</Text> : null}
 
       <Text className="text-xs leading-5 text-fg-muted">
-        Web版と同じアカウントです。ここで開いた作品は<Text className="text-fg-sub">読むだけ</Text>
-        で、この端末で動かしても保存はされません。
+        Web版と同じアカウントです。ここで開いた作品は
+        <Text className="text-fg-sub">この端末からも保存されます</Text>。
+        実機での確認はこれからなので、まずは捨ててよい作品で試してください。
       </Text>
     </View>
   );
@@ -230,7 +231,7 @@ function SignedIn({
 
       {openedTitle ? (
         <Text className="text-xs text-accent-soft">
-          「{openedTitle}」を開いています（この端末での変更は保存されません）
+          「{openedTitle}」を開いています（この端末での変更も保存されます）
         </Text>
       ) : null}
 

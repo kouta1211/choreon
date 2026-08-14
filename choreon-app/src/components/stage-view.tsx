@@ -7,7 +7,9 @@ import { StageMarks } from '@/components/stage-marks';
 import { getSceneStep } from '@/features/canvas/lib/sceneStep';
 import { useSceneWarnings } from '@/features/canvas/hooks/useSceneWarnings';
 import { useHistoryStore } from '@/features/canvas/store/useHistoryStore';
+import { persist } from '@/features/project/lib/persistence';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
+import { upsertPositions } from '@/features/scene/api/positions';
 import type { Position } from '@/features/scene/types';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
@@ -67,7 +69,7 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
    * `usePositionCommit` と同じ形）。どのフィールドが変わった操作なのかを
    * 履歴側が知らなくてよくなる。
    */
-  const commit = (
+  const commit = async (
     targetSceneId: string,
     dancerId: string,
     kind: 'move' | 'rotate',
@@ -77,11 +79,30 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
     if (!before) return;
     const after = { ...before, ...next };
 
+    // 1. 先に画面へ反映（楽観的更新）
     updateDancerPosition(targetSceneId, dancerId, next);
-    useHistoryStore.getState().push({
-      kind,
-      changes: [{ sceneId: targetSceneId, dancerId, before, after }],
-    });
+
+    try {
+      // 2. 保存。ゲスト中や仮のサンプルでは persist が何もせずに返る
+      await persist((client) => upsertPositions(client, [after]));
+      // 3. 保存できてから履歴へ積む（戻せるのは、保存された変更だけ）
+      useHistoryStore.getState().push({
+        kind,
+        changes: [{ sceneId: targetSceneId, dancerId, before, after }],
+      });
+    } catch {
+      // 4. 失敗したら元の位置へ戻す。**黙って飲まない** —
+      //    動かしたのに保存されていない、がいちばん困る
+      updateDancerPosition(targetSceneId, dancerId, before);
+      useUIStore.getState().showToast({
+        message: '保存できませんでした。位置を元に戻しました',
+        type: 'error',
+        action: {
+          label: '再試行',
+          onAction: () => void commit(targetSceneId, dancerId, kind, next),
+        },
+      });
+    }
   };
 
   const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
@@ -282,12 +303,12 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
               // 押しただけなら選ぶ。もう一度押すと外れる
               onTap={() => selectDancer(dancerId === selectedDancerId ? null : dancerId)}
               onRotateEnd={(rotationAngle) =>
-                commit(sceneId, dancerId, 'rotate', { rotationAngle })
+                void commit(sceneId, dancerId, 'rotate', { rotationAngle })
               }
               onDragEnd={({ x, y }) =>
                 // いまは端末の中だけ。Supabase への保存は、実機で1周
                 // 確かめてから（account-panel.tsx 参照）
-                commit(sceneId, dancerId, 'move', {
+                void commit(sceneId, dancerId, 'move', {
                   xCoordinate: x,
                   yCoordinate: y,
                 })

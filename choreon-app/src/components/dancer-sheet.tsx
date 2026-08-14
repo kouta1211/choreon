@@ -9,7 +9,10 @@ import {
 } from '@/features/dancer/lib/newDancers';
 import { themedDancerColor } from '@/features/dancer/lib/themedColor';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
+import { persist } from '@/features/project/lib/persistence';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
+import { createDancers, deleteDancer, updateDancerColor } from '@/features/dancer/api/dancers';
+import { upsertPositions } from '@/features/scene/api/positions';
 import { useThemeStore } from '@/features/theme/store/useThemeStore';
 import { randomId } from '@/lib/randomId';
 
@@ -40,7 +43,11 @@ type Props = {
  * `Alert.alert` は Web（react-native-web）では何も出ないので、確認は画面の中に
  * 出す。1タップ目で「本当に消す」に変わる。
  *
- * まだ Supabase へは書いていない（ストアの中だけ）。保存は認証を移してから。
+ * ■ 保存
+ * 追加・色替え・削除はすべて `persist` を通す（ゲスト中や仮のサンプルでは
+ * 何も書かない）。**消すのは保存できてから**で、足すのは先に画面へ出して
+ * 失敗したら取り消す。消す方を逆にすると、失敗したときにその人の立ち位置を
+ * 全シーンぶん画面へ戻す羽目になる。
  */
 export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
   const dancers = useProjectStore((state) => state.dancers);
@@ -53,6 +60,7 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
   const selectedDancerId = useUIStore((state) => state.selectedDancerId);
   const selectDancer = useUIStore((state) => state.selectDancer);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
+  const showToast = useUIStore((state) => state.showToast);
 
   // 「消す」を押したあとの確認待ち。誰の確認かを持つ（別の人を選び直したら消える）
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -64,7 +72,7 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
   const list = Object.values(dancers);
   const selected = selectedDancerId ? dancers[selectedDancerId] : undefined;
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     const sceneId = selectedSceneId ?? scenes[0]?.id;
     if (!sceneId) return;
 
@@ -85,7 +93,7 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
     );
 
     const id = randomId();
-    addDancer({
+    const created = {
       id,
       projectId: projectId ?? 'local',
       name,
@@ -93,19 +101,35 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
       // 0度 = 客席を向く（Web版と同じ既定）
       initialDirection: 0,
       createdAt: new Date().toISOString(),
-    });
+    };
+    addDancer(created);
 
     // 全シーンに同じ場所で立たせる。「まだ動かしていない人」から始まり、
     // 動かしたシーンだけが変わっていく
-    for (const scene of scenes) {
-      updateDancerPosition(scene.id, id, {
-        xCoordinate: spot.x,
-        yCoordinate: spot.y,
-        rotationAngle: 0,
-      });
+    const placed = scenes.map((scene) => ({
+      sceneId: scene.id,
+      dancerId: id,
+      xCoordinate: spot.x,
+      yCoordinate: spot.y,
+      rotationAngle: 0,
+    }));
+    for (const position of placed) {
+      updateDancerPosition(position.sceneId, id, position);
     }
     selectDancer(id);
     setPendingDeleteId(null);
+
+    try {
+      // ダンサーを作ってから立ち位置（外部キーの順番）
+      await persist(async (client) => {
+        await createDancers(client, [created]);
+        await upsertPositions(client, placed);
+      });
+    } catch {
+      removeDancer(id);
+      selectDancer(null);
+      showToast({ message: 'ダンサーを追加できませんでした', type: 'error' });
+    }
   };
 
   const handleSelect = (dancerId: string) => {
@@ -113,14 +137,37 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
     selectDancer(dancerId === selectedDancerId ? null : dancerId);
   };
 
-  const handleDelete = (dancerId: string) => {
+  const handleDelete = async (dancerId: string) => {
     if (pendingDeleteId !== dancerId) {
       setPendingDeleteId(dancerId);
       return;
     }
+    setPendingDeleteId(null);
+
+    // 消すのは【保存できてから】。先に消して失敗すると、その人の
+    // 立ち位置（全シーンぶん）まで画面へ戻す必要が出る
+    try {
+      await persist((client) => deleteDancer(client, dancerId));
+    } catch {
+      showToast({ message: 'この人を消せませんでした', type: 'error' });
+      return;
+    }
     removeDancer(dancerId);
     selectDancer(null);
-    setPendingDeleteId(null);
+  };
+
+  /** 色を変える。ストアの addDancer が上書きも兼ねる（Web版と同じ） */
+  const changeColor = async (dancerId: string, color: string) => {
+    const before = dancers[dancerId];
+    if (!before || before.color === color) return;
+
+    addDancer({ ...before, color });
+    try {
+      await persist((client) => updateDancerColor(client, dancerId, color));
+    } catch {
+      addDancer(before);
+      showToast({ message: '色を保存できませんでした。元に戻しました', type: 'error' });
+    }
   };
 
   return (
@@ -130,7 +177,7 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
           ダンサー（{list.length}人）
         </Text>
         <Pressable
-          onPress={handleAdd}
+          onPress={() => void handleAdd()}
           accessibilityRole="button"
           accessibilityLabel="ダンサーを追加"
           className="rounded-full bg-accent px-4 py-1.5 active:opacity-80"
@@ -178,7 +225,7 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
             {DANCER_COLOR_PALETTE.map((color) => (
               <Pressable
                 key={color}
-                onPress={() => addDancer({ ...selected, color })}
+                onPress={() => void changeColor(selected.id, color)}
                 accessibilityRole="button"
                 accessibilityLabel={`色を ${color} にする`}
                 className={`h-9 w-9 rounded-full ${
@@ -190,7 +237,7 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
           </View>
 
           <Pressable
-            onPress={() => handleDelete(selected.id)}
+            onPress={() => void handleDelete(selected.id)}
             accessibilityRole="button"
             className="self-start rounded-lg border border-line-strong px-3 py-1.5 active:opacity-80"
           >

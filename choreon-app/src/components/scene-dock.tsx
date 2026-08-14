@@ -1,6 +1,9 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { persist } from '@/features/project/lib/persistence';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
+import { createScene } from '@/features/scene/api/scenes';
+import { upsertPositions } from '@/features/scene/api/positions';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
 import { duplicateTimeSeconds } from '@/features/scene/lib/sceneTiming';
@@ -23,34 +26,56 @@ export function SceneDock() {
   const scenes = useProjectStore((state) => state.scenes);
   const positionsBySceneId = useProjectStore((state) => state.positionsBySceneId);
   const addScene = useProjectStore((state) => state.addScene);
+  const removeScene = useProjectStore((state) => state.removeScene);
   const updateDancerPosition = useProjectStore((state) => state.updateDancerPosition);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const selectScene = useUIStore((state) => state.selectScene);
   const defaultSegmentSeconds = useSettingsStore((state) => state.defaultSegmentSeconds);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     const source = scenes.find((scene) => scene.id === selectedSceneId) ?? scenes[scenes.length - 1];
     if (!source) return;
 
     const id = randomId();
-    addScene({
+    const created = {
       id,
       projectId: source.projectId,
       name: `シーン${scenes.length + 1}`,
       orderIndex: scenes.length,
       // 並び順の正は時刻。選んでいるシーンの隣へ入れる
       timeSeconds: duplicateTimeSeconds(scenes, source, defaultSegmentSeconds),
-    });
+    };
+    addScene(created);
 
     // いまの配置をそのままコピーする
-    for (const position of Object.values(positionsBySceneId[source.id] ?? {})) {
-      updateDancerPosition(id, position.dancerId, {
-        xCoordinate: position.xCoordinate,
-        yCoordinate: position.yCoordinate,
-        rotationAngle: position.rotationAngle,
-      });
+    const copied = Object.values(positionsBySceneId[source.id] ?? {}).map((position) => ({
+      sceneId: id,
+      dancerId: position.dancerId,
+      xCoordinate: position.xCoordinate,
+      yCoordinate: position.yCoordinate,
+      rotationAngle: position.rotationAngle,
+    }));
+    for (const position of copied) {
+      updateDancerPosition(id, position.dancerId, position);
     }
     selectScene(id);
+
+    try {
+      // シーンを作ってから立ち位置を入れる（外部キーの順番）。
+      // まとめて並列に投げられないのはこのため
+      await persist(async (client) => {
+        await createScene(client, created);
+        await upsertPositions(client, copied);
+      });
+    } catch {
+      // 作れなかったら画面からも消す。**中途半端に残さない** —
+      // 画面にあるのにサーバーに無いシーンは、次に開いたときに消えて見える
+      removeScene(id);
+      selectScene(source.id);
+      useUIStore
+        .getState()
+        .showToast({ message: 'シーンを追加できませんでした', type: 'error' });
+    }
   };
 
   return (
@@ -84,7 +109,7 @@ export function SceneDock() {
         })}
 
         <Pressable
-          onPress={handleAdd}
+          onPress={() => void handleAdd()}
           className="min-w-14 items-center justify-center rounded-xl border border-dashed border-line-strong px-3 py-2 active:opacity-80"
         >
           <Text className="text-lg text-fg-sub">＋</Text>

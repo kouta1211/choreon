@@ -12,6 +12,7 @@ import { SceneDock } from '@/components/scene-dock';
 import { SceneEditor } from '@/components/scene-editor';
 import { StageView } from '@/components/stage-view';
 import { ThemePicker } from '@/components/theme-picker';
+import { Toast } from '@/components/toast';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
@@ -172,6 +173,9 @@ export default function FoundationScreen() {
         </View>
 
         <StageView stageWidthUnits={stage.width} stageHeightUnits={stage.height} />
+
+        {/* 保存に失敗したときの知らせ。ステージのすぐ下に出す */}
+        <Toast />
 
         <PlaybackControls />
 

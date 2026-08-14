@@ -15,7 +15,9 @@ import {
 } from '@/features/canvas/lib/formationTemplates';
 import { useHistoryStore } from '@/features/canvas/store/useHistoryStore';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
+import { persist } from '@/features/project/lib/persistence';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
+import { upsertPositions } from '@/features/scene/api/positions';
 
 type Props = {
   stageWidthUnits: number;
@@ -83,14 +85,34 @@ export function FormationSheet({ stageWidthUnits, stageHeightUnits }: Props) {
     for (const change of changes) {
       updateDancerPosition(selectedSceneId, change.dancerId, change.after);
     }
-    useHistoryStore.getState().push({ kind: 'template', changes });
 
-    const leftOut = dancers.length - changes.length;
-    setApplied(
-      leftOut > 0
-        ? `${formationName(formation.label)} にしました（余る${leftOut}人はそのまま）`
-        : `${formationName(formation.label)} にしました`,
-    );
+    void (async () => {
+      try {
+        await persist((client) =>
+          upsertPositions(
+            client,
+            changes.map((change) => change.after),
+          ),
+        );
+        // 全員ぶんを1ステップとして積む（保存できてから）
+        useHistoryStore.getState().push({ kind: 'template', changes });
+
+        const leftOut = dancers.length - changes.length;
+        setApplied(
+          leftOut > 0
+            ? `${formationName(formation.label)} にしました（余る${leftOut}人はそのまま）`
+            : `${formationName(formation.label)} にしました`,
+        );
+      } catch {
+        for (const change of changes) {
+          updateDancerPosition(selectedSceneId, change.dancerId, change.before);
+        }
+        useUIStore.getState().showToast({
+          message: '隊形を保存できませんでした。元に戻しました',
+          type: 'error',
+        });
+      }
+    })();
   };
 
   return (

@@ -2,7 +2,13 @@ import { useEffect, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 
 import { useUIStore } from '@/features/canvas/store/useUIStore';
+import { persist } from '@/features/project/lib/persistence';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
+import {
+  deleteScene as deleteSceneApi,
+  renameScene as renameSceneApi,
+  updateSceneTimes,
+} from '@/features/scene/api/scenes';
 import {
   MIN_SEGMENT_SECONDS,
   retimeScene,
@@ -40,6 +46,7 @@ export function SceneEditor() {
   const applySceneTimes = useProjectStore((state) => state.applySceneTimes);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const selectScene = useUIStore((state) => state.selectScene);
+  const showToast = useUIStore((state) => state.showToast);
 
   const index = scenes.findIndex((scene) => scene.id === selectedSceneId);
   const scene = index === -1 ? undefined : scenes[index];
@@ -67,21 +74,64 @@ export function SceneEditor() {
   const segment = durations[index] ?? 0;
   const isFirst = index === 0;
 
-  const changeSegment = (delta: number) => {
+  /**
+   * 時刻の変更を保存する。**動いたシーンだけ**を送る
+   * （全件送ると、触っていない行まで書き換わる。Web版 commitTimes と同じ）。
+   */
+  const changeSegment = async (delta: number) => {
     const next = Math.max(MIN_SEGMENT_SECONDS, segment + delta);
-    applySceneTimes(retimeScene(scenes, index, next, ripple).timesById);
+    const timesById = retimeScene(scenes, index, next, ripple).timesById;
+    const changed = scenes
+      .filter((other) => {
+        const value = timesById.get(other.id);
+        return value !== undefined && value !== other.timeSeconds;
+      })
+      .map((other) => ({ id: other.id, timeSeconds: timesById.get(other.id)! }));
+    if (changed.length === 0) return;
+
+    const previous = new Map(scenes.map((other) => [other.id, other.timeSeconds]));
+    applySceneTimes(timesById);
+    try {
+      await persist((client) => updateSceneTimes(client, changed));
+    } catch {
+      applySceneTimes(previous);
+      showToast({ message: '秒数を保存できませんでした。元に戻しました', type: 'error' });
+    }
   };
 
-  const handleDelete = () => {
+  const commitName = async (nextName: string) => {
+    const name = nextName.trim() === '' ? scene.name : nextName.trim();
+    if (name === scene.name) return;
+
+    const previousName = scene.name;
+    renameScene(scene.id, name);
+    try {
+      await persist((client) => renameSceneApi(client, scene.id, name));
+    } catch {
+      renameScene(scene.id, previousName);
+      showToast({ message: '名前を保存できませんでした。元に戻しました', type: 'error' });
+    }
+  };
+
+  const handleDelete = async () => {
     if (!isConfirmingDelete) {
       setIsConfirmingDelete(true);
+      return;
+    }
+    setIsConfirmingDelete(false);
+
+    // 消すのは【保存できてから】。先に消して失敗すると、消えたはずの
+    // シーンを画面へ戻すことになり、立ち位置まで復元できない
+    try {
+      await persist((client) => deleteSceneApi(client, scene.id));
+    } catch {
+      showToast({ message: 'シーンを消せませんでした', type: 'error' });
       return;
     }
     const remaining = scenes.filter((other) => other.id !== scene.id);
     removeScene(scene.id);
     // 残っているうち先頭を選ぶ（Web版 confirmDelete と同じ）
     selectScene(remaining[0]?.id ?? null);
-    setIsConfirmingDelete(false);
   };
 
   const dancerCount = Object.keys(positionsBySceneId[scene.id] ?? {}).length;
@@ -97,10 +147,8 @@ export function SceneEditor() {
         onChangeText={setName}
         // 打っている途中で毎文字ストアへ入れると、一覧の並びが指の下で
         // ちらつく。手を離した時点で確定する
-        onBlur={() => renameScene(scene.id, name.trim() === '' ? scene.name : name.trim())}
-        onSubmitEditing={() =>
-          renameScene(scene.id, name.trim() === '' ? scene.name : name.trim())
-        }
+        onBlur={() => void commitName(name)}
+        onSubmitEditing={() => void commitName(name)}
         returnKeyType="done"
         accessibilityLabel="シーンの名前"
         className="rounded-xl border border-line bg-surface-raised px-4 py-3 text-base text-fg-strong"
@@ -116,7 +164,7 @@ export function SceneEditor() {
           <View className="flex-row items-center justify-between gap-3">
             <Text className="flex-1 text-sm text-fg">前の隊形から入ってくる時間</Text>
             <Pressable
-              onPress={() => changeSegment(-STEP_SECONDS)}
+              onPress={() => void changeSegment(-STEP_SECONDS)}
               accessibilityRole="button"
               accessibilityLabel="入ってくる時間を短く"
               className="h-10 w-10 items-center justify-center rounded-xl border border-line-strong active:opacity-80"
@@ -127,7 +175,7 @@ export function SceneEditor() {
               {segment.toFixed(1)}s
             </Text>
             <Pressable
-              onPress={() => changeSegment(STEP_SECONDS)}
+              onPress={() => void changeSegment(STEP_SECONDS)}
               accessibilityRole="button"
               accessibilityLabel="入ってくる時間を長く"
               className="h-10 w-10 items-center justify-center rounded-xl border border-line-strong active:opacity-80"
@@ -156,7 +204,7 @@ export function SceneEditor() {
       )}
 
       <Pressable
-        onPress={handleDelete}
+        onPress={() => void handleDelete()}
         accessibilityRole="button"
         className="self-start rounded-lg border border-line-strong px-3 py-1.5 active:opacity-80"
       >
