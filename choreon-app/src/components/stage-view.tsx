@@ -3,6 +3,7 @@ import { PanResponder, View, Text, type LayoutChangeEvent } from 'react-native';
 
 import { DraggableDancer } from '@/components/draggable-dancer';
 import { getSceneStep } from '@/features/canvas/lib/sceneStep';
+import { useSceneWarnings } from '@/features/canvas/hooks/useSceneWarnings';
 import { useHistoryStore } from '@/features/canvas/store/useHistoryStore';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import type { Position } from '@/features/scene/types';
@@ -52,6 +53,7 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
   const isSwipeEnabled = useUIStore((state) => state.isSwipeSceneChangeEnabled);
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
   const isSnapEnabled = useSettingsStore((state) => state.isSnapEnabled);
+  const isBlindSpotCheckVisible = useUIStore((state) => state.isBlindSpotCheckVisible);
   const dancerNameDisplay = useSettingsStore((state) => state.dancerNameDisplay);
 
   /**
@@ -108,6 +110,16 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
       ? scenes.findIndex((scene) => scene.id === previousSceneId)
       : sceneIndex;
   const transitionSeconds = step === 'jump' ? 0 : (durations[segmentIndex] ?? 0);
+
+  // ダンサーに付ける印。速すぎる移動は【次のシーンへの移動】で決まるので、
+  // 次のシーンの隊形とその区間の秒数を渡す
+  const nextScene = scenes[sceneIndex + 1];
+  const { excessiveMoves, blockedDancerIds } = useSceneWarnings({
+    positions,
+    nextPositions: nextScene ? (positionsBySceneId[nextScene.id] ?? {}) : {},
+    nextSceneSeconds: durations[sceneIndex + 1] ?? 0,
+    isBlindSpotCheckVisible,
+  });
 
   /** 払っている最中の進み具合。触っていなければ null */
   const [scrub, setScrub] = useState<{ targetSceneId: string; progress: number } | null>(
@@ -242,6 +254,8 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
               isSnapEnabled={isSnapEnabled}
               showName={dancerNameDisplay === 'always'}
               transitionSeconds={transitionSeconds}
+              isBlocked={blockedDancerIds.has(dancerId)}
+              excessiveMove={excessiveMoves.get(dancerId) ?? null}
               // 押しただけなら選ぶ。もう一度押すと外れる
               onTap={() => selectDancer(dancerId === selectedDancerId ? null : dancerId)}
               onRotateEnd={(rotationAngle) =>

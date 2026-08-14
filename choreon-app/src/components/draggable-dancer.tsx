@@ -9,6 +9,7 @@ import {
 import { mirrorAngle } from '@/features/canvas/lib/stageFlip';
 import { RotationHandle } from '@/components/rotation-handle';
 import type { Dancer } from '@/features/dancer/types';
+import type { MoveStrain } from '@/features/canvas/lib/physicalLimits';
 import { themedDancerColor } from '@/features/dancer/lib/themedColor';
 import { useThemeStore } from '@/features/theme/store/useThemeStore';
 
@@ -60,6 +61,10 @@ type Props = {
    * そのまま4秒かかる。0 を渡すと瞬間移動（隣り合わないシーンへ飛んだとき）。
    */
   transitionSeconds: number;
+  /** 客席から見て、手前の人に顔が隠れている（顔被り） */
+  isBlocked?: boolean;
+  /** 次のシーンへの移動が速すぎる。数値は m/s */
+  excessiveMove?: MoveStrain | null;
 };
 
 const DOT = 28;
@@ -107,6 +112,8 @@ export function DraggableDancer({
   onRotateEnd,
   onDragEnd,
   transitionSeconds,
+  isBlocked = false,
+  excessiveMove = null,
 }: Props) {
   /** 回している最中の見た目だけの角度。離すまで確定しない */
   const [liveAngle, setLiveAngle] = useState<number | null>(null);
@@ -351,9 +358,45 @@ export function DraggableDancer({
         </>
       ) : null}
 
+      {/* 印。丸の【右上】に出す。名前は下に出るので重ならない。
+          2つ付く人もいるので、横に並べる */}
+      {isBlocked || excessiveMove ? (
+        <View
+          pointerEvents="none"
+          className="absolute flex-row gap-0.5"
+          style={{ top: -8, left: DOT - 6 }}
+        >
+          {isBlocked ? <Badge text="顔" tone="warn" /> : null}
+          {excessiveMove ? (
+            <Badge text={`${excessiveMove.speedMetersPerSecond.toFixed(1)}`} tone="alert" />
+          ) : null}
+        </View>
+      ) : null}
+
       {showName ? (
         <Text className="mt-0.5 text-[10px] text-fg-strong">{dancer.name}</Text>
       ) : null}
     </Animated.View>
+  );
+}
+
+/**
+ * 丸の肩に付く小さな印。
+ *
+ * Web版はホバーで説明が出る帯だが、指の画面にホバーは無い。**ひと目で
+ * 「何かある」と分かる**ことだけを受け持ち、意味は下の説明文で補う。
+ * 速すぎる移動は数値（m/s）をそのまま出す — 「速い」より「3.5を超えている」
+ * の方が、直したときに直ったと分かる。
+ */
+function Badge({ text, tone }: { text: string; tone: 'warn' | 'alert' }) {
+  return (
+    <View
+      className={`items-center justify-center rounded-full px-1 ${
+        tone === 'alert' ? 'bg-[#ef4444]' : 'bg-[#f59e0b]'
+      }`}
+      style={{ minWidth: 16, height: 16 }}
+    >
+      <Text className="text-[9px] font-semibold text-white">{text}</Text>
+    </View>
   );
 }

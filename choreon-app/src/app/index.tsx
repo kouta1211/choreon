@@ -82,6 +82,8 @@ export default function FoundationScreen() {
   const setGridMode = useUIStore((state) => state.setGridMode);
   const isSwipeEnabled = useUIStore((state) => state.isSwipeSceneChangeEnabled);
   const toggleSwipe = useUIStore((state) => state.toggleSwipeSceneChange);
+  const isBlindSpotVisible = useUIStore((state) => state.isBlindSpotCheckVisible);
+  const toggleBlindSpotCheck = useUIStore((state) => state.toggleBlindSpotCheck);
 
   // 仮の隊形をストアへ入れる（Web版と同じ hydrate を通す）
   const hydrate = useProjectStore((state) => state.hydrate);
@@ -212,6 +214,17 @@ export default function FoundationScreen() {
             value={isSwipeEnabled ? 'オン' : 'オフ'}
             onPress={toggleSwipe}
           />
+          <Toggle
+            label="顔被りを見つける"
+            value={isBlindSpotVisible ? 'オン' : 'オフ'}
+            onPress={toggleBlindSpotCheck}
+          />
+
+          <Text className="text-xs leading-5 text-fg-muted">
+            丸の肩に付く印: <Text className="text-fg-sub">顔</Text>＝手前の人に隠れている／
+            <Text className="text-fg-sub">数字</Text>＝次のシーンへの移動が速すぎる（m/s。
+            3.5 を超えると付く）。速さの印は<Text className="text-fg-sub">常に</Text>出ます。
+          </Text>
 
           <Text className="text-xs leading-5 text-fg-muted">
             上2つは設定（settings）、目盛りは「表示とモード」（viewPreference）。
