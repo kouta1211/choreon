@@ -1,6 +1,5 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
 
 // NativeWind の入口。Web ではこの CSS がそのまま読み込まれ、
 // ネイティブでは Metro が style へ変換したものが使われる
@@ -8,19 +7,30 @@ import '@/global.css';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { AppearanceProvider } from '@/components/appearance-provider';
-import AppTabs from '@/components/app-tabs';
 
 SplashScreen.preventAutoHideAsync();
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+/**
+ * 画面の器。
+ *
+ * ■ タブを外した
+ * Expo の見本に付いていた「Home / Explore」のタブは、**中身が Expo の
+ * デモ**で、上に「Expo Starter」と出ていた。テーマも効かない（OS 側の
+ * 部品なので、こちらの CSS 変数が届かない）ので、いま画面は1枚だけ、と
+ * 素直に見せる形にした。画面が増えたら、そのときに navigation を選ぶ。
+ *
+ * ■ expo-router の ThemeProvider も外した
+ * あれは端末の明暗（useColorScheme）で React Navigation の色を決めるもの。
+ * Choreon の見た目は**テーマで決まる**（`AppearanceProvider`）ので、
+ * 2つの色の決め方が並ぶと食い違う。ヘッダーも出していないので出番が無い。
+ */
+export default function RootLayout() {
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <AppearanceProvider>
       <AnimatedSplashOverlay />
-      {/* テーマの変数を載せた1枚。この下のクラスが色をここから読む */}
-      <AppearanceProvider>
-        <AppTabs />
-      </AppearanceProvider>
-    </ThemeProvider>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
+        <Stack.Screen name="index" />
+      </Stack>
+    </AppearanceProvider>
   );
 }
