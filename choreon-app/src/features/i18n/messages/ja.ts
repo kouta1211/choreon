@@ -37,6 +37,15 @@ export const ja = {
     done: '完了',
   },
 
+  /** 取り消せない操作の前に出す確認。Web版と同じ文言 */
+  confirm: {
+    cancel: 'やめる',
+    delete: '削除する',
+    deleting: '削除中…',
+    cannotUndo: 'この操作は元に戻せません。',
+    undoNote: '（移動や向きの変更は「元に戻す」で戻せます）',
+  },
+
   stage: {
     backstage: 'バックステージ',
     audience: '客席側',
@@ -82,8 +91,9 @@ export const ja = {
     rippleNote: (seconds: string) =>
       `オフのときは次のシーンを押しのけず、手前の余地いっぱいで止まります。曲の ${seconds} 秒目。`,
     remove: 'このシーンを消す',
-    removeConfirm: (name: string, dancers: number) =>
-      `本当に「${name}」を消す（${dancers}人ぶんの立ち位置も消えます）`,
+    removeTitle: (name: string) => `「${name}」を消しますか`,
+    removeDescription: 'このシーンと、そこに置いた立ち位置がまとめて消えます。',
+    removeMetaPositions: (count: number) => `${count} 人ぶんの立ち位置`,
     addFailed: 'シーンを追加できませんでした',
     removeFailed: 'シーンを消せませんでした',
     renameFailed: '名前を保存できませんでした。元に戻しました',
@@ -97,7 +107,9 @@ export const ja = {
     selected: '選んでいるのは',
     colorLabel: (color: string) => `色を ${color} にする`,
     remove: 'この人を消す',
-    removeConfirm: (name: string) => `本当に ${name} を消す`,
+    removeTitle: (name: string) => `${name} を消しますか`,
+    removeDescription: 'この人が、すべてのシーンから居なくなります。',
+    removeMetaScenes: (count: number) => `${count} シーンぶんの立ち位置`,
     hint: 'ステージか上の一覧で1人選ぶと、色を変えたり消したりできます',
     addFailed: 'ダンサーを追加できませんでした',
     removeFailed: 'この人を消せませんでした',

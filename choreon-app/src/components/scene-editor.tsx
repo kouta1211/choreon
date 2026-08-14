@@ -36,8 +36,9 @@ const STEP_SECONDS = 0.5;
  * Web版のフィールドと同じ既定。オフのときは次のシーンを押しのけず、
  * 手前の余地いっぱいで止まる。
  *
- * ■ 消すのは2回押し
- * ダンサーと同じ形。`Alert.alert` は Web で何も出ないため、確認は画面の中。
+ * ■ 消すときは確認のダイアログ
+ * 共通の `requestConfirm` に投げる（`confirm-dialog.tsx` が受けて描く）。
+ * 一緒に消える立ち位置の数と、「元に戻す」では戻せないことを出せる。
  */
 export function SceneEditor() {
   const t = useT();
@@ -49,6 +50,7 @@ export function SceneEditor() {
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const selectScene = useUIStore((state) => state.selectScene);
   const showToast = useUIStore((state) => state.showToast);
+  const requestConfirm = useUIStore((state) => state.requestConfirm);
 
   const index = scenes.findIndex((scene) => scene.id === selectedSceneId);
   const scene = index === -1 ? undefined : scenes[index];
@@ -56,12 +58,10 @@ export function SceneEditor() {
   // 入力中の名前。**選んでいるシーンが変わったら入れ替える**（前のシーンの
   // 名前が残っていると、続けて打った文字が別のシーンへ入る）
   const [name, setName] = useState(scene?.name ?? '');
-  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [ripple, setRipple] = useState(false);
 
   useEffect(() => {
     setName(scene?.name ?? '');
-    setIsConfirmingDelete(false);
   }, [scene?.id, scene?.name]);
 
   if (!scene) {
@@ -115,28 +115,37 @@ export function SceneEditor() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!isConfirmingDelete) {
-      setIsConfirmingDelete(true);
-      return;
-    }
-    setIsConfirmingDelete(false);
-
-    // 消すのは【保存できてから】。先に消して失敗すると、消えたはずの
-    // シーンを画面へ戻すことになり、立ち位置まで復元できない
-    try {
-      await persist((client) => deleteSceneApi(client, scene.id));
-    } catch {
-      showToast({ message: t.scenes.removeFailed, type: 'error' });
-      return;
-    }
-    const remaining = scenes.filter((other) => other.id !== scene.id);
-    removeScene(scene.id);
-    // 残っているうち先頭を選ぶ（Web版 confirmDelete と同じ）
-    selectScene(remaining[0]?.id ?? null);
-  };
-
   const dancerCount = Object.keys(positionsBySceneId[scene.id] ?? {}).length;
+
+  /**
+   * 消す。確認は共通のダイアログに任せる（`requestConfirm`）。
+   *
+   * 以前は「押すと文言が『本当に消す』に変わり、もう一度押すと消える」形
+   * だった。**その場に残るのは変わった文言だけで、一緒に何が消えるのかを
+   * 出せない。** ダイアログなら「N人ぶんの立ち位置」を数で示せて、
+   * 「元に戻す」では戻せないことも書ける。
+   */
+  const handleDelete = () => {
+    requestConfirm({
+      title: t.scenes.removeTitle(scene.name),
+      description: t.scenes.removeDescription,
+      meta: [t.scenes.removeMetaPositions(dancerCount)],
+      onConfirm: async () => {
+        // 消すのは【保存できてから】。先に消して失敗すると、消えたはずの
+        // シーンを画面へ戻すことになり、立ち位置まで復元できない
+        try {
+          await persist((client) => deleteSceneApi(client, scene.id));
+        } catch {
+          showToast({ message: t.scenes.removeFailed, type: 'error' });
+          return;
+        }
+        const remaining = scenes.filter((other) => other.id !== scene.id);
+        removeScene(scene.id);
+        // 残っているうち先頭を選ぶ（Web版 confirmDelete と同じ）
+        selectScene(remaining[0]?.id ?? null);
+      },
+    });
+  };
 
   return (
     <View className="gap-3 rounded-2xl border border-line bg-surface p-4">
@@ -204,15 +213,11 @@ export function SceneEditor() {
       )}
 
       <Pressable
-        onPress={() => void handleDelete()}
+        onPress={handleDelete}
         accessibilityRole="button"
         className="self-start rounded-lg border border-line-strong px-3 py-1.5 active:opacity-80"
       >
-        <Text className="text-sm text-fg">
-          {isConfirmingDelete
-            ? t.scenes.removeConfirm(scene.name, dancerCount)
-            : t.scenes.remove}
-        </Text>
+        <Text className="text-sm text-fg">{t.scenes.remove}</Text>
       </Pressable>
     </View>
   );

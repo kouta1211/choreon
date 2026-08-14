@@ -63,9 +63,7 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
   const selectDancer = useUIStore((state) => state.selectDancer);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const showToast = useUIStore((state) => state.showToast);
-
-  // 「消す」を押したあとの確認待ち。誰の確認かを持つ（別の人を選び直したら消える）
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const requestConfirm = useUIStore((state) => state.requestConfirm);
 
   // 見せる色はテーマ側の6色。**選び方の判定は保存されている値のまま**
   // 行う（読み替えた色で照合すると、紙のテーマで全部が「選択中」に見える）
@@ -119,7 +117,6 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
       updateDancerPosition(position.sceneId, id, position);
     }
     selectDancer(id);
-    setPendingDeleteId(null);
 
     try {
       // ダンサーを作ってから立ち位置（外部キーの順番）
@@ -135,27 +132,36 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
   };
 
   const handleSelect = (dancerId: string) => {
-    setPendingDeleteId(null);
     selectDancer(dancerId === selectedDancerId ? null : dancerId);
   };
 
-  const handleDelete = async (dancerId: string) => {
-    if (pendingDeleteId !== dancerId) {
-      setPendingDeleteId(dancerId);
-      return;
-    }
-    setPendingDeleteId(null);
+  /**
+   * 消す。確認は共通のダイアログに任せる（`requestConfirm`）。
+   *
+   * 以前は2回押しだった。**その人が全シーンから消えることが伝わらない** —
+   * ダイアログなら「N シーンぶんの立ち位置」を数で示せる。
+   */
+  const handleDelete = (dancerId: string) => {
+    const dancer = dancers[dancerId];
+    if (!dancer) return;
 
-    // 消すのは【保存できてから】。先に消して失敗すると、その人の
-    // 立ち位置（全シーンぶん）まで画面へ戻す必要が出る
-    try {
-      await persist((client) => deleteDancer(client, dancerId));
-    } catch {
-      showToast({ message: t.dancers.removeFailed, type: 'error' });
-      return;
-    }
-    removeDancer(dancerId);
-    selectDancer(null);
+    requestConfirm({
+      title: t.dancers.removeTitle(dancer.name),
+      description: t.dancers.removeDescription,
+      meta: [t.dancers.removeMetaScenes(scenes.length)],
+      onConfirm: async () => {
+        // 消すのは【保存できてから】。先に消して失敗すると、その人の
+        // 立ち位置（全シーンぶん）まで画面へ戻す必要が出る
+        try {
+          await persist((client) => deleteDancer(client, dancerId));
+        } catch {
+          showToast({ message: t.dancers.removeFailed, type: 'error' });
+          return;
+        }
+        removeDancer(dancerId);
+        selectDancer(null);
+      },
+    });
   };
 
   /** 色を変える。ストアの addDancer が上書きも兼ねる（Web版と同じ） */
@@ -239,15 +245,11 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
           </View>
 
           <Pressable
-            onPress={() => void handleDelete(selected.id)}
+            onPress={() => handleDelete(selected.id)}
             accessibilityRole="button"
             className="self-start rounded-lg border border-line-strong px-3 py-1.5 active:opacity-80"
           >
-            <Text className="text-sm text-fg">
-              {pendingDeleteId === selected.id
-                ? t.dancers.removeConfirm(selected.name)
-                : t.dancers.remove}
-            </Text>
+            <Text className="text-sm text-fg">{t.dancers.remove}</Text>
           </Pressable>
         </View>
       ) : (

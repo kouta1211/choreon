@@ -28,6 +28,14 @@ export const en: Messages = {
     done: 'Done',
   },
 
+  confirm: {
+    cancel: 'Cancel',
+    delete: 'Delete',
+    deleting: 'Deleting…',
+    cannotUndo: 'This cannot be undone.',
+    undoNote: '(Moves and facing changes can still be undone.)',
+  },
+
   stage: {
     backstage: 'Upstage',
     audience: 'Downstage',
@@ -72,8 +80,9 @@ export const en: Messages = {
     rippleNote: (seconds: string) =>
       `With this off, the next scene is never pushed — it stops just short of it. This scene sits at ${seconds}s.`,
     remove: 'Delete this scene',
-    removeConfirm: (name: string, dancers: number) =>
-      `Really delete “${name}” (${dancers} placements go with it)`,
+    removeTitle: (name: string) => `Delete “${name}”?`,
+    removeDescription: 'The scene and every placement in it go together.',
+    removeMetaPositions: (count: number) => `${count} placements`,
     addFailed: 'Could not add the scene',
     removeFailed: 'Could not delete the scene',
     renameFailed: 'Could not save the name. Put it back.',
@@ -87,7 +96,9 @@ export const en: Messages = {
     selected: 'Selected:',
     colorLabel: (color: string) => `Use ${color}`,
     remove: 'Remove this dancer',
-    removeConfirm: (name: string) => `Really remove ${name}`,
+    removeTitle: (name: string) => `Remove ${name}?`,
+    removeDescription: 'They will be gone from every scene.',
+    removeMetaScenes: (count: number) => `placements in ${count} scenes`,
     hint: 'Pick someone on stage or in the list above to recolour or remove them',
     addFailed: 'Could not add the dancer',
     removeFailed: 'Could not remove that dancer',

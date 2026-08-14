@@ -28,6 +28,14 @@ export const ko: Messages = {
     done: '완료',
   },
 
+  confirm: {
+    cancel: '취소',
+    delete: '삭제',
+    deleting: '삭제 중…',
+    cannotUndo: '이 작업은 되돌릴 수 없습니다.',
+    undoNote: '(이동과 방향 변경은 「되돌리기」로 되돌릴 수 있습니다.)',
+  },
+
   stage: {
     backstage: '무대 뒤',
     audience: '객석 쪽',
@@ -72,8 +80,9 @@ export const ko: Messages = {
     rippleNote: (seconds: string) =>
       `끄면 다음 장면을 밀지 않고 바로 앞에서 멈춥니다. 곡의 ${seconds}초 지점.`,
     remove: '이 장면 삭제',
-    removeConfirm: (name: string, dancers: number) =>
-      `정말 「${name}」을(를) 삭제(${dancers}명의 위치도 함께 사라집니다)`,
+    removeTitle: (name: string) => `「${name}」을(를) 삭제할까요`,
+    removeDescription: '이 장면과 거기에 놓은 위치가 함께 사라집니다.',
+    removeMetaPositions: (count: number) => `${count}명의 위치`,
     addFailed: '장면을 추가하지 못했습니다',
     removeFailed: '장면을 삭제하지 못했습니다',
     renameFailed: '이름을 저장하지 못해 되돌렸습니다',
@@ -87,7 +96,9 @@ export const ko: Messages = {
     selected: '선택한 사람:',
     colorLabel: (color: string) => `색을 ${color}(으)로`,
     remove: '이 사람 삭제',
-    removeConfirm: (name: string) => `정말 ${name}을(를) 삭제`,
+    removeTitle: (name: string) => `${name}을(를) 삭제할까요`,
+    removeDescription: '이 사람이 모든 장면에서 사라집니다.',
+    removeMetaScenes: (count: number) => `${count}개 장면의 위치`,
     hint: '무대나 위 목록에서 한 명을 고르면 색을 바꾸거나 삭제할 수 있습니다',
     addFailed: '댄서를 추가하지 못했습니다',
     removeFailed: '이 사람을 삭제하지 못했습니다',

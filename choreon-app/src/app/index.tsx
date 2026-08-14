@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DancerSheet } from '@/components/dancer-sheet';
 import { EditorHeader } from '@/components/editor-header';
 import { FormationSheet } from '@/components/formation-sheet';
@@ -195,6 +196,10 @@ export default function EditorScreen() {
         onClose={close}
         onProjectLoaded={setStage}
       />
+
+      {/* 取り消せない操作の確認。**シートより後ろに置く** — シートの中から
+          「消す」を押したときに、確認の板がその上に出る必要がある */}
+      <ConfirmDialog />
     </SafeAreaView>
   );
 }
