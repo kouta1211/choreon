@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AccountPanel } from '@/components/account-panel';
 import { DancerSheet } from '@/components/dancer-sheet';
+import { FormationSheet } from '@/components/formation-sheet';
 import { HistoryControls } from '@/components/history-controls';
 import { PlaybackControls } from '@/components/playback-controls';
 import { SceneDock } from '@/components/scene-dock';
@@ -174,6 +175,8 @@ export default function FoundationScreen() {
         <SceneEditor />
 
         <DancerSheet stageWidthUnits={stage.width} stageHeightUnits={stage.height} />
+
+        <FormationSheet stageWidthUnits={stage.width} stageHeightUnits={stage.height} />
 
         <AccountPanel onProjectLoaded={setStage} />
 
