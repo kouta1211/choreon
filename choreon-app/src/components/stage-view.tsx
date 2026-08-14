@@ -40,6 +40,8 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
   const positionsBySceneId = useProjectStore((state) => state.positionsBySceneId);
   const updateDancerPosition = useProjectStore((state) => state.updateDancerPosition);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
+  const selectedDancerId = useUIStore((state) => state.selectedDancerId);
+  const selectDancer = useUIStore((state) => state.selectDancer);
   const selectScene = useUIStore((state) => state.selectScene);
   const gridMode = useUIStore((state) => state.gridMode);
   const isSwipeEnabled = useUIStore((state) => state.isSwipeSceneChangeEnabled);
@@ -177,6 +179,8 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
               x={point.x}
               y={point.y}
               screenY={screenY}
+              rotationAngle={here?.rotationAngle ?? 0}
+              isSelected={dancerId === selectedDancerId}
               opacity={point.opacity}
               // 払っている最中は、その人だけを掴めないようにする
               // (指はステージ全体の操作に使われている)
@@ -187,6 +191,11 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
               isAudienceOnTop={isAudienceOnTop}
               isSnapEnabled={isSnapEnabled}
               showName={dancerNameDisplay === 'always'}
+              // 押しただけなら選ぶ。もう一度押すと外れる
+              onTap={() => selectDancer(dancerId === selectedDancerId ? null : dancerId)}
+              onRotateEnd={(rotationAngle) =>
+                updateDancerPosition(sceneId, dancerId, { rotationAngle })
+              }
               onDragEnd={({ x, y }) =>
                 // いまは端末の中だけ。Supabase への保存は、認証を移してから
                 updateDancerPosition(sceneId, dancerId, {

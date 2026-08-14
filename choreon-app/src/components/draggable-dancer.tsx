@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, PanResponder, Platform, Text, View } from 'react-native';
 
 import {
@@ -6,6 +6,8 @@ import {
   pixelDeltaToUnitDelta,
   snapToGrid,
 } from '@/features/canvas/lib/dragMath';
+import { mirrorAngle } from '@/features/canvas/lib/stageFlip';
+import { RotationHandle } from '@/components/rotation-handle';
 import type { Dancer } from '@/features/dancer/types';
 
 /**
@@ -34,6 +36,14 @@ type Props = {
   isAudienceOnTop: boolean;
   isSnapEnabled: boolean;
   showName: boolean;
+  /** いまの向き（ステージ座標系。0度=客席側、時計回り） */
+  rotationAngle: number;
+  /** 選ばれているか。選ばれている人にだけ回すつまみが出る */
+  isSelected: boolean;
+  /** 軽く押したとき（＝掴まずに離したとき） */
+  onTap: () => void;
+  /** 回し終えたとき。ステージ座標系の角度で返す */
+  onRotateEnd: (angle: number) => void;
   /** 払っている最中の濃さ。片側のシーンにしか居ない人が出入りする */
   opacity?: number;
   /** ステージ全体を払っている間は、その人だけを掴めないようにする */
@@ -79,13 +89,19 @@ export function DraggableDancer({
   stageHeightUnits,
   stageSize,
   screenY,
+  rotationAngle,
+  isSelected,
   isAudienceOnTop,
   isSnapEnabled,
   showName,
   opacity = 1,
   isDraggable = true,
+  onTap,
+  onRotateEnd,
   onDragEnd,
 }: Props) {
+  /** 回している最中の見た目だけの角度。離すまで確定しない */
+  const [liveAngle, setLiveAngle] = useState<number | null>(null);
   const offset = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
 
   // 最新の props を掴んでおく。PanResponder は作り直さない(作り直すと
@@ -98,8 +114,9 @@ export function DraggableDancer({
     isAudienceOnTop,
     isSnapEnabled,
     onDragEnd,
+    onTap,
   });
-  latest.current = { x, y, stageSize, isAudienceOnTop, isSnapEnabled, onDragEnd };
+  latest.current = { x, y, stageSize, isAudienceOnTop, isSnapEnabled, onDragEnd, onTap };
 
   const draggable = useRef(isDraggable);
   draggable.current = isDraggable;
@@ -178,6 +195,13 @@ export function DraggableDancer({
       PanResponder.create({
         // 押しただけでは掴まない。8px 動いて初めてドラッグとみなす
         // (でないと、選ぶつもりの一押しが移動になる)
+        // 軽く押しただけ（＝動かさずに離した）は「選ぶ」。掴んで動かすのは
+        // 8px 動いてから(下の onMoveShouldSetPanResponder)。押した時点で
+        // 責任者になっておかないと、タップがどこにも届かない
+        onStartShouldSetPanResponder: () => true,
+        // ステージを縦にスクロールしたい指は譲る
+        onPanResponderTerminationRequest: () => true,
+
         onMoveShouldSetPanResponder: (_event, gesture) => {
           if (!draggable.current) return false;
           const shouldGrab =
@@ -199,6 +223,18 @@ export function DraggableDancer({
           const { width, height } = current.stageSize;
           const totalDx = gesture.dx + beforeGrant.current.dx;
           const totalDy = gesture.dy + beforeGrant.current.dy;
+
+          // 動かしていない＝タップ。選ぶだけで、位置は触らない
+          if (
+            Math.abs(totalDx) <= DRAG_THRESHOLD_PX &&
+            Math.abs(totalDy) <= DRAG_THRESHOLD_PX
+          ) {
+            current.onTap();
+            offset.setValue({ x: 0, y: 0 });
+            beforeGrant.current = { dx: 0, dy: 0 };
+            return;
+          }
+
           if (width > 0 && height > 0) {
             // px の移動量をステージのユニットへ。幅と高さで比が違うので別々に
             const deltaX = pixelDeltaToUnitDelta(totalDx, width, stageWidthUnits);
@@ -234,6 +270,11 @@ export function DraggableDancer({
     [offset, stageWidthUnits, stageHeightUnits],
   );
 
+  // 画面に描く向き。上下が逆なら鼻先も逆を向いていなければならない
+  // (＝既定の0度「客席を向く」が、客席のある側を向いたままになる)
+  const angle = liveAngle ?? (isAudienceOnTop ? mirrorAngle(rotationAngle) : rotationAngle);
+  const screenRotation = angle;
+
   return (
     <Animated.View
       {...responder.panHandlers}
@@ -248,10 +289,51 @@ export function DraggableDancer({
         transform: offset.getTranslateTransform(),
       }}
     >
+      {/* 本体と鼻先。向きは【画面の向き】で描く(客席を上にしていれば鏡) */}
       <View
-        className="rounded-full"
-        style={{ width: DOT, height: DOT, backgroundColor: dancer.color }}
-      />
+        style={{
+          width: DOT,
+          height: DOT,
+          alignItems: 'center',
+          justifyContent: 'center',
+          transform: [{ rotate: `${screenRotation}deg` }],
+        }}
+      >
+        <View
+          className="rounded-full"
+          style={{ width: DOT, height: DOT, backgroundColor: dancer.color }}
+        />
+        {/* 0度＝客席側＝画面の下。鼻先も下へ出す */}
+        <View
+          className="absolute rounded-full"
+          style={{
+            width: 4,
+            height: 9,
+            bottom: -5,
+            backgroundColor: dancer.color,
+          }}
+        />
+      </View>
+
+      {isSelected ? (
+        <>
+          <View
+            pointerEvents="none"
+            className="absolute rounded-full border-2 border-accent"
+            style={{ width: DOT + 10, height: DOT + 10, top: -5, left: -5 }}
+          />
+          <RotationHandle
+            displayAngle={screenRotation}
+            onChange={setLiveAngle}
+            onEnd={(next) => {
+              setLiveAngle(null);
+              // 画面の向きで受け取った角度を、保存する向きへ戻す
+              onRotateEnd(isAudienceOnTop ? mirrorAngle(next) : next);
+            }}
+          />
+        </>
+      ) : null}
+
       {showName ? (
         <Text className="mt-0.5 text-[10px] text-fg-strong">{dancer.name}</Text>
       ) : null}
