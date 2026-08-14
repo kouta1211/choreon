@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { pressableClass } from "@/components/hooks/usePressable";
 
 type Props = {
   checked: boolean;
@@ -23,13 +24,21 @@ type Props = {
  * 支援技術からは押せる的が2つあるように見える)。
  * 見た目をここへ切り出して、Switch と メニューの行の両方から使う。
  */
-export function SwitchTrack({ checked }: { checked: boolean }) {
+export function SwitchTrack({
+  checked,
+  isPressed = false,
+}: {
+  checked: boolean;
+  /** 押し込みをここで見せたいとき。行そのものを的にしていて、
+   * 沈むのはトグルだけにしたい場合に渡す(SettingsSwitchRow) */
+  isPressed?: boolean;
+}) {
   return (
     <span
       aria-hidden
       className={`relative block h-6 w-11 shrink-0 rounded-full transition-colors ${
         checked ? "bg-accent" : "bg-line-strong"
-      }`}
+      } ${isPressed ? pressableClass("round", true) : ""}`}
     >
       <span
         className={`absolute top-0.5 left-0.5 block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${

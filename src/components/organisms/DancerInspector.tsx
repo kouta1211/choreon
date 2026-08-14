@@ -177,7 +177,11 @@ export function DancerInspector() {
     //
     // 面にそのダンサーの色を薄く流し、左端に色帯を置く。誰の設定を
     // いじっているのかを、名前を読まなくても地の色で分かるようにするため
-    <div className="absolute inset-x-0 bottom-full z-20 mx-3 mb-2 flex items-stretch overflow-hidden rounded-xl border border-line-strong bg-surface-strong shadow-xl">
+    //
+    // overlay-panel はステージの上に浮くもの共通の材質。以前は
+    // bg-surface-strong(白11%)だったため、下の格子が透けて読めなかった。
+    // surface 系は地の上に重ねる色味で、浮きものの地ではない
+    <div className="overlay-panel absolute inset-x-0 bottom-full z-20 mx-3 mb-2 flex items-stretch overflow-hidden rounded-xl">
       <span
         aria-hidden
         className="w-1 shrink-0"

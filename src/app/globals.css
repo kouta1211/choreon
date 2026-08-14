@@ -228,8 +228,8 @@ body::before {
    「同じ厚みの同じ板」に見える必要があるため */
 .overlay-panel {
   background: var(--overlay-bg);
-  backdrop-filter: var(--overlay-blur);
   -webkit-backdrop-filter: var(--overlay-blur);
+  backdrop-filter: var(--overlay-blur);
   border: 1px solid var(--overlay-line);
   box-shadow: var(--overlay-sheen), var(--overlay-shadow);
   color: var(--fg);

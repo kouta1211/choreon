@@ -34,7 +34,10 @@ export function DropdownMenuContent({
       <DropdownMenuPrimitive.Content
         sideOffset={sideOffset}
         className={cn(
-          "z-50 min-w-64 rounded-xl border border-line-strong bg-surface p-1.5 shadow-2xl",
+          // overlay-panel が地・枠線・影をまとめて持つ。以前は
+          // bg-surface(白4%)で、ステージの上に出したときに格子が透けて
+          // 読めなかった(「表示とモード」がこれ)
+          "overlay-panel z-50 min-w-64 rounded-xl p-1.5",
           "data-[state=open]:animate-in data-[state=open]:fade-in-0",
           "data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
           className,

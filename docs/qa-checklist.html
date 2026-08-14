@@ -386,6 +386,8 @@
     font-weight: 600;
   }
   .report .said { font-size: 0.82rem; color: var(--ok); }
+  /* 失敗を成功と同じ色で出さない（引き継ぎの取り込みで使う） */
+  .report .said.bad { color: var(--warn); }
   textarea.out {
     width: 100%;
     min-height: 14rem;
@@ -492,6 +494,41 @@
     <textarea id="report-out" class="out" readonly hidden></textarea>
   </section>
 
+  <section class="report">
+    <h2>別の端末へ引き継ぐ</h2>
+    <p class="why">
+      チェックとメモは<b>この端末のブラウザにだけ</b>残ります。
+      PCを操作しながらスマホで台本を読みたいときは、ここで進捗を文字列にして、
+      もう片方の端末へ貼ってください（メール・メモアプリ・チャット、何でも構いません）。
+      <b>取り込むと、その文字列を作った側の端末の台本に切り替わります。</b>
+    </p>
+    <div class="actions">
+      <button type="button" id="make-handoff">この端末の進捗をコピー</button>
+      <span class="said" id="handoff-copied" hidden>コピーしました</span>
+    </div>
+    <textarea
+      id="handoff-out"
+      class="out"
+      readonly
+      hidden
+      style="min-height: 6rem"
+    ></textarea>
+
+    <label for="handoff-in" class="why">
+      <b>受け取った文字列を貼る</b>
+    </label>
+    <textarea
+      id="handoff-in"
+      class="memo"
+      rows="3"
+      placeholder="もう片方の端末でコピーした文字列をここへ貼って、下のボタンを押してください"
+    ></textarea>
+    <div class="actions">
+      <button type="button" class="ghost" id="apply-handoff">取り込む</button>
+      <span class="said" id="handoff-said" hidden></span>
+    </div>
+  </section>
+
   <footer class="end">
     <p>
       ちがう挙動になった項目は、チェックを付けずに残しておいてください。
@@ -513,6 +550,7 @@
       ["最初にすること", "ページを開いたら一度タブを閉じて、開き直す。今日の変更が入っていない古い画面のまま確認してしまうのを防ぎます"],
       ["ログイン", "自分のアカウントでログインした状態にする"],
       ["注意", "設定は端末ごとに覚えます。PCで変えた設定はスマホには来ません（それが正しい動作です）"],
+      ["途中から続けるとき", "チェックとメモはこの端末にだけ残ります。もう片方の端末で進めた続きをやるなら、<b>いちばん下の「別の端末へ引き継ぐ」</b>から文字列を渡してください"],
     ],
     pc: [
       ["開く場所", '<a href="https://choreon.vercel.app" target="_blank" rel="noopener">choreon.vercel.app</a>　または <code>npm run dev</code> → <code>localhost:3000</code>'],
@@ -521,6 +559,7 @@
       ["ログイン", "自分のアカウントでログインした状態にする"],
       ["窓の幅", "最大化して始めてください。狭いとスマホ用の見た目に切り替わります"],
       ["ついでに", "ブラウザのコンソール（F12）を開いたまま一巡すると、赤いエラーが出たとき拾えます"],
+      ["スマホで読みながらやる", "この台本をスマホでも開き、PC側の<b>いちばん下「別の端末へ引き継ぐ」</b>で進捗をコピーしてスマホへ貼ると、続きから読めます"],
     ],
   };
 
@@ -649,6 +688,12 @@
             do: "設定を閉じ、どれか作品を開いて、右上の<em>つまみのアイコン（表示とモード）</em>から <em>設定</em>",
             ok: "ホームと同じ設定が出る。今度は「データ」の見出しも増えていて、書き出し・取り込み・この作品を空にする が並ぶ",
           },
+          {
+            n: true,
+            do: "設定の中の<em>スイッチの行（客席を上にする など）</em>を、押したまま少し留める",
+            ok: "<b>右のトグルだけが少し沈む</b>。行やカードの大きさは変わらない",
+            ng: "<b>以前は行ぜんぶが縮んでいました。</b>押す的は行の幅ぜんぶのままなので、どこを押しても切り替わります",
+          },
         ],
       },
       {
@@ -657,13 +702,24 @@
         items: [
           {
             n: true,
-            do: "設定 → 舞台 → <em>ステージの幅</em> を 10、<em>ステージの奥行き</em> を 8 に",
-            ok: "数字が変わる。いま開いている作品のステージは変わらない（これが正しい）",
+            do: "設定 → 舞台 → <em>ステージの幅</em> の欄を選び、<b>キーボードで「10」と打つ</b>。続けて<em>ステージの奥行き</em>に「8」",
+            ok: "打った通りに 10 / 8 と入る。欄から離れる（またはEnter）と確定する。いま開いている作品のステージは変わらない（これが正しい）",
+            ng: "<b>以前は打てませんでした。</b>下限が6のため「1」を打った瞬間に6へ化けていました。いまは打っている間は丸めず、確定するときに1回だけ範囲へ収めます",
           },
           {
             n: true,
-            do: "設定 → 再生 → <em>既定の速さ</em> を 100 BPM に",
-            ok: "数字が変わる",
+            do: "同じ欄に <code>2</code>（下限より小さい）と打って、欄の外を触る",
+            ok: "6 に丸まる。範囲の外は確定するときに直される",
+          },
+          {
+            n: true,
+            do: "同じ欄を<b>空にして</b>、欄の外を触る",
+            ok: "元の数字に戻る。空のまま保存されたり、0になったりしない",
+          },
+          {
+            n: true,
+            do: "設定 → 再生 → <em>既定の速さ</em> に<b>キーボードで「100」</b>と打って Enter",
+            ok: "100 になる（下限が40なので、以前は「1」の時点で40に化けていました）",
           },
           {
             n: true,
@@ -700,7 +756,8 @@
           },
           {
             do: `ダンサーを1人${tap}して選ぶ`,
-            ok: "画面の下にインスペクター（名前・色・向き・削除）が出る",
+            ok: "画面の下にインスペクター（名前・色・向き・削除）が出る。<b>下のステージの格子や目盛りの数字が透けて見えない</b>",
+            ng: "<b>以前は板がほぼ透明で、後ろの格子と重なって読めませんでした。</b>左端にそのダンサーの色の帯が出るのは正しい動作です",
           },
           {
             do: "インスペクターで<em>色</em>を変える",
@@ -712,8 +769,8 @@
           },
           {
             do: "シーンを2つ作り、2つ目で1人だけ<em>ステージの端から端まで</em>動かす",
-            ok: "「歩いて間に合わない速さです」という警告が出る",
-            ng: "移動時間が長い（何秒もある）と警告は出ません。シーンの間隔が短いときに出ます",
+            ok: "そのダンサーに警告の印が付く。印を押すと「移動が速すぎます」という見出しの説明が出る",
+            ng: "短い札には「歩いて間に合わない速さです」、開いた説明の見出しは「移動が速すぎます」。<b>言い回しが2つあるのは正常です</b>。移動時間が長い（何秒もある）と警告自体が出ません",
           },
           {
             do: "ダンサーを1人追加してから、<em>別のシーンへ移る</em>",
@@ -796,11 +853,13 @@
           {
             n: true,
             do: "<em>センターラインを強調</em> をオフ",
-            ok: "ステージの真ん中を縦に走る線が消える。もう一度オンで戻る",
+            ok: "ステージの真ん中を縦に走る<b>ピンクの線</b>が消える。もう一度オンで戻る",
+            ng: "<b>以前は白い薄い線で、格子と見分けが付かず、消しても変化が分かりませんでした。</b>いまはアクセント色なので、オン/オフの差がはっきり出ます（テーマを変えると線の色もそのテーマの色になります）",
           },
           {
             do: "表示とモード → <em>目盛り</em> を 格子 / 同心円 / なし と切り替える",
-            ok: "ステージの下敷きが3通りに変わる",
+            ok: "ステージの下敷きが3通りに変わる。開いている「表示とモード」の板ごしに<b>後ろのダンサーや目盛りの数字が透けて見えない</b>（うっすらぼけて沈んでいるのが正しい）",
+            ng: "<b>以前は板が透明で、後ろの数字がそのまま読めていました。</b>浮いている板（シート・ダイアログ・トースト・起動後の選択画面）すべてが同じ材質になっています",
           },
         ],
       },
@@ -1469,7 +1528,16 @@
   // いるので、そのままだと別の項目に付いたまま残る。作り直してもらう
   const KEY = (device) => "choreon.checklist.v3." + device;
   const MEMO_KEY = (device) => "choreon.checklist.v3.memo." + device;
+  /** どちらの台本を見ていたか。開き直すたびに選び直さなくてよいように覚える */
+  const DEVICE_KEY = "choreon.checklist.v3.device";
+
   let device = "phone";
+  try {
+    const saved = localStorage.getItem(DEVICE_KEY);
+    if (saved === "phone" || saved === "pc") device = saved;
+  } catch {
+    /* プライベートモード等。既定のままで進む */
+  }
   let filter = "all";
   let state = {};
   /** { items: { "3-2": "…" }, global: "…" } */
@@ -1659,19 +1727,27 @@
     else applyFilter();
   });
 
-  document.querySelectorAll(".seg button").forEach((button) => {
-    button.addEventListener("click", () => {
-      device = button.dataset.device;
-      document.querySelectorAll(".seg button").forEach((other) => {
-        other.setAttribute(
-          "aria-pressed",
-          String(other.dataset.device === device),
-        );
-      });
-      load();
-      render();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+  /** 見る台本を切り替える。取り込みからも呼ぶので関数にしてある */
+  function switchDevice(next, { scroll = true } = {}) {
+    device = next;
+    try {
+      localStorage.setItem(DEVICE_KEY, device);
+    } catch {
+      /* 覚えられなくても、今回の切り替えは効く */
+    }
+    document.querySelectorAll(".seg button").forEach((other) => {
+      other.setAttribute(
+        "aria-pressed",
+        String(other.dataset.device === device),
+      );
     });
+    load();
+    render();
+    if (scroll) window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  document.querySelectorAll(".seg button").forEach((button) => {
+    button.addEventListener("click", () => switchDevice(button.dataset.device));
   });
 
   document.querySelectorAll(".chips button[data-filter]").forEach((button) => {
@@ -1798,6 +1874,130 @@
       $copied.textContent = "選択しました。手でコピーしてください";
       $copied.hidden = false;
     }
+  });
+
+  // ── 別の端末へ引き継ぐ ──
+  // チェックとメモは localStorage にあり、端末をまたがない。PCを触りながら
+  // スマホで台本を読む、という進め方ができるように、文字列にして運べるようにする。
+  //
+  // 生のJSONではなくbase64にしているのは、メールやチャットを経由したときに
+  // 改行が混ざったり引用符が全角に化けたりして壊れるのを避けるため。
+  // 日本語のメモが入るので、UTF-8にしてからでないと btoa は通らない。
+
+  function encodeHandoff(payload) {
+    const bytes = new TextEncoder().encode(JSON.stringify(payload));
+    let binary = "";
+    // 大きな配列を spread で渡すとスタックが溢れるので、少しずつ積む
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+    return btoa(binary);
+  }
+
+  function decodeHandoff(text) {
+    const binary = atob(text.trim().replace(/\s+/g, ""));
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    return JSON.parse(new TextDecoder().decode(bytes));
+  }
+
+  const $handoffOut = document.getElementById("handoff-out");
+  const $handoffIn = document.getElementById("handoff-in");
+  const $handoffCopied = document.getElementById("handoff-copied");
+  const $handoffSaid = document.getElementById("handoff-said");
+
+  document.getElementById("make-handoff").addEventListener("click", async () => {
+    const code = encodeHandoff({ v: 3, device, state, memos });
+    $handoffOut.value = code;
+    $handoffOut.hidden = false;
+    try {
+      await navigator.clipboard.writeText(code);
+      $handoffCopied.textContent = "コピーしました";
+    } catch {
+      $handoffOut.focus();
+      $handoffOut.select();
+      $handoffCopied.textContent = "選択しました。手でコピーしてください";
+    }
+    $handoffCopied.hidden = false;
+  });
+
+  document.getElementById("apply-handoff").addEventListener("click", () => {
+    const say = (message, isBad = false) => {
+      $handoffSaid.textContent = message;
+      $handoffSaid.classList.toggle("bad", isBad);
+      $handoffSaid.hidden = false;
+    };
+
+    let payload;
+    try {
+      payload = decodeHandoff($handoffIn.value);
+    } catch {
+      say("読み取れませんでした。文字列が途中で切れていないか確認してください", true);
+      return;
+    }
+
+    const from = payload && (payload.device === "pc" ? "pc" : "phone");
+    if (!payload || payload.v !== 3 || typeof payload.state !== "object") {
+      say("この台本では使えない文字列です", true);
+      return;
+    }
+
+    // 上書きではなく併合する。取り込む側にも書きかけのメモがあるかもしれない
+    let checks = 0;
+    let notes = 0;
+    const nextState = { ...readRaw(KEY(from), {}) };
+    for (const [id, done] of Object.entries(payload.state)) {
+      if (done === true) {
+        nextState[id] = true;
+        checks += 1;
+      }
+    }
+
+    const existing = readRaw(MEMO_KEY(from), { items: {}, global: "" });
+    const nextMemos = {
+      items: { ...(existing.items || {}) },
+      global: existing.global || "",
+    };
+    const incoming = payload.memos || {};
+    for (const [id, text] of Object.entries(incoming.items || {})) {
+      if (typeof text === "string" && text) {
+        nextMemos.items[id] = text;
+        notes += 1;
+      }
+    }
+    if (typeof incoming.global === "string" && incoming.global.trim()) {
+      nextMemos.global = nextMemos.global
+        ? nextMemos.global + "\n" + incoming.global
+        : incoming.global;
+    }
+
+    try {
+      localStorage.setItem(KEY(from), JSON.stringify(nextState));
+      localStorage.setItem(MEMO_KEY(from), JSON.stringify(nextMemos));
+    } catch {
+      say("この端末に保存できませんでした（プライベートモードかもしれません）", true);
+      return;
+    }
+
+    // 作った側の台本へ切り替える。PCの進捗をスマホで開いたらPCの台本が出る、
+    // というのがこの機能の目的なので、ここは黙って合わせる
+    switchDevice(from, { scroll: false });
+    $handoffIn.value = "";
+    say(
+      `取り込みました（${from === "pc" ? "PC" : "スマホ"}／チェック ${checks} 件・メモ ${notes} 件）`,
+    );
+  });
+
+  /** localStorage から JSON を読む。壊れていたら既定値。load() と同じ作法 */
+  function readRaw(key, fallback) {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(key) || "null");
+      return parsed && typeof parsed === "object" ? parsed : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  // 覚えている端末を、起動時のボタンの押下状態にも反映する
+  document.querySelectorAll(".seg button").forEach((button) => {
+    button.setAttribute("aria-pressed", String(button.dataset.device === device));
   });
 
   load();

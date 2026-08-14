@@ -1,8 +1,9 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { SwitchTrack } from "@/components/atoms/Switch";
+import { usePressable } from "@/components/hooks/usePressable";
 
 /**
  * 設定の1行と、その束ね。
@@ -42,7 +43,15 @@ export function SettingsGroup({
   );
 }
 
-/** 押すと切り替わる行 */
+/**
+ * 押すと切り替わる行。
+ *
+ * ■ 的は行ぜんぶ、沈むのはトグルだけ
+ * 以前は行全体を PressableButton にしていたため、押すと**カードごと縮んで**
+ * いた。動いたのは行だが、実際に切り替わるのは右のトグルなので、
+ * 目と手の対応がずれる。的の広さ(44px以上)は変えずに、押し込みの見た目
+ * だけをトグルへ移した。押下の判定は行で拾い、`isPressed` を渡している。
+ */
 export function SettingsSwitchRow({
   label,
   description,
@@ -54,11 +63,15 @@ export function SettingsSwitchRow({
   checked: boolean;
   onChange: () => void;
 }) {
+  const { isPressed, handlers } = usePressable();
+
   return (
-    <PressableButton
+    <button
+      type="button"
       role="switch"
       aria-checked={checked}
       onClick={onChange}
+      {...handlers}
       className="flex min-h-target w-full items-center gap-gutter px-gutter py-unit text-left"
     >
       <span className="flex min-w-0 flex-1 flex-col gap-base">
@@ -69,8 +82,8 @@ export function SettingsSwitchRow({
           </span>
         )}
       </span>
-      <SwitchTrack checked={checked} />
-    </PressableButton>
+      <SwitchTrack checked={checked} isPressed={isPressed} />
+    </button>
   );
 }
 
@@ -123,7 +136,18 @@ export function SettingsSegmentRow<T extends string | number>({
   );
 }
 
-/** 数値を入れる行。単位は右に添える */
+/**
+ * 数値を入れる行。単位は右に添える。
+ *
+ * ■ 打っている間は値に触らない
+ * 以前は1文字打つたびに min/max へ丸めていた。ステージの幅は下限が6なので、
+ * 「10」を入れようと `1` を打った瞬間に 6 へ化け、**先頭の桁が下限未満の数は
+ * どうやっても入力できなかった**(BPMの「100」も同じ)。空欄にもできない。
+ *
+ * 打っている最中の文字列はここで預かり、**欄から離れた時点で1回だけ**
+ * 数値にして丸める。曲の頭出し(MusicSheet)が先に同じ作法になっているので、
+ * 数を入れる場所の振る舞いが画面によって違う、ということも無くなる。
+ */
 export function SettingsNumberRow({
   label,
   description,
@@ -143,6 +167,35 @@ export function SettingsNumberRow({
   unit: string;
   onChange: (value: number) => void;
 }) {
+  // 入力中の【文字列】。数値にしてしまうと "1" と "1." の区別が消え、
+  // 小数を打っている途中で勝手に整形されてしまう
+  const [draft, setDraft] = useState(String(value));
+
+  // 外から値が変わったとき(設定の初期化など)に追い付く。
+  //
+  // useEffect で setDraft する形は使えない。描画が終わってからもう一度
+  // 描き直すことになり、この書き方は lint でも止められる。
+  // **描画の途中で前回の値と比べて直す**のが React の言う正しい形で、
+  // 追加の描画は同じ処理の中で片付く(打っている間は value が動かないので、
+  // ここが入力を邪魔することはない)
+  const [lastValue, setLastValue] = useState(value);
+  if (value !== lastValue) {
+    setLastValue(value);
+    setDraft(String(value));
+  }
+
+  /** 欄から離れた/Enterを押した時に1回だけ走る。ここで初めて丸める */
+  const commit = () => {
+    const parsed = Number(draft.trim());
+    if (draft.trim() === "" || !Number.isFinite(parsed)) {
+      setDraft(String(value)); // 数でないものは、前の値に戻すだけ
+      return;
+    }
+    const clamped = Math.min(max, Math.max(min, parsed));
+    setDraft(String(clamped));
+    if (clamped !== value) onChange(clamped);
+  };
+
   return (
     <div className="flex min-h-target flex-col gap-unit px-gutter py-unit">
       <label className="flex items-center gap-gutter">
@@ -154,11 +207,12 @@ export function SettingsNumberRow({
             min={min}
             max={max}
             step={step}
-            value={value}
-            onChange={(event) => {
-              const parsed = Number(event.target.value);
-              if (!Number.isFinite(parsed)) return;
-              onChange(Math.min(max, Math.max(min, parsed)));
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            onBlur={commit}
+            onKeyDown={(event) => {
+              // Enter で確定。欄から離れるのと同じ扱いにする
+              if (event.key === "Enter") event.currentTarget.blur();
             }}
             className="w-14 bg-transparent text-right outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />

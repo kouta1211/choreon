@@ -119,12 +119,18 @@ export function Stage({
             />
           )}
           {/* センターライン。中央(0の列)は隊形の基準になるので、
-              格子より一段強く引く */}
+              格子とは【種類の違う線】にする。
+
+              以前は --line-strong(白18%)で、格子の --stage-grid(白6%)と
+              「同じ白い線の濃さ違い」でしかなかった。そのため消しても差が
+              読み取れず、設定を切り替えた手応えが無かった。アクセントを
+              薄く混ぜると、格子の中で1本だけ意味を持つ線として拾える
+              (color-mix なので10テーマそれぞれの色に追従する) */}
           {isCenterLineVisible && gridMode !== "none" && (
             <div
               aria-hidden
               data-testid="stage-center-line"
-              className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-line-strong"
+              className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-[color-mix(in_oklab,var(--accent)_55%,transparent)]"
             />
           )}
           {gridMode === "circle" && (
