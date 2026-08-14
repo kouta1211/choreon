@@ -10,7 +10,9 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: "./vitest.setup.ts",
-    exclude: [...configDefaults.exclude, ".next/**"],
+    // choreon-app はネイティブ版(Expo)。テストの走らせ方が別なので、
+    // ルートの vitest では拾わない
+    exclude: [...configDefaults.exclude, ".next/**", "choreon-app/**"],
     passWithNoTests: true,
   },
 });

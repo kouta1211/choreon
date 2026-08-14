@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // デザインツールの書き出し(参照用で、ここでビルドするコードではない)。
     // .gitignore にも入れているが、ESLint はそちらを見ないので別途要る
+    // ネイティブ版(Expo)。別プロジェクトで、ルールも tsconfig も別に持つ
+    "choreon-app/**",
     "design_handoff_*/**",
     "*.dc.html",
     "support.js",

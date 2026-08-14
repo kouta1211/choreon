@@ -30,5 +30,6 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "//": "choreon-app はネイティブ版(Expo)の別プロジェクト。include が **/*.ts(x) なので、外さないと next build の型検査が React Native のコードまで読む",
+  "exclude": ["node_modules", "choreon-app"]
 }

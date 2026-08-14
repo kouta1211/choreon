@@ -2,6 +2,13 @@
 
 # dependencies
 /node_modules
+# ネイティブ版(choreon-app)は同じリポジトリの別プロジェクト。
+# 上の /node_modules は【ルート直下だけ】を外すので、こちらは別途要る
+/choreon-app/node_modules
+/choreon-app/.expo/
+/choreon-app/dist/
+/choreon-app/web-build/
+/choreon-app/expo-env.d.ts
 /.pnp
 .pnp.*
 .yarn/*
