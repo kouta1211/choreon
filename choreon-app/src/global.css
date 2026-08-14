@@ -4,6 +4,66 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * テーマのトークン。**Web版(ルートの themes.css)と同じ変数名・同じ値**。
+ *
+ * ■ なぜ変数で持つのか
+ * 色を直に書くと、テーマを足すたびに全画面を触ることになる。Web版は10種の
+ * テーマをこの変数の差し替えだけで実現していて、同じ形をこちらでも保つ。
+ * いま入っているのは既定(ミッドナイト・ピンク)の1種だけ。残る9種は、
+ * この :root を上書きする形で後から足せる(NativeWind の vars() を使えば
+ * 実行時にも差し替えられる)。
+ *
+ * ■ Tailwind の色名との対応は tailwind.config.js
+ * `bg-surface` や `text-fg-sub` と書けばここの変数を読む。**クラス名は
+ * Web版と同じ**なので、画面を移すときにクラスを書き換えなくてよい。
+ *
+ * ■ Web版から持ってこられないもの
+ * 角丸(--radius)からの比率計算、8段のタイポ、質感(--bg-fx)は
+ * Tailwind v4 の @theme と CSS の calc に依存している。こちらは v3 系なので、
+ * 必要になった時点で個別に決める。
+ */
+:root {
+  /* 地。純黒を基準に、面は白のアルファを重ねて階層を作る */
+  --bg: #000000;
+  --surface-sunken: rgba(255, 255, 255, 0.02);
+  --surface: rgba(255, 255, 255, 0.04);
+  --surface-raised: rgba(255, 255, 255, 0.07);
+  --surface-strong: rgba(255, 255, 255, 0.11);
+
+  /* ステージ */
+  --stage: #0a0a0b;
+  --stage-grid: rgba(255, 255, 255, 0.06);
+  --stage-grid-soft: rgba(255, 255, 255, 0.035);
+  --scrim: #000000;
+
+  /* 線 */
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.18);
+
+  /* 文字。強い順 */
+  --text-strong: #ffffff;
+  --text: rgba(255, 255, 255, 0.86);
+  --text-sub: rgba(255, 255, 255, 0.64);
+  --text-muted: rgba(255, 255, 255, 0.46);
+
+  /* アクセント。soft / bright は「アクセントの面や地に載る文字」 */
+  --accent: #ec4899;
+  --accent-fg: #ffffff;
+  --accent-soft: #f472b6;
+  --accent-bright: #f9a8d4;
+  --accent-row: rgba(236, 72, 153, 0.14);
+
+  /* ダンサーの既定色6種。作品には保存色が入るので、これは新規追加時の種 */
+  --dancer-1: #3b82f6;
+  --dancer-2: #ef4444;
+  --dancer-3: #10b981;
+  --dancer-4: #f59e0b;
+  --dancer-5: #8b5cf6;
+  --dancer-6: #ec4899;
+}
+
+/* テンプレート由来のフォント指定(Web でのみ効く) */
 :root {
   --font-display:
     Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,

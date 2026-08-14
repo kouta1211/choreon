@@ -2,158 +2,201 @@ import { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { supabase } from '@/lib/supabase/client';
+import { StageView } from '@/components/stage-view';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
+import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
+import { supabase } from '@/lib/supabase/client';
+
+/** 見た目を確かめるための仮の隊形(まだ Supabase から読んでいない) */
+const SAMPLE = {
+  stageWidth: 14,
+  stageHeight: 10,
+  dancers: [
+    { id: 'd1', name: 'あかり', color: '#3b82f6', x: 3, y: 7 },
+    { id: 'd2', name: 'ゆい', color: '#ef4444', x: 5.5, y: 7 },
+    { id: 'd3', name: 'かな', color: '#10b981', x: 8.5, y: 7 },
+    { id: 'd4', name: 'みお', color: '#f59e0b', x: 11, y: 7 },
+    { id: 'd5', name: 'りん', color: '#8b5cf6', x: 7, y: 4 },
+  ],
+};
 
 /**
  * ネイティブ版の最初の画面。
  *
- * まだ Choreon の画面ではなく、**基盤が生きているかを目で見るための盤**。
- * 確かめているのは4つ:
+ * **土台が生きているかを見る盤**と、**最初のステージ1枚**。
+ * 確かめているのは:
  *
- *   1. NativeWind — className が Web でもネイティブでも効く
- *   2. ストレージ — 設定が端末に残る(Web は localStorage / iOS・Android は AsyncStorage)
- *   3. Supabase — 同じ鍵で本物のプロジェクトに届く
- *   4. Zustand — Web 版からコピーしたストアがそのまま動く
+ *   1. NativeWind ＋ テーマのトークン（Web版と同じクラス名で同じ色が出るか）
+ *   2. ストレージ（設定と「表示とモード」が端末に残るか）
+ *   3. Supabase（同じ鍵で本物のプロジェクトに届くか）
+ *   4. Zustand（Web版からコピーしたストアが動くか）
  *
- * 画面の移植はこの次。先に見た目だけ移すと、動かない画面が増えるだけになる。
+ * 隊形はまだ手書きの仮データ。Supabase から読むのは、認証を移してから。
  */
 export default function FoundationScreen() {
   const platform = Platform.OS === 'web' ? 'Web (react-native-web)' : Platform.OS;
 
-  // --- 2. ストレージ（設定） -------------------------------------------
+  // 端末に覚えてあるものを読む（どちらも Promise。Web版は同期だった）
+  const loadSettings = useSettingsStore((state) => state.load);
+  const loadView = useUIStore((state) => state.loadViewPreference);
   const isLoaded = useSettingsStore((state) => state.isLoaded);
-  const isSnapEnabled = useSettingsStore((state) => state.isSnapEnabled);
-  const defaultBpm = useSettingsStore((state) => state.defaultBpm);
-  const update = useSettingsStore((state) => state.update);
-  const load = useSettingsStore((state) => state.load);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    void loadSettings();
+    void loadView();
+  }, [loadSettings, loadView]);
 
-  // --- 3. Supabase ------------------------------------------------------
+  // 設定と表示のトグル
+  const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
+  const dancerNameDisplay = useSettingsStore((state) => state.dancerNameDisplay);
+  const update = useSettingsStore((state) => state.update);
+  const gridMode = useUIStore((state) => state.gridMode);
+  const setGridMode = useUIStore((state) => state.setGridMode);
+
+  // 仮の隊形をストアへ入れる（Web版と同じ hydrate を通す）
+  const hydrate = useProjectStore((state) => state.hydrate);
+  useEffect(() => {
+    const now = new Date().toISOString();
+    hydrate({
+      project: {
+        id: 'local',
+        userId: 'local',
+        title: 'ネイティブ版の下書き',
+        stageWidth: SAMPLE.stageWidth,
+        stageHeight: SAMPLE.stageHeight,
+        musicOffsetSeconds: 0,
+        bpm: 120,
+        beatsPerBar: 4,
+        shareToken: null,
+        isShared: false,
+        createdAt: now,
+        updatedAt: now,
+      },
+      dancers: SAMPLE.dancers.map((dancer, index) => ({
+        id: dancer.id,
+        projectId: 'local',
+        name: dancer.name,
+        color: dancer.color,
+        // 0度 = 客席を向く（Web版と同じ既定）
+        initialDirection: 0,
+        orderIndex: index,
+        createdAt: now,
+      })),
+      scenes: [
+        {
+          id: 'scene-1',
+          projectId: 'local',
+          name: 'シーン1',
+          orderIndex: 0,
+          timeSeconds: 0,
+        },
+      ],
+      positions: SAMPLE.dancers.map((dancer) => ({
+        sceneId: 'scene-1',
+        dancerId: dancer.id,
+        xCoordinate: dancer.x,
+        yCoordinate: dancer.y,
+        rotationAngle: 0,
+      })),
+      isGuest: true,
+    });
+    useUIStore.getState().selectScene('scene-1');
+  }, [hydrate]);
+
+  // Supabase に届くか
   const [reach, setReach] = useState('確かめています…');
-
   useEffect(() => {
     let alive = true;
-
     void (async () => {
-      // セッションの有無は端末のストレージを読むだけ(通信しない)
       const { data } = await supabase.auth.getSession();
       const session = data.session ? 'ログイン中' : '未ログイン';
-
-      // 往復できるかは、認証サーバーの health を叩いて確かめる。
-      // 作品テーブルを読みにいくと、匿名には権限が無いので必ず 401 になり
-      // (それが正しい設定)、コンソールに赤いエラーが残り続ける
       try {
         const response = await fetch(
           `${process.env.EXPO_PUBLIC_SUPABASE_URL}/auth/v1/health`,
           { headers: { apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '' } },
         );
-        if (!alive) return;
-        setReach(response.ok ? `届いた（${session}）` : `届かない（${response.status}）`);
+        if (alive) {
+          setReach(response.ok ? `届いた（${session}）` : `届かない（${response.status}）`);
+        }
       } catch {
         if (alive) setReach('届かない（通信できませんでした）');
       }
     })();
-
     return () => {
       alive = false;
     };
   }, []);
 
-  // --- 4. Zustand（Web版からコピーしたストア） --------------------------
-  const scenes = useProjectStore((state) => state.scenes);
-  const addScene = useProjectStore((state) => state.addScene);
-
   return (
-    <SafeAreaView className="flex-1 bg-neutral-950">
-      <ScrollView contentContainerClassName="gap-4 p-6">
+    <SafeAreaView className="flex-1 bg-page">
+      <ScrollView contentContainerClassName="gap-5 p-5">
         <View className="gap-1">
-          <Text className="text-3xl font-bold tracking-tight text-white">Choreon</Text>
-          <Text className="text-sm text-neutral-400">ネイティブ版の土台（動作確認用）</Text>
+          <Text className="text-3xl font-bold tracking-tight text-fg-strong">Choreon</Text>
+          <Text className="text-sm text-fg-muted">ネイティブ版の土台</Text>
         </View>
 
-        <Row label="1. NativeWind" value="この枠と色が出ていれば効いている" />
-        <Row label="環境" value={platform} />
-
-        <Row
-          label="3. Supabase"
-          value={reach}
-          hint="Web版と同じ Supabase を、EXPO_PUBLIC_ の鍵で見ています"
+        <StageView
+          stageWidthUnits={SAMPLE.stageWidth}
+          stageHeightUnits={SAMPLE.stageHeight}
         />
 
-        {/* 2. ストレージ：切り替えて、リロード（実機なら再起動）しても残るか */}
-        <View className="gap-3 rounded-2xl border border-pink-500/60 bg-neutral-900 p-5">
-          <Text className="text-xs uppercase tracking-widest text-neutral-500">
-            2. 端末に覚える
-          </Text>
-          <Text className="text-sm text-neutral-400">
-            {isLoaded ? '読み込み済み' : '読み込み中（既定値を表示）'}
+        {/* 端末に覚えるもの。切り替えてから再読み込みしても残る */}
+        <View className="gap-3 rounded-2xl border border-line bg-surface p-4">
+          <Text className="text-xs uppercase tracking-widest text-fg-muted">
+            端末に覚える{isLoaded ? '' : '（読み込み中）'}
           </Text>
 
-          <Pressable
-            onPress={() => update('isSnapEnabled', !isSnapEnabled)}
-            className="flex-row items-center justify-between rounded-xl bg-neutral-800 px-4 py-3 active:opacity-80"
-          >
-            <Text className="text-base text-white">格子に吸着させる</Text>
-            <Text className="text-base font-semibold text-pink-400">
-              {isSnapEnabled ? 'オン' : 'オフ'}
-            </Text>
-          </Pressable>
+          <Toggle
+            label="客席を上にする"
+            value={isAudienceOnTop ? 'オン' : 'オフ'}
+            onPress={() => update('isAudienceOnTop', !isAudienceOnTop)}
+          />
+          <Toggle
+            label="ダンサー名"
+            value={dancerNameDisplay === 'always' ? '常に' : '出さない'}
+            onPress={() =>
+              update('dancerNameDisplay', dancerNameDisplay === 'always' ? 'never' : 'always')
+            }
+          />
+          <Toggle
+            label="目盛り"
+            value={gridMode === 'square' ? '格子' : 'なし'}
+            onPress={() => setGridMode(gridMode === 'square' ? 'none' : 'square')}
+          />
 
-          <Pressable
-            onPress={() => update('defaultBpm', defaultBpm >= 200 ? 60 : defaultBpm + 20)}
-            className="flex-row items-center justify-between rounded-xl bg-neutral-800 px-4 py-3 active:opacity-80"
-          >
-            <Text className="text-base text-white">既定の速さ</Text>
-            <Text className="text-base font-semibold text-pink-400">{defaultBpm} BPM</Text>
-          </Pressable>
-
-          <Text className="text-xs leading-5 text-neutral-500">
-            切り替えてから再読み込み（実機ならアプリを閉じて開き直す）。値が残っていれば、
-            Web は localStorage、iOS/Android は AsyncStorage に書けています。
+          <Text className="text-xs leading-5 text-fg-muted">
+            上2つは設定（settings）、目盛りは「表示とモード」（viewPreference）。
+            どちらも Web は localStorage、iOS/Android は AsyncStorage へ書いています。
           </Text>
         </View>
 
-        {/* 4. Web版からコピーしたストアが、無修正で動くか */}
-        <View className="gap-3 rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
-          <Text className="text-xs uppercase tracking-widest text-neutral-500">
-            4. Zustand（Web版からコピー）
-          </Text>
-          <Text className="text-base text-white">シーン {scenes.length} 件</Text>
-          <Pressable
-            onPress={() =>
-              addScene({
-                id: `scene-${scenes.length + 1}-${Date.now()}`,
-                projectId: 'local',
-                name: `シーン${scenes.length + 1}`,
-                orderIndex: scenes.length,
-                timeSeconds: scenes.length * 4,
-              })
-            }
-            className="self-start rounded-full bg-pink-500 px-5 py-2.5 active:opacity-80"
-          >
-            <Text className="text-base font-semibold text-white">シーンを足す</Text>
-          </Pressable>
-          <Text className="text-xs leading-5 text-neutral-500">
-            並び順は時刻の昇順（sceneTiming.sortScenes）。ここは Web 版のストアを
-            1行も変えずに動かしています。
-          </Text>
+        <View className="gap-1 rounded-2xl border border-line bg-surface p-4">
+          <Text className="text-xs uppercase tracking-widest text-fg-muted">Supabase</Text>
+          <Text className="text-base text-fg-strong">{reach}</Text>
+          <Text className="text-xs text-fg-muted">環境: {platform}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function Row({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function Toggle({
+  label,
+  value,
+  onPress,
+}: {
+  label: string;
+  value: string;
+  onPress: () => void;
+}) {
   return (
-    <View className="gap-1 rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
-      <Text className="text-xs uppercase tracking-widest text-neutral-500">{label}</Text>
-      <Text className="text-lg text-white">{value}</Text>
-      {hint ? <Text className="text-xs text-neutral-500">{hint}</Text> : null}
-    </View>
+    <Pressable
+      onPress={onPress}
+      className="flex-row items-center justify-between rounded-xl bg-surface-raised px-4 py-3 active:opacity-80"
+    >
+      <Text className="text-base text-fg">{label}</Text>
+      <Text className="text-base font-semibold text-accent-soft">{value}</Text>
+    </Pressable>
   );
 }
