@@ -13,7 +13,7 @@ import { upsertPositions } from '@/features/scene/api/positions';
 import { sceneDurations } from '@/features/scene/lib/sceneTiming';
 import { resolveNumberInput } from '@/features/settings/lib/numberField';
 import { useThemeColor } from '@/features/theme/lib/useThemeColor';
-import { useThemeStore } from '@/features/theme/store/useThemeStore';
+import { useCurrentTheme } from '@/features/theme/store/useThemeStore';
 
 /** 個別の移動時間が取れる範囲。Web版と同じ（schema.sql の CHECK に合わせてある） */
 const MIN_DURATION_SECONDS = 0.1;
@@ -42,7 +42,7 @@ const MAX_DURATION_SECONDS = 30;
  */
 export function DancerInspector() {
   const t = useT();
-  const theme = useThemeStore((state) => state.preference.theme);
+  const theme = useCurrentTheme();
   const accent = useThemeColor('--accent');
 
   const selectedDancerId = useUIStore((state) => state.selectedDancerId);

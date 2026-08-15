@@ -200,6 +200,9 @@ export const en: Messages = {
     title: 'Theme',
     loading: ' (loading)',
     note: 'Colours are copied from the web app’s themes.css. Your choice stays on this device.',
+    perProject: 'Use a different theme for this project',
+    perProjectNote:
+      'This theme applies only while this project is open. Other projects keep the device default.',
   },
 
   themes: {

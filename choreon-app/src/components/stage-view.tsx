@@ -7,7 +7,7 @@ import { PathOverlay } from '@/components/path-overlay';
 import { StageMarks } from '@/components/stage-marks';
 import { themedDancerColor } from '@/features/dancer/lib/themedColor';
 import { getSceneStep } from '@/features/canvas/lib/sceneStep';
-import { useThemeStore } from '@/features/theme/store/useThemeStore';
+import { useCurrentTheme } from '@/features/theme/store/useThemeStore';
 import { useSceneWarnings } from '@/features/canvas/hooks/useSceneWarnings';
 import { useHistoryStore } from '@/features/canvas/store/useHistoryStore';
 import { persist } from '@/features/project/lib/persistence';
@@ -67,7 +67,7 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
   const isBlindSpotCheckVisible = useUIStore((state) => state.isBlindSpotCheckVisible);
   const focusedDancerId = useUIStore((state) => state.focusedDancerId);
   const dancerNameDisplay = useSettingsStore((state) => state.dancerNameDisplay);
-  const theme = useThemeStore((state) => state.preference.theme);
+  const theme = useCurrentTheme();
 
   /**
    * 動かした結果をストアへ入れ、**戻せるように履歴へ積む**。

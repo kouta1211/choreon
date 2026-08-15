@@ -3,7 +3,13 @@ import { vars } from 'nativewind';
 
 import { THEMES } from '@/features/theme/catalog';
 import { THEME_VARS } from '@/features/theme/themeVars.generated';
-import { useThemeStore } from '@/features/theme/store/useThemeStore';
+import {
+  useCurrentTheme,
+  useHasProjectTheme,
+  useThemeStore,
+} from '@/features/theme/store/useThemeStore';
+import { useProjectStore } from '@/features/project/store/useProjectStore';
+import { SwitchTrack } from '@/components/ui/switch';
 import { useT } from '@/features/i18n/store/useLocaleStore';
 
 
@@ -21,9 +27,13 @@ import { useT } from '@/features/i18n/store/useLocaleStore';
  */
 export function ThemePicker() {
   const t = useT();
-  const current = useThemeStore((state) => state.preference.theme);
+  const current = useCurrentTheme();
   const setTheme = useThemeStore((state) => state.setTheme);
   const isLoaded = useThemeStore((state) => state.isLoaded);
+
+  // 作品を開いていないと「この作品だけ」の主語が立たない
+  const hasProject = useProjectStore((state) => Boolean(state.project) && !state.isGuest);
+  const isProjectTheme = useHasProjectTheme();
 
   return (
     <View className="gap-3 rounded-2xl border border-line bg-surface p-4">
@@ -42,7 +52,7 @@ export function ThemePicker() {
           return (
             <Pressable
               key={theme.id}
-              onPress={() => setTheme(theme.id)}
+              onPress={() => setTheme(theme.id, isProjectTheme)}
               accessibilityRole="button"
               accessibilityLabel={t.themes[theme.id]}
               accessibilityState={{ selected: isCurrent }}
@@ -70,7 +80,28 @@ export function ThemePicker() {
         })}
       </ScrollView>
 
-      <Text className="text-xs leading-5 text-fg-muted">{t.themeSection.note}</Text>
+      {/* 作品ごとに変えるかどうか。**押した瞬間に、いまのテーマを
+          その作品へ移す／端末の既定へ戻す** — 切り替えただけで
+          見た目が変わらないようにしてある */}
+      {hasProject ? (
+        <Pressable
+          onPress={() => setTheme(current, !isProjectTheme)}
+          accessibilityRole="switch"
+          accessibilityLabel={t.themeSection.perProject}
+          accessibilityState={{ checked: isProjectTheme }}
+          aria-checked={isProjectTheme}
+          className="min-h-11 flex-row items-center gap-3 rounded-xl bg-surface-raised px-3 active:opacity-70"
+        >
+          <Text className="min-w-0 flex-1 text-sm text-fg-strong">
+            {t.themeSection.perProject}
+          </Text>
+          <SwitchTrack checked={isProjectTheme} />
+        </Pressable>
+      ) : null}
+
+      <Text className="text-xs leading-5 text-fg-muted">
+        {hasProject && isProjectTheme ? t.themeSection.perProjectNote : t.themeSection.note}
+      </Text>
     </View>
   );
 }

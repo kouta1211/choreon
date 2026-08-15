@@ -12,7 +12,7 @@ import type { Dancer } from '@/features/dancer/types';
 import type { Collision } from '@/features/canvas/lib/collision';
 import type { MoveStrain } from '@/features/canvas/lib/physicalLimits';
 import { themedDancerColor } from '@/features/dancer/lib/themedColor';
-import { useThemeStore } from '@/features/theme/store/useThemeStore';
+import { useCurrentTheme } from '@/features/theme/store/useThemeStore';
 import { useT } from '@/features/i18n/store/useLocaleStore';
 
 /**
@@ -127,7 +127,7 @@ export function DraggableDancer({
 
   // 保存されている6色を、いまのテーマの6色へ読み替える(紙のテーマでは
   // 沈んだ色になる)。保存の値そのものは変えない
-  const theme = useThemeStore((state) => state.preference.theme);
+  const theme = useCurrentTheme();
   const color = themedDancerColor(dancer.color, theme);
   const offset = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
 

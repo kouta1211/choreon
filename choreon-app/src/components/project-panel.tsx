@@ -21,6 +21,7 @@ import { discardPendingWrites } from '@/features/project/lib/persistence';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
 import { useThemeColor } from '@/features/theme/lib/useThemeColor';
+import { useThemeStore } from '@/features/theme/store/useThemeStore';
 import { supabase } from '@/lib/supabase/client';
 
 type Props = {
@@ -117,6 +118,8 @@ export function ProjectPanel({ userId, onProjectLoaded }: Props) {
       hydrate({ ...loaded, isGuest: false });
       // その作品に覚えてある曲を戻す。**別の作品の曲が鳴ったままにしない**
       void useMusicStore.getState().restore(loaded.project.id);
+      // その作品に専用のテーマが入っていれば、開いた時点で切り替わる
+      useThemeStore.getState().setProjectId(loaded.project.id);
       // 時刻の順で最初のシーンを選ぶ（Web版 useHydrateProject と同じ規則）
       const first = [...loaded.scenes].sort(
         (a, b) => a.timeSeconds - b.timeSeconds || a.orderIndex - b.orderIndex,

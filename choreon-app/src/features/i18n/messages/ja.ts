@@ -220,6 +220,9 @@ export const ja = {
     title: 'テーマ',
     loading: '（読み込み中）',
     note: '色は Web版の themes.css から機械的に写しています。選んだテーマは端末に残ります。',
+    perProject: 'この作品だけ別のテーマにする',
+    perProjectNote:
+      'この作品を開いている間だけ、このテーマになります。ほかの作品と、作品を開いていないときは端末の既定のままです。',
   },
 
   themes: {

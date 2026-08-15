@@ -3,7 +3,10 @@ import { View } from 'react-native';
 import { vars } from 'nativewind';
 
 import { THEME_VARS } from '@/features/theme/themeVars.generated';
-import { useThemeStore } from '@/features/theme/store/useThemeStore';
+import {
+  useCurrentTheme,
+  useThemeStore,
+} from '@/features/theme/store/useThemeStore';
 
 /**
  * 選んだテーマを、この下の全部に効かせる。
@@ -26,7 +29,7 @@ import { useThemeStore } from '@/features/theme/store/useThemeStore';
  * テーマを選んでいる人には見える。ここは実機で確かめたい）。
  */
 export function AppearanceProvider({ children }: { children: ReactNode }) {
-  const theme = useThemeStore((state) => state.preference.theme);
+  const theme = useCurrentTheme();
   const load = useThemeStore((state) => state.load);
 
   useEffect(() => {

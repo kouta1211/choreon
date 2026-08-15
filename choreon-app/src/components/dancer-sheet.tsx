@@ -14,7 +14,7 @@ import { persist } from '@/features/project/lib/persistence';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { createDancers, deleteDancer, updateDancerColor } from '@/features/dancer/api/dancers';
 import { upsertPositions } from '@/features/scene/api/positions';
-import { useThemeStore } from '@/features/theme/store/useThemeStore';
+import { useCurrentTheme } from '@/features/theme/store/useThemeStore';
 import { randomId } from '@/lib/randomId';
 
 type Props = {
@@ -67,7 +67,7 @@ export function DancerSheet({ stageWidthUnits, stageHeightUnits }: Props) {
 
   // 見せる色はテーマ側の6色。**選び方の判定は保存されている値のまま**
   // 行う（読み替えた色で照合すると、紙のテーマで全部が「選択中」に見える）
-  const theme = useThemeStore((state) => state.preference.theme);
+  const theme = useCurrentTheme();
 
   const list = Object.values(dancers);
   const selected = selectedDancerId ? dancers[selectedDancerId] : undefined;

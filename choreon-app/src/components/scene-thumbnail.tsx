@@ -5,7 +5,7 @@ import { buildThumbnailDots } from '@/features/scene/lib/sceneThumbnail';
 import { themedDancerColor } from '@/features/dancer/lib/themedColor';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
-import { useThemeStore } from '@/features/theme/store/useThemeStore';
+import { useCurrentTheme } from '@/features/theme/store/useThemeStore';
 
 type Props = {
   sceneId: string;
@@ -43,7 +43,7 @@ export function SceneThumbnail({
   const dancers = useProjectStore((state) => state.dancers);
   const positions = useProjectStore((state) => state.positionsBySceneId[sceneId]);
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
-  const theme = useThemeStore((state) => state.preference.theme);
+  const theme = useCurrentTheme();
 
   const heightPx = (widthPx * stageHeightUnits) / stageWidthUnits;
   const dots = buildThumbnailDots(

@@ -9,7 +9,7 @@ import { SwitchTrack } from '@/components/ui/switch';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useT } from '@/features/i18n/store/useLocaleStore';
 import { THEME_VARS } from '@/features/theme/themeVars.generated';
-import { useThemeStore } from '@/features/theme/store/useThemeStore';
+import { useCurrentTheme } from '@/features/theme/store/useThemeStore';
 
 type Props = {
   onOpenMusic: () => void;
@@ -43,7 +43,7 @@ type Props = {
  */
 export function DisplayModeMenu({ onOpenMusic, onOpenSettings }: Props) {
   const t = useT();
-  const theme = useThemeStore((state) => state.preference.theme);
+  const theme = useCurrentTheme();
   const insets = useSafeAreaInsets();
   const [isOpen, setIsOpen] = useState(false);
 

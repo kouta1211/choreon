@@ -5,7 +5,7 @@ import { vars } from 'nativewind';
 
 import { Icon } from '@/components/ui/icon';
 import { THEME_VARS } from '@/features/theme/themeVars.generated';
-import { useThemeStore } from '@/features/theme/store/useThemeStore';
+import { useCurrentTheme } from '@/features/theme/store/useThemeStore';
 import { useT } from '@/features/i18n/store/useLocaleStore';
 
 type Props = {
@@ -57,7 +57,7 @@ export function Sheet({
   children,
 }: Props) {
   const t = useT();
-  const theme = useThemeStore((state) => state.preference.theme);
+  const theme = useCurrentTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isWide = width >= WIDE_SCREEN;

@@ -4,7 +4,7 @@ import Svg, { Path, Polygon } from 'react-native-svg';
 import { themedDancerColor } from '@/features/dancer/lib/themedColor';
 import { toScreenY } from '@/features/canvas/lib/stageFlip';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
-import { useThemeStore } from '@/features/theme/store/useThemeStore';
+import { useCurrentTheme } from '@/features/theme/store/useThemeStore';
 import type { Dancer } from '@/features/dancer/types';
 import type { Position } from '@/features/scene/types';
 
@@ -51,7 +51,7 @@ export function PathOverlay({
   stageHeightUnits,
 }: Props) {
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
-  const theme = useThemeStore((state) => state.preference.theme);
+  const theme = useCurrentTheme();
   const screenY = (value: number) => toScreenY(value, stageHeightUnits, isAudienceOnTop);
 
   const toX = (units: number) => (units / stageWidthUnits) * 100;

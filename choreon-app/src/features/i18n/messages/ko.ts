@@ -200,6 +200,9 @@ export const ko: Messages = {
     title: '테마',
     loading: '(불러오는 중)',
     note: '색은 웹 버전의 themes.css에서 그대로 옮겼습니다. 고른 테마는 기기에 남습니다.',
+    perProject: '이 작품만 다른 테마로',
+    perProjectNote:
+      '이 작품을 열고 있는 동안에만 이 테마가 적용됩니다. 다른 작품은 기기 기본값 그대로입니다.',
   },
 
   themes: {

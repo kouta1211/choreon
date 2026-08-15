@@ -1,5 +1,5 @@
 import { THEME_VARS } from '@/features/theme/themeVars.generated';
-import { useThemeStore } from '@/features/theme/store/useThemeStore';
+import { useCurrentTheme } from '@/features/theme/store/useThemeStore';
 
 /** 表に載っている変数の名前。増やすときは themes.css 側にもあることを確かめる */
 export type ThemeColorName =
@@ -26,6 +26,6 @@ export type ThemeColorName =
  * 色を直に書いてしまうと、テーマを変えたときにアイコンだけ取り残される。
  */
 export function useThemeColor(name: ThemeColorName): string {
-  const theme = useThemeStore((state) => state.preference.theme);
+  const theme = useCurrentTheme();
   return THEME_VARS[theme][name] ?? '#888888';
 }

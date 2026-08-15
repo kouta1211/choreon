@@ -6,7 +6,7 @@ import { vars } from 'nativewind';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { THEME_VARS } from '@/features/theme/themeVars.generated';
 import { useThemeColor } from '@/features/theme/lib/useThemeColor';
-import { useThemeStore } from '@/features/theme/store/useThemeStore';
+import { useCurrentTheme } from '@/features/theme/store/useThemeStore';
 import { useT } from '@/features/i18n/store/useLocaleStore';
 
 /** 中央に置くか、下端に寄せるかの境目（Sheet と同じ値） */
@@ -42,7 +42,7 @@ export function ConfirmDialog() {
   const t = useT();
   const request = useUIStore((state) => state.confirm);
   const closeConfirm = useUIStore((state) => state.closeConfirm);
-  const theme = useThemeStore((state) => state.preference.theme);
+  const theme = useCurrentTheme();
   const danger = useThemeColor('--dancer-2');
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
