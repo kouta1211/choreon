@@ -17,6 +17,7 @@ import { SettingsSheet } from '@/components/settings-sheet';
 import { StageView } from '@/components/stage-view';
 import { Toast } from '@/components/toast';
 import { Sheet } from '@/components/ui/sheet';
+import { useMusicStore } from '@/features/music/store/useMusicStore';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
@@ -155,6 +156,8 @@ export default function EditorScreen() {
       isGuest: true,
     });
     useUIStore.getState().selectScene('scene-1');
+    // 下書きに覚えさせた曲があれば戻す（作品を開けば入れ替わる）
+    void useMusicStore.getState().restore('local');
   }, [hydrate]);
 
   return (

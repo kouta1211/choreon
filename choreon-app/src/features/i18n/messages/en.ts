@@ -89,7 +89,8 @@ export const en: Messages = {
     withMusic:
       'Run through starts from the scene you are on. While a track is loaded, the clock is the track itself — it cannot drift.',
     withoutMusic:
-      'Load a track and the run-through follows it. Without one, it runs on seconds alone. Reopening the app clears the choice.',
+      'Load a track and the run-through follows it. Without one, it runs on seconds alone.',
+    kept: 'Kept on this device (one track per project). It is still here next time you open it.',
   },
 
   scenes: {

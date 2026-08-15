@@ -3,6 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 
 import { useMusicStore } from '@/features/music/store/useMusicStore';
+import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { usePlaybackStore } from '@/features/music/store/usePlaybackStore';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useT } from '@/features/i18n/store/useLocaleStore';
@@ -15,10 +16,10 @@ import { useT } from '@/features/i18n/store/useLocaleStore';
  * 選ぶ前に作った振付の秒数はそのままなので、曲を載せた時点で
  * 「何秒目に何をするか」は変わらない。
  *
- * ■ まだ端末に覚えない
- * ピッカーが渡してくる場所は一時的で、アプリを開き直すと消えていることが
- * ある。**アプリの領域へ複写して覚える**のが正しい直し方だが、それは実機で
- * 1周確かめてからにする（`useMusicStore` の注）。
+ * ■ 端末に覚える（作品ごとに1曲）
+ * ピッカーが渡してくる場所はキャッシュで、端末が容量を空けるときに消える。
+ * **アプリの領域へ写して、その場所を覚える**（`musicStorage.ts`）。
+ * 次に同じ作品を開けば、選び直さずに鳴らせる。
  *
  * ■ 選び直し・外す
  * 曲を外すと、時計は曲なしの方（`useSilentClock`）へ戻る。どちらも同じ場所へ
@@ -28,7 +29,9 @@ export function MusicPicker() {
   const t = useT();
   const uri = useMusicStore((state) => state.uri);
   const name = useMusicStore((state) => state.name);
-  const setMusic = useMusicStore((state) => state.setMusic);
+  const pickMusic = useMusicStore((state) => state.pick);
+  const clearMusic = useMusicStore((state) => state.clear);
+  const projectId = useProjectStore((state) => state.project?.id);
   const setIsPlaying = useUIStore((state) => state.setIsPlaying);
   const setCurrentTime = usePlaybackStore((state) => state.setCurrentTime);
   const [error, setError] = useState<string | null>(null);
@@ -51,16 +54,16 @@ export function MusicPicker() {
       // 曲を変えたら時計は頭へ。前の曲の秒数のまま鳴らし始めない
       setIsPlaying(false);
       setCurrentTime(0);
-      setMusic({ uri: file.uri, name: file.name });
+      await pickMusic(projectId ?? 'local', { uri: file.uri, name: file.name });
     } catch {
       setError(t.music.failed);
     }
   };
 
-  const clear = () => {
+  const clear = async () => {
     setIsPlaying(false);
     setCurrentTime(0);
-    setMusic(null);
+    await clearMusic();
   };
 
   return (
@@ -73,7 +76,7 @@ export function MusicPicker() {
             {name}
           </Text>
           <Pressable
-            onPress={clear}
+            onPress={() => void clear()}
             accessibilityRole="button"
             accessibilityLabel={t.music.clear}
             className="rounded-lg border border-line-strong px-3 py-1.5 active:opacity-80"
@@ -97,6 +100,7 @@ export function MusicPicker() {
       <Text className="text-xs leading-5 text-fg-muted">
         {uri ? t.music.withMusic : t.music.withoutMusic}
       </Text>
+      <Text className="text-xs leading-5 text-fg-muted">{t.music.kept}</Text>
     </View>
   );
 }

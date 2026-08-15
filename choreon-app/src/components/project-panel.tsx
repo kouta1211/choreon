@@ -16,6 +16,7 @@ import {
   loadProject,
   type ProjectListItem,
 } from '@/features/project/api/load';
+import { useMusicStore } from '@/features/music/store/useMusicStore';
 import { discardPendingWrites } from '@/features/project/lib/persistence';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
@@ -114,6 +115,8 @@ export function ProjectPanel({ userId, onProjectLoaded }: Props) {
       // 次に保存したときに前の作品への書き込みまで一緒に走る
       discardPendingWrites();
       hydrate({ ...loaded, isGuest: false });
+      // その作品に覚えてある曲を戻す。**別の作品の曲が鳴ったままにしない**
+      void useMusicStore.getState().restore(loaded.project.id);
       // 時刻の順で最初のシーンを選ぶ（Web版 useHydrateProject と同じ規則）
       const first = [...loaded.scenes].sort(
         (a, b) => a.timeSeconds - b.timeSeconds || a.orderIndex - b.orderIndex,
