@@ -10,6 +10,7 @@ import { EditorSidePanel } from '@/components/editor-side-panel';
 import { FormationSheet } from '@/components/formation-sheet';
 import { HistoryControls } from '@/components/history-controls';
 import { MusicPicker } from '@/components/music-picker';
+import { MusicTimeline } from '@/components/music-timeline';
 import { PlaybackControls } from '@/components/playback-controls';
 import { SceneDock } from '@/components/scene-dock';
 import { SceneEditor } from '@/components/scene-editor';
@@ -96,6 +97,9 @@ export default function EditorScreen() {
 
   const { width } = useWindowDimensions();
   const isWide = width >= WIDE_SCREEN;
+
+  // 曲があるかどうかで、下端に出すものが変わる
+  const hasMusic = useMusicStore((state) => state.uri !== null);
 
   // 端末に覚えてあるものを読む（どれも Promise。Web版は同期だった）
   const loadSettings = useSettingsStore((state) => state.load);
@@ -197,10 +201,18 @@ export default function EditorScreen() {
         <PlaybackControls />
         <HistoryControls />
 
-        {/* 帯は狭い画面だけ。**広い画面では横のパネルが同じ役をしていて、
-            同じものが2つ並ぶ**（Web版は両方出しているが、あちらは
-            マウスで一覧を、指でドックを、と使い分けが立つ画面幅がある） */}
-        {isWide ? null : (
+        {/* 曲を入れているときは、等間隔の帯ではなく**時間軸**を出す。
+            「ここは詰まっている」「ここは間が空いている」が目で分かる方が、
+            曲に合わせて組むときには要る。曲が無ければ従来の帯のまま
+            （秒の位置に並べても、拠りどころが無くて読めない）。
+
+            広い画面では横のパネルが同じ役をしているので、どちらも出さない */}
+        {isWide ? null : hasMusic ? (
+          <MusicTimeline
+            stageWidthUnits={stage.width}
+            stageHeightUnits={stage.height}
+          />
+        ) : (
           <SceneDock
             onEditScene={() => setOpenSheet('scene')}
             stageWidthUnits={stage.width}

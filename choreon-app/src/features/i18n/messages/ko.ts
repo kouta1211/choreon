@@ -93,6 +93,13 @@ export const ko: Messages = {
     kept: '이 기기에 저장합니다(작품당 1곡). 다음에 열어도 그대로 재생할 수 있습니다.',
   },
 
+  timeline: {
+    section: '타임라인',
+    scale: (px: number) => `1초 = ${px}px`,
+    note:
+      '카드를 옆으로 끌면 그 장면의 시각이 바뀝니다. 촘촘한 곳은 번호만 표시됩니다. 곡의 파형은 아직 표시할 수 없습니다.',
+  },
+
   scenes: {
     section: '장면',
     add: '장면 추가',

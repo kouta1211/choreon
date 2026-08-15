@@ -93,6 +93,13 @@ export const en: Messages = {
     kept: 'Kept on this device (one track per project). It is still here next time you open it.',
   },
 
+  timeline: {
+    section: 'Timeline',
+    scale: (px: number) => `1s = ${px}px`,
+    note:
+      'Drag a card sideways to change when that scene happens. Where scenes are tight, only the number is shown. The waveform is not available yet.',
+  },
+
   scenes: {
     section: 'Scenes',
     add: 'Add a scene',
