@@ -2,9 +2,12 @@ import { useMemo, useRef, useState } from 'react';
 import { PanResponder, View, Text, type LayoutChangeEvent } from 'react-native';
 
 import { DraggableDancer } from '@/components/draggable-dancer';
+import { CurveHandle } from '@/components/curve-handle';
 import { PathOverlay } from '@/components/path-overlay';
 import { StageMarks } from '@/components/stage-marks';
+import { themedDancerColor } from '@/features/dancer/lib/themedColor';
 import { getSceneStep } from '@/features/canvas/lib/sceneStep';
+import { useThemeStore } from '@/features/theme/store/useThemeStore';
 import { useSceneWarnings } from '@/features/canvas/hooks/useSceneWarnings';
 import { useHistoryStore } from '@/features/canvas/store/useHistoryStore';
 import { persist } from '@/features/project/lib/persistence';
@@ -64,6 +67,7 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
   const isBlindSpotCheckVisible = useUIStore((state) => state.isBlindSpotCheckVisible);
   const focusedDancerId = useUIStore((state) => state.focusedDancerId);
   const dancerNameDisplay = useSettingsStore((state) => state.dancerNameDisplay);
+  const theme = useThemeStore((state) => state.preference.theme);
 
   /**
    * 動かした結果をストアへ入れ、**戻せるように履歴へ積む**。
@@ -75,7 +79,7 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
   const commit = async (
     targetSceneId: string,
     dancerId: string,
-    kind: 'move' | 'rotate',
+    kind: 'move' | 'rotate' | 'curve',
     next: Partial<Position>,
   ) => {
     const before = positionsBySceneId[targetSceneId]?.[dancerId];
@@ -158,12 +162,33 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
   // ダンサーに付ける印。速すぎる移動は【次のシーンへの移動】で決まるので、
   // 次のシーンの隊形とその区間の秒数を渡す
   const nextScene = scenes[sceneIndex + 1];
-  const { excessiveMoves, blockedDancerIds } = useSceneWarnings({
+  const { excessiveMoves, blockedDancerIds, collisions } = useSceneWarnings({
     positions,
     nextPositions: nextScene ? (positionsBySceneId[nextScene.id] ?? {}) : {},
     nextSceneSeconds: durations[sceneIndex + 1] ?? 0,
     isBlindSpotCheckVisible,
+    // ぶつかる印は導線と一緒のときだけ。線が見えていないと直しようがない
+    isPathVisible,
+    nextSceneId: nextScene?.id ?? null,
   });
+
+  /**
+   * 導線の曲がり具合（制御点）を保存する。
+   *
+   * 立ち位置と同じ `commit` を通す — 制御点は **positions の列**に入って
+   * いるので、保存も履歴も同じ道でよい。`kind` を分けているのは、
+   * 「元に戻す」で何が戻るのかを後から読めるようにするため。
+   *
+   * **書き込む先は「次のシーン」の行。** 区間の持ち物は後ろ側のシーンが
+   * 持っている（秒数と同じ置き方）。
+   */
+  const commitCurve = (dancerId: string, control: { x: number; y: number } | null) => {
+    if (!nextScene) return;
+    void commit(nextScene.id, dancerId, 'curve', {
+      curveControlX: control?.x ?? null,
+      curveControlY: control?.y ?? null,
+    });
+  };
 
   /** 払っている最中の進み具合。触っていなければ null */
   const [scrub, setScrub] = useState<{ targetSceneId: string; progress: number } | null>(
@@ -288,6 +313,37 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
           />
         )}
 
+        {/* 導線を曲げるつまみ。**選んでいる人の線にだけ**出す。
+            全員ぶん出すと、ダンサー本体と見分けが付かなくなる */}
+        {isPathVisible && nextScene && !scrub && selectedDancerId
+          ? (() => {
+              const from = positions[selectedDancerId];
+              const to = (positionsBySceneId[nextScene.id] ?? {})[selectedDancerId];
+              // 動かない人には線が無いので、曲げるつまみも出さない
+              if (!from || !to) return null;
+              if (
+                from.xCoordinate === to.xCoordinate &&
+                from.yCoordinate === to.yCoordinate
+              ) {
+                return null;
+              }
+              const hasCurve = to.curveControlX != null && to.curveControlY != null;
+              return (
+                <CurveHandle
+                  x={hasCurve ? (to.curveControlX as number) : (from.xCoordinate + to.xCoordinate) / 2}
+                  y={hasCurve ? (to.curveControlY as number) : (from.yCoordinate + to.yCoordinate) / 2}
+                  color={themedDancerColor(dancers[selectedDancerId]?.color ?? '', theme)}
+                  stageWidthUnits={stageWidthUnits}
+                  stageHeightUnits={stageHeightUnits}
+                  stageSize={stageSize}
+                  isAudienceOnTop={isAudienceOnTop}
+                  onMoveEnd={(next) => commitCurve(selectedDancerId, next)}
+                  onReset={() => commitCurve(selectedDancerId, null)}
+                />
+              );
+            })()
+          : null}
+
         {/* 払っている間は、移動先にしか居ない人も描き始める。そうしないと
             半分まで引いた時点で「これから出てくる人」が居らず、確定した
             瞬間に唐突に現れる */}
@@ -355,6 +411,7 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
               }
               isBlocked={blockedDancerIds.has(dancerId)}
               excessiveMove={excessiveMoves.get(dancerId) ?? null}
+              collision={collisions.get(dancerId) ?? null}
               // 押しただけなら選ぶ。もう一度押すと外れる
               onTap={() => selectDancer(dancerId === selectedDancerId ? null : dancerId)}
               onRotateEnd={(rotationAngle) =>

@@ -9,6 +9,7 @@ import {
 import { mirrorAngle } from '@/features/canvas/lib/stageFlip';
 import { RotationHandle } from '@/components/rotation-handle';
 import type { Dancer } from '@/features/dancer/types';
+import type { Collision } from '@/features/canvas/lib/collision';
 import type { MoveStrain } from '@/features/canvas/lib/physicalLimits';
 import { themedDancerColor } from '@/features/dancer/lib/themedColor';
 import { useThemeStore } from '@/features/theme/store/useThemeStore';
@@ -66,6 +67,8 @@ type Props = {
   isBlocked?: boolean;
   /** 次のシーンへの移動が速すぎる。数値は m/s */
   excessiveMove?: MoveStrain | null;
+  /** 移動の途中で誰かとぶつかるなら、その相手と瞬間。導線を出している間だけ */
+  collision?: Collision | null;
 };
 
 const DOT = 28;
@@ -115,6 +118,7 @@ export function DraggableDancer({
   transitionSeconds,
   isBlocked = false,
   excessiveMove = null,
+  collision = null,
 }: Props) {
   const t = useT();
 
@@ -363,7 +367,7 @@ export function DraggableDancer({
 
       {/* 印。丸の【右上】に出す。名前は下に出るので重ならない。
           2つ付く人もいるので、横に並べる */}
-      {isBlocked || excessiveMove ? (
+      {isBlocked || excessiveMove || collision ? (
         <View
           pointerEvents="none"
           className="absolute flex-row gap-0.5"
@@ -372,6 +376,11 @@ export function DraggableDancer({
           {isBlocked ? <Badge text={t.stage.blockedBadge} tone="warn" /> : null}
           {excessiveMove ? (
             <Badge text={`${excessiveMove.speedMetersPerSecond.toFixed(1)}`} tone="alert" />
+          ) : null}
+          {/* ぶつかる。**何秒後か**を出す — 「ぶつかる」だけだと、
+              どこを直せばよいのか分からない */}
+          {collision ? (
+            <Badge text={`${collision.atSeconds.toFixed(1)}s`} tone="collide" />
           ) : null}
         </View>
       ) : null}
@@ -391,11 +400,15 @@ export function DraggableDancer({
  * 速すぎる移動は数値（m/s）をそのまま出す — 「速い」より「3.5を超えている」
  * の方が、直したときに直ったと分かる。
  */
-function Badge({ text, tone }: { text: string; tone: 'warn' | 'alert' }) {
+function Badge({ text, tone }: { text: string; tone: 'warn' | 'alert' | 'collide' }) {
   return (
     <View
       className={`items-center justify-center rounded-full px-1 ${
-        tone === 'alert' ? 'bg-[#ef4444]' : 'bg-[#f59e0b]'
+        tone === 'alert'
+          ? 'bg-[#ef4444]'
+          : tone === 'collide'
+            ? 'bg-[#8b5cf6]'
+            : 'bg-[#f59e0b]'
       }`}
       style={{ minWidth: 16, height: 16 }}
     >
