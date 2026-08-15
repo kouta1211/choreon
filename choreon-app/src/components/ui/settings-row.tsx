@@ -79,7 +79,12 @@ export function SettingsSwitchRow({
       onPress={onChange}
       accessibilityRole="switch"
       accessibilityLabel={label}
+      // **両方渡す。** iOS/Android は accessibilityState を見るが、
+      // react-native-web 0.21 はそれを aria-checked に変換しない
+      // （実際に属性が出ていないことを確かめた）。読み上げに
+      // オン/オフが伝わらないので、Web 用の props も添える
       accessibilityState={{ checked }}
+      aria-checked={checked}
       className="min-h-11 flex-row items-center gap-4 px-4 py-3 active:opacity-70"
     >
       <View className="min-w-0 flex-1 gap-1">

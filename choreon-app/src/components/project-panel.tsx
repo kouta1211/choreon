@@ -16,6 +16,7 @@ import {
   loadProject,
   type ProjectListItem,
 } from '@/features/project/api/load';
+import { discardPendingWrites } from '@/features/project/lib/persistence';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
 import { useThemeColor } from '@/features/theme/lib/useThemeColor';
@@ -108,6 +109,10 @@ export function ProjectPanel({ userId, onProjectLoaded }: Props) {
         setError(t.account.notFound);
         return;
       }
+      // 自動保存を切っている間に貯まった書き込みは、**別の作品へ移る前に
+      // 捨てる**。「どの作品のものか」を持たない関数なので、持ち越すと
+      // 次に保存したときに前の作品への書き込みまで一緒に走る
+      discardPendingWrites();
       hydrate({ ...loaded, isGuest: false });
       // 時刻の順で最初のシーンを選ぶ（Web版 useHydrateProject と同じ規則）
       const first = [...loaded.scenes].sort(

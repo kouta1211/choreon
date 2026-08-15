@@ -151,7 +151,9 @@ export function DisplayModeMenu({ onOpenMusic, onOpenSettings }: Props) {
                 onPress={item.onToggle}
                 accessibilityRole="switch"
                 accessibilityLabel={item.label}
+                // 読み上げ用。web は accessibilityState を変換しないので両方
                 accessibilityState={{ checked: item.checked }}
+                aria-checked={item.checked}
                 className="min-h-11 flex-row items-center gap-3 border-t border-line px-3 py-2 active:opacity-70"
               >
                 <Text className="min-w-0 flex-1 text-sm text-fg-strong">{item.label}</Text>

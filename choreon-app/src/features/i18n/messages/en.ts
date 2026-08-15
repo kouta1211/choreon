@@ -283,7 +283,15 @@ export const en: Messages = {
 
     app: {
       title: 'App',
-      summary: 'Theme and language',
+      summary: 'Theme, language, auto-save',
+      autoSave: {
+        label: 'Auto-save',
+        description: 'With this off, nothing is sent until you press “Save now”',
+        pending: (count: number) => `${count} changes not sent yet`,
+        flush: 'Save now',
+        failed: 'Could not save. Try again.',
+        done: 'Saved',
+      },
     },
 
     account: {

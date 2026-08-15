@@ -281,7 +281,15 @@ export const ko: Messages = {
 
     app: {
       title: '앱',
-      summary: '테마·언어',
+      summary: '테마·언어·자동 저장',
+      autoSave: {
+        label: '자동 저장',
+        description: '끄면 「지금 저장」을 누를 때까지 보내지 않습니다',
+        pending: (count: number) => `보내지 않은 변경 ${count}건`,
+        flush: '지금 저장',
+        failed: '저장하지 못했습니다. 다시 시도해 주세요',
+        done: '저장했습니다',
+      },
     },
 
     account: {

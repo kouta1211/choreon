@@ -307,7 +307,15 @@ export const ja = {
 
     app: {
       title: 'アプリ',
-      summary: 'テーマ・言語',
+      summary: 'テーマ・言語・自動保存',
+      autoSave: {
+        label: '自動保存',
+        description: '切ると、変更は「いま保存する」を押すまで送られません',
+        pending: (count: number) => `送っていない変更が ${count} 件`,
+        flush: 'いま保存する',
+        failed: '保存できませんでした。もう一度お試しください',
+        done: '保存しました',
+      },
     },
 
     account: {
