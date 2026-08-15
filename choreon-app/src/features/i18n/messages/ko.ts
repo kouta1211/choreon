@@ -108,6 +108,11 @@ export const ko: Messages = {
     ripple: '이후 장면도 함께 밀기',
     rippleNote: (seconds: string) =>
       `끄면 다음 장면을 밀지 않고 바로 앞에서 멈춥니다. 곡의 ${seconds}초 지점.`,
+    order: '순서',
+    moveEarlier: '← 앞으로',
+    moveLater: '뒤로 →',
+    orderNote:
+      '옆 장면과 시각을 맞바꿉니다. 곡 전체의 시간 배치는 그대로이고, 거기에 들어가는 대형만 바뀝니다.',
     remove: '이 장면 삭제',
     removeTitle: (name: string) => `「${name}」을(를) 삭제할까요`,
     removeDescription: '이 장면과 거기에 놓은 위치가 함께 사라집니다.',

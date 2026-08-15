@@ -108,6 +108,11 @@ export const en: Messages = {
     ripple: 'Shift later scenes too',
     rippleNote: (seconds: string) =>
       `With this off, the next scene is never pushed — it stops just short of it. This scene sits at ${seconds}s.`,
+    order: 'Order',
+    moveEarlier: '← Earlier',
+    moveLater: 'Later →',
+    orderNote:
+      'Swaps times with the neighbouring scene. The overall timing of the piece stays the same; only which formation lands there changes.',
     remove: 'Delete this scene',
     removeTitle: (name: string) => `Delete “${name}”?`,
     removeDescription: 'The scene and every placement in it go together.',

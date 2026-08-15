@@ -125,6 +125,11 @@ export const ja = {
     ripple: '以降のシーンもずらす',
     rippleNote: (seconds: string) =>
       `オフのときは次のシーンを押しのけず、手前の余地いっぱいで止まります。曲の ${seconds} 秒目。`,
+    order: '並び順',
+    moveEarlier: '← 前へ',
+    moveLater: '後ろへ →',
+    orderNote:
+      '隣のシーンと時刻を入れ替えます。曲全体の時間割は変わらず、そこへ入る隊形だけが入れ替わります。',
     remove: 'このシーンを消す',
     removeTitle: (name: string) => `「${name}」を消しますか`,
     removeDescription: 'このシーンと、そこに置いた立ち位置がまとめて消えます。',

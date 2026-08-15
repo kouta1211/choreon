@@ -101,6 +101,45 @@ export function SceneEditor() {
     }
   };
 
+  /**
+   * 隣のシーンと**時刻を入れ替える**。
+   *
+   * ■ なぜ `retimeForOrder` を使わないのか
+   * あちらは一覧を指で掴んで任意の場所へ落とす操作のためのもので、
+   * 「動かした1つを新しい隣同士の**中間**へ置く」。先頭へ動かすと
+   * 「0秒と、いまの先頭（0秒）の中間」＝ 0秒 になり、**2つのシーンが
+   * 同じ時刻に重なる**（実際にそうなるのを確かめた）。並びの正は時刻なので、
+   * 重なるとどちらが先か決まらない。
+   *
+   * 隣との入れ替えなら、**2つの時刻をそのまま交換すれば足りる**。
+   * 曲全体の時間割（どの秒に何かが起きるか）は変わらず、そこへ入る隊形
+   * だけが入れ替わる。重なりようが無い。
+   */
+  const moveOrder = async (direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= scenes.length) return;
+
+    const here = scenes[index];
+    const there = scenes[target];
+    const timesById = new Map(scenes.map((other) => [other.id, other.timeSeconds]));
+    timesById.set(here.id, there.timeSeconds);
+    timesById.set(there.id, here.timeSeconds);
+
+    const changed = [
+      { id: here.id, timeSeconds: there.timeSeconds },
+      { id: there.id, timeSeconds: here.timeSeconds },
+    ];
+
+    const previous = new Map(scenes.map((other) => [other.id, other.timeSeconds]));
+    applySceneTimes(timesById);
+    try {
+      await persist((client) => updateSceneTimes(client, changed));
+    } catch {
+      applySceneTimes(previous);
+      showToast({ message: t.scenes.retimeFailed, type: 'error' });
+    }
+  };
+
   const commitName = async (nextName: string) => {
     const name = nextName.trim() === '' ? scene.name : nextName.trim();
     if (name === scene.name) return;
@@ -211,6 +250,39 @@ export function SceneEditor() {
           </Text>
         </View>
       )}
+
+      {/* 並び替え。**時刻を動かす**ので、曲を入れているときは
+          「並びを変えると鳴る場所も変わる」ことになる */}
+      <View className="gap-1.5">
+        <Text className="text-xs uppercase tracking-widest text-fg-muted">
+          {t.scenes.order}
+        </Text>
+        <View className="flex-row gap-2">
+          <Pressable
+            onPress={() => void moveOrder(-1)}
+            disabled={index <= 0}
+            accessibilityRole="button"
+            accessibilityLabel={t.scenes.moveEarlier}
+            className={`flex-1 items-center rounded-lg border border-line-strong py-2 ${
+              index <= 0 ? 'opacity-35' : 'active:opacity-80'
+            }`}
+          >
+            <Text className="text-sm text-fg">{t.scenes.moveEarlier}</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => void moveOrder(1)}
+            disabled={index >= scenes.length - 1}
+            accessibilityRole="button"
+            accessibilityLabel={t.scenes.moveLater}
+            className={`flex-1 items-center rounded-lg border border-line-strong py-2 ${
+              index >= scenes.length - 1 ? 'opacity-35' : 'active:opacity-80'
+            }`}
+          >
+            <Text className="text-sm text-fg">{t.scenes.moveLater}</Text>
+          </Pressable>
+        </View>
+        <Text className="text-xs leading-5 text-fg-muted">{t.scenes.orderNote}</Text>
+      </View>
 
       <Pressable
         onPress={handleDelete}
