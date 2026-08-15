@@ -172,9 +172,8 @@ export function ProjectPanel({ userId, onProjectLoaded }: Props) {
       await updateProjectTitle(supabase, item.id, title);
       await refresh();
       // いま開いている作品なら、ヘッダーの名前も入れ替える
-      const current = useProjectStore.getState().project;
-      if (current?.id === item.id) {
-        useProjectStore.setState({ project: { ...current, title } });
+      if (useProjectStore.getState().project?.id === item.id) {
+        useProjectStore.getState().renameProject(title);
       }
     } catch {
       setError(t.projects.renameFailed);

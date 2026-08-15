@@ -55,25 +55,26 @@ export function SettingsShareSection() {
     ? buildShareLink({ origin, projectId: project.id, shareToken: project.shareToken })
     : null;
 
-  /** ストアの作品を1項目だけ差し替える。開き直さずに画面へ反映させる */
-  const patch = (next: Partial<typeof project>) => {
-    const current = useProjectStore.getState().project;
-    if (current) useProjectStore.setState({ project: { ...current, ...next } });
-  };
+  /* 画面への反映は**ストアの setter 経由**。以前はここで
+     `setState({ project: {...} })` を組み立てていたが、同じことをする道が
+     2つあると、片方だけ直したときに気づけない（setSharing / setShareToken に
+     「なぜ作品が持つのか」のコメントも付いている） */
+  const applySharing = useProjectStore((state) => state.setSharing);
+  const applyShareToken = useProjectStore((state) => state.setShareToken);
 
   const toggleShared = async () => {
     const next = !project.isShared;
     setError(null);
     setIsBusy(true);
-    patch({ isShared: next });
+    applySharing(next);
     try {
       await updateProjectSharing(supabase, project.id, next);
       // 初めてオンにしたときは合鍵がまだ無い。ここで作る
       if (next && !project.shareToken) {
-        patch({ shareToken: await rotateShareToken(supabase, project.id) });
+        applyShareToken(await rotateShareToken(supabase, project.id));
       }
     } catch {
-      patch({ isShared: !next });
+      applySharing(!next);
       setError(t.share.failed);
     } finally {
       setIsBusy(false);
@@ -88,7 +89,7 @@ export function SettingsShareSection() {
       onConfirm: async () => {
         setError(null);
         try {
-          patch({ shareToken: await rotateShareToken(supabase, project.id) });
+          applyShareToken(await rotateShareToken(supabase, project.id));
         } catch {
           setError(t.share.failed);
         }

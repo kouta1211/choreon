@@ -115,6 +115,30 @@ type UIState = {
    * 登録できるようにするため(「これを残したい」という気持ちが切れない) */
   authDialogMode: "login" | "signup" | null;
 
+  /*
+   * ── ここから下の6つは【Web版から持ってきたが、ネイティブでは誰も
+   *    読んでいない】。消さずに残しているが、**まだ動くとは思わないこと**。
+   *
+   *  isTransitioning / setIsTransitioning
+   *    Web版は「滑っている最中は掴ませない」の旗。こちらは各自の
+   *    アニメーションがそのまま答えになるので draggable-dancer の中で
+   *    持っている（isSliding）。
+   *  playToggleRequestedAt / requestTogglePlay
+   *    Web版のキーボード（スペースで再生）用。押す口がまだ無い。
+   *  isSceneSheetOpen / isAddDancerSheetOpen / isTemplateSheetOpen /
+   *  isExportSheetOpen とその setter
+   *    こちらは開いているシートを app/index.tsx の中の状態で持っている
+   *    （1つしか開かないので、名前を1つ持つだけで足りる）。
+   *  authDialogMode / openAuthDialog / closeAuthDialog
+   *    Web版は登録・ログインをモーダルで出す。こちらは設定 → アカウントに
+   *    入力欄が常にあるので、出し入れする相手がいない。
+   *  guestTourIntent / setGuestTourIntent
+   *    書くのは Web版の「ゲストで始める」画面。こちらにその画面はまだ無い
+   *    （**読む側は EditorTour にある**ので、画面ができれば繋がる）。
+   *
+   * 画面を足すときにここへ繋ぐか、そのとき要らないと分かったら消す。
+   */
+
   selectScene: (sceneId: string | null) => void;
   selectDancer: (dancerId: string | null) => void;
   setGridMode: (mode: GridMode) => void;

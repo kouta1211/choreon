@@ -46,7 +46,13 @@ type ProjectState = {
     isGuest?: boolean;
   }) => void;
 
-  /** ミニチュアを丸ごと差し替える。呼ぶのは useSceneThumbnails だけ */
+  /** ミニチュアを丸ごと差し替える。呼ぶのは useSceneThumbnails だけ
+   *
+   * **ネイティブでは誰も読んでいない。** こちらは焼いた画像を配るのでは
+   * なく、シーンのカードごとに `SceneThumbnail` がその場で SVG を描く
+   * （テーマの色を実測する必要が無いので、焼いて配る理由が無い）。
+   * この2つ（thumbnailBySceneId と setThumbnails）は Web版から持って
+   * きたまま残っている。 */
   setThumbnails: (thumbnailBySceneId: Record<string, string>) => void;
 
   /** 曲の開始位置(秒)の変更。プロジェクト名と同じく、表示中の値の置き場を
