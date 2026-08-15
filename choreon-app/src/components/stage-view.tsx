@@ -298,6 +298,10 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
           <GridLines widthUnits={stageWidthUnits} heightUnits={stageHeightUnits} />
         )}
 
+        {/* 吸い付く先。格子を消していても出す — 吸着は格子の表示とは別の
+            設定で、切っていない限り効いているため */}
+        <SnapLines widthUnits={stageWidthUnits} heightUnits={stageHeightUnits} />
+
         {isStageMarksVisible && (
           <StageMarks
             stageWidthUnits={stageWidthUnits}
@@ -448,6 +452,49 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
  * 背景画像は無いので、線を1本ずつ置く。マス目の数だけ View が増えるが、
  * ステージは最大30マスなので数十本で収まる。
  */
+/**
+ * 吸い付く先の格子線。掴んでいる間だけ、その1本（か2本）を光らせる。
+ *
+ * ■ なぜ光らせるのか
+ * 吸着はドラッグの最中には見えない — 離してはじめて位置が動く。しかも
+ * **指の下は指で隠れている**ので、どこへ着くのかが離すまで分からない。
+ * 縦横どちらも出ていれば、交差点へ吸うのだと分かる。
+ *
+ * ■ 影は付けない
+ * Web版は光の滲みを `box-shadow` で足しているが、RN の `shadow*` は
+ * iOS と Android で出方が違う（Android は elevation で、色も付かない）。
+ * **太さと色だけ**で見せる（1px の格子に対して 2px・アクセント色）。
+ */
+function SnapLines({
+  widthUnits,
+  heightUnits,
+}: {
+  widthUnits: number;
+  heightUnits: number;
+}) {
+  const line = useUIStore((state) => state.dragSnapLine);
+  if (line.x === null && line.y === null) return null;
+
+  return (
+    <View className="absolute inset-0" pointerEvents="none">
+      {line.x !== null ? (
+        <View
+          testID="snap-line-x"
+          className="absolute top-0 bottom-0 w-0.5 bg-accent-soft"
+          style={{ left: `${(line.x / widthUnits) * 100}%`, marginLeft: -1 }}
+        />
+      ) : null}
+      {line.y !== null ? (
+        <View
+          testID="snap-line-y"
+          className="absolute right-0 left-0 h-0.5 bg-accent-soft"
+          style={{ top: `${(line.y / heightUnits) * 100}%`, marginTop: -1 }}
+        />
+      ) : null}
+    </View>
+  );
+}
+
 function GridLines({
   widthUnits,
   heightUnits,

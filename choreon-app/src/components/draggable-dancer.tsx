@@ -7,6 +7,8 @@ import {
   snapToGrid,
 } from '@/features/canvas/lib/dragMath';
 import { mirrorAngle } from '@/features/canvas/lib/stageFlip';
+import { useUIStore } from '@/features/canvas/store/useUIStore';
+import { NO_SNAP_LINE, snapLineFor } from '@/features/canvas/lib/snapLine';
 import { RotationHandle } from '@/components/rotation-handle';
 import type { Dancer } from '@/features/dancer/types';
 import type { Collision } from '@/features/canvas/lib/collision';
@@ -138,12 +140,25 @@ export function DraggableDancer({
     x,
     y,
     stageSize,
+    stageWidthUnits,
+    stageHeightUnits,
     isAudienceOnTop,
     isSnapEnabled,
     onDragEnd,
     onTap,
   });
-  latest.current = { x, y, stageSize, isAudienceOnTop, isSnapEnabled, onDragEnd, onTap };
+  latest.current = {
+    x,
+    y,
+    stageSize,
+    // 吸着線を引くのに、px をユニットへ直す比が要る
+    stageWidthUnits,
+    stageHeightUnits,
+    isAudienceOnTop,
+    isSnapEnabled,
+    onDragEnd,
+    onTap,
+  };
 
   const draggable = useRef(isDraggable);
   draggable.current = isDraggable;
@@ -171,6 +186,18 @@ export function DraggableDancer({
    */
   const previous = useRef({ x, y });
   const justDragged = useRef(false);
+  /**
+   * いま滑っている最中か。滑っているあいだは掴ませない。
+   *
+   * 掴むと `offset` を指の移動量で上書きするので、**途中まで滑ってきた
+   * 見た目が一瞬で飛ぶ**。しかも離したときの置き先は「滑り終わった先」から
+   * 数えるので、目で見ていた場所とも合わない。Web版も同じ理由で、
+   * 移っている最中は掴めなくしている（isTransitioning）。
+   *
+   * あちらは全員ぶんをストアの1つの旗で持っているが、こちらは**各自の
+   * アニメーションがそのまま答え**になるので、この部品の中で足りる。
+   */
+  const isSliding = useRef(false);
 
   useEffect(() => {
     const from = previous.current;
@@ -206,8 +233,14 @@ export function DraggableDancer({
       // true のままだと毎回警告が出て JS 側へ落ちる
       useNativeDriver: Platform.OS !== 'web',
     });
-    animation.start();
-    return () => animation.stop();
+    isSliding.current = true;
+    animation.start(() => {
+      isSliding.current = false;
+    });
+    return () => {
+      animation.stop();
+      isSliding.current = false;
+    };
   }, [
     x,
     y,
@@ -234,7 +267,7 @@ export function DraggableDancer({
         onPanResponderTerminationRequest: () => true,
 
         onMoveShouldSetPanResponder: (_event, gesture) => {
-          if (!draggable.current) return false;
+          if (!draggable.current || isSliding.current) return false;
           const shouldGrab =
             Math.abs(gesture.dx) > DRAG_THRESHOLD_PX ||
             Math.abs(gesture.dy) > DRAG_THRESHOLD_PX;
@@ -243,10 +276,10 @@ export function DraggableDancer({
         },
 
         onPanResponderMove: (_event, gesture) => {
-          offset.setValue({
-            x: gesture.dx + beforeGrant.current.dx,
-            y: gesture.dy + beforeGrant.current.dy,
-          });
+          const totalDx = gesture.dx + beforeGrant.current.dx;
+          const totalDy = gesture.dy + beforeGrant.current.dy;
+          offset.setValue({ x: totalDx, y: totalDy });
+          reportSnapLine(latest.current, totalDx, totalDy);
         },
 
         onPanResponderRelease: (_event, gesture) => {
@@ -263,6 +296,7 @@ export function DraggableDancer({
             current.onTap();
             offset.setValue({ x: 0, y: 0 });
             beforeGrant.current = { dx: 0, dy: 0 };
+            clearSnapLine();
             return;
           }
 
@@ -291,11 +325,13 @@ export function DraggableDancer({
           // 戻し忘れると、次に掴んだときに前回のぶんが足されて飛ぶ
           offset.setValue({ x: 0, y: 0 });
           beforeGrant.current = { dx: 0, dy: 0 };
+          clearSnapLine();
         },
 
         onPanResponderTerminate: () => {
           offset.setValue({ x: 0, y: 0 });
           beforeGrant.current = { dx: 0, dy: 0 };
+          clearSnapLine();
         },
       }),
     [offset, stageWidthUnits, stageHeightUnits],
@@ -415,4 +451,34 @@ function Badge({ text, tone }: { text: string; tone: 'warn' | 'alert' | 'collide
       <Text className="text-[9px] font-semibold text-white">{text}</Text>
     </View>
   );
+}
+
+
+type DragLatest = {
+  x: number;
+  y: number;
+  stageSize: { width: number; height: number };
+  stageWidthUnits: number;
+  stageHeightUnits: number;
+  isAudienceOnTop: boolean;
+  isSnapEnabled: boolean;
+};
+
+/**
+ * 掴んでいる間、吸い付く先の格子線をストアへ知らせる。ステージ側が
+ * それを光らせる（Web版 CanvasBoard.handleDragMove と同じ役）。
+ *
+ * 求め方そのものは `snapLine.ts` の純関数。ここは**繋ぐだけ**にしてある
+ * （指を動かすたびに走るので、画面を触らない部分は切り離して試せる形に
+ * しておきたい）。同じ値なら書き換えないのはストア側の仕事
+ * （`setDragSnapLine` のコメント）。
+ */
+function reportSnapLine(current: DragLatest, totalDx: number, totalDy: number) {
+  useUIStore.getState().setDragSnapLine(
+    snapLineFor({ ...current, totalDx, totalDy, tolerance: GRID_SNAP_TOLERANCE }),
+  );
+}
+
+function clearSnapLine() {
+  useUIStore.getState().setDragSnapLine(NO_SNAP_LINE);
 }
