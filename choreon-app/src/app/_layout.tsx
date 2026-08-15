@@ -30,6 +30,9 @@ export default function RootLayout() {
       <AnimatedSplashOverlay />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
         <Stack.Screen name="index" />
+        {/* 共有リンクを**このアプリで**開いたとき。読むだけの画面
+            （`view/[projectId].tsx`）。ブラウザで開けば Web版のビューアが出る */}
+        <Stack.Screen name="view/[projectId]" />
       </Stack>
     </AppearanceProvider>
   );

@@ -93,6 +93,13 @@ export const ko: Messages = {
     kept: '이 기기에 저장합니다(작품당 1곡). 다음에 열어도 그대로 재생할 수 있습니다.',
   },
 
+  viewer: {
+    readOnly: '보기 전용',
+    missing: '이 작품을 열 수 없었습니다',
+    missingNote: '링크가 새로 만들어졌거나 공유가 중지되었습니다. 보낸 사람에게 확인해 주세요.',
+    back: '닫기',
+  },
+
   timeline: {
     section: '타임라인',
     scale: (px: number) => `1초 = ${px}px`,

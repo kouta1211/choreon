@@ -93,6 +93,14 @@ export const en: Messages = {
     kept: 'Kept on this device (one track per project). It is still here next time you open it.',
   },
 
+  viewer: {
+    readOnly: 'View only',
+    missing: 'This piece could not be opened',
+    missingNote:
+      'The link was replaced, or sharing was turned off. Check with whoever sent it.',
+    back: 'Close',
+  },
+
   timeline: {
     section: 'Timeline',
     scale: (px: number) => `1s = ${px}px`,
