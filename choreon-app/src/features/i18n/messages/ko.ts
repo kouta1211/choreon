@@ -162,6 +162,27 @@ export const ko: Messages = {
     },
   },
 
+  song: {
+    description:
+      "이 작품이 올라가는 곡의 정보입니다. 메트로놈과 예비 박자가 여기를 봅니다. 설정의 '기본 빠르기'는 앞으로 만들 작품의 초기값이라 다른 것입니다.",
+    metronomeNote: '소리를 낼지는 이 기기만의 취향이고, 작품에는 들어가지 않습니다',
+    bpm: '빠르기(BPM)',
+    bpmUnit: 'BPM',
+    bpmNote: '곡이 없을 때는 이것이 시간의 잣대가 됩니다',
+    presetLabel: (bpm: number) => `빠르기를 ${bpm}으로`,
+    beatsPerBar: '박자',
+    beatsOption: (beats: number) => `${beats}/4`,
+    beatsNote:
+      '세는 단위(8카운트)는 박자로 바뀌지 않습니다. 여기서 바뀌는 것은 메트로놈에서 세게 울리는 박과, 시간축에 굵게 긋는 선뿐입니다.',
+    offset: '곡의 시작 위치',
+    seconds: '초',
+    offsetNote:
+      '안무가 곡 중간부터 시작할 때 씁니다. 인트로가 12.5초라면 12.5를 넣으면 재생이 거기서 시작합니다.',
+    bpmFailed: '빠르기를 저장하지 못했습니다. 되돌렸습니다',
+    beatsFailed: '박자를 저장하지 못했습니다. 되돌렸습니다',
+    offsetFailed: '곡의 시작 위치를 저장하지 못했습니다. 되돌렸습니다',
+  },
+
   timeline: {
     section: '타임라인',
     scale: (px: number) => `1초 = ${px}px`,

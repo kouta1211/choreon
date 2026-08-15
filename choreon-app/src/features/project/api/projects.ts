@@ -139,6 +139,49 @@ export async function updateProjectTitle(
 }
 
 /**
+ * 曲に合わせる3つの値。**どれも作品の列**（端末ではない）。
+ *
+ * 音源は共有しないので、読むだけのビューアで見る人の画面に出せる時間の
+ * 手がかりは「シーンの時刻」と「BPM・拍子」しか無い。端末に置くと、
+ * 共有した相手の画面ではカウントが引けない。
+ *
+ * 3つに分けてあるのは、変わるのが常に1つだけだから。まとめて送ると、
+ * BPM を変えただけのつもりで、隣の欄が古い値で上書きされ得る。
+ */
+export async function updateProjectBpm(
+  supabase: SupabaseClient<Database>,
+  projectId: string,
+  bpm: number,
+): Promise<void> {
+  const { error } = await supabase.from('projects').update({ bpm }).eq('id', projectId);
+  if (error) throw error;
+}
+
+export async function updateProjectBeatsPerBar(
+  supabase: SupabaseClient<Database>,
+  projectId: string,
+  beatsPerBar: number,
+): Promise<void> {
+  const { error } = await supabase
+    .from('projects')
+    .update({ beats_per_bar: beatsPerBar })
+    .eq('id', projectId);
+  if (error) throw error;
+}
+
+export async function updateProjectMusicOffset(
+  supabase: SupabaseClient<Database>,
+  projectId: string,
+  musicOffsetSeconds: number,
+): Promise<void> {
+  const { error } = await supabase
+    .from('projects')
+    .update({ music_offset_seconds: musicOffsetSeconds })
+    .eq('id', projectId);
+  if (error) throw error;
+}
+
+/**
  * dancers / scenes / positions は projects への外部キーが
  * `on delete cascade` なので、**この1回の削除で関連データもまとめて消える**
  * （アプリ側で順番に消して回る必要はない）。

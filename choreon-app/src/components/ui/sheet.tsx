@@ -95,10 +95,17 @@ export function Sheet({
             maxHeight: '86%',
             ...(isTall ? { height: isWide ? undefined : '82%' } : null),
           }}
-          className={`w-full max-w-[560px] border border-line bg-surface ${
+          className={`w-full max-w-[560px] overflow-hidden border border-line bg-page ${
             isWide ? 'rounded-2xl' : 'rounded-t-3xl border-x-0 border-b-0'
           }`}
         >
+          {/* 地の色は **--bg（不透明）**。板の色 --surface は白4%の半透明で、
+              Web版はその後ろをぼかして沈めているが、**React Native には
+              backdrop-filter が無い**。幕（黒60%）だけでは足りず、素直に
+              bg-surface を敷くと後ろのステージやボタンがそのまま読める。
+              不透明な地の上に板の色を重ねて、透けないようにする */}
+          <View pointerEvents="none" className="absolute inset-0 bg-surface" />
+
           {/* つまむための印。まだ引き下げられないが、**下から出る板である
               ことを示す手がかり**として置いている（フェーズ4でここが的になる） */}
           {isWide ? null : (

@@ -140,8 +140,11 @@ export function DisplayModeMenu({ onOpenMusic, onOpenSettings }: Props) {
 
           <View
             style={{ top: insets.top + 52 }}
-            className="absolute right-3 w-64 overflow-hidden rounded-2xl border border-line bg-surface"
+            className="absolute right-3 w-64 overflow-hidden rounded-2xl border border-line bg-page"
           >
+            {/* 不透明な地の上に板の色を重ねる（sheet.tsx と同じ理由） */}
+            <View pointerEvents="none" className="absolute inset-0 bg-surface" />
+
             <MenuLabel text={t.editor.menuView} />
 
             <View className="min-h-11 flex-row items-center gap-3 px-3 py-2">

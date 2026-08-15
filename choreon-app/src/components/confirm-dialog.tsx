@@ -89,8 +89,11 @@ export function ConfirmDialog() {
         <View
           accessibilityViewIsModal
           style={{ marginBottom: isWide ? 0 : Math.max(insets.bottom, 4) }}
-          className="w-full max-w-[420px] overflow-hidden rounded-2xl border border-line bg-surface"
+          className="w-full max-w-[420px] overflow-hidden rounded-2xl border border-line bg-page"
         >
+          {/* 不透明な地の上に板の色を重ねる（sheet.tsx と同じ理由） */}
+          <View pointerEvents="none" className="absolute inset-0 bg-surface" />
+
           <View className="items-center gap-3 px-5 pt-6 pb-4">
             <Text className="text-center text-lg text-fg-strong">{request?.title}</Text>
 

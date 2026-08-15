@@ -13,6 +13,7 @@ import { HistoryControls } from '@/components/history-controls';
 import { MusicPicker } from '@/components/music-picker';
 import { MusicTimeline } from '@/components/music-timeline';
 import { PlaybackControls } from '@/components/playback-controls';
+import { SongSettings } from '@/components/song-settings';
 import { SceneDock } from '@/components/scene-dock';
 import { SceneEditor } from '@/components/scene-editor';
 import { SettingsSheet } from '@/components/settings-sheet';
@@ -239,6 +240,9 @@ export default function EditorScreen() {
 
       <Sheet isOpen={openSheet === 'music'} onClose={close} title={t.editor.music}>
         <MusicPicker />
+        {/* 曲を選ぶのと、その曲に合わせるのは続きの作業。速さ・拍子・
+            頭出しはここに置く（設定の「既定の速さ」は別物） */}
+        <SongSettings />
       </Sheet>
 
       <Sheet isOpen={openSheet === 'scene'} onClose={close} title={t.editor.editScene}>

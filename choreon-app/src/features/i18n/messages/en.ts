@@ -165,6 +165,27 @@ export const en: Messages = {
     },
   },
 
+  song: {
+    description:
+      'About the track this piece runs on. The metronome and the count-in both read these. The "default tempo" in Settings is the starting value for pieces you make later — a different thing.',
+    metronomeNote: 'Whether it sounds is this device only; it is not part of the piece',
+    bpm: 'Tempo (BPM)',
+    bpmUnit: 'BPM',
+    bpmNote: 'With no track loaded, this is what measures time',
+    presetLabel: (bpm: number) => `Set the tempo to ${bpm}`,
+    beatsPerBar: 'Time signature',
+    beatsOption: (beats: number) => `${beats}/4`,
+    beatsNote:
+      'The counting unit (8-counts) does not change with this. All it changes is which beat the metronome accents, and which lines are drawn thick on the time axis.',
+    offset: 'Start of the track',
+    seconds: 's',
+    offsetNote:
+      'Use this when the choreography starts partway into the track. If the intro runs 12.5 seconds, enter 12.5 and playback starts there.',
+    bpmFailed: 'Could not save the tempo. Put it back.',
+    beatsFailed: 'Could not save the time signature. Put it back.',
+    offsetFailed: 'Could not save the start of the track. Put it back.',
+  },
+
   timeline: {
     section: 'Timeline',
     scale: (px: number) => `1s = ${px}px`,
