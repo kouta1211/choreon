@@ -298,6 +298,26 @@ export const ko: Messages = {
     },
   },
 
+  data: {
+    title: '데이터',
+    summary: '내보내기·가져오기',
+    description:
+      '곡은 들어가지 않습니다(음원은 이 기기에서 나가지 않습니다). 가져오기는 현재 작품을 덮어쓰지 않고 다른 작품으로 만듭니다.',
+    export: '내보내기',
+    exportNote: 'JSON으로 저장합니다. 스프레드시트에도 붙일 수 있고 눈으로 읽을 수 있습니다.',
+    exportFailed: '내보내지 못했습니다',
+    exportedWeb: (name: string) => `${name}을(를) 내려받았습니다`,
+    import: '파일에서 가져오기',
+    needsSignIn: '로그인한 뒤 가져와 주세요',
+    imported: (title: string) => `「${title}」(으)로 가져왔습니다`,
+    importFailed: '가져오지 못했습니다',
+    unreadableFile: '파일을 읽지 못했습니다',
+    wrongShape: '파일 형식이 다릅니다',
+    wrongVersion: '이 형식은 읽을 수 없습니다(다른 버전에서 내보낸 파일입니다)',
+    noProject: '작품 정보가 들어 있지 않습니다',
+    incomplete: '댄서·장면·위치 중 무언가가 부족합니다',
+  },
+
   language: {
     section: '언어',
     note: '고른 언어는 기기에 남습니다.',

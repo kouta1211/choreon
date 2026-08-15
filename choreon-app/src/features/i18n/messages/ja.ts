@@ -324,6 +324,27 @@ export const ja = {
     },
   },
 
+  /** 作品の持ち出しと取り込み（JSON）。Web版 data と同じ文言 */
+  data: {
+    title: 'データ',
+    summary: '書き出し・取り込み',
+    description:
+      '曲は入りません（音源はこの端末から出ないため）。取り込みは、いまの作品を上書きせず、別の作品として作ります。',
+    export: '書き出す',
+    exportNote: 'JSONで手元に保存します。表計算にも貼れて、中身を目で読めます。',
+    exportFailed: '書き出せませんでした',
+    exportedWeb: (name: string) => `${name} をダウンロードしました`,
+    import: 'ファイルから取り込む',
+    needsSignIn: 'ログインしてから取り込んでください',
+    imported: (title: string) => `「${title}」として取り込みました`,
+    importFailed: '取り込めませんでした',
+    unreadableFile: 'ファイルを読み取れませんでした',
+    wrongShape: 'ファイルの形が違います',
+    wrongVersion: 'この形式は読み込めません（別の版で書き出されたファイルです）',
+    noProject: '作品の情報が入っていません',
+    incomplete: 'ダンサー・シーン・配置のどれかが足りません',
+  },
+
   language: {
     section: '言語',
     note: '選んだ言語は端末に残ります。',

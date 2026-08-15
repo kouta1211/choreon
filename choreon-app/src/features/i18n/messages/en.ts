@@ -300,6 +300,26 @@ export const en: Messages = {
     },
   },
 
+  data: {
+    title: 'Data',
+    summary: 'Export and import',
+    description:
+      'The track is not included (audio never leaves this device). An import is always created as a separate project, so nothing is overwritten.',
+    export: 'Export',
+    exportNote: 'Saves a JSON file you can keep. It pastes into a spreadsheet and is readable by eye.',
+    exportFailed: 'Could not export',
+    exportedWeb: (name: string) => `Downloaded ${name}`,
+    import: 'Import from a file',
+    needsSignIn: 'Sign in before importing',
+    imported: (title: string) => `Imported as “${title}”`,
+    importFailed: 'Could not import that',
+    unreadableFile: 'Could not read that file',
+    wrongShape: 'That file has the wrong shape',
+    wrongVersion: 'This format cannot be read (it was exported by another version)',
+    noProject: 'There is no project in it',
+    incomplete: 'Dancers, scenes or placements are missing',
+  },
+
   language: {
     section: 'Language',
     note: 'Your choice stays on this device.',

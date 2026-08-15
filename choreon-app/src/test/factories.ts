@@ -1,4 +1,5 @@
 import type { Dancer } from '@/features/dancer/types';
+import type { Project } from '@/features/project/types';
 import type { Position, Scene } from '@/features/scene/types';
 
 /**
@@ -13,6 +14,24 @@ export function makeScene(overrides: Partial<Scene> = {}): Scene {
     name: 'シーン1',
     orderIndex: 0,
     timeSeconds: 0,
+    ...overrides,
+  };
+}
+
+export function makeProject(overrides: Partial<Project> = {}): Project {
+  return {
+    id: 'project-1',
+    userId: 'user-1',
+    title: '発表会A',
+    stageWidth: 15,
+    stageHeight: 10,
+    musicOffsetSeconds: 0,
+    bpm: 120,
+    beatsPerBar: 4,
+    shareToken: null,
+    isShared: false,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
     ...overrides,
   };
 }
