@@ -57,8 +57,16 @@ export function DisplayModeMenu({ onOpenMusic, onOpenSettings }: Props) {
   const toggleBlindSpotCheck = useUIStore((state) => state.toggleBlindSpotCheck);
   const isSwipeSceneChangeEnabled = useUIStore((state) => state.isSwipeSceneChangeEnabled);
   const toggleSwipeSceneChange = useUIStore((state) => state.toggleSwipeSceneChange);
+  const isMetronomeEnabled = useUIStore((state) => state.isMetronomeEnabled);
+  const toggleMetronome = useUIStore((state) => state.toggleMetronome);
 
   const switches = [
+    // 稽古中に何度も切り替えるもの。設定の奥ではなくここに置く
+    {
+      label: t.playback.metronome,
+      checked: isMetronomeEnabled,
+      onToggle: toggleMetronome,
+    },
     {
       label: t.settings.display.path.label,
       checked: isPathVisible,

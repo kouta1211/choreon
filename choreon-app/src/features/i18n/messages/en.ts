@@ -72,6 +72,8 @@ export const en: Messages = {
     play: '▶ Run through',
     stop: '■ Stop',
     rewind: 'Back to start',
+    countingIn: (beats: number) => `${beats}`,
+    metronome: 'Metronome',
   },
 
   history: {
@@ -241,7 +243,18 @@ export const en: Messages = {
 
     playback: {
       title: 'Playback',
-      summary: 'Gap when adding a scene',
+      summary: 'Count-in, default tempo, gap when adding a scene',
+      countIn: {
+        label: 'Count-in',
+        description: 'Beats played after you press run-through, before anything moves',
+        off: 'None',
+        beats: (n: number) => `${n} beats`,
+      },
+      bpm: {
+        label: 'Default tempo',
+        description: 'Goes into new projects. The tempo of the project you have open does not change',
+        unit: 'BPM',
+      },
       segment: {
         label: 'Scene gap',
         description:

@@ -36,6 +36,10 @@ export type ViewPreference = {
    * マウスでは「掴んで動かす」より場所を取る操作になってしまうので、
    * 指のある端末だけ既定でオンにする(defaultViewPreference参照) */
   isSwipeSceneChangeEnabled: boolean;
+  /** メトロノーム（拍を鳴らす）。**Web版は作品ごとに覚えている**が、
+   * こちらは端末ごと — 稽古場で鳴らすか鳴らさないかは、開いている作品では
+   * なく「いまどこで見ているか」で決まることが多いため */
+  isMetronomeEnabled: boolean;
 };
 
 export const DEFAULT_VIEW_PREFERENCE: ViewPreference = {
@@ -44,6 +48,7 @@ export const DEFAULT_VIEW_PREFERENCE: ViewPreference = {
   isStageMarksVisible: false,
   isBlindSpotCheckVisible: false,
   isSwipeSceneChangeEnabled: false,
+  isMetronomeEnabled: false,
 };
 
 /**
@@ -108,5 +113,9 @@ export function parseViewPreference(raw: string | null): ViewPreference {
       typeof record.isSwipeSceneChangeEnabled === "boolean"
         ? record.isSwipeSceneChangeEnabled
         : fallback.isSwipeSceneChangeEnabled,
+    isMetronomeEnabled:
+      typeof record.isMetronomeEnabled === "boolean"
+        ? record.isMetronomeEnabled
+        : fallback.isMetronomeEnabled,
   };
 }

@@ -68,6 +68,8 @@ type UIState = {
   isBlindSpotCheckVisible: boolean;
   /** ステージを横に払ってシーンを送る操作を受け付けるか */
   isSwipeSceneChangeEnabled: boolean;
+  /** メトロノーム（拍を鳴らす）。端末に覚える */
+  isMetronomeEnabled: boolean;
   /** シーン移動のアニメーションが進行中か。この間はダンサーを掴ませない
    * (掴むと、移動アニメーションとドラッグが同じ座標を取り合う) */
   isTransitioning: boolean;
@@ -122,6 +124,7 @@ type UIState = {
   toggleStageMarks: () => void;
   toggleBlindSpotCheck: () => void;
   toggleSwipeSceneChange: () => void;
+  toggleMetronome: () => void;
   setIsTransitioning: (isTransitioning: boolean) => void;
   setDragSnapLine: (line: DragSnapLine) => void;
   setIsPlaying: (isPlaying: boolean) => void;
@@ -172,6 +175,7 @@ function persistFromState(
     isStageMarksVisible: state.isStageMarksVisible,
     isBlindSpotCheckVisible: state.isBlindSpotCheckVisible,
     isSwipeSceneChangeEnabled: state.isSwipeSceneChangeEnabled,
+    isMetronomeEnabled: state.isMetronomeEnabled,
     ...changed,
   });
 }
@@ -190,6 +194,7 @@ export const useUIStore = create<UIState>((set) => ({
   isStageMarksVisible: DEFAULT_VIEW_PREFERENCE.isStageMarksVisible,
   isBlindSpotCheckVisible: DEFAULT_VIEW_PREFERENCE.isBlindSpotCheckVisible,
   isSwipeSceneChangeEnabled: DEFAULT_VIEW_PREFERENCE.isSwipeSceneChangeEnabled,
+  isMetronomeEnabled: DEFAULT_VIEW_PREFERENCE.isMetronomeEnabled,
   isTransitioning: false,
   dragSnapLine: { x: null, y: null },
   isPlaying: false,
@@ -237,6 +242,13 @@ export const useUIStore = create<UIState>((set) => ({
     set((state) =>
       state.isTransitioning === isTransitioning ? {} : { isTransitioning },
     ),
+  toggleMetronome: () =>
+    set((state) => {
+      const isMetronomeEnabled = !state.isMetronomeEnabled;
+      persistFromState(state, { isMetronomeEnabled });
+      return { isMetronomeEnabled };
+    }),
+
   toggleSwipeSceneChange: () =>
     set((state) => {
       const isSwipeSceneChangeEnabled = !state.isSwipeSceneChangeEnabled;

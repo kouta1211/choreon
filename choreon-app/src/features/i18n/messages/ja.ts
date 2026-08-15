@@ -88,6 +88,9 @@ export const ja = {
     play: '▶ 通しで見る',
     stop: '■ 止める',
     rewind: '頭に戻す',
+    /** 予備拍を数えている間。残りの拍を出す */
+    countingIn: (beats: number) => `${beats}`,
+    metronome: 'メトロノーム',
   },
 
   history: {
@@ -266,7 +269,18 @@ export const ja = {
 
     playback: {
       title: '再生',
-      summary: 'シーンを足す間隔',
+      summary: '予備拍・既定の速さ・シーンを足す間隔',
+      countIn: {
+        label: '予備拍（カウントイン）',
+        description: '再生を押してから、実際に動き出すまでに鳴らす拍',
+        off: 'なし',
+        beats: (n: number) => `${n}拍`,
+      },
+      bpm: {
+        label: '既定の速さ',
+        description: '新しく作る作品に入る速さ。開いている作品の速さは変わりません',
+        unit: 'BPM',
+      },
       segment: {
         label: 'シーンの間隔',
         description:

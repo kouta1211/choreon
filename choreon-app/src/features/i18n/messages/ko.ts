@@ -72,6 +72,8 @@ export const ko: Messages = {
     play: '▶ 전체 보기',
     stop: '■ 정지',
     rewind: '처음으로',
+    countingIn: (beats: number) => `${beats}`,
+    metronome: '메트로놈',
   },
 
   history: {
@@ -240,7 +242,18 @@ export const ko: Messages = {
 
     playback: {
       title: '재생',
-      summary: '장면을 추가하는 간격',
+      summary: '예비 박·기본 빠르기·장면 추가 간격',
+      countIn: {
+        label: '예비 박(카운트인)',
+        description: '재생을 누른 뒤 실제로 움직이기 시작할 때까지 울리는 박',
+        off: '없음',
+        beats: (n: number) => `${n}박`,
+      },
+      bpm: {
+        label: '기본 빠르기',
+        description: '새로 만드는 작품에 들어갑니다. 열려 있는 작품의 빠르기는 바뀌지 않습니다',
+        unit: 'BPM',
+      },
       segment: {
         label: '장면 간격',
         description:

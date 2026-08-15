@@ -2,8 +2,11 @@ import { Pressable, Text, View } from 'react-native';
 
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useT } from '@/features/i18n/store/useLocaleStore';
+import { useCountIn } from '@/features/music/hooks/useCountIn';
+import { useMetronome } from '@/features/music/hooks/useMetronome';
 import { useMusicPlayback } from '@/features/music/hooks/useMusicPlayback';
 import { useSilentClock } from '@/features/music/hooks/useSilentClock';
+import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
 import {
   nearestSceneIndexAtSeconds,
   sceneStartSeconds,
@@ -51,7 +54,37 @@ export function PlaybackControls() {
   const currentTime = usePlaybackStore((state) => state.currentTime);
   const setCurrentTime = usePlaybackStore((state) => state.setCurrentTime);
 
+  // 速さは【作品】が持つ。曲を入れていなくても、この速さで拍を鳴らす
+  const bpm = useProjectStore((state) => state.project?.bpm ?? 120);
+  const beatsPerBar = useProjectStore((state) => state.project?.beatsPerBar ?? 4);
+  const musicOffsetSeconds = useProjectStore(
+    (state) => state.project?.musicOffsetSeconds ?? 0,
+  );
+  const countIn = useSettingsStore((state) => state.countIn);
+  const isMetronomeEnabled = useUIStore((state) => state.isMetronomeEnabled);
+
+  const {
+    isCountingIn,
+    remainingBeats,
+    start: startCountIn,
+    cancel: cancelCountIn,
+  } = useCountIn(bpm);
+
+  // 数えている間も拍は鳴る（そのための予備拍なので）
+  useMetronome({
+    isActive: isMetronomeEnabled && (isPlaying || isCountingIn),
+    bpm,
+    beatsPerBar,
+    originSeconds: musicOffsetSeconds,
+  });
+
   const toggle = () => {
+    if (isCountingIn) {
+      // 数えている最中にもう一度押したら、始める前に取り消す
+      cancelCountIn();
+      return;
+    }
+
     if (!isPlaying) {
       const from = playbackStartIndex(scenes, selectedSceneId, playbackStartSceneId);
       if (from === -1) return;
@@ -59,7 +92,9 @@ export function PlaybackControls() {
       if (scenes[from].id !== selectedSceneId) selectScene(scenes[from].id);
       setPlaybackStartScene(scenes[from].id);
       setCurrentTime(sceneStartSeconds(scenes)[from] ?? 0);
-      setIsPlaying(true);
+
+      // 予備拍。0 ならその場で始まる（`useCountIn` が判断する）
+      startCountIn(countIn, () => setIsPlaying(true));
       return;
     }
 
@@ -74,6 +109,7 @@ export function PlaybackControls() {
   };
 
   const rewind = () => {
+    cancelCountIn();
     setIsPlaying(false);
     setCurrentTime(0);
     if (scenes[0]) selectScene(scenes[0].id);
@@ -85,13 +121,21 @@ export function PlaybackControls() {
         onPress={toggle}
         disabled={scenes.length === 0}
         accessibilityRole="button"
-        accessibilityLabel={isPlaying ? t.playback.stop : t.playback.play}
+        accessibilityLabel={
+          isCountingIn ? t.playback.countingIn(remainingBeats) : isPlaying ? t.playback.stop : t.playback.play
+        }
         className={`flex-1 items-center rounded-xl bg-accent py-3 active:opacity-80 ${
           scenes.length === 0 ? 'opacity-35' : ''
         }`}
       >
         <Text className="text-base font-semibold text-accent-fg">
-          {isPlaying ? t.playback.stop : t.playback.play}
+          {/* 数えている間は残りの拍を出す。押した手応えがここに出ないと、
+              予備拍を待っているのか押せていないのか分からない */}
+          {isCountingIn
+            ? t.playback.countingIn(remainingBeats)
+            : isPlaying
+              ? t.playback.stop
+              : t.playback.play}
         </Text>
       </Pressable>
 
