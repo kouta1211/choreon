@@ -11,6 +11,7 @@ import {
 
 import { SceneThumbnail } from '@/components/scene-thumbnail';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
+import { useTourTarget } from '@/features/tutorial/lib/tourTargets';
 import { useT } from '@/features/i18n/store/useLocaleStore';
 import {
   TIMELINE_LAYOUT,
@@ -70,6 +71,8 @@ export function MusicTimeline({ stageWidthUnits, stageHeightUnits }: Props) {
   const scenes = useProjectStore((state) => state.scenes);
   const applySceneTimes = useProjectStore((state) => state.applySceneTimes);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
+  // 使い方の案内が指す先。曲が無いときは SceneDock が同じ名前を名乗る
+  const timelineRef = useTourTarget('timeline');
   const selectScene = useUIStore((state) => state.selectScene);
   const showToast = useUIStore((state) => state.showToast);
   const currentTime = usePlaybackStore((state) => state.currentTime);
@@ -119,7 +122,7 @@ export function MusicTimeline({ stageWidthUnits, stageHeightUnits }: Props) {
   if (scenes.length === 0) return null;
 
   return (
-    <View className="gap-1 rounded-2xl border border-line bg-surface p-2">
+    <View ref={timelineRef} className="gap-1 rounded-2xl border border-line bg-surface p-2">
       <View className="flex-row items-center justify-between px-1">
         <Text className="text-xs uppercase tracking-widest text-fg-muted">
           {t.timeline.section}

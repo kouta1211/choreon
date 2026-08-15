@@ -23,6 +23,29 @@ export const en: Messages = {
     menuBadge: (count: number) => `${count}`,
   },
 
+  tour: {
+    stageTitle: 'This is the stage',
+    stageBody:
+      'Upstage at the top, the audience at the bottom. The circles are dancers — pick one up and move it. The numbers along the bottom are the distance from centre.',
+    timelineTitle: 'Across is time in the music',
+    timelineBody:
+      'Each frame sits at the second of the track it belongs to. Drag a frame sideways to change that time, and the gap between frames is the time the move gets.',
+    dockTitle: 'The formation strip',
+    dockBody:
+      'Tap a frame to switch to that formation. They run left to right, in performance order. Load a track and this strip becomes a time axis, with each frame at the second it lands on.',
+    addTitle: 'Add a formation',
+    addBody:
+      'Makes a new formation at the position you are listening to, copied from the current one. Make it, then move people — that is the usual order.',
+    viewTitle: 'Change what you see',
+    viewBody:
+      'Paths, the grid, the blocked-view warning and the look of the app are all here. So is this walkthrough, if you want it again.',
+    back: 'Back',
+    last: 'Start',
+    nextWithProgress: (current: number, total: number) => `Next (${current}/${total})`,
+    skip: 'Skip',
+    replay: 'Show the walkthrough again',
+  },
+
   common: {
     on: 'On',
     off: 'Off',

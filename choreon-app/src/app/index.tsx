@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DancerInspector } from '@/components/dancer-inspector';
 import { DancerSheet } from '@/components/dancer-sheet';
+import { EditorTour } from '@/components/editor-tour';
 import { EditorHeader } from '@/components/editor-header';
 import { EditorSidePanel } from '@/components/editor-side-panel';
 import { FormationSheet } from '@/components/formation-sheet';
@@ -224,6 +225,10 @@ export default function EditorScreen() {
       {/* どれも中身の高さぶんだけ下に貼り付く（`isTall` を付けない）。
           ダンサーも隊形も横に流す一覧なので縦には伸びず、高さを決め打ちに
           すると空いた面ばかりが目に入る。伸びるのは設定だけ */}
+      {/* 初回だけ自動で出る使い方の案内。**一番最後に置く** — 幕を
+          いちばん上に重ねたいので、他のシートより後に描かせる */}
+      <EditorTour />
+
       <Sheet isOpen={openSheet === 'dancers'} onClose={close} title={t.editor.dancers}>
         <DancerSheet stageWidthUnits={stage.width} stageHeightUnits={stage.height} />
       </Sheet>

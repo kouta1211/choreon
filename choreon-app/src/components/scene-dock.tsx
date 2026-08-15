@@ -4,6 +4,7 @@ import { SceneThumbnail } from '@/components/scene-thumbnail';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { useAddScene } from '@/features/scene/hooks/useAddScene';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
+import { useTourTarget } from '@/features/tutorial/lib/tourTargets';
 import { useT } from '@/features/i18n/store/useLocaleStore';
 
 /**
@@ -56,9 +57,14 @@ export function SceneDock({
   const selectScene = useUIStore((state) => state.selectScene);
   // 足す処理は一覧（広い画面）と共通。フックへ切り出してある
   const handleAdd = useAddScene();
+  // 使い方の案内が指す先。曲があるときは MusicTimeline の "timeline" に
+  // 差し替わる。**別の名前**にしてあるのは、説明する中身が違うため
+  // （こちらは等間隔の帯、あちらは曲の時間軸）
+  const timelineRef = useTourTarget('scene-dock');
+  const addRef = useTourTarget('add-scene');
 
   return (
-    <View className="gap-2 rounded-2xl border border-line bg-surface p-3">
+    <View ref={timelineRef} className="gap-2 rounded-2xl border border-line bg-surface p-3">
       <View className="flex-row items-center justify-between">
         <Text className="text-xs uppercase tracking-widest text-fg-muted">{t.scenes.section}</Text>
         {onEditScene ? (
@@ -123,6 +129,7 @@ export function SceneDock({
 
         {isReadOnly ? null : (
         <Pressable
+          ref={addRef}
           onPress={() => void handleAdd()}
           accessibilityRole="button"
           accessibilityLabel={t.scenes.add}

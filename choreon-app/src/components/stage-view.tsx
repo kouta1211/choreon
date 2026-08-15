@@ -15,6 +15,7 @@ import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { upsertPositions } from '@/features/scene/api/positions';
 import type { Position } from '@/features/scene/types';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
+import { useTourTarget } from '@/features/tutorial/lib/tourTargets';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
 import { getT, useT } from '@/features/i18n/store/useLocaleStore';
 import {
@@ -54,6 +55,8 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
   const positionsBySceneId = useProjectStore((state) => state.positionsBySceneId);
   const updateDancerPosition = useProjectStore((state) => state.updateDancerPosition);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
+  // 使い方の案内が指す先。舞台の面そのもの（札ではなく）
+  const stageRef = useTourTarget('stage');
   const previousSceneId = useUIStore((state) => state.previousSceneId);
   const selectedDancerId = useUIStore((state) => state.selectedDancerId);
   const selectDancer = useUIStore((state) => state.selectDancer);
@@ -285,6 +288,7 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
       </Text>
 
       <View
+        ref={stageRef}
         {...responder.panHandlers}
         onLayout={handleLayout}
         className="overflow-hidden rounded-stage border border-line-strong bg-stage"

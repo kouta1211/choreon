@@ -7,6 +7,7 @@ import { Icon, type IconName } from '@/components/ui/icon';
 import { Segment } from '@/components/ui/button';
 import { SwitchTrack } from '@/components/ui/switch';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
+import { useTourTarget } from '@/features/tutorial/lib/tourTargets';
 import { useT } from '@/features/i18n/store/useLocaleStore';
 import { THEME_VARS } from '@/features/theme/themeVars.generated';
 import { useCurrentTheme } from '@/features/theme/store/useThemeStore';
@@ -59,6 +60,10 @@ export function DisplayModeMenu({ onOpenMusic, onOpenSettings }: Props) {
   const toggleSwipeSceneChange = useUIStore((state) => state.toggleSwipeSceneChange);
   const isMetronomeEnabled = useUIStore((state) => state.isMetronomeEnabled);
   const toggleMetronome = useUIStore((state) => state.toggleMetronome);
+  const requestTour = useUIStore((state) => state.requestTour);
+  // 案内の最後の段が指す先。この入口そのものを指すので、
+  // 「もう一度見るのはここから」がその場で分かる
+  const menuRef = useTourTarget('display-menu');
 
   const switches = [
     // 稽古中に何度も切り替えるもの。設定の奥ではなくここに置く
@@ -101,6 +106,7 @@ export function DisplayModeMenu({ onOpenMusic, onOpenSettings }: Props) {
   return (
     <>
       <Pressable
+        ref={menuRef}
         onPress={() => setIsOpen(true)}
         accessibilityRole="button"
         accessibilityLabel={t.editor.menu}
@@ -177,6 +183,14 @@ export function DisplayModeMenu({ onOpenMusic, onOpenSettings }: Props) {
               label={t.settings.title}
               onPress={() => openAnd(onOpenSettings)}
               hasBorder
+            />
+            {/* 案内は「初回だけ自動」なので、あとから見たい人の道が要る。
+                閉じてから頼む — 開いたままだと、指す先がこのメニューに
+                隠れてしまう */}
+            <MenuRow
+              icon="help"
+              label={t.tour.replay}
+              onPress={() => openAnd(requestTour)}
             />
           </View>
         </View>

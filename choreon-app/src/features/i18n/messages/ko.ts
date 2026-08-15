@@ -23,6 +23,29 @@ export const ko: Messages = {
     menuBadge: (count: number) => `${count}`,
   },
 
+  tour: {
+    stageTitle: '여기가 무대입니다',
+    stageBody:
+      '위가 무대 뒤, 아래가 객석 쪽입니다. 동그라미가 댄서이고, 잡아서 옮길 수 있습니다. 아래 눈금은 센터에서의 거리입니다.',
+    timelineTitle: '가로 위치가 곡의 시간입니다',
+    timelineBody:
+      "각 컷은 '곡의 몇 초의 대형인지'의 위치에 놓입니다. 컷을 옆으로 끌면 그 시각이 움직이고, 간격이 그대로 이동에 쓸 수 있는 시간이 됩니다.",
+    dockTitle: '장면 띠입니다',
+    dockBody:
+      "컷을 누르면 그 대형으로 바뀝니다. 왼쪽부터 순서대로 공연 순서입니다. 곡을 넣으면 이 띠는 '곡의 몇 초인지'로 놓이는 시간축으로 바뀝니다.",
+    addTitle: '대형 추가하기',
+    addBody:
+      '지금 듣고 있는 위치에, 지금 배치를 복사한 대형을 만듭니다. 만들고 나서 옮기는 것이 기본 흐름입니다.',
+    viewTitle: '보이는 방식 바꾸기',
+    viewBody:
+      '동선·격자·가림 경고 같은 전환과 화면 모양 변경이 여기 있습니다. 이 안내를 다시 보는 것도 여기서 할 수 있습니다.',
+    back: '뒤로',
+    last: '시작하기',
+    nextWithProgress: (current: number, total: number) => `다음 (${current}/${total})`,
+    skip: '건너뛰기',
+    replay: '사용법 다시 보기',
+  },
+
   common: {
     on: '켬',
     off: '끔',

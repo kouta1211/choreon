@@ -38,7 +38,8 @@ export type IconName =
   | 'pencil'
   | 'share'
   | 'download'
-  | 'upload';
+  | 'upload'
+  | 'help';
 
 /** lucide（24×24, stroke-width 2）と同じ座標。形が揃っていないと並べたときに浮く */
 const SHAPES: Record<IconName, ReactNode> = {
@@ -179,6 +180,14 @@ const SHAPES: Record<IconName, ReactNode> = {
       <Path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <Path d="m17 8-5-5-5 5" />
       <Path d="M12 3v12" />
+    </>
+  ),
+  /** lucide の circle-help。使い方の案内をもう一度見る入口に使う */
+  help: (
+    <>
+      <Circle cx={12} cy={12} r={10} />
+      <Path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+      <Path d="M12 17h.01" />
     </>
   ),
 };
