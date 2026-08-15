@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from 'react';
 import { View } from 'react-native';
 import { vars } from 'nativewind';
 
+import { TextureOverlay } from '@/components/texture-overlay';
 import { THEME_VARS } from '@/features/theme/themeVars.generated';
 import {
   useCurrentTheme,
@@ -38,6 +39,9 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
 
   return (
     <View style={vars(THEME_VARS[theme])} className="flex-1 bg-page">
+      {/* 背景の質感。**いちばん後ろに1枚**。ステージは自前の面で塗られて
+          いるので、その下を通る（Web版と同じ重ね方） */}
+      <TextureOverlay />
       {children}
     </View>
   );

@@ -4,10 +4,12 @@ import { vars } from 'nativewind';
 import { THEMES } from '@/features/theme/catalog';
 import { THEME_VARS } from '@/features/theme/themeVars.generated';
 import {
+  useCurrentTexture,
   useCurrentTheme,
   useHasProjectTheme,
   useThemeStore,
 } from '@/features/theme/store/useThemeStore';
+import { TEXTURE_ORDER } from '@/components/texture-overlay';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { SwitchTrack } from '@/components/ui/switch';
 import { useT } from '@/features/i18n/store/useLocaleStore';
@@ -34,6 +36,8 @@ export function ThemePicker() {
   // 作品を開いていないと「この作品だけ」の主語が立たない
   const hasProject = useProjectStore((state) => Boolean(state.project) && !state.isGuest);
   const isProjectTheme = useHasProjectTheme();
+  const currentTexture = useCurrentTexture();
+  const setTexture = useThemeStore((state) => state.setTexture);
 
   return (
     <View className="gap-3 rounded-2xl border border-line bg-surface p-4">
@@ -79,6 +83,39 @@ export function ThemePicker() {
           );
         })}
       </ScrollView>
+
+      {/* 背景の質感。テーマとは別の軸で選ぶ（Web版と同じ）。
+          見本を作らず名前だけ並べているのは、模様が薄い（濃さ20%以下）ため
+          — 小さな四角に描いても差が出ない。**選ぶと画面全体で確かめられる** */}
+      <Text className="text-xs uppercase tracking-widest text-fg-muted">
+        {t.themeSection.texture}
+      </Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerClassName="gap-2 pr-2"
+      >
+        {TEXTURE_ORDER.map((id) => {
+          const isCurrent = id === currentTexture;
+          return (
+            <Pressable
+              key={id}
+              onPress={() => setTexture(id, isProjectTheme)}
+              accessibilityRole="button"
+              accessibilityLabel={t.textures[id]}
+              accessibilityState={{ selected: isCurrent }}
+              className={`min-h-9 justify-center rounded-lg px-3 active:opacity-80 ${
+                isCurrent ? 'border border-accent bg-accent-row' : 'border border-line bg-surface-raised'
+              }`}
+            >
+              <Text className={`text-xs ${isCurrent ? 'text-accent-soft' : 'text-fg-sub'}`}>
+                {t.textures[id]}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+      <Text className="text-xs leading-5 text-fg-muted">{t.themeSection.textureNote}</Text>
 
       {/* 作品ごとに変えるかどうか。**押した瞬間に、いまのテーマを
           その作品へ移す／端末の既定へ戻す** — 切り替えただけで

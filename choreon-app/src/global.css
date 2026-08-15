@@ -61,6 +61,14 @@
   --dancer-4: #f59e0b;
   --dancer-5: #8b5cf6;
   --dancer-6: #ec4899;
+
+  /* 背景の質感を描くインク。**色は書かず、濃さだけをテーマが持つ** —
+     暗い地では白、明るい紙では黒として同じ模様が描かれる。
+     --texture-shade は「陰」として必ず黒で描くもの（暗幕の襞）用。
+     Web版 themes.css と同じ名前・同じ値（generate-theme-vars.mjs が写す） */
+  --texture-ink: 255 255 255;
+  --texture-strength: 0.09;
+  --texture-shade: 0.32;
 }
 
 /* テンプレート由来のフォント指定(Web でのみ効く) */

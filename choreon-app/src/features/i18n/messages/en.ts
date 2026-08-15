@@ -208,8 +208,20 @@ export const en: Messages = {
     loading: ' (loading)',
     note: 'Colours are copied from the web app’s themes.css. Your choice stays on this device.',
     perProject: 'Use a different theme for this project',
+    texture: 'Background texture',
+    textureNote: 'A faint pattern over the backdrop. It does not reach inside the stage.',
     perProjectNote:
       'This theme applies only while this project is open. Other projects keep the device default.',
+  },
+
+  textures: {
+    flat: 'None',
+    horizon: 'Cyclorama wash',
+    spot: 'Spotlight pool',
+    grid: 'Grid and marks',
+    nebula: 'Nebula',
+    grain: 'Grain',
+    curtain: 'Blackout curtain',
   },
 
   themes: {

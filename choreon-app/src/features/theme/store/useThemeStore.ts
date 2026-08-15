@@ -7,7 +7,7 @@ import {
   resolveAppearance,
   type ThemePreference,
 } from '@/features/theme/lib/themePreference';
-import type { ThemeId } from '@/features/theme/catalog';
+import type { TextureId, ThemeId } from '@/features/theme/catalog';
 import { storage } from '@/lib/storage';
 
 type ThemeStore = {
@@ -25,6 +25,8 @@ type ThemeStore = {
    * false なら端末の既定を変え、その作品の上書きは外す。
    */
   setTheme: (theme: ThemeId, forProject?: boolean) => void;
+  /** 背景の質感。テーマとは別の軸で選ぶ（Web版と同じ） */
+  setTexture: (texture: TextureId, forProject?: boolean) => void;
 };
 
 /**
@@ -39,10 +41,9 @@ type ThemeStore = {
  * かぶせる形（`src/components/theme-provider.tsx`）で、値は Web版の
  * themes.css から機械的に写した表（themeVars.generated.ts）から来る。
  *
- * ■ 質感（texture）はまだ持たない
- * CSS のグラデーションと合成モードで作っていて、そのまま持ってこられない。
- * **保存する形（THEME_STORAGE_KEY と JSON の構造）は Web版と同じ**なので、
- * 後から足せる。
+ * ■ 質感（texture）も持つ
+ * 絵は CSS ではなく SVG で描き直した（`texture-overlay.tsx`）。
+ * **保存する形（THEME_STORAGE_KEY と JSON の構造）は Web版と同じ。**
  *
  * ■ 作品ごとの上書きは持つ
  * 作品を開けるようになったので主語が立った。読み替えは Web版と同じ
@@ -65,12 +66,38 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
 
   setProjectId: (projectId) => set({ projectId }),
 
+  setTexture: (texture, forProject = false) => {
+    const { preference, projectId } = get();
+    const byProject = { ...preference.byProject };
+
+    if (forProject && projectId) {
+      // 作品ごとの上書きは「テーマ＋質感」で1組。片方だけ入れ替える
+      byProject[projectId] = {
+        theme: byProject[projectId]?.theme ?? preference.theme,
+        texture,
+      };
+    } else if (projectId) {
+      delete byProject[projectId];
+    }
+
+    const updated: ThemePreference = {
+      ...preference,
+      texture: forProject ? preference.texture : texture,
+      byProject,
+    };
+    set({ preference: updated, isLoaded: true });
+    void storage.setItem(THEME_STORAGE_KEY, JSON.stringify(updated));
+  },
+
   setTheme: (theme, forProject = false) => {
     const { preference, projectId } = get();
     const byProject = { ...preference.byProject };
 
     if (forProject && projectId) {
-      byProject[projectId] = { theme, texture: preference.texture };
+      byProject[projectId] = {
+        theme,
+        texture: byProject[projectId]?.texture ?? preference.texture,
+      };
     } else if (projectId) {
       // 端末の既定を変えたときは、その作品の上書きを外す。**残したままだと
       // 「選んだのに変わらない」**（上書きの方が勝つため）
@@ -98,6 +125,13 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
  */
 export function useCurrentTheme(): ThemeId {
   return useThemeStore((state) => resolveAppearance(state.preference, state.projectId).theme);
+}
+
+/** いま画面に当たっている質感。テーマと同じく上書きを解いた結果 */
+export function useCurrentTexture(): TextureId {
+  return useThemeStore(
+    (state) => resolveAppearance(state.preference, state.projectId).texture,
+  );
 }
 
 /** いま開いている作品に、専用のテーマが入っているか */

@@ -208,8 +208,20 @@ export const ko: Messages = {
     loading: '(불러오는 중)',
     note: '색은 웹 버전의 themes.css에서 그대로 옮겼습니다. 고른 테마는 기기에 남습니다.',
     perProject: '이 작품만 다른 테마로',
+    texture: '배경 질감',
+    textureNote: '바탕 위에 옅게 겹치는 무늬입니다. 무대 안에는 적용되지 않습니다.',
     perProjectNote:
       '이 작품을 열고 있는 동안에만 이 테마가 적용됩니다. 다른 작품은 기기 기본값 그대로입니다.',
+  },
+
+  textures: {
+    flat: '없음',
+    horizon: '호리존트 막',
+    spot: '스포트라이트',
+    grid: '모눈과 눈금',
+    nebula: '네뷸라',
+    grain: '그레인',
+    curtain: '암막',
   },
 
   themes: {

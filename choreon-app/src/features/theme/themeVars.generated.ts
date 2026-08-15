@@ -38,6 +38,9 @@ export const THEME_VARS: Record<ThemeId, Record<string, string>> = {
     '--dancer-4': '#f59e0b',
     '--dancer-5': '#8b5cf6',
     '--dancer-6': '#ec4899',
+    '--texture-ink': '255 255 255',
+    '--texture-strength': '0.09',
+    '--texture-shade': '0.32',
   },
   neon: {
     '--bg': '#05070a',
@@ -66,6 +69,9 @@ export const THEME_VARS: Record<ThemeId, Record<string, string>> = {
     '--dancer-4': '#f59e0b',
     '--dancer-5': '#8b5cf6',
     '--dancer-6': '#ec4899',
+    '--texture-ink': '255 255 255',
+    '--texture-strength': '0.09',
+    '--texture-shade': '0.32',
   },
   amber: {
     '--bg': '#14100e',
@@ -94,6 +100,9 @@ export const THEME_VARS: Record<ThemeId, Record<string, string>> = {
     '--dancer-4': '#f59e0b',
     '--dancer-5': '#8b5cf6',
     '--dancer-6': '#ec4899',
+    '--texture-ink': '255 255 255',
+    '--texture-strength': '0.09',
+    '--texture-shade': '0.32',
   },
   mono: {
     '--bg': '#101010',
@@ -122,6 +131,9 @@ export const THEME_VARS: Record<ThemeId, Record<string, string>> = {
     '--dancer-4': '#f59e0b',
     '--dancer-5': '#8b5cf6',
     '--dancer-6': '#ec4899',
+    '--texture-ink': '255 255 255',
+    '--texture-strength': '0.09',
+    '--texture-shade': '0.32',
   },
   chalk: {
     '--bg': '#202723',
@@ -150,6 +162,9 @@ export const THEME_VARS: Record<ThemeId, Record<string, string>> = {
     '--dancer-4': '#f2cf94',
     '--dancer-5': '#c3b0e8',
     '--dancer-6': '#f2a8bd',
+    '--texture-ink': '255 255 255',
+    '--texture-strength': '0.09',
+    '--texture-shade': '0.32',
   },
   paper: {
     '--bg': '#f7f4ea',
@@ -178,6 +193,9 @@ export const THEME_VARS: Record<ThemeId, Record<string, string>> = {
     '--dancer-4': '#d18b2c',
     '--dancer-5': '#7a5cae',
     '--dancer-6': '#c1508a',
+    '--texture-ink': '0 0 0',
+    '--texture-strength': '0.055',
+    '--texture-shade': '0.09',
   },
   gridnote: {
     '--bg': '#f1f4f8',
@@ -206,6 +224,9 @@ export const THEME_VARS: Record<ThemeId, Record<string, string>> = {
     '--dancer-4': '#d18b2c',
     '--dancer-5': '#7a5cae',
     '--dancer-6': '#c1508a',
+    '--texture-ink': '0 0 0',
+    '--texture-strength': '0.055',
+    '--texture-shade': '0.09',
   },
   kraft: {
     '--bg': '#d8c8ac',
@@ -234,6 +255,9 @@ export const THEME_VARS: Record<ThemeId, Record<string, string>> = {
     '--dancer-4': '#d18b2c',
     '--dancer-5': '#7a5cae',
     '--dancer-6': '#c1508a',
+    '--texture-ink': '0 0 0',
+    '--texture-strength': '0.055',
+    '--texture-shade': '0.09',
   },
   tracing: {
     '--bg': '#e7eae6',
@@ -262,6 +286,9 @@ export const THEME_VARS: Record<ThemeId, Record<string, string>> = {
     '--dancer-4': '#d18b2c',
     '--dancer-5': '#7a5cae',
     '--dancer-6': '#c1508a',
+    '--texture-ink': '0 0 0',
+    '--texture-strength': '0.055',
+    '--texture-shade': '0.09',
   },
   whiteboard: {
     '--bg': '#f8fafa',
@@ -290,5 +317,8 @@ export const THEME_VARS: Record<ThemeId, Record<string, string>> = {
     '--dancer-4': '#d18b2c',
     '--dancer-5': '#7a5cae',
     '--dancer-6': '#c1508a',
+    '--texture-ink': '0 0 0',
+    '--texture-strength': '0.055',
+    '--texture-shade': '0.09',
   },
 };

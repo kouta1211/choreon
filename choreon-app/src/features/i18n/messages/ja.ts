@@ -229,8 +229,21 @@ export const ja = {
     loading: '（読み込み中）',
     note: '色は Web版の themes.css から機械的に写しています。選んだテーマは端末に残ります。',
     perProject: 'この作品だけ別のテーマにする',
+    texture: '背景の質感',
+    textureNote: '地の上に薄く重ねる模様です。ステージの中には掛かりません。',
     perProjectNote:
       'この作品を開いている間だけ、このテーマになります。ほかの作品と、作品を開いていないときは端末の既定のままです。',
+  },
+
+  /** 背景の質感の呼び名（Web版と同じ） */
+  textures: {
+    flat: 'なし',
+    horizon: 'ホリゾント幕',
+    spot: 'スポットの円光',
+    grid: '方眼と目盛り',
+    nebula: 'ネビュラ',
+    grain: 'グレイン',
+    curtain: '暗幕',
   },
 
   themes: {
