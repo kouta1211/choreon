@@ -419,7 +419,13 @@ export const ja = {
 
     account: {
       title: 'アカウント',
-      summary: 'ログイン・作品を開く',
+      summary: 'ログイン・作品を開く・設定を戻す',
+      resetSettings: {
+        label: '設定を既定に戻す',
+        description: 'この画面の選択だけを戻します。作品には触れません',
+        title: '設定を既定に戻しますか',
+        confirm: '戻す',
+      },
     },
   },
 
@@ -434,6 +440,15 @@ export const ja = {
     exportFailed: '書き出せませんでした',
     exportedWeb: (name: string) => `${name} をダウンロードしました`,
     import: 'ファイルから取り込む',
+    resetTitle: 'この作品を空にしますか',
+    resetDescription:
+      'シーンとダンサーを全部消します。作品そのもの（名前・ステージの広さ）は残ります。',
+    resetMetaScenes: (n: number) => `${n} シーン`,
+    resetMetaDancers: (n: number) => `${n} 人`,
+    resetLabel: 'この作品を空にする',
+    resetNote: '作り直したいときに。作品ごと消すのは 設定 → アカウント から。',
+    resetConfirm: '空にする',
+    resetFailed: '空にできませんでした',
     needsSignIn: 'ログインしてから取り込んでください',
     imported: (title: string) => `「${title}」として取り込みました`,
     importFailed: '取り込めませんでした',

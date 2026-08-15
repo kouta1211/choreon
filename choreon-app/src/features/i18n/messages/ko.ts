@@ -381,7 +381,13 @@ export const ko: Messages = {
 
     account: {
       title: '계정',
-      summary: '로그인·작품 열기',
+      summary: '로그인·작품 열기·설정 되돌리기',
+      resetSettings: {
+        label: '설정을 기본값으로',
+        description: '이 화면의 선택만 되돌립니다. 작품은 건드리지 않습니다',
+        title: '설정을 기본값으로 되돌릴까요',
+        confirm: '되돌리기',
+      },
     },
   },
 
@@ -395,6 +401,14 @@ export const ko: Messages = {
     exportFailed: '내보내지 못했습니다',
     exportedWeb: (name: string) => `${name}을(를) 내려받았습니다`,
     import: '파일에서 가져오기',
+    resetTitle: '이 작품을 비울까요',
+    resetDescription: '장면과 댄서를 모두 삭제합니다. 작품 자체(이름·무대 크기)는 남습니다.',
+    resetMetaScenes: (n: number) => `${n}개 장면`,
+    resetMetaDancers: (n: number) => `${n}명`,
+    resetLabel: '이 작품 비우기',
+    resetNote: '다시 짜고 싶을 때. 작품 자체를 지우려면 설정 → 계정에서.',
+    resetConfirm: '비우기',
+    resetFailed: '비우지 못했습니다',
     needsSignIn: '로그인한 뒤 가져와 주세요',
     imported: (title: string) => `「${title}」(으)로 가져왔습니다`,
     importFailed: '가져오지 못했습니다',

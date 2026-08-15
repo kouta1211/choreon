@@ -386,7 +386,13 @@ export const en: Messages = {
 
     account: {
       title: 'Account',
-      summary: 'Sign in, open a piece',
+      summary: 'Sign in, open a piece, reset settings',
+      resetSettings: {
+        label: 'Reset settings to defaults',
+        description: 'Only the choices on these screens. Your projects are untouched',
+        title: 'Reset settings to defaults?',
+        confirm: 'Reset',
+      },
     },
   },
 
@@ -400,6 +406,15 @@ export const en: Messages = {
     exportFailed: 'Could not export',
     exportedWeb: (name: string) => `Downloaded ${name}`,
     import: 'Import from a file',
+    resetTitle: 'Empty this project?',
+    resetDescription:
+      'Every scene and dancer goes. The project itself (its name and stage size) stays.',
+    resetMetaScenes: (n: number) => `${n} scenes`,
+    resetMetaDancers: (n: number) => `${n} dancers`,
+    resetLabel: 'Empty this project',
+    resetNote: 'For starting over. To delete the project itself, go to Settings → Account.',
+    resetConfirm: 'Empty it',
+    resetFailed: 'Could not empty it',
     needsSignIn: 'Sign in before importing',
     imported: (title: string) => `Imported as “${title}”`,
     importFailed: 'Could not import that',

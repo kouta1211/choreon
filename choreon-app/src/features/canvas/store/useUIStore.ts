@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { storage } from "@/lib/storage";
 import {
   DEFAULT_VIEW_PREFERENCE,
+  defaultViewPreference,
   parseViewPreference,
   VIEW_STORAGE_KEY,
   type GridMode,
@@ -148,6 +149,7 @@ type UIState = {
    * 1回だけ呼ぶ(端末のストレージは描画前には読めない)。
    * Web版と違って **Promise を返す** — AsyncStorage が非同期のため */
   loadViewPreference: () => Promise<void>;
+  resetViewPreference: () => void;
 };
 
 /** 「表示とモード」の選択を端末へ書き戻す。
@@ -263,6 +265,22 @@ export const useUIStore = create<UIState>((set) => ({
     }),
   loadViewPreference: async () => {
     set(parseViewPreference(await storage.getItem(VIEW_STORAGE_KEY)));
+  },
+  /** 見え方だけを初期値へ戻す(選んでいるシーンや再生の状態には触らない)。
+   *
+   * 設定の「設定を既定に戻す」から、useSettingsStore.reset() と**対で**
+   * 呼ばれる。設定シートの「表示」の段は、ダンサー名だけが設定ストア、
+   * 導線・バミリ・顔被り・払って送るはこちらのストアに入っている。
+   * 片方だけ戻すと、同じ段に並んでいるのに戻るものと戻らないものが
+   * できてしまう。
+   *
+   * 既定は DEFAULT_VIEW_PREFERENCE ではなく defaultViewPreference() —
+   * 払って送るは端末によって初期値が違う(指ならオン)ので、
+   * 「まだ何も触っていない端末」と同じ状態へ戻す */
+  resetViewPreference: () => {
+    const preference = defaultViewPreference();
+    persistViewPreference(preference);
+    set(preference);
   },
   // 中身が前回と同じなら何も書き換えない(空オブジェクトを返す=状態は不変)。
   // これはドラッグ中に毎pointermoveごとに呼ばれるため、素直に

@@ -4,6 +4,10 @@ import { Text, View } from 'react-native';
 import { Button } from '@/components/ui/button';
 import { SettingsGroup, SettingsActionRow } from '@/components/ui/settings-row';
 import { useSessionStore } from '@/features/auth/store/useSessionStore';
+import { useUIStore } from '@/features/canvas/store/useUIStore';
+import { deleteDancer } from '@/features/dancer/api/dancers';
+import { deleteScene } from '@/features/scene/api/scenes';
+import { persist, pendingWriteCount } from '@/features/project/lib/persistence';
 import { useT } from '@/features/i18n/store/useLocaleStore';
 import { saveGuestProject } from '@/features/project/api/saveGuestProject';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
@@ -44,6 +48,50 @@ export function SettingsDataSection() {
   const [isBusy, setIsBusy] = useState(false);
 
   const project = useProjectStore((state) => state.project);
+  const isGuest = useProjectStore((state) => state.isGuest);
+  const requestConfirm = useUIStore((state) => state.requestConfirm);
+
+  /**
+   * この作品を空にする。**シーンとダンサーを全部消す**が、作品そのもの
+   * （名前・ステージの広さ）は残る。作り直したいときのため。
+   *
+   * 立ち位置は scenes / dancers の外部キーに付いて消えるので、
+   * ここで個別に消して回る必要はない（Web版と同じ）。
+   */
+  const handleReset = () => {
+    const { scenes, dancers } = useProjectStore.getState();
+    requestConfirm({
+      title: t.data.resetTitle,
+      description: t.data.resetDescription,
+      meta: [
+        t.data.resetMetaScenes(scenes.length),
+        t.data.resetMetaDancers(Object.keys(dancers).length),
+      ],
+      confirmLabel: t.data.resetConfirm,
+      onConfirm: async () => {
+        const current = useProjectStore.getState().project;
+        if (!current) return;
+        const sceneIds = scenes.map((scene) => scene.id);
+        const dancerIds = Object.keys(dancers);
+        try {
+          await persist(async (client) => {
+            for (const id of sceneIds) await deleteScene(client, id);
+            for (const id of dancerIds) await deleteDancer(client, id);
+          });
+          useProjectStore
+            .getState()
+            .hydrate({ project: current, dancers: [], scenes: [], positions: [] });
+          // 自動保存を切っていると、消す指示はまだ送られていない。
+          // hydrate が未保存の印を落とすので、貯まっていれば立て直す
+          if (pendingWriteCount() > 0) useProjectStore.getState().markUnsaved();
+          useUIStore.getState().selectScene(null);
+          useUIStore.getState().selectDancer(null);
+        } catch {
+          setError(t.data.resetFailed);
+        }
+      },
+    });
+  };
 
   const handleExport = async () => {
     const state = useProjectStore.getState();
@@ -151,6 +199,18 @@ export function SettingsDataSection() {
           onPress={() => void handleImport()}
           disabled={isBusy}
         />
+        {/* 下書きには出さない。クラウドに置き場所が無く、空にする意味も
+            「作り直す」以上のものにならない（開き直せば元の下書きに戻る） */}
+        {isGuest ? null : (
+          <SettingsActionRow
+            label={t.data.resetLabel}
+            description={t.data.resetNote}
+            icon="trash"
+            onPress={handleReset}
+            isDangerous
+            disabled={isBusy || !project}
+          />
+        )}
       </SettingsGroup>
 
       {notice ? <Text className="px-1 text-xs text-accent-soft">{notice}</Text> : null}

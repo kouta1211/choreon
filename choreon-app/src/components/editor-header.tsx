@@ -1,6 +1,7 @@
 import { Text, View } from 'react-native';
 
 import { DisplayModeMenu } from '@/components/display-mode-menu';
+import { SaveChangesButton } from '@/components/save-changes-button';
 import { Button } from '@/components/ui/button';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { useT } from '@/features/i18n/store/useLocaleStore';
@@ -40,6 +41,9 @@ export function EditorHeader({
       <Text numberOfLines={1} className="min-w-0 flex-1 text-lg text-fg-strong">
         {title ?? t.editor.draft}
       </Text>
+
+      {/* 自動保存を切っている間だけ出る。入っている間は何も出ない */}
+      <SaveChangesButton />
 
       <Button
         kind="ghost"
