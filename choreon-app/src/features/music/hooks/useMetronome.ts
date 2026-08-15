@@ -14,8 +14,15 @@ type Params = {
   originSeconds?: number;
 };
 
-/** 拍を取りこぼさない見張りの間隔（ms）。拍の間隔よりずっと短くする */
-const TICK_MS = 20;
+/**
+ * 拍を見に行く間隔（ms）。**ここが、鳴り出しの遅れの上限になる。**
+ *
+ * 20ms から詰めた。240BPM でも拍の間隔は 250ms あるので、8ms なら
+ * 1拍につき30回は見に行ける。JS のタイマーは詰まれば遅れるが、
+ * **遅れても次の見張りで取り返す**（拍の時刻は絶対値で決まるため、
+ * ずれは溜まらない）。
+ */
+const TICK_MS = 8;
 
 /**
  * メトロノーム。**Web版とは鳴らし方が根本的に違う。**
@@ -33,9 +40,15 @@ const TICK_MS = 20;
  * 1拍ごとの鳴り出しは見張りの間隔ぶん遅れうる。
  *
  * ■ 実機で聴いてもらう必要がある
- * この作りは**拍が揺れるかもしれない**。揺れが気になるようなら、
- * Web Audio API を持つ `react-native-audio-api` を入れて予約式へ寄せる。
- * ここを直すときは、拍の計算（metronome.ts）はそのまま使える。
+ * この作りは**拍が揺れるかもしれない**。鳴り出しの遅れは見張りの間隔
+ * （8ms）が上限で、ずれは溜まらないが、1拍ごとのばらつきは残る。
+ *
+ * **直すなら `react-native-audio-api`（Web Audio API 相当）を入れて
+ * 予約式へ寄せることになるが、あれは iOS/Android のネイティブコードを
+ * 含むので Expo Go では動かない** — 確認のやり方が「QRを読む」から
+ * 「開発ビルドを作る」へ変わる。揺れが我慢できないと分かってから
+ * 決める話なので、いまは入れていない。拍の計算（metronome.ts）は
+ * そのまま使えるので、移るときの手戻りは小さい。
  *
  * ■ 時計は再生と同じものを使う
  * 曲があれば音の再生位置、無ければ秒を数える時計（どちらも
@@ -55,6 +68,8 @@ export function useMetronome({
 
   /** 最後に鳴らした拍の番号。**同じ拍を二度鳴らさないための印** */
   const lastBeatIndexRef = useRef<number | null>(null);
+  /** 音を一度通したか。**初回の1拍目だけ遅れるのを防ぐ**（下の注） */
+  const warmedRef = useRef(false);
 
   useEffect(() => {
     if (!isActive) {
@@ -64,6 +79,23 @@ export function useMetronome({
     }
 
     const interval = secondsPerBeat(bpm);
+
+    // **1拍目だけ遅れるのを防ぐ。** 音は初めて鳴らすときに用意が入るので、
+    // その1回ぶんが拍の頭にぶつかると出だしがもたつく。無音で通しておく
+    if (!warmedRef.current) {
+      warmedRef.current = true;
+      try {
+        for (const player of [downbeat, beat]) {
+          player.volume = 0;
+          player.play();
+          player.pause();
+          player.seekTo(0);
+          player.volume = 1;
+        }
+      } catch {
+        // 通せなくても鳴らす方には影響しない
+      }
+    }
 
     const timer = setInterval(() => {
       const now = usePlaybackStore.getState().currentTime;
