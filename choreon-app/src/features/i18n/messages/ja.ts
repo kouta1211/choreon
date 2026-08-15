@@ -110,13 +110,59 @@ export const ja = {
     kept: 'この端末に覚えます（作品ごとに1曲）。次に開いたときはそのまま鳴らせます。',
   },
 
-  /** 共有されたものを開く画面（読むだけ） */
+  /**
+   * 共有されたものを開く画面（読むだけ）。
+   *
+   * ■ 道順は「部品」で持ち、文はここで組む
+   * 差分の読み取り（`describeMove`）は「左へ・前へ・6歩」までしか出さない。
+   * 「下手前へ 約6歩」の語順は言語で変わり、**英語には「下手前」に当たる
+   * 1語が無い**ため、繋ぎ方は辞書側の `direction()` が決める（Web版と同じ）。
+   */
   viewer: {
     readOnly: '読むだけ',
     missing: 'この作品は開けませんでした',
     missingNote:
       'リンクが作り直されたか、共有が止められています。配った人に確かめてください。',
     back: '閉じる',
+
+    move: {
+      still: 'その場',
+      to: (direction: string, steps: number) => `${direction}へ 約${steps}歩`,
+      direction: (
+        sideways: 'left' | 'right' | null,
+        depth: 'front' | 'back' | null,
+      ) =>
+        `${sideways === null ? '' : sideways === 'left' ? '下手' : '上手'}${
+          depth === null ? '' : depth === 'front' ? '前' : '奥'
+        }`,
+      turn: (facing: string) => `＋ ${facing}`,
+    },
+    facing: {
+      0: '客席向き',
+      45: '下手前向き',
+      90: '下手向き',
+      135: '下手奥向き',
+      180: '奥向き',
+      225: '上手奥向き',
+      270: '上手向き',
+      315: '上手前向き',
+    },
+    route: {
+      title: (name: string) => `${name} の道順`,
+      everyone: '全員',
+      summary: (scenes: number, total: string) => `${scenes} シーン · 通し ${total}`,
+      lastFormation: 'ここが最後の隊形です',
+      stepsNote: '歩数は 1歩 60cm・1マス 90cm で計算した目安です。',
+      sidesNote: '上手／下手は客席から見た向きです。',
+      fast: ' — 速め',
+      hereNow: ' · いまここ',
+      reselect: 'ポジションを選び直す',
+    },
+    entry: {
+      question: 'あなたはどれですか',
+      note: '選ぶと、その人だけが濃く出て、道順も出るようになります。あとで変えられます。',
+      skip: '選ばずに全員を見る',
+    },
   },
 
   /** 時間軸（シーンを「曲の何秒目か」の位置に並べる帯） */

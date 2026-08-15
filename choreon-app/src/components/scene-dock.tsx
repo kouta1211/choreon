@@ -31,12 +31,25 @@ type Props = {
   /** ステージの広さ。カードのミニチュアを同じ形で描くために要る */
   stageWidthUnits: number;
   stageHeightUnits: number;
+  /**
+   * 読むだけの画面か。**足す「＋」を出さない。**
+   *
+   * 共有されたものを開いた人は、相手の作品を触れない（`persist` が
+   * 何も送らない）。それでも押せる形で置いてあると、押した人は
+   * 「足したのに保存されない」と受け取る。
+   */
+  isReadOnly?: boolean;
 };
 
 /** カードの中のミニチュアの幅（px）。Web版のストリップは74px */
 const THUMBNAIL_WIDTH = 74;
 
-export function SceneDock({ onEditScene, stageWidthUnits, stageHeightUnits }: Props) {
+export function SceneDock({
+  onEditScene,
+  stageWidthUnits,
+  stageHeightUnits,
+  isReadOnly = false,
+}: Props) {
   const t = useT();
   const scenes = useProjectStore((state) => state.scenes);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
@@ -108,6 +121,7 @@ export function SceneDock({ onEditScene, stageWidthUnits, stageHeightUnits }: Pr
           );
         })}
 
+        {isReadOnly ? null : (
         <Pressable
           onPress={() => void handleAdd()}
           accessibilityRole="button"
@@ -116,6 +130,7 @@ export function SceneDock({ onEditScene, stageWidthUnits, stageHeightUnits }: Pr
         >
           <Text className="text-lg text-fg-sub">＋</Text>
         </Pressable>
+        )}
       </ScrollView>
     </View>
   );

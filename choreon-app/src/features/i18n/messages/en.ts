@@ -99,6 +99,47 @@ export const en: Messages = {
     missingNote:
       'The link was replaced, or sharing was turned off. Check with whoever sent it.',
     back: 'Close',
+
+    move: {
+      still: 'Stay',
+      to: (direction: string, steps: number) => `${direction} about ${steps} steps`,
+      direction: (
+        sideways: 'left' | 'right' | null,
+        depth: 'front' | 'back' | null,
+      ) => {
+        const parts: string[] = [];
+        if (sideways !== null) parts.push(sideways === 'left' ? 'stage right' : 'stage left');
+        if (depth !== null) parts.push(depth === 'front' ? 'downstage' : 'upstage');
+        return parts.join(' and ');
+      },
+      turn: (facing: string) => `+ ${facing}`,
+    },
+    facing: {
+      0: 'facing the audience',
+      45: 'facing downstage right',
+      90: 'facing stage right',
+      135: 'facing upstage right',
+      180: 'facing upstage',
+      225: 'facing upstage left',
+      270: 'facing stage left',
+      315: 'facing downstage left',
+    },
+    route: {
+      title: (name: string) => `${name}âs route`,
+      everyone: 'Everyone',
+      summary: (scenes: number, total: string) => `${scenes} scenes Â· ${total} total`,
+      lastFormation: 'This is the last formation',
+      stepsNote: 'Steps are a guide: 60cm per step, 90cm per square.',
+      sidesNote: 'Stage left and right are from the audienceâs point of view.',
+      fast: ' â fast',
+      hereNow: ' Â· here now',
+      reselect: 'Pick a different position',
+    },
+    entry: {
+      question: 'Which one are you?',
+      note: 'Pick yourself and only you stay solid, with your route written out. You can change it later.',
+      skip: 'Skip and watch everyone',
+    },
   },
 
   timeline: {

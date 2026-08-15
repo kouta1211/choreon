@@ -98,6 +98,45 @@ export const ko: Messages = {
     missing: '이 작품을 열 수 없었습니다',
     missingNote: '링크가 새로 만들어졌거나 공유가 중지되었습니다. 보낸 사람에게 확인해 주세요.',
     back: '닫기',
+
+    move: {
+      still: '제자리',
+      to: (direction: string, steps: number) => `${direction}으로 약 ${steps}걸음`,
+      direction: (
+        sideways: 'left' | 'right' | null,
+        depth: 'front' | 'back' | null,
+      ) =>
+        `${sideways === null ? '' : sideways === 'left' ? '하수' : '상수'}${
+          depth === null ? '' : depth === 'front' ? '앞' : '뒤'
+        }`,
+      turn: (facing: string) => `＋ ${facing}`,
+    },
+    facing: {
+      0: '객석 방향',
+      45: '하수 앞 방향',
+      90: '하수 방향',
+      135: '하수 뒤 방향',
+      180: '뒤 방향',
+      225: '상수 뒤 방향',
+      270: '상수 방향',
+      315: '상수 앞 방향',
+    },
+    route: {
+      title: (name: string) => `${name}의 동선`,
+      everyone: '전체',
+      summary: (scenes: number, total: string) => `${scenes}개 장면 · 전체 ${total}`,
+      lastFormation: '여기가 마지막 대형입니다',
+      stepsNote: '걸음 수는 1걸음 60cm·1칸 90cm로 계산한 기준입니다.',
+      sidesNote: '상수／하수는 객석에서 본 방향입니다.',
+      fast: ' — 빠름',
+      hereNow: ' · 지금 여기',
+      reselect: '포지션 다시 고르기',
+    },
+    entry: {
+      question: '어느 분인가요',
+      note: '고르면 그 사람만 진하게 보이고 동선도 표시됩니다. 나중에 바꿀 수 있습니다.',
+      skip: '고르지 않고 전체 보기',
+    },
   },
 
   timeline: {
