@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/database.types';
 import type { Project } from '@/features/project/types';
 import { nextAvailableTitle } from '@/features/project/lib/projectTitle';
+import { randomId } from '@/lib/randomId';
 
 type ProjectRow = Database['public']['Tables']['projects']['Row'];
 
@@ -87,6 +88,45 @@ export async function createProject(
 
   if (error) throw error;
   return toProject(data);
+}
+
+export async function updateProjectSharing(
+  supabase: SupabaseClient<Database>,
+  projectId: string,
+  isShared: boolean,
+): Promise<void> {
+  const { error } = await supabase
+    .from('projects')
+    .update({ is_shared: isShared })
+    .eq('id', projectId);
+
+  if (error) throw error;
+}
+
+/**
+ * リンクを作り直す。**前のリンクはその瞬間から開けなくなる。**
+ *
+ * 配った相手を個別に外す仕組みは持たない。リンクを知っている人が見られる、
+ * という以上の細かさは、稽古の連絡手段（グループの共有）と釣り合わない。
+ * 「もう見せたくない」ときは作り直すか、共有そのものをオフにする。
+ *
+ * ■ Web版との違いは1行だけ
+ * あちらは `crypto.randomUUID()` を呼んでいるが、**Hermes に `crypto` は
+ * 無い**（ここで落ちると「押しても何も起きない」になる）。ネイティブ版の
+ * `randomId()` は同じ v4 uuid を、無ければ自前の乱数で作る。
+ */
+export async function rotateShareToken(
+  supabase: SupabaseClient<Database>,
+  projectId: string,
+): Promise<string> {
+  const shareToken = randomId();
+  const { error } = await supabase
+    .from('projects')
+    .update({ share_token: shareToken })
+    .eq('id', projectId);
+
+  if (error) throw error;
+  return shareToken;
 }
 
 export async function updateProjectTitle(

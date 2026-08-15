@@ -318,6 +318,25 @@ export const ko: Messages = {
     incomplete: '댄서·장면·위치 중 무언가가 부족합니다',
   },
 
+  share: {
+    title: '공유',
+    summary: '링크 전달·새로 만들기',
+    description:
+      '링크를 아는 사람이 동선을 볼 수 있습니다. 편집은 할 수 없고 곡은 들어가지 않습니다.',
+    toggle: '이 작품을 공유',
+    toggleNote: '끄면 나눠준 링크가 즉시 열리지 않게 됩니다.',
+    link: '링크',
+    send: '링크 보내기',
+    rotate: '링크 새로 만들기',
+    rotateNote: '이전에 나눠준 링크는 열리지 않게 됩니다.',
+    rotateTitle: '링크를 새로 만들까요',
+    rotateDescription: '이전에 나눠준 링크는 그 즉시 열리지 않게 됩니다.',
+    rotateConfirm: '새로 만들기',
+    failed: '공유 설정을 바꾸지 못했습니다',
+    needsProject: '작품을 연 뒤에 공유해 주세요',
+    off: '아직 공유하지 않았습니다',
+  },
+
   language: {
     section: '언어',
     note: '고른 언어는 기기에 남습니다.',

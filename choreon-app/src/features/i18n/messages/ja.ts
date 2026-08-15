@@ -345,6 +345,26 @@ export const ja = {
     incomplete: 'ダンサー・シーン・配置のどれかが足りません',
   },
 
+  /** 共有（リンクを配って、稽古の相手に見てもらう） */
+  share: {
+    title: '共有',
+    summary: 'リンクを配る・作り直す',
+    description:
+      'リンクを知っている人が、道順を見られるようになります。編集はできません。曲は入りません。',
+    toggle: 'この作品を共有する',
+    toggleNote: '切ると、配ったリンクはその場で開けなくなります。',
+    link: 'リンク',
+    send: 'リンクを渡す',
+    rotate: 'リンクを作り直す',
+    rotateNote: '作り直すと、前に配ったリンクは開けなくなります。',
+    rotateTitle: 'リンクを作り直しますか',
+    rotateDescription: '前に配ったリンクは、その瞬間から開けなくなります。',
+    rotateConfirm: '作り直す',
+    failed: '共有の設定を変えられませんでした',
+    needsProject: '作品を開いてから共有してください',
+    off: 'まだ共有していません',
+  },
+
   language: {
     section: '言語',
     note: '選んだ言語は端末に残ります。',

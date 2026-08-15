@@ -10,6 +10,7 @@ import { SettingsPlaybackSection } from '@/components/settings/playback-section'
 import { SettingsDisplaySection } from '@/components/settings/display-section';
 import { SettingsAppSection } from '@/components/settings/app-section';
 import { SettingsDataSection } from '@/components/settings/data-section';
+import { SettingsShareSection } from '@/components/settings/share-section';
 import { SettingsAccountSection } from '@/components/settings/account-section';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
 import { useT } from '@/features/i18n/store/useLocaleStore';
@@ -20,7 +21,15 @@ type Props = {
   onProjectLoaded: (stage: { width: number; height: number }) => void;
 };
 
-type SectionId = 'stage' | 'grid' | 'playback' | 'display' | 'app' | 'data' | 'account';
+type SectionId =
+  | 'stage'
+  | 'grid'
+  | 'playback'
+  | 'display'
+  | 'app'
+  | 'share'
+  | 'data'
+  | 'account';
 
 type Section = {
   id: SectionId;
@@ -100,6 +109,13 @@ export function SettingsSheet({ isOpen, onClose, onProjectLoaded }: Props) {
       summary: t.settings.app.summary,
       icon: 'palette',
       body: <SettingsAppSection />,
+    },
+    {
+      id: 'share',
+      title: t.share.title,
+      summary: t.share.summary,
+      icon: 'share',
+      body: <SettingsShareSection />,
     },
     {
       id: 'data',

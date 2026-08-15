@@ -320,6 +320,25 @@ export const en: Messages = {
     incomplete: 'Dancers, scenes or placements are missing',
   },
 
+  share: {
+    title: 'Sharing',
+    summary: 'Hand out a link, or make a new one',
+    description:
+      'Anyone with the link can follow the routes. They cannot edit, and the track is not included.',
+    toggle: 'Share this project',
+    toggleNote: 'Turning it off makes every link you handed out stop working straight away.',
+    link: 'Link',
+    send: 'Send the link',
+    rotate: 'Make a new link',
+    rotateNote: 'The link you handed out before stops working.',
+    rotateTitle: 'Make a new link?',
+    rotateDescription: 'The link you handed out before stops working immediately.',
+    rotateConfirm: 'Make a new one',
+    failed: 'Could not change the sharing setting',
+    needsProject: 'Open a project first',
+    off: 'Not shared yet',
+  },
+
   language: {
     section: 'Language',
     note: 'Your choice stays on this device.',
