@@ -43,6 +43,31 @@ export const ja = {
     done: '完了',
   },
 
+  /** 作品そのものの出し入れ（一覧・新規作成・改名・削除・下書きの保存） */
+  projects: {
+    section: '作品',
+    count: (n: number) => `${n}件`,
+    newName: '新しい作品の名前',
+    create: '作る',
+    createFailed: '作品を作れませんでした',
+    renamedForClash: (title: string) => `同じ名前があったので「${title}」で作りました`,
+    rename: '名前を変える',
+    renameFailed: '名前を変えられませんでした',
+    remove: (title: string) => `${title} を消す`,
+    deleteTitle: (title: string) => `「${title}」を消しますか`,
+    deleteDescription: 'この作品のシーン・ダンサー・立ち位置がすべて消えます。',
+    deleteFailed: '作品を消せませんでした',
+    /** ゲストの下書き。作った時点の言語で名前が決まる */
+    guestTitle: 'はじめてのフォーメーション',
+    sceneName: (index: number) => `シーン${index}`,
+    /** 下書きをクラウドへ */
+    saveDraft: 'この下書きを自分の作品にする',
+    saveDraftNote: 'ログインしている自分の作品として、新しく1件できます。',
+    saveDraftFailed: '保存できませんでした',
+    saved: (title: string) => `「${title}」として保存しました`,
+    unsaved: 'まだ保存していない変更があります',
+  },
+
   /** 取り消せない操作の前に出す確認。Web版と同じ文言 */
   confirm: {
     cancel: 'やめる',

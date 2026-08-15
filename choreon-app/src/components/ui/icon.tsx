@@ -34,7 +34,11 @@ export type IconName =
   | 'layout'
   | 'list'
   | 'focus'
-  | 'trash';
+  | 'trash'
+  | 'pencil'
+  | 'share'
+  | 'download'
+  | 'upload';
 
 /** lucide（24×24, stroke-width 2）と同じ座標。形が揃っていないと並べたときに浮く */
 const SHAPES: Record<IconName, ReactNode> = {
@@ -148,6 +152,33 @@ const SHAPES: Record<IconName, ReactNode> = {
       <Path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
       <Path d="M10 11v6" />
       <Path d="M14 11v6" />
+    </>
+  ),
+  pencil: (
+    <>
+      <Path d="M21.17 6.83a2.83 2.83 0 0 0-4-4L3 17v4h4z" />
+      <Path d="m15 5 4 4" />
+    </>
+  ),
+  share: (
+    <>
+      <Path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+      <Path d="m16 6-4-4-4 4" />
+      <Path d="M12 2v13" />
+    </>
+  ),
+  download: (
+    <>
+      <Path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <Path d="m7 10 5 5 5-5" />
+      <Path d="M12 15V3" />
+    </>
+  ),
+  upload: (
+    <>
+      <Path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <Path d="m17 8-5-5-5 5" />
+      <Path d="M12 3v12" />
     </>
   ),
 };

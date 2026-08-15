@@ -32,6 +32,28 @@ export const en: Messages = {
     done: 'Done',
   },
 
+  projects: {
+    section: 'Projects',
+    count: (n: number) => `${n}`,
+    newName: 'Name for the new project',
+    create: 'Create',
+    createFailed: 'Could not create the project',
+    renamedForClash: (title: string) => `That name was taken, so it is “${title}”`,
+    rename: 'Rename',
+    renameFailed: 'Could not rename it',
+    remove: (title: string) => `Delete ${title}`,
+    deleteTitle: (title: string) => `Delete “${title}”?`,
+    deleteDescription: 'Every scene, dancer and placement in it goes too.',
+    deleteFailed: 'Could not delete the project',
+    guestTitle: 'My first formation',
+    sceneName: (index: number) => `Scene ${index}`,
+    saveDraft: 'Save this draft as my project',
+    saveDraftNote: 'It becomes a new project on the account you are signed in to.',
+    saveDraftFailed: 'Could not save it',
+    saved: (title: string) => `Saved as “${title}”`,
+    unsaved: 'There are unsaved changes',
+  },
+
   confirm: {
     cancel: 'Cancel',
     delete: 'Delete',

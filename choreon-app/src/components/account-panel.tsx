@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
+
+import { ProjectPanel } from '@/components/project-panel';
 
 import {
   signInWithPassword,
@@ -7,13 +9,6 @@ import {
   signUpWithPassword,
 } from '@/features/auth/api/auth';
 import { useSessionStore } from '@/features/auth/store/useSessionStore';
-import {
-  listMyProjects,
-  loadProject,
-  type ProjectListItem,
-} from '@/features/project/api/load';
-import { useProjectStore } from '@/features/project/store/useProjectStore';
-import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useT } from '@/features/i18n/store/useLocaleStore';
 
 type Props = {
@@ -165,54 +160,7 @@ function SignedIn({
   onProjectLoaded: (stage: { width: number; height: number }) => void;
 }) {
   const t = useT();
-  const [projects, setProjects] = useState<ProjectListItem[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [openingId, setOpeningId] = useState<string | null>(null);
-  const [openedTitle, setOpenedTitle] = useState<string | null>(null);
-  const hydrate = useProjectStore((state) => state.hydrate);
-
-  useEffect(() => {
-    let alive = true;
-    void (async () => {
-      try {
-        const list = await listMyProjects();
-        if (alive) setProjects(list);
-      } catch {
-        if (alive) setError(t.account.listFailed);
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  const open = async (item: ProjectListItem) => {
-    setError(null);
-    setOpeningId(item.id);
-    try {
-      const loaded = await loadProject(item.id);
-      if (!loaded) {
-        setError(t.account.notFound);
-        return;
-      }
-      hydrate({ ...loaded, isGuest: false });
-      // 時刻の順で最初のシーンを選ぶ（Web版 useHydrateProject と同じ規則）
-      const first = [...loaded.scenes].sort(
-        (a, b) => a.timeSeconds - b.timeSeconds || a.orderIndex - b.orderIndex,
-      )[0];
-      useUIStore.getState().selectScene(first?.id ?? null);
-      useUIStore.getState().selectDancer(null);
-      setOpenedTitle(loaded.project.title);
-      onProjectLoaded({
-        width: loaded.project.stageWidth,
-        height: loaded.project.stageHeight,
-      });
-    } catch {
-      setError(t.account.openFailed);
-    } finally {
-      setOpeningId(null);
-    }
-  };
+  const userId = useSessionStore((state) => state.userId);
 
   return (
     <View className="gap-3">
@@ -230,40 +178,12 @@ function SignedIn({
         </Pressable>
       </View>
 
-      {openedTitle ? (
-        <Text className="text-xs text-accent-soft">
-          {t.account.opened(openedTitle)}
-        </Text>
+      {/* 作品の出し入れは別の部品。ここはログインの状態だけを持つ */}
+      {userId ? (
+        <ProjectPanel userId={userId} onProjectLoaded={onProjectLoaded} />
       ) : null}
 
-      {projects === null ? (
-        <ActivityIndicator />
-      ) : projects.length === 0 ? (
-        <Text className="text-sm text-fg-muted">{t.account.empty}</Text>
-      ) : (
-        <View className="gap-2">
-          {projects.map((item) => (
-            <Pressable
-              key={item.id}
-              onPress={() => void open(item)}
-              accessibilityRole="button"
-              accessibilityLabel={item.title}
-              className="flex-row items-center justify-between rounded-xl bg-surface-raised px-4 py-3 active:opacity-80"
-            >
-              <Text className="flex-1 text-base text-fg" numberOfLines={1}>
-                {item.title}
-              </Text>
-              {openingId === item.id ? (
-                <ActivityIndicator />
-              ) : (
-                <Text className="text-xs text-fg-muted">{t.account.open}</Text>
-              )}
-            </Pressable>
-          ))}
-        </View>
-      )}
-
-      {error ? <Text className="text-sm text-[#f87171]">{error}</Text> : null}
+      <Text className="text-xs leading-5 text-fg-muted">{t.account.note}</Text>
     </View>
   );
 }

@@ -32,6 +32,28 @@ export const ko: Messages = {
     done: '완료',
   },
 
+  projects: {
+    section: '작품',
+    count: (n: number) => `${n}건`,
+    newName: '새 작품 이름',
+    create: '만들기',
+    createFailed: '작품을 만들지 못했습니다',
+    renamedForClash: (title: string) => `같은 이름이 있어서 「${title}」(으)로 만들었습니다`,
+    rename: '이름 변경',
+    renameFailed: '이름을 바꾸지 못했습니다',
+    remove: (title: string) => `${title} 삭제`,
+    deleteTitle: (title: string) => `「${title}」을(를) 삭제할까요`,
+    deleteDescription: '이 작품의 장면·댄서·위치가 모두 사라집니다.',
+    deleteFailed: '작품을 삭제하지 못했습니다',
+    guestTitle: '첫 대형',
+    sceneName: (index: number) => `장면${index}`,
+    saveDraft: '이 초안을 내 작품으로 저장',
+    saveDraftNote: '로그인한 계정의 작품으로 새로 하나 만들어집니다.',
+    saveDraftFailed: '저장하지 못했습니다',
+    saved: (title: string) => `「${title}」(으)로 저장했습니다`,
+    unsaved: '아직 저장하지 않은 변경이 있습니다',
+  },
+
   confirm: {
     cancel: '취소',
     delete: '삭제',
