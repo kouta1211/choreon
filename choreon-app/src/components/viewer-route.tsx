@@ -1,6 +1,7 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
-import { useUIStore } from '@/features/canvas/store/useUIStore';
+import { usePlaybackStore } from '@/features/music/store/usePlaybackStore';
+import { sceneSpanAt } from '@/features/viewer/lib/interpolate';
 import { themedDancerColor } from '@/features/dancer/lib/themedColor';
 import { moveText } from '@/features/i18n/lib/moveText';
 import { useT } from '@/features/i18n/store/useLocaleStore';
@@ -41,8 +42,13 @@ export function ViewerRoute({ focusedDancerId, onReselect }: Props) {
   const scenes = useProjectStore((state) => state.scenes);
   const dancers = useProjectStore((state) => state.dancers);
   const positionsBySceneId = useProjectStore((state) => state.positionsBySceneId);
-  const selectedSceneId = useUIStore((state) => state.selectedSceneId);
-  const selectScene = useUIStore((state) => state.selectScene);
+  /* この画面が持つのは「いま何番のシーン」ではなく **「いま何秒目」**。
+     スクラブ帯で区間の途中に止まれるので、シーンを選ぶ形だとその状態を
+     表せない（`interpolate.ts` のコメントと同じ理由）。
+     押したときも秒を動かす — シーンを選ぶとステージが付いてこない */
+  const currentTime = usePlaybackStore((state) => state.currentTime);
+  const setCurrentTime = usePlaybackStore((state) => state.setCurrentTime);
+  const spanNow = sceneSpanAt(scenes, currentTime);
 
   const dancer = focusedDancerId ? dancers[focusedDancerId] : undefined;
   const total = scenes.length > 0 ? scenes[scenes.length - 1].timeSeconds : 0;
@@ -74,7 +80,7 @@ export function ViewerRoute({ focusedDancerId, onReselect }: Props) {
               const here = positionsBySceneId[scene.id]?.[dancer.id];
               const previous =
                 index === 0 ? undefined : positionsBySceneId[scenes[index - 1].id]?.[dancer.id];
-              const isCurrent = scene.id === selectedSceneId;
+              const isCurrent = scene.id === spanNow?.from.id;
 
               // 先頭のシーンには「入ってくる動き」が無い。立ち位置だけを出す
               const description =
@@ -86,7 +92,7 @@ export function ViewerRoute({ focusedDancerId, onReselect }: Props) {
               return (
                 <Pressable
                   key={scene.id}
-                  onPress={() => selectScene(scene.id)}
+                  onPress={() => setCurrentTime(scene.timeSeconds)}
                   accessibilityRole="button"
                   accessibilityLabel={scene.name}
                   className={`flex-row items-baseline gap-2 rounded-lg px-2 py-1.5 active:opacity-70 ${

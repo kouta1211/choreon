@@ -4,10 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 
 import { PlaybackControls } from '@/components/playback-controls';
-import { SceneDock } from '@/components/scene-dock';
 import { StageView } from '@/components/stage-view';
 import { ViewerEntry } from '@/components/viewer-entry';
 import { ViewerRoute } from '@/components/viewer-route';
+import { ViewerScrub } from '@/components/viewer-scrub';
+import { usePlaybackStore } from '@/features/music/store/usePlaybackStore';
 import { Button } from '@/components/ui/button';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useT } from '@/features/i18n/store/useLocaleStore';
@@ -47,6 +48,8 @@ import { supabase } from '@/lib/supabase/client';
  */
 export default function SharedViewerScreen() {
   const t = useT();
+  /* ステージが描く秒。スクラブ帯が書き、再生も同じ場所へ書く */
+  const currentTime = usePlaybackStore((state) => state.currentTime);
   const danger = useThemeColor('--dancer-2');
 
   // **Web版の共有リンクと同じ形**を受ける: /view/<作品id>?t=<トークン>&p=<ポジション>。
@@ -173,21 +176,26 @@ export default function SharedViewerScreen() {
         {/* ステージは高さを決め打ちにする。下に道順が続くので、
             エディタのように「余った高さを全部」取らせると読めなくなる */}
         <View style={{ height: 260 }}>
-          {/* 読むだけ。掴む・回す・曲げる・払って送る の口を全部閉じる */}
+          {/* 読むだけ。掴む・回す・曲げる・払って送る の口を全部閉じる。
+              **描くのは「選んでいるシーン」ではなく「いまの秒」** —
+              スクラブで区間の途中に止まれるようにするため */}
           <StageView
             stageWidthUnits={stage.width}
             stageHeightUnits={stage.height}
             isReadOnly
+            atSeconds={currentTime}
           />
         </View>
 
-        <PlaybackControls />
+        {/* この画面は秒が正。押した場所から鳴らし、止めても寄せない */}
+        <PlaybackControls isTimeBased />
 
-        {/* 「直す」を渡さない = 直す入口を出さない */}
-        <SceneDock
+        {/* この画面の主操作。エディタのシーンの帯（押して切り替えるだけ）
+            ではなく、指で引いて途中で止められる帯を出す */}
+        <ViewerScrub
+          focusedDancerId={focusedDancerId}
           stageWidthUnits={stage.width}
           stageHeightUnits={stage.height}
-          isReadOnly
         />
 
         <ViewerRoute

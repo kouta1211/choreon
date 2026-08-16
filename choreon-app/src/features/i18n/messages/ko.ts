@@ -159,6 +159,13 @@ export const ko: Messages = {
       270: '상수 방향',
       315: '상수 앞 방향',
     },
+    scrub: {
+      section: '시간',
+      clock: (seconds: string, sceneName: string) =>
+        sceneName ? `${seconds}s · ${sceneName}` : `${seconds}s`,
+      tick: (seconds: number) => `${seconds}s`,
+      note: '띠를 옆으로 끌면 이동 도중에 멈출 수 있습니다. 컷을 누르면 그 대형으로.',
+    },
     route: {
       title: (name: string) => `${name}의 동선`,
       everyone: '전체',

@@ -162,6 +162,13 @@ export const en: Messages = {
       270: 'facing stage left',
       315: 'facing downstage left',
     },
+    scrub: {
+      section: 'Time',
+      clock: (seconds: string, sceneName: string) =>
+        sceneName ? `${seconds}s · ${sceneName}` : `${seconds}s`,
+      tick: (seconds: number) => `${seconds}s`,
+      note: 'Drag the strip to stop partway through a move. Tap a frame to jump to it.',
+    },
     route: {
       title: (name: string) => `${name}âs route`,
       everyone: 'Everyone',

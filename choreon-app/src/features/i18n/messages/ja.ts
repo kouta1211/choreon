@@ -188,6 +188,14 @@ export const ja = {
       270: '上手向き',
       315: '上手前向き',
     },
+    /** スクラブ帯（この画面の主操作） */
+    scrub: {
+      section: '時間',
+      clock: (seconds: string, sceneName: string) =>
+        sceneName ? `${seconds}s · ${sceneName}` : `${seconds}s`,
+      tick: (seconds: number) => `${seconds}s`,
+      note: '帯を横に引くと、移動の途中で止められます。コマを押すとその隊形へ。',
+    },
     route: {
       title: (name: string) => `${name} の道順`,
       everyone: '全員',

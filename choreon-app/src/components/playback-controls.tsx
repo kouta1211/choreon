@@ -38,7 +38,21 @@ import { useProjectStore } from '@/features/project/store/useProjectStore';
  * 別の音源（`assets/click-*.wav`）で、曲が無くても鳴る。数えている最中も
  * 拍は鳴る — そのための予備拍なので。
  */
-export function PlaybackControls() {
+type Props = {
+  /**
+   * 時刻を正とする画面か（ビューア）。既定はシーンを正とするエディタ。
+   *
+   * ■ 何が変わるか
+   *   - 始める場所 … エディタは「選んでいるシーン」の頭から。こちらは
+   *     **いま止めている秒から**（スクラブでそこを探して押すため）
+   *   - 止めたとき … エディタはいちばん近いシーンへ寄せる（次に触るのは
+   *     シーンなので）。こちらは**動かさない** — 区間の途中で止まれることが
+   *     この画面の値打ちなので、寄せるとそれを捨てることになる
+   */
+  isTimeBased?: boolean;
+};
+
+export function PlaybackControls({ isTimeBased = false }: Props) {
   const t = useT();
   // 時計はここで回す（再生中だけ動く）。曲があれば曲が時計、無ければ秒を数える。
   // どちらも同じ場所（usePlaybackStore）へ書くので、下の表示は変わらない
@@ -87,6 +101,12 @@ export function PlaybackControls() {
     }
 
     if (!isPlaying) {
+      if (isTimeBased) {
+        // いま止めている秒から。探し当てた場所から鳴らすのが目的
+        startCountIn(countIn, () => setIsPlaying(true));
+        return;
+      }
+
       const from = playbackStartIndex(scenes, selectedSceneId, playbackStartSceneId);
       if (from === -1) return;
 
@@ -99,12 +119,15 @@ export function PlaybackControls() {
       return;
     }
 
-    // 止めるときは、いちばん近いシーンへ寄せてから止める
-    const index = nearestSceneIndexAtSeconds(scenes, currentTime);
-    const scene = scenes[index];
-    if (scene) {
-      selectScene(scene.id);
-      setCurrentTime(sceneStartSeconds(scenes)[index] ?? 0);
+    // 止めるときは、いちばん近いシーンへ寄せてから止める。
+    // **時刻を正とする画面では寄せない** — 止めた場所がそのまま答え
+    if (!isTimeBased) {
+      const index = nearestSceneIndexAtSeconds(scenes, currentTime);
+      const scene = scenes[index];
+      if (scene) {
+        selectScene(scene.id);
+        setCurrentTime(sceneStartSeconds(scenes)[index] ?? 0);
+      }
     }
     setIsPlaying(false);
   };

@@ -350,6 +350,13 @@ export function DraggableDancer({
   return (
     <Animated.View
       {...responder.panHandlers}
+      /* この丸に名前が無かった。**このアプリの主役**（掴んで動かす相手）
+         なのに、支援技術からは名前の無い塊にしか見えていなかった。
+         選んでいるかも合わせて渡す */
+      accessibilityRole="button"
+      accessibilityLabel={dancer.name}
+      accessibilityState={{ selected: isSelected }}
+      aria-selected={isSelected}
       style={{
         position: 'absolute',
         left: `${(x / stageWidthUnits) * 100}%`,

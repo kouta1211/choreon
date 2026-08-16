@@ -27,6 +27,7 @@ import {
   shouldCommitScrub,
 } from '@/features/canvas/lib/sceneScrub';
 import { sceneDurations } from '@/features/scene/lib/sceneTiming';
+import { positionsAtSeconds } from '@/features/viewer/lib/interpolate';
 
 type Props = {
   stageWidthUnits: number;
@@ -46,6 +47,21 @@ type Props = {
    * **触れる口を1つずつ閉じる**（掴む・回す・曲げる・払って送る）。
    */
   isReadOnly?: boolean;
+  /**
+   * この秒の隊形を描く（ビューアのスクラブ）。null なら従来どおり
+   * 「選んでいるシーン」を描く。
+   *
+   * ■ シーンではなく時刻で描く
+   * エディタは「シーンを選ぶ」道具なので、止まる先はシーンでよい。
+   * ビューアは「サビで自分はどこ」を見る道具で、いちばんの値打ちは
+   * **移動の途中で止められること**にある。指を止めた場所の隊形を、
+   * 前後のシーンから補間して出す（`positionsAtSeconds`）。
+   *
+   * 払って送るときの補間（`interpolateDancerPoint`）とは別物。あちらは
+   * 素の直線で、こちらは**イージングと自由曲線に沿う** — 導線として
+   * 描いてある線と違う場所を通らせないため。
+   */
+  atSeconds?: number | null;
 };
 
 /**
@@ -64,7 +80,12 @@ type Props = {
  * 居ない人の出入りは `sceneScrub.ts` をコピーして使っている。**触り心地の
  * 数値がWebとスマホでずれない**ようにするため。
  */
-export function StageView({ stageWidthUnits, stageHeightUnits, isReadOnly = false }: Props) {
+export function StageView({
+  stageWidthUnits,
+  stageHeightUnits,
+  isReadOnly = false,
+  atSeconds = null,
+}: Props) {
   const t = useT();
   const dancers = useProjectStore((state) => state.dancers);
   const scenes = useProjectStore((state) => state.scenes);
@@ -160,6 +181,14 @@ export function StageView({ stageWidthUnits, stageHeightUnits, isReadOnly = fals
   const sceneIndex = scenes.findIndex((scene) => scene.id === selectedSceneId);
   const sceneId = scenes[sceneIndex]?.id ?? scenes[0]?.id ?? '';
   const positions = positionsBySceneId[sceneId] ?? {};
+
+  /* 時刻で描くとき。dancerId で引ける形にしておく（下の描画は
+     「その人が居るか」を何度も引くため） */
+  const atTime = useMemo(() => {
+    if (atSeconds == null) return null;
+    const list = positionsAtSeconds(scenes, positionsBySceneId, atSeconds);
+    return Object.fromEntries(list.map((item) => [item.dancerId, item]));
+  }, [atSeconds, scenes, positionsBySceneId]);
 
   /**
    * 次の隊形まで動くのにかける秒数。**区間の実際の長さ**を渡す。
@@ -402,7 +431,9 @@ export function StageView({ stageWidthUnits, stageHeightUnits, isReadOnly = fals
             半分まで引いた時点で「これから出てくる人」が居らず、確定した
             瞬間に唐突に現れる */}
         {Array.from(
-          new Set([...Object.keys(positions), ...Object.keys(targetPositions)]),
+          atTime
+            ? new Set(Object.keys(atTime))
+            : new Set([...Object.keys(positions), ...Object.keys(targetPositions)]),
         ).map((dancerId) => {
           const dancer = dancers[dancerId];
           if (!dancer) return null;
@@ -410,7 +441,10 @@ export function StageView({ stageWidthUnits, stageHeightUnits, isReadOnly = fals
           const here = positions[dancerId];
           const there = targetPositions[dancerId];
 
-          const point = scrub
+          const atNow = atTime?.[dancerId];
+          const point = atNow
+            ? { x: atNow.x, y: atNow.y, opacity: 1 }
+            : scrub
             ? interpolateDancerPoint(
                 here && { x: here.xCoordinate, y: here.yCoordinate },
                 there && { x: there.xCoordinate, y: there.yCoordinate },
@@ -430,7 +464,7 @@ export function StageView({ stageWidthUnits, stageHeightUnits, isReadOnly = fals
               x={point.x}
               y={point.y}
               screenY={screenY}
-              rotationAngle={here?.rotationAngle ?? 0}
+              rotationAngle={atNow ? atNow.rotationAngle : (here?.rotationAngle ?? 0)}
               isSelected={dancerId === selectedDancerId}
               // 誰かに「注目」しているときは、その人以外を薄くする。
               // 払っている最中の濃さと掛け合わせる（両方が効く場面がある）
@@ -456,8 +490,13 @@ export function StageView({ stageWidthUnits, stageHeightUnits, isReadOnly = fals
               // 短い＝早く着いて残りは立って待つ、という意味）。
               // 区間そのものが 0（隣り合わないシーンへ飛んだ）ときは
               // 上書きも効かせない — 通っていない区間を通ったように見せない
+              /* 時刻で描いている間は滑らせない。位置は指が毎フレーム
+                 決めているので、時間ベースの動きを重ねると2つが同じ値を
+                 取り合う（払っている最中と同じ理屈） */
               transitionSeconds={
-                transitionSeconds === 0
+                atTime
+                  ? 0
+                  : transitionSeconds === 0
                   ? 0
                   : Math.min(
                       transitionSeconds,
