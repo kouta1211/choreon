@@ -217,8 +217,13 @@ export function DancerInspector() {
           <Pressable
             onPress={() => setFocusedDancer(isFocused ? null : dancer.id)}
             accessibilityRole="button"
-            accessibilityLabel={t.dancers.inspector.focus}
+            // 注目中は押すと【解除】になる。同じ読み上げのままだと、
+            // 目で色を見られない人には、いまどちらの状態なのかが分からない
+            accessibilityLabel={
+              isFocused ? t.dancers.inspector.focusOn : t.dancers.inspector.focus
+            }
             accessibilityState={{ selected: isFocused }}
+            aria-selected={isFocused}
             className={`h-9 w-9 items-center justify-center rounded-lg active:opacity-70 ${
               isFocused ? 'bg-accent-row' : ''
             }`}
