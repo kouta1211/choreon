@@ -102,6 +102,8 @@ export const ko: Messages = {
     backstage: '무대 뒤',
     audience: '객석 쪽',
     blockedBadge: '얼굴',
+    rotate: '방향 바꾸기',
+    rotateValue: (degrees: number) => `${degrees}도`,
   },
 
   playback: {

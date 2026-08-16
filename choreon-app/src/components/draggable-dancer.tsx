@@ -55,6 +55,10 @@ type Props = {
   opacity?: number;
   /** ステージ全体を払っている間は、その人だけを掴めないようにする */
   isDraggable?: boolean;
+  /** 読むだけか。**掴めなくするだけでは足りない** — 選ぶと出る回転ハンドルも
+   * 出さない。「隠す」のではなく「持たせない」（Web版が編集用の
+   * アクションを持たない別ストアにしているのと同じ考え） */
+  isReadOnly?: boolean;
   /** 指を離した時に1回だけ呼ばれる。保存はここではなく呼び出し側 */
   onDragEnd: (next: { x: number; y: number }) => void;
   /**
@@ -114,6 +118,7 @@ export function DraggableDancer({
   showName,
   opacity = 1,
   isDraggable = true,
+  isReadOnly = false,
   onTap,
   onRotateEnd,
   onDragEnd,
@@ -389,6 +394,7 @@ export function DraggableDancer({
             className="absolute rounded-full border-2 border-accent"
             style={{ width: DOT + 10, height: DOT + 10, top: -5, left: -5 }}
           />
+          {isReadOnly ? null : (
           <RotationHandle
             displayAngle={screenRotation}
             onChange={setLiveAngle}
@@ -398,6 +404,7 @@ export function DraggableDancer({
               onRotateEnd(isAudienceOnTop ? mirrorAngle(next) : next);
             }}
           />
+          )}
         </>
       ) : null}
 

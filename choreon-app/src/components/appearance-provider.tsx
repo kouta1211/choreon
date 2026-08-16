@@ -1,8 +1,10 @@
 import { useEffect, type ReactNode } from 'react';
 import { View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { vars } from 'nativewind';
 
 import { TextureOverlay } from '@/components/texture-overlay';
+import { isLightTheme } from '@/features/settings/lib/colorScheme';
 import { THEME_VARS } from '@/features/theme/themeVars.generated';
 import {
   useCurrentTheme,
@@ -39,6 +41,12 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
 
   return (
     <View style={vars(THEME_VARS[theme])} className="flex-1 bg-page">
+      {/* 時計や電池の色を、テーマの明暗に合わせる。
+          **指定しないと、紙のテーマで白い文字が白い地に乗って消える。**
+          端末の暗い/明るいではなく【いまのテーマ】で決める — 紙を選んで
+          いる人の画面は、端末が暗い設定でも明るいため */}
+      <StatusBar style={isLightTheme(theme) ? 'dark' : 'light'} />
+
       {/* 背景の質感。**いちばん後ろに1枚**。ステージは自前の面で塗られて
           いるので、その下を通る（Web版と同じ重ね方） */}
       <TextureOverlay />

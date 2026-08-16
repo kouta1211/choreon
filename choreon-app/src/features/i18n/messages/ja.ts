@@ -121,6 +121,8 @@ export const ja = {
     audience: '客席側',
     /** 丸の肩に付く印。「顔」は顔被り */
     blockedBadge: '顔',
+    rotate: '向きを変える',
+    rotateValue: (degrees: number) => `${degrees}度`,
   },
 
   playback: {

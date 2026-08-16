@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react';
 import { PanResponder, View } from 'react-native';
 
 import { snapRotation } from '@/features/canvas/lib/dragMath';
+import { useT } from '@/features/i18n/store/useLocaleStore';
 
 /** ダンサー本体の中心からハンドルまでの距離(px)。Web版と同じ */
 const HANDLE_DISTANCE_PX = 46;
@@ -32,6 +33,7 @@ type Props = {
  * 移動量を足して、同じ atan2 を取る。測らずに済み、結果は同じ。
  */
 export function RotationHandle({ displayAngle, onChange, onEnd }: Props) {
+  const t = useT();
   // 掴んだ時点の角度。ここから相対で計算する
   const startAngle = useRef(displayAngle);
   const latest = useRef({ displayAngle, onChange, onEnd });
@@ -86,6 +88,11 @@ export function RotationHandle({ displayAngle, onChange, onEnd }: Props) {
       />
       <View
         {...responder.panHandlers}
+        // つまみに名前が無かった。回すための的なので、見えない人にも
+        // 「ここが向きを変える所」と分かる必要がある
+        accessibilityRole="adjustable"
+        accessibilityLabel={t.stage.rotate}
+        accessibilityValue={{ text: t.stage.rotateValue(Math.round(displayAngle)) }}
         className="absolute items-center justify-center"
         style={{
           left: 0,

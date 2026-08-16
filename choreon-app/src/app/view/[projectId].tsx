@@ -173,7 +173,12 @@ export default function SharedViewerScreen() {
         {/* ステージは高さを決め打ちにする。下に道順が続くので、
             エディタのように「余った高さを全部」取らせると読めなくなる */}
         <View style={{ height: 260 }}>
-          <StageView stageWidthUnits={stage.width} stageHeightUnits={stage.height} />
+          {/* 読むだけ。掴む・回す・曲げる・払って送る の口を全部閉じる */}
+          <StageView
+            stageWidthUnits={stage.width}
+            stageHeightUnits={stage.height}
+            isReadOnly
+          />
         </View>
 
         <PlaybackControls />

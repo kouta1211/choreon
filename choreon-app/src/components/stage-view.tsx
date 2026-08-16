@@ -31,6 +31,21 @@ import { sceneDurations } from '@/features/scene/lib/sceneTiming';
 type Props = {
   stageWidthUnits: number;
   stageHeightUnits: number;
+  /**
+   * 読むだけか（共有リンクを開いた人の画面）。
+   *
+   * **隠すだけでは足りない。** これまでビューアは「＋ を出さない」だけで、
+   * ステージは編集用のものをそのまま使っていた。読んでいる人が指で
+   * ダンサーを動かせ、回転ハンドルも曲線ハンドルも触れた。サーバーへは
+   * 書かれない（ゲスト扱いなので `persist` が止める）が、**画面の隊形は
+   * 変わり、戻す手段が無い** — 袖で自分の位置を確かめている人が、
+   * 親指で誰かをずらしたまま間違った図を読むことになる。
+   *
+   * Web版は編集用のアクションを持たない別のストアにして「持っていない
+   * ものは押せない」形にしている。こちらは同じ部品を使い回しているので、
+   * **触れる口を1つずつ閉じる**（掴む・回す・曲げる・払って送る）。
+   */
+  isReadOnly?: boolean;
 };
 
 /**
@@ -49,7 +64,7 @@ type Props = {
  * 居ない人の出入りは `sceneScrub.ts` をコピーして使っている。**触り心地の
  * 数値がWebとスマホでずれない**ようにするため。
  */
-export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
+export function StageView({ stageWidthUnits, stageHeightUnits, isReadOnly = false }: Props) {
   const t = useT();
   const dancers = useProjectStore((state) => state.dancers);
   const scenes = useProjectStore((state) => state.scenes);
@@ -65,7 +80,10 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
   const gridMode = useUIStore((state) => state.gridMode);
   const isPathVisible = useUIStore((state) => state.isPathVisible);
   const isStageMarksVisible = useUIStore((state) => state.isStageMarksVisible);
-  const isSwipeEnabled = useUIStore((state) => state.isSwipeSceneChangeEnabled);
+  // 読むだけのときは払って送らせない。**シーンは押して選ぶ**（ビューアの
+  // 帯がその役）。払いはステージの操作なので、編集の口と一緒に閉じる
+  const isSwipeEnabledSetting = useUIStore((state) => state.isSwipeSceneChangeEnabled);
+  const isSwipeEnabled = isSwipeEnabledSetting && !isReadOnly;
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
   const isSnapEnabled = useSettingsStore((state) => state.isSnapEnabled);
   const isCenterLineVisible = useSettingsStore((state) => state.isCenterLineVisible);
@@ -363,6 +381,7 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
                 return null;
               }
               const hasCurve = to.curveControlX != null && to.curveControlY != null;
+              if (isReadOnly) return null;
               return (
                 <CurveHandle
                   x={hasCurve ? (to.curveControlX as number) : (from.xCoordinate + to.xCoordinate) / 2}
@@ -420,7 +439,8 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
               }
               // 払っている最中は、その人だけを掴めないようにする
               // (指はステージ全体の操作に使われている)
-              isDraggable={!scrub}
+              isDraggable={!scrub && !isReadOnly}
+              isReadOnly={isReadOnly}
               stageWidthUnits={stageWidthUnits}
               stageHeightUnits={stageHeightUnits}
               stageSize={stageSize}

@@ -16,6 +16,7 @@ import {
   loadProject,
   type ProjectListItem,
 } from '@/features/project/api/load';
+import { forgetMusic } from '@/features/music/lib/musicStorage';
 import { useMusicStore } from '@/features/music/store/useMusicStore';
 import { discardPendingWrites } from '@/features/project/lib/persistence';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
@@ -223,6 +224,12 @@ export function ProjectPanel({ userId, onProjectLoaded }: Props) {
           setError(t.projects.deleteFailed);
           return;
         }
+        /* その作品に覚えてある曲も一緒に消す。
+           **消し忘れると端末に音源だけが残り続ける** — 数MBのファイルが
+           作品を消すたびに1つずつ増え、見る手段も消す手段も無い
+           （「外す」を押したときにしか消えていなかった）。
+           作品が消えたあとなので、失敗しても知らせる相手がいない。 */
+        void forgetMusic(item.id);
         await refresh();
       },
     });

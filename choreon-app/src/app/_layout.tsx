@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 
@@ -7,6 +8,7 @@ import '@/global.css';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { AppearanceProvider } from '@/components/appearance-provider';
+import { configureAudioMode } from '@/features/music/lib/audioMode';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -25,6 +27,12 @@ SplashScreen.preventAutoHideAsync();
  * 2つの色の決め方が並ぶと食い違う。ヘッダーも出していないので出番が無い。
  */
 export default function RootLayout() {
+  // 音の区分は**アプリに1つ**なので、いちばん外側で1回だけ決める。
+  // これを呼ばないと、マナーモードの間は曲もメトロノームも鳴らない
+  useEffect(() => {
+    void configureAudioMode();
+  }, []);
+
   return (
     <AppearanceProvider>
       <AnimatedSplashOverlay />

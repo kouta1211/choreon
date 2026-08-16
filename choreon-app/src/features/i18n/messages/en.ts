@@ -102,6 +102,8 @@ export const en: Messages = {
     backstage: 'Upstage',
     audience: 'Downstage',
     blockedBadge: 'H',
+    rotate: 'Change the facing',
+    rotateValue: (degrees: number) => `${degrees} degrees`,
   },
 
   playback: {
