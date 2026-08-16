@@ -46,6 +46,15 @@ export const ko: Messages = {
     replay: '사용법 다시 보기',
   },
 
+  welcome: {
+    tagline: '안무 대형을 시간과 함께 짜기',
+    guestStart: '게스트로 시작',
+    withTour: '사용법 안내부터 시작',
+    guestNote: '가입은 필요 없습니다. 만든 것은 이 기기에만 남습니다.',
+    or: '또는',
+    signIn: '로그인해서 내 작품 열기',
+  },
+
   common: {
     on: '켬',
     off: '끔',
@@ -75,6 +84,10 @@ export const ko: Messages = {
     saveDraftFailed: '저장하지 못했습니다',
     saved: (title: string) => `「${title}」(으)로 저장했습니다`,
     unsaved: '아직 저장하지 않은 변경이 있습니다',
+    discardDraftTitle: '이 초안은 사라집니다',
+    discardDraftDescription:
+      '초안은 이 앱 안에만 있고, 다른 작품을 열면 되돌릴 수 없습니다. 남기려면 취소하고 「이 초안을 내 작품으로 저장」을 먼저 누르세요.',
+    discardDraftConfirm: '열기',
   },
 
   confirm: {
@@ -350,6 +363,7 @@ export const ko: Messages = {
       mode: {
         label: '격자',
         square: '격자',
+        circle: '원',
         none: '없음',
       },
       snap: {

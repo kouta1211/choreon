@@ -1,9 +1,9 @@
 import { Text, View } from 'react-native';
 
 import { DisplayModeMenu } from '@/components/display-mode-menu';
+import { ProjectTitle } from '@/components/project-title';
 import { SaveChangesButton } from '@/components/save-changes-button';
 import { Button } from '@/components/ui/button';
-import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { useT } from '@/features/i18n/store/useLocaleStore';
 
 type Props = {
@@ -34,13 +34,11 @@ export function EditorHeader({
   onOpenSettings,
 }: Props) {
   const t = useT();
-  const title = useProjectStore((state) => state.project?.title);
 
   return (
     <View className="h-14 shrink-0 flex-row items-center gap-1 px-3">
-      <Text numberOfLines={1} className="min-w-0 flex-1 text-lg text-fg-strong">
-        {title ?? t.editor.draft}
-      </Text>
+      {/* 押すとその場で名前を変えられる。一覧まで潜らずに済む */}
+      <ProjectTitle />
 
       {/* 自動保存を切っている間だけ出る。入っている間は何も出ない */}
       <SaveChangesButton />

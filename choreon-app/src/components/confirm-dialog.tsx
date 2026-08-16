@@ -50,6 +50,12 @@ export function ConfirmDialog() {
 
   const [isRunning, setIsRunning] = useState(false);
 
+  /** やめる。頼んだ側が待っていれば、そこへも知らせる */
+  const cancel = () => {
+    request?.onCancel?.();
+    closeConfirm();
+  };
+
   const handleConfirm = async () => {
     if (!request) return;
     setIsRunning(true);
@@ -67,7 +73,7 @@ export function ConfirmDialog() {
       transparent
       animationType="fade"
       onRequestClose={() => {
-        if (!isRunning) closeConfirm();
+        if (!isRunning) cancel();
       }}
       statusBarTranslucent
     >
@@ -79,7 +85,7 @@ export function ConfirmDialog() {
       >
         <Pressable
           onPress={() => {
-            if (!isRunning) closeConfirm();
+            if (!isRunning) cancel();
           }}
           accessibilityRole="button"
           accessibilityLabel={t.confirm.cancel}
@@ -129,7 +135,7 @@ export function ConfirmDialog() {
               — 赤い面はステージの赤いダンサーと同じ強さになる */}
           <View className="flex-row border-t border-line">
             <Pressable
-              onPress={closeConfirm}
+              onPress={cancel}
               disabled={isRunning}
               accessibilityRole="button"
               className={`h-14 flex-1 items-center justify-center border-r border-line ${

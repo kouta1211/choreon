@@ -4,6 +4,7 @@ import { PanResponder, View, Text, type LayoutChangeEvent } from 'react-native';
 import { DraggableDancer } from '@/components/draggable-dancer';
 import { CurveHandle } from '@/components/curve-handle';
 import { PathOverlay } from '@/components/path-overlay';
+import { ConcentricGuides } from '@/components/concentric-guides';
 import { StageMarks } from '@/components/stage-marks';
 import { themedDancerColor } from '@/features/dancer/lib/themedColor';
 import { getSceneStep } from '@/features/canvas/lib/sceneStep';
@@ -296,6 +297,15 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
       >
         {gridMode === 'square' && (
           <GridLines widthUnits={stageWidthUnits} heightUnits={stageHeightUnits} />
+        )}
+
+        {/* 円や弧を組むときの目盛り。格子の代わりで、同時には出ない */}
+        {gridMode === 'circle' && (
+          <ConcentricGuides
+            widthUnits={stageWidthUnits}
+            heightUnits={stageHeightUnits}
+            stageWidthPx={fitWidth}
+          />
         )}
 
         {/* 吸い付く先。格子を消していても出す — 吸着は格子の表示とは別の

@@ -33,6 +33,7 @@ export function SettingsGridSection() {
         value={gridMode}
         options={[
           { value: 'square' as const, label: t.settings.grid.mode.square },
+          { value: 'circle' as const, label: t.settings.grid.mode.circle },
           { value: 'none' as const, label: t.settings.grid.mode.none },
         ]}
         onChange={setGridMode}

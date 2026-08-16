@@ -14,6 +14,8 @@ import { MusicPicker } from '@/components/music-picker';
 import { MusicTimeline } from '@/components/music-timeline';
 import { PlaybackControls } from '@/components/playback-controls';
 import { SongSettings } from '@/components/song-settings';
+import { WelcomeScreen } from '@/components/welcome-screen';
+import { useSessionStore } from '@/features/auth/store/useSessionStore';
 import { SceneDock } from '@/components/scene-dock';
 import { SceneEditor } from '@/components/scene-editor';
 import { SettingsSheet } from '@/components/settings-sheet';
@@ -97,6 +99,19 @@ export default function EditorScreen() {
   const [openSheet, setOpenSheet] = useState<OpenSheet>(null);
   const close = () => setOpenSheet(null);
 
+  /**
+   * 始め方を選ぶ画面を出しているか。
+   *
+   * ログイン済みなら出さない（自分の作品を開きに来た人に、始め方を
+   * 聞き直す意味が無い）。**セッションを読み終えるまでは何も決めない** —
+   * 先に「未ログイン」と決め打つと、ログイン済みの人にも一瞬この画面が
+   * 出て消える。
+   */
+  const isSessionLoaded = useSessionStore((state) => state.isLoaded);
+  const signedInUserId = useSessionStore((state) => state.userId);
+  const [hasChosenStart, setHasChosenStart] = useState(false);
+  const isWelcoming = isSessionLoaded && !signedInUserId && !hasChosenStart;
+
   const { width } = useWindowDimensions();
   const isWide = width >= WIDE_SCREEN;
 
@@ -114,9 +129,26 @@ export default function EditorScreen() {
     void loadLocale();
   }, [loadSettings, loadView, loadLocale]);
 
+  /**
+   * ログインしているかを【起動時に】読む。
+   *
+   * 以前は設定 → アカウントの `AccountPanel` が開いたときにだけ読んでいた。
+   * それでも困らなかったのは、読めているかを見ているのがその画面だけ
+   * だったため。**始め方を選ぶ画面が「ログイン済みなら出さない」を
+   * 判断する**ようになったので、開く前に分かっていないといけない。
+   * （`start()` は購読も張るので、後始末をそのまま返している）
+   */
+  const startSession = useSessionStore((state) => state.start);
+  useEffect(() => startSession(), [startSession]);
+
   // 仮の隊形をストアへ入れる（Web版と同じ hydrate を通す）
   const hydrate = useProjectStore((state) => state.hydrate);
   useEffect(() => {
+    // 始め方を選ぶ画面を出している間は入れない。**先に入れてしまうと
+    // 「ゲストで始める」を押す前から下書きが動き出す**（案内を見るかどうかの
+    // 選択も、その時点ではまだ受け取れていない）
+    if (isWelcoming) return;
+
     const now = new Date().toISOString();
     hydrate({
       project: {
@@ -164,7 +196,20 @@ export default function EditorScreen() {
     useUIStore.getState().selectScene('scene-1');
     // 下書きに覚えさせた曲があれば戻す（作品を開けば入れ替わる）
     void useMusicStore.getState().restore('local');
-  }, [hydrate]);
+  }, [hydrate, isWelcoming]);
+
+  if (isWelcoming) {
+    return (
+      <WelcomeScreen
+        onGuestStart={() => setHasChosenStart(true)}
+        // ログインの入力欄は設定 → アカウントにある。同じものを2つ作らない
+        onOpenAccount={() => {
+          setHasChosenStart(true);
+          setOpenSheet('settings');
+        }}
+      />
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-page">

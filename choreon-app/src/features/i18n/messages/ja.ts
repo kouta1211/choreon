@@ -59,6 +59,16 @@ export const ja = {
     replay: '使い方をもう一度見る',
   },
 
+  /** 未ログインで開いたときに最初に出る、始め方を選ぶ画面 */
+  welcome: {
+    tagline: '振付の隊形を、時間と一緒に組む',
+    guestStart: 'ゲストで始める',
+    withTour: '使い方の案内から始める',
+    guestNote: '登録は要りません。作ったものはこの端末にだけ残ります。',
+    or: 'または',
+    signIn: 'ログインして自分の作品を開く',
+  },
+
   common: {
     on: 'オン',
     off: 'オフ',
@@ -91,6 +101,10 @@ export const ja = {
     saveDraftFailed: '保存できませんでした',
     saved: (title: string) => `「${title}」として保存しました`,
     unsaved: 'まだ保存していない変更があります',
+    discardDraftTitle: 'この下書きは消えます',
+    discardDraftDescription:
+      '下書きはこのアプリの中だけにあり、別の作品を開くと元に戻せません。残したいときは、やめてから「この下書きを自分の作品にする」を押してください。',
+    discardDraftConfirm: '開く',
   },
 
   /** 取り消せない操作の前に出す確認。Web版と同じ文言 */
@@ -391,6 +405,7 @@ export const ja = {
       mode: {
         label: '格子',
         square: '格子',
+        circle: '円（サークル）',
         none: 'なし',
       },
       snap: {

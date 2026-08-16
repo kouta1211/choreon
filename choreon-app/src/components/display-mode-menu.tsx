@@ -95,7 +95,7 @@ export function DisplayModeMenu({ onOpenMusic, onOpenSettings }: Props) {
   ];
 
   const onCount =
-    switches.filter((item) => item.checked).length + (gridMode === 'square' ? 1 : 0);
+    switches.filter((item) => item.checked).length + (gridMode === 'none' ? 0 : 1);
 
   const close = () => setIsOpen(false);
   const openAnd = (run: () => void) => {
@@ -155,6 +155,7 @@ export function DisplayModeMenu({ onOpenMusic, onOpenSettings }: Props) {
                 value={gridMode}
                 options={[
                   { value: 'square' as const, label: t.settings.grid.mode.square },
+                  { value: 'circle' as const, label: t.settings.grid.mode.circle },
                   { value: 'none' as const, label: t.settings.grid.mode.none },
                 ]}
                 onChange={setGridMode}

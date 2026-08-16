@@ -46,6 +46,15 @@ export const en: Messages = {
     replay: 'Show the walkthrough again',
   },
 
+  welcome: {
+    tagline: 'Build formations along the music',
+    guestStart: 'Start as a guest',
+    withTour: 'Start with the walkthrough',
+    guestNote: 'No account needed. What you make stays on this device only.',
+    or: 'or',
+    signIn: 'Sign in and open your own work',
+  },
+
   common: {
     on: 'On',
     off: 'Off',
@@ -75,6 +84,10 @@ export const en: Messages = {
     saveDraftFailed: 'Could not save it',
     saved: (title: string) => `Saved as “${title}”`,
     unsaved: 'There are unsaved changes',
+    discardDraftTitle: 'This draft will be lost',
+    discardDraftDescription:
+      'The draft lives only inside this app, and opening another piece cannot be undone. To keep it, cancel and press "Save this draft as my own work" first.',
+    discardDraftConfirm: 'Open',
   },
 
   confirm: {
@@ -354,6 +367,7 @@ export const en: Messages = {
       mode: {
         label: 'Grid',
         square: 'Squares',
+        circle: 'Circle',
         none: 'None',
       },
       snap: {
