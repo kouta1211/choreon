@@ -238,6 +238,7 @@ export const ja = {
 
   /** 時間軸（シーンを「曲の何秒目か」の位置に並べる帯） */
   timeline: {
+    minimap: '曲ぜんたいの見取り図',
     section: '時間軸',
     scale: (px: number) => `1秒 = ${px}px`,
     note:

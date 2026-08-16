@@ -209,6 +209,7 @@ export const en: Messages = {
   },
 
   timeline: {
+    minimap: 'Overview of the whole track',
     section: 'Timeline',
     scale: (px: number) => `1s = ${px}px`,
     note:

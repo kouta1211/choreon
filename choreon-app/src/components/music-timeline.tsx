@@ -12,7 +12,7 @@ import {
 import { SceneThumbnail } from '@/components/scene-thumbnail';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useTourTarget } from '@/features/tutorial/lib/tourTargets';
-import { useT } from '@/features/i18n/store/useLocaleStore';
+import { getT, useT } from '@/features/i18n/store/useLocaleStore';
 import {
   TIMELINE_LAYOUT,
   cardMinGapPx,
@@ -28,6 +28,7 @@ import { usePlaybackStore } from '@/features/music/store/usePlaybackStore';
 import { persist } from '@/features/project/lib/persistence';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { updateSceneTimes } from '@/features/scene/api/scenes';
+import type { Scene } from '@/features/scene/types';
 import { moveSceneTo } from '@/features/scene/lib/sceneTiming';
 import { useThemeColor } from '@/features/theme/lib/useThemeColor';
 
@@ -98,6 +99,11 @@ export function MusicTimeline({ stageWidthUnits, stageHeightUnits }: Props) {
   // 終わりなのか切れているのか分からない
   const contentWidth = axisX(lastSeconds, pxPerSecond) + layout.selectedCardWidth;
 
+  /* 見取り図に「いま窓がどこか」を出すのに、幅と位置が要る */
+  const scroller = useRef<ScrollView>(null);
+  const [scrollX, setScrollX] = useState(0);
+  const [viewportPx, setViewportPx] = useState(0);
+
   /** 時刻を保存する。**動いた1つだけ**を送る */
   const commitTime = async (index: number, seconds: number) => {
     const timesById = moveSceneTo(scenes, index, seconds);
@@ -133,9 +139,13 @@ export function MusicTimeline({ stageWidthUnits, stageHeightUnits }: Props) {
       </View>
 
       <ScrollView
+        ref={scroller}
         horizontal
         showsHorizontalScrollIndicator={false}
         scrollEnabled={!isDraggingCard}
+        scrollEventThrottle={32}
+        onScroll={(event) => setScrollX(event.nativeEvent.contentOffset.x)}
+        onLayout={(event) => setViewportPx(event.nativeEvent.layout.width)}
         contentContainerStyle={{ width: contentWidth, height: TRACK_HEIGHT }}
       >
         {/* 秒の目盛り。5秒ごとに線と数字 */}
@@ -212,6 +222,20 @@ export function MusicTimeline({ stageWidthUnits, stageHeightUnits }: Props) {
           );
         })}
       </ScrollView>
+
+      {/* 曲ぜんたいの見取り図。長い曲だと、帯の窓に入るのは一部だけなので */}
+      <Minimap
+        scenes={scenes}
+        lastSeconds={lastSeconds}
+        currentTime={currentTime}
+        viewportPx={viewportPx}
+        contentWidth={contentWidth}
+        scrollX={scrollX}
+        onJump={(ratio) => {
+          const target = ratio * contentWidth - viewportPx / 2;
+          scroller.current?.scrollTo({ x: Math.max(0, target), animated: true });
+        }}
+      />
 
       <Text className="px-1 text-[10px] leading-4 text-fg-muted">{t.timeline.note}</Text>
     </View>
@@ -383,5 +407,102 @@ function TimelineCard({
         {String(index + 1).padStart(2, '0')} · {seconds.toFixed(1)}s
       </Text>
     </Animated.View>
+  );
+}
+
+/** ミニマップの高さ。倍率が変わっても段が上下しないよう固定 */
+const MINIMAP_HEIGHT = 14;
+
+/**
+ * 時間軸の見取り図。**曲ぜんたいを1行に押し込んで、いま窓がどこかを出す。**
+ *
+ * ■ なぜ要るか
+ * 帯は寄って描いてあるので、長い曲だと窓に入るのは一部だけ。横に流している
+ * うちに「いま曲のどのあたりを見ているのか」が分からなくなる。シーンの点も
+ * 置くので、**混んでいる所と空いている所**が一目で分かる。
+ *
+ * ■ 押せる
+ * 見るだけの帯にすると、遠くへ行くのに何度も払うことになる。押した所へ
+ * 窓を飛ばす。
+ */
+function Minimap({
+  scenes,
+  lastSeconds,
+  currentTime,
+  viewportPx,
+  contentWidth,
+  scrollX,
+  onJump,
+}: {
+  scenes: Scene[];
+  lastSeconds: number;
+  currentTime: number;
+  viewportPx: number;
+  contentWidth: number;
+  scrollX: number;
+  onJump: (ratio: number) => void;
+}) {
+  const [width, setWidth] = useState(0);
+  // 窓がぜんたいのどこを、どれだけ占めているか
+  const windowRatio = contentWidth > 0 ? Math.min(1, viewportPx / contentWidth) : 1;
+  const windowLeft = contentWidth > 0 ? scrollX / contentWidth : 0;
+
+  // ぜんたいが窓に収まっているなら、見取り図に意味が無い
+  if (viewportPx > 0 && contentWidth <= viewportPx) return null;
+
+  return (
+    <Pressable
+      onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
+      onPress={(event) => {
+        if (width <= 0) return;
+        onJump(event.nativeEvent.locationX / width);
+      }}
+      accessibilityRole="adjustable"
+      accessibilityLabel={getT().timeline.minimap}
+      style={{ height: MINIMAP_HEIGHT }}
+      className="justify-center overflow-hidden rounded bg-surface-raised"
+    >
+      {/* シーンの点 */}
+      {scenes.map((scene) => (
+        <View
+          key={scene.id}
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            left: `${lastSeconds > 0 ? (scene.timeSeconds / lastSeconds) * 100 : 0}%`,
+            width: 2,
+            top: 3,
+            bottom: 3,
+          }}
+          className="rounded-full bg-fg-muted"
+        />
+      ))}
+
+      {/* いま鳴っている位置 */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          left: `${lastSeconds > 0 ? Math.min(100, (currentTime / lastSeconds) * 100) : 0}%`,
+          width: 1,
+          top: 0,
+          bottom: 0,
+        }}
+        className="bg-accent"
+      />
+
+      {/* いま見えている窓 */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          left: `${windowLeft * 100}%`,
+          width: `${windowRatio * 100}%`,
+          top: 0,
+          bottom: 0,
+        }}
+        className="rounded border border-accent bg-accent-row"
+      />
+    </Pressable>
   );
 }

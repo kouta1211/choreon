@@ -206,6 +206,7 @@ export const ko: Messages = {
   },
 
   timeline: {
+    minimap: '곡 전체 개요',
     section: '타임라인',
     scale: (px: number) => `1초 = ${px}px`,
     note:
