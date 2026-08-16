@@ -50,6 +50,7 @@ const SHARED = [
   'music/lib/playbackStart.ts',
   'music/lib/timelineScale.ts',
   'project/lib/projectTitle.ts',
+  'review/lib/formationSummary.ts',
   'project/types.ts',
   'scene/api/positions.ts',
   'scene/api/scenes.ts',

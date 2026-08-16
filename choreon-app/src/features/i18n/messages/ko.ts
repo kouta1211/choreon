@@ -205,6 +205,21 @@ export const ko: Messages = {
     offsetFailed: '곡의 시작 위치를 저장하지 못했습니다. 되돌렸습니다',
   },
 
+  review: {
+    title: '진단',
+    summary: '대형을 봐 달라고 하기',
+    description:
+      '지금 선택한 장면의 위치를 보고 눈에 띄는 점을 짚어 줍니다. 판정이 아니라 재료입니다 — 안무에 정답은 하나가 아니므로.',
+    run: (sceneName: string) => `「${sceneName}」 봐 달라고 하기`,
+    pickScene: '장면을 하나 선택하세요',
+    onlyOnDevice:
+      '이것은 휴대폰 실기기에서만 요청할 수 있습니다. 브라우저에서는 다른 곳으로의 호출을 브라우저가 막기 때문입니다(브라우저의 Choreon에도 같은 진단이 있습니다).',
+    failed: '진단하지 못했습니다',
+    offline: '서버에 닿지 못했습니다. 연결을 확인하세요',
+    note:
+      '보내는 것은 위치 요약뿐입니다(작품 이름·댄서 색·ID는 보내지 않습니다). 로그인이 필요합니다.',
+  },
+
   timeline: {
     minimap: '곡 전체 개요',
     section: '타임라인',

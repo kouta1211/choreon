@@ -208,6 +208,21 @@ export const en: Messages = {
     offsetFailed: 'Could not save the start of the track. Put it back.',
   },
 
+  review: {
+    title: 'Review',
+    summary: 'Have a look at the formation',
+    description:
+      'Looks at the positions in the scene you have selected and raises what stands out. It is material, not a verdict — there is no single right answer in choreography.',
+    run: (sceneName: string) => `Review “${sceneName}”`,
+    pickScene: 'Select a scene first',
+    onlyOnDevice:
+      'This can only run on the phone itself. In a browser the call to another origin is blocked. Choreon in a browser has the same review built in.',
+    failed: 'Could not review it',
+    offline: 'Could not reach the server. Check your connection.',
+    note:
+      'Only a summary of the positions is sent (no piece name, dancer colours or IDs). You need to be signed in.',
+  },
+
   timeline: {
     minimap: 'Overview of the whole track',
     section: 'Timeline',

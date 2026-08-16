@@ -66,7 +66,29 @@ export async function POST(request: Request) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) {
+
+  /**
+   * Cookieで通らなかったときだけ、Authorizationヘッダを見る。
+   *
+   * ブラウザはCookieを自動で付けてくれるが、**スマホ用アプリ
+   * (choreon-app)にはその仕組みが無い** — あちらはセッションを端末の
+   * ストレージに持っていて、送れるのはBearerトークンだけ。
+   * 上の道は一切変えず、通らなかった場合の受け皿だけを足してある。
+   *
+   * トークンの検証はSupabaseにさせる(こちらでJWTを開かない)。
+   * 偽のトークンならuserがnullで返るので、下の断りへ落ちる。
+   */
+  let viewer = user;
+  if (!viewer) {
+    const bearer = request.headers.get("authorization");
+    const token = bearer?.startsWith("Bearer ") ? bearer.slice(7) : null;
+    if (token) {
+      const { data } = await supabase.auth.getUser(token);
+      viewer = data.user;
+    }
+  }
+
+  if (!viewer) {
     return NextResponse.json(
       { error: t.review.errors.needsSignIn },
       { status: 401 },

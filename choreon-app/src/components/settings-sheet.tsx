@@ -10,6 +10,7 @@ import { SettingsPlaybackSection } from '@/components/settings/playback-section'
 import { SettingsDisplaySection } from '@/components/settings/display-section';
 import { SettingsAppSection } from '@/components/settings/app-section';
 import { SettingsDataSection } from '@/components/settings/data-section';
+import { ReviewSheet } from '@/components/review-sheet';
 import { SettingsShareSection } from '@/components/settings/share-section';
 import { SettingsAccountSection } from '@/components/settings/account-section';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
@@ -27,6 +28,7 @@ type SectionId =
   | 'playback'
   | 'display'
   | 'app'
+  | 'review'
   | 'share'
   | 'data'
   | 'account';
@@ -109,6 +111,14 @@ export function SettingsSheet({ isOpen, onClose, onProjectLoaded }: Props) {
       summary: t.settings.app.summary,
       icon: 'palette',
       body: <SettingsAppSection />,
+    },
+    {
+      // 隊形を見てもらう。**共有より前**に置く — 直してから配る順なので
+      id: 'review',
+      title: t.review.title,
+      summary: t.review.summary,
+      icon: 'eye',
+      body: <ReviewSheet />,
     },
     {
       id: 'share',
