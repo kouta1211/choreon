@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { FlatList, Pressable, Text, View } from 'react-native';
 
 import { SceneThumbnail } from '@/components/scene-thumbnail';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
@@ -44,6 +44,8 @@ type Props = {
 
 /** カードの中のミニチュアの幅（px）。Web版のストリップは74px */
 const THUMBNAIL_WIDTH = 74;
+/** コマ1つぶんの幅。ミニチュア＋内側の余白（p-2 が左右で16）＋隙間（gap-2 で8） */
+const ITEM_WIDTH = THUMBNAIL_WIDTH + 16 + 8;
 
 export function SceneDock({
   onEditScene,
@@ -79,12 +81,29 @@ export function SceneDock({
         ) : null}
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2">
-        {scenes.map((scene, index) => {
+      {/* 一覧は FlatList。**画面に出ているぶんだけ描く**。
+          コマ1つにつきミニチュアの SVG が1枚あるので、素直に全部並べると
+          シーンが増えたぶんだけ丸を描き続けることになる（60シーンなら
+          SVG が60枚）。振付は数十シーンになるものなので、ここは効く。
+
+          ＋ は末尾に添える（一覧の一部ではないので ListFooterComponent） */}
+      <FlatList
+        horizontal
+        data={scenes}
+        keyExtractor={(scene) => scene.id}
+        showsHorizontalScrollIndicator={false}
+        contentContainerClassName="gap-2"
+        // 横に並ぶコマは幅が決まっているので、位置を測らせずに教える。
+        // これが無いと、選んでいるコマまで飛ばすときに全部を測りに行く
+        getItemLayout={(_data, index) => ({
+          length: ITEM_WIDTH,
+          offset: ITEM_WIDTH * index,
+          index,
+        })}
+        renderItem={({ item: scene, index }) => {
           const isSelected = scene.id === selectedSceneId;
           return (
             <Pressable
-              key={scene.id}
               onPress={() => selectScene(scene.id)}
               accessibilityRole="button"
               accessibilityLabel={scene.name}
@@ -125,20 +144,26 @@ export function SceneDock({
               </View>
             </Pressable>
           );
-        })}
-
-        {isReadOnly ? null : (
-        <Pressable
-          ref={addRef}
-          onPress={() => void handleAdd()}
-          accessibilityRole="button"
-          accessibilityLabel={t.scenes.add}
-          className="min-w-14 items-center justify-center rounded-xl border border-dashed border-line-strong px-3 active:opacity-80"
-        >
-          <Text className="text-lg text-fg-sub">＋</Text>
-        </Pressable>
-        )}
-      </ScrollView>
+        }}
+        /* footer は一覧の外側の入れ物に入るので、行と同じ丈にするには
+           **その入れ物**へ指定が要る（中の Pressable に alignSelf を
+           付けても伸びない） */
+        ListFooterComponentStyle={{ alignSelf: 'stretch' }}
+        ListFooterComponent={
+          isReadOnly ? null : (
+            <Pressable
+              ref={addRef}
+              onPress={() => void handleAdd()}
+              accessibilityRole="button"
+              accessibilityLabel={t.scenes.add}
+              style={{ flex: 1 }}
+              className="min-w-14 items-center justify-center rounded-xl border border-dashed border-line-strong px-3 active:opacity-80"
+            >
+              <Text className="text-lg text-fg-sub">＋</Text>
+            </Pressable>
+          )
+        }
+      />
     </View>
   );
 }

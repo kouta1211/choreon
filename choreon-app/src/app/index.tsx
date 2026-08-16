@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DancerInspector } from '@/components/dancer-inspector';
 import { DancerSheet } from '@/components/dancer-sheet';
+import { EditorShortcuts } from '@/components/editor-shortcuts';
 import { EditorTour } from '@/components/editor-tour';
 import { EditorHeader } from '@/components/editor-header';
 import { EditorSidePanel } from '@/components/editor-side-panel';
@@ -281,6 +282,9 @@ export default function EditorScreen() {
           すると空いた面ばかりが目に入る。伸びるのは設定だけ */}
       {/* 初回だけ自動で出る使い方の案内。**一番最後に置く** — 幕を
           いちばん上に重ねたいので、他のシートより後に描かせる */}
+      {/* キーボードのある面だけで効く（スマホでは何もしない） */}
+      <EditorShortcuts />
+
       <EditorTour />
 
       <Sheet isOpen={openSheet === 'dancers'} onClose={close} title={t.editor.dancers}>

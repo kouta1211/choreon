@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { FlatList, Pressable, Text, View } from 'react-native';
 
 import { SceneThumbnail } from '@/components/scene-thumbnail';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
@@ -50,16 +50,19 @@ export function SceneList({ stageWidthUnits, stageHeightUnits, onEditScene }: Pr
         </View>
       ) : null}
 
-      <ScrollView
+      {/* 画面に出ているぶんだけ描く。コマ1つにつきミニチュアの SVG が
+          1枚あるので、シーンが数十になると素直に並べたぶんだけ丸を
+          描き続けることになる（帯の側と同じ理由） */}
+      <FlatList
         className="min-h-0 flex-1"
+        data={scenes}
+        keyExtractor={(scene) => scene.id}
         contentContainerClassName="gap-2 px-3 pb-3"
         showsVerticalScrollIndicator={false}
-      >
-        {scenes.map((scene, index) => {
+        renderItem={({ item: scene, index }) => {
           const isSelected = scene.id === selectedSceneId;
           return (
             <Pressable
-              key={scene.id}
               onPress={() => selectScene(scene.id)}
               accessibilityRole="button"
               accessibilityLabel={scene.name}
@@ -89,17 +92,18 @@ export function SceneList({ stageWidthUnits, stageHeightUnits, onEditScene }: Pr
               </View>
             </Pressable>
           );
-        })}
-
-        <Pressable
-          onPress={() => void handleAdd()}
-          accessibilityRole="button"
-          accessibilityLabel={t.scenes.add}
-          className="min-h-11 items-center justify-center rounded-xl border border-dashed border-line-strong active:opacity-80"
-        >
-          <Text className="text-lg text-fg-sub">＋</Text>
-        </Pressable>
-      </ScrollView>
+        }}
+        ListFooterComponent={
+          <Pressable
+            onPress={() => void handleAdd()}
+            accessibilityRole="button"
+            accessibilityLabel={t.scenes.add}
+            className="min-h-11 items-center justify-center rounded-xl border border-dashed border-line-strong active:opacity-80"
+          >
+            <Text className="text-lg text-fg-sub">＋</Text>
+          </Pressable>
+        }
+      />
     </View>
   );
 }

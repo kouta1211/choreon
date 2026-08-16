@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { useUIStore } from '@/features/canvas/store/useUIStore';
@@ -61,6 +62,7 @@ export function PlaybackControls({ isTimeBased = false }: Props) {
 
   const scenes = useProjectStore((state) => state.scenes);
   const isPlaying = useUIStore((state) => state.isPlaying);
+  const playToggleRequestedAt = useUIStore((state) => state.playToggleRequestedAt);
   const setIsPlaying = useUIStore((state) => state.setIsPlaying);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const selectScene = useUIStore((state) => state.selectScene);
@@ -131,6 +133,19 @@ export function PlaybackControls({ isTimeBased = false }: Props) {
     }
     setIsPlaying(false);
   };
+
+  /* キーボードから頼まれたら、ボタンを押したのと同じことをする。
+     `isPlaying` を直に立てず**ここを通す**ので、予備拍を挟むかどうかが
+     ボタンとキーで食い違わない（`editor-shortcuts.tsx`） */
+  const handledRequestAt = useRef(playToggleRequestedAt);
+  useEffect(() => {
+    if (playToggleRequestedAt === null) return;
+    if (playToggleRequestedAt === handledRequestAt.current) return;
+    handledRequestAt.current = playToggleRequestedAt;
+    toggle();
+    // 走らせたいのは「頼まれた時刻」が変わったときだけ
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playToggleRequestedAt]);
 
   const rewind = () => {
     cancelCountIn();
