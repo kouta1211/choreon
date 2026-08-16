@@ -26,8 +26,8 @@ const mockPersist = persist as jest.MockedFunction<typeof persist>;
 const CHANGE = {
   sceneId: 's1',
   dancerId: 'd1',
-  before: { xCoordinate: 2, yCoordinate: 5, rotationAngle: 0 },
-  after: { xCoordinate: 9, yCoordinate: 5, rotationAngle: 0 },
+  before: makePosition({ sceneId: 's1', dancerId: 'd1', xCoordinate: 2, yCoordinate: 5 }),
+  after: makePosition({ sceneId: 's1', dancerId: 'd1', xCoordinate: 9, yCoordinate: 5 }),
 };
 
 function load() {
