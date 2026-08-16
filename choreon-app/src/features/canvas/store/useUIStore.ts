@@ -122,8 +122,10 @@ type UIState = {
   authDialogMode: "login" | "signup" | null;
 
   /*
-   * ── ここから下の6つは【Web版から持ってきたが、ネイティブでは誰も
+   * ── ここから下は【Web版から持ってきたが、ネイティブでは誰も
    *    読んでいない】。消さずに残しているが、**まだ動くとは思わないこと**。
+   *    （guestTourIntent はここに並んでいたが、始め方を選ぶ画面ができて
+   *    書き手が付いたので外した）
    *
    *  isTransitioning / setIsTransitioning
    *    Web版は「滑っている最中は掴ませない」の旗。こちらは各自の
@@ -138,10 +140,6 @@ type UIState = {
    *  authDialogMode / openAuthDialog / closeAuthDialog
    *    Web版は登録・ログインをモーダルで出す。こちらは設定 → アカウントに
    *    入力欄が常にあるので、出し入れする相手がいない。
-   *  guestTourIntent / setGuestTourIntent
-   *    書くのは Web版の「ゲストで始める」画面。こちらにその画面はまだ無い
-   *    （**読む側は EditorTour にある**ので、画面ができれば繋がる）。
-   *
    * 画面を足すときにここへ繋ぐか、そのとき要らないと分かったら消す。
    */
 

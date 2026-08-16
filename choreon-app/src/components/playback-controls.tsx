@@ -33,9 +33,10 @@ import { useProjectStore } from '@/features/project/store/useProjectStore';
  * （`useSilentClock`）。**どちらも同じ場所へ秒を書く**ので、ここから下は
  * 曲の有無を知らなくてよい。
  *
- * ■ まだ無いもの
- * メトロノームと予備拍（カウントイン）。どちらも「拍を鳴らす」仕組みが
- * 別に要る（曲を鳴らすのとは別の音源）。
+ * ■ 拍はここで鳴らす
+ * メトロノーム（`useMetronome`）と予備拍（`useCountIn`）。曲を鳴らすのとは
+ * 別の音源（`assets/click-*.wav`）で、曲が無くても鳴る。数えている最中も
+ * 拍は鳴る — そのための予備拍なので。
  */
 export function PlaybackControls() {
   const t = useT();
