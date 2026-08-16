@@ -300,24 +300,7 @@ where tablename in ('projects', 'dancers', 'scenes', 'positions');
 -- 上の `create table` 群は「最新のスキーマ」であり、DBを新規構築するとき
 -- だけそのまま流せばよい。
 --
--- 既にテーブルが存在するSupabaseプロジェクトに後から列や制約を足す場合は、
--- このファイルではなく supabase/migrations/ 配下のSQLを番号順に
--- SQL Editorで実行すること。
---
---   supabase/migrations/0000_bounds_and_stage_defaults.sql
---   supabase/migrations/0001_transition_and_curve.sql
---   supabase/migrations/0002_stage_width_14.sql
---   supabase/migrations/0003_music_offset.sql
---   supabase/migrations/0004_scene_time_seconds.sql
---   supabase/migrations/0005_project_bpm.sql
---   supabase/migrations/0006_drop_scene_transition_duration.sql
---   supabase/migrations/0007_share_link.sql
---
--- どのファイルも「何度実行しても安全」に書いてあるため、適用済みかどうか
--- 分からない場合はとりあえず流してよい。各ファイル末尾には、意図した列が
--- 揃ったかを確認するクエリが付いている。
---
--- (以前はこのファイルの末尾に追記式でマイグレーションを並べていたが、
---  そうすると新規構築時は末尾で「列が既にある」と失敗し、既存プロジェクト
---  では先頭の create table で失敗する、というどちらでも通らないファイルに
---  なってしまうため分離した)
+-- 以前は supabase/migrations/ に「既存のDBへ後から足す」SQLを番号順に
+-- 置いていたが、すべて適用済みになったため削除した(bounds_and_stage_defaults
+-- から share_link まで8本)。いまは schema.sql 1本が正で、列の追加・変更は
+-- すべてここへ直接反映する。
