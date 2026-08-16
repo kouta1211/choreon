@@ -48,7 +48,7 @@ export const ko: Messages = {
 
   welcome: {
     tagline: '안무 대형을 시간과 함께 짜기',
-    guestStart: '게스트로 시작',
+    guestStart: '게스트로 시작하기',
     withTour: '사용법 안내부터 시작',
     guestNote: '가입은 필요 없습니다. 만든 것은 이 기기에만 남습니다.',
     or: '또는',
@@ -77,7 +77,7 @@ export const ko: Messages = {
     deleteTitle: (title: string) => `「${title}」을(를) 삭제할까요`,
     deleteDescription: '이 작품의 장면·댄서·위치가 모두 사라집니다.',
     deleteFailed: '작품을 삭제하지 못했습니다',
-    guestTitle: '첫 대형',
+    guestTitle: '첫 포메이션',
     sceneName: (index: number) => `장면${index}`,
     saveDraft: '이 초안을 내 작품으로 저장',
     saveDraftNote: '로그인한 계정의 작품으로 새로 하나 만들어집니다.',
@@ -188,7 +188,7 @@ export const ko: Messages = {
     description:
       "이 작품이 올라가는 곡의 정보입니다. 메트로놈과 예비 박자가 여기를 봅니다. 설정의 '기본 빠르기'는 앞으로 만들 작품의 초기값이라 다른 것입니다.",
     metronomeNote: '소리를 낼지는 이 기기만의 취향이고, 작품에는 들어가지 않습니다',
-    bpm: '빠르기(BPM)',
+    bpm: '속도(BPM)',
     bpmUnit: 'BPM',
     bpmNote: '곡이 없을 때는 이것이 시간의 잣대가 됩니다',
     presetLabel: (bpm: number) => `빠르기를 ${bpm}으로`,
@@ -261,8 +261,8 @@ export const ko: Messages = {
     inspector: {
       name: '이름',
       nameFailed: '이름을 저장하지 못해 되돌렸습니다',
-      focus: '이 사람에 주목',
-      focusOn: '주목 중',
+      focus: '마이 포커스',
+      focusOn: '마이 포커스 중',
       deselect: '선택 해제',
       ownDuration: '이 사람만의 이동 시간',
       ownDurationFailed: '이동 시간을 저장하지 못해 되돌렸습니다',
@@ -328,8 +328,8 @@ export const ko: Messages = {
   },
 
   textures: {
-    flat: '없음',
-    horizon: '호리존트 막',
+    flat: '단색',
+    horizon: '호리존트',
     spot: '스포트라이트',
     grid: '모눈과 눈금',
     nebula: '네뷸라',
@@ -489,6 +489,9 @@ export const ko: Messages = {
     resetNote: '다시 짜고 싶을 때. 작품 자체를 지우려면 설정 → 계정에서.',
     resetConfirm: '비우기',
     resetFailed: '비우지 못했습니다',
+    videoTitle: '동영상 내보내기는 지금은 브라우저에서',
+    videoNote:
+      '이 기기에서는 만들 수 없습니다(화면을 녹화하는 장치가 앱 안에 없고, 넣으면 이 앱 자체가 Expo Go에서 돌지 않게 됩니다). 같은 작품을 브라우저의 Choreon에서 열면 내보낼 수 있습니다. 로그인해 두었다면 이 기기에서 고친 내용은 그대로 저쪽에도 있습니다.',
     needsSignIn: '로그인한 뒤 가져와 주세요',
     imported: (title: string) => `「${title}」(으)로 가져왔습니다`,
     importFailed: '가져오지 못했습니다',

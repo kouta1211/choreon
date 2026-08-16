@@ -6,6 +6,7 @@ import { makeDancer, makePosition, makeProject, makeScene } from '@/test/factori
 import { useProjectStore } from '@/features/project/store/useProjectStore';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { persist } from '@/features/project/lib/persistence';
+import { getT } from '@/features/i18n/store/useLocaleStore';
 
 /**
  * 選んでいる人の帯。**保存に失敗したときの戻し方**をここで押さえる。
@@ -51,7 +52,7 @@ describe('DancerInspector', () => {
     useUIStore.setState({ selectedDancerId: null });
     const view = await renderWithProviders(<DancerInspector />);
 
-    expect(view.queryByLabelText('この人に注目')).toBeNull();
+    expect(view.queryByLabelText(getT().dancers.inspector.focus)).toBeNull();
   });
 
   it('選んでいる人の名前を出す', async () => {
@@ -63,7 +64,7 @@ describe('DancerInspector', () => {
   it('注目を押すと、その人が注目中になる', async () => {
     const view = await renderWithProviders(<DancerInspector />);
 
-    await fireEvent.press(view.getByLabelText('この人に注目'));
+    await fireEvent.press(view.getByLabelText(getT().dancers.inspector.focus));
 
     expect(useUIStore.getState().focusedDancerId).toBe('d1');
   });

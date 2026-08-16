@@ -213,6 +213,13 @@ export function SettingsDataSection() {
         )}
       </SettingsGroup>
 
+      {/* 動画の書き出しは、この端末では作れない。**黙って無いままにしない** —
+          Web版にはある機能なので、探して見つからないと「壊れている」と映る */}
+      <View className="gap-1 rounded-2xl border border-line bg-surface p-4">
+        <Text className="text-base text-fg-strong">{t.data.videoTitle}</Text>
+        <Text className="text-xs leading-5 text-fg-muted">{t.data.videoNote}</Text>
+      </View>
+
       {notice ? <Text className="px-1 text-xs text-accent-soft">{notice}</Text> : null}
       {error ? (
         <Text className="px-1 text-sm" style={{ color: danger }}>

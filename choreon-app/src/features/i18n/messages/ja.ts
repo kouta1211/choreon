@@ -294,8 +294,8 @@ export const ja = {
     inspector: {
       name: '名前',
       nameFailed: '名前を保存できませんでした。元に戻しました',
-      focus: 'この人に注目',
-      focusOn: '注目中',
+      focus: 'マイ・フォーカス',
+      focusOn: 'マイ・フォーカス中',
       deselect: '選択をやめる',
       ownDuration: 'この人だけの移動時間',
       ownDurationFailed: '移動時間を保存できませんでした。元に戻しました',
@@ -364,7 +364,7 @@ export const ja = {
 
   /** 背景の質感の呼び名（Web版と同じ） */
   textures: {
-    flat: 'なし',
+    flat: 'フラット',
     horizon: 'ホリゾント幕',
     spot: 'スポットの円光',
     grid: '方眼と目盛り',
@@ -533,6 +533,10 @@ export const ja = {
     resetNote: '作り直したいときに。作品ごと消すのは 設定 → アカウント から。',
     resetConfirm: '空にする',
     resetFailed: '空にできませんでした',
+    /** 動画の書き出しは Web版だけ。無いことと、その理由を書いておく */
+    videoTitle: '動画の書き出しは、いまはブラウザで',
+    videoNote:
+      'この端末では作れません（画面を録る仕組みがアプリの中に無いためで、入れるとこのアプリ自体が Expo Go で動かなくなります）。同じ作品をブラウザの Choreon で開くと書き出せます。ログインしていれば、この端末で直したものはそのまま向こうにも出ています。',
     needsSignIn: 'ログインしてから取り込んでください',
     imported: (title: string) => `「${title}」として取り込みました`,
     importFailed: '取り込めませんでした',

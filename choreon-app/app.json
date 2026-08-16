@@ -13,7 +13,8 @@
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "app.vercel.choreon"
     },
     "web": {
       "output": "static",
@@ -31,11 +32,15 @@
       ],
       "expo-audio",
       "expo-sharing",
-      "expo-asset"
+      "expo-asset",
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "ios": {
+      "bundleIdentifier": "app.vercel.choreon"
     }
   }
 }

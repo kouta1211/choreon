@@ -264,7 +264,7 @@ export const en: Messages = {
     inspector: {
       name: 'Name',
       nameFailed: 'Could not save the name. Put it back.',
-      focus: 'Focus on this dancer',
+      focus: 'Focus on me',
       focusOn: 'Focused',
       deselect: 'Deselect',
       ownDuration: 'Travel time for this dancer only',
@@ -331,10 +331,10 @@ export const en: Messages = {
   },
 
   textures: {
-    flat: 'None',
-    horizon: 'Cyclorama wash',
+    flat: 'Flat',
+    horizon: 'Cyclorama',
     spot: 'Spotlight pool',
-    grid: 'Grid and marks',
+    grid: 'Grid and ruler',
     nebula: 'Nebula',
     grain: 'Grain',
     curtain: 'Blackout curtain',
@@ -494,6 +494,9 @@ export const en: Messages = {
     resetNote: 'For starting over. To delete the project itself, go to Settings → Account.',
     resetConfirm: 'Empty it',
     resetFailed: 'Could not empty it',
+    videoTitle: 'Video export lives in the browser for now',
+    videoNote:
+      'This device cannot make one — there is no screen-recording piece inside the app, and adding one would stop the app running in Expo Go. Open the same piece in Choreon in a browser to export. If you are signed in, what you changed here is already there.',
     needsSignIn: 'Sign in before importing',
     imported: (title: string) => `Imported as “${title}”`,
     importFailed: 'Could not import that',

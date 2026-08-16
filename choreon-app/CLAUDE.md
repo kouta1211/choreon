@@ -36,3 +36,21 @@ TS の変換で落ちる。`npx expo lint` は壊れている（ルートの esl
 choreon-app を除外している）。
 
 Web 版が無事かは**ルートで** `npm run verify`。
+
+# 実機へ配るとき（まだ一度もやっていない）
+
+`eas.json` と識別子（`app.vercel.choreon`）は入れてあるが、**ビルドはまだ
+通していない**。試すときに詰まるのはたぶんここ。
+
+- **鍵を渡す口が要る。** アプリは `EXPO_PUBLIC_SUPABASE_URL` /
+  `EXPO_PUBLIC_SUPABASE_ANON_KEY` を `.env.local` から読んでいる。
+  EAS のビルド機には `.env.local` が無いので、`eas.json` の `env` へ書くか
+  `eas secret` へ入れる。`EXPO_PUBLIC_` の付いた値は**バンドルに入る**
+  （＝配った先で読める）ので、anon キー以外をここへ置かないこと。
+- **背景で音を鳴らすなら申告が要る。** いまは画面を点けている間だけ
+  （`audioMode.ts`）。続けたいなら `expo-audio` の config plugin と
+  `UIBackgroundModes` を足す — 審査で見られる項目が増える。
+- **共有リンクをアプリで開くには、まだ足りない。** `scheme` はあるが、
+  `choreon.vercel.app/view/…` を受けるには
+  `ios.associatedDomains` / `android.intentFilters` と、Web版の
+  `.well-known` が要る（後者は Web版に手を入れることになる）。
