@@ -5,7 +5,7 @@ import type { Dancer } from "@/features/dancer/types";
 import type { Position } from "@/features/scene/types";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
-import { toScreenY } from "@/features/canvas/lib/stageFlip";
+import { makeScreenY } from "@/features/canvas/lib/stageFlip";
 import {
   useCurveControlDrag,
   type StagePoint,
@@ -84,8 +84,7 @@ export function PathOverlay({
   // 客席を上にして描くか。線を引くときはステージ座標を画面の向きへ写し、
   // 指から制御点を拾うときは逆へ戻す(stageFlip.ts)
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
-  const screenY = (value: number) =>
-    toScreenY(value, stageHeightUnits, isAudienceOnTop);
+  const screenY = makeScreenY(stageHeightUnits, isAudienceOnTop);
   // 制御点を掴んで動かす操作。引いている間はここが持つ点を出し、
   // 離した時点で初めて確定する
   const {

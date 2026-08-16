@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mirrorAngle, stageYSign, toScreenY } from "./stageFlip";
+import { makeScreenY, mirrorAngle, stageYSign, toScreenY } from "./stageFlip";
 
 describe("toScreenY", () => {
   it("既定では何もしない", () => {
@@ -20,6 +20,14 @@ describe("toScreenY", () => {
 
   it("2回写せば元に戻る", () => {
     expect(toScreenY(toScreenY(4.2, 10, true), 10, true)).toBeCloseTo(4.2);
+  });
+});
+
+describe("makeScreenY", () => {
+  it("heightUnits/isAudienceOnTopを固定してtoScreenYと同じ結果を返す", () => {
+    const screenY = makeScreenY(10, true);
+    expect(screenY(3)).toBe(toScreenY(3, 10, true));
+    expect(screenY(0)).toBe(toScreenY(0, 10, true));
   });
 });
 

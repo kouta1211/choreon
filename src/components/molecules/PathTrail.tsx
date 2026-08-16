@@ -12,7 +12,7 @@ import type { Dancer } from "@/features/dancer/types";
 import type { Position } from "@/features/scene/types";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
-import { toScreenY } from "@/features/canvas/lib/stageFlip";
+import { makeScreenY } from "@/features/canvas/lib/stageFlip";
 
 /**
  * 進むときは通ってきたぶんを消し(erase)、戻るときは通ってきたぶんを
@@ -104,8 +104,7 @@ export function PathTrail({
   // 客席を上にして描くときは、線もその向きで引く(stageFlip.ts)。
   // 組み立てはマウント時の1回だけなので、この値もその時点のものでよい
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
-  const screenY = (value: number) =>
-    toScreenY(value, stageHeightUnits, isAudienceOnTop);
+  const screenY = makeScreenY(stageHeightUnits, isAudienceOnTop);
 
   // マウント時に1回だけ組み立てる。以後propsが変わっても作り直さない
   const [segments] = useState<TrailSegment[]>(() =>

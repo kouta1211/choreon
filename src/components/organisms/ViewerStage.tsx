@@ -9,7 +9,7 @@ import {
   sceneSpanAt,
 } from "@/features/viewer/lib/interpolate";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
-import { toScreenY } from "@/features/canvas/lib/stageFlip";
+import { makeScreenY } from "@/features/canvas/lib/stageFlip";
 
 /** 自分のマーカー。他の人より一回り大きい */
 const OWN_SIZE = 36;
@@ -58,8 +58,7 @@ export function ViewerStage() {
   const own = positions.find((p) => p.dancerId === focusedDancerId);
   // 見る側の端末でも「客席を上にする」は効く。踊る人が稽古場で鏡を
   // 見ながら確かめるための設定なので、見る画面でこそ要る(stageFlip.ts)
-  const screenY = (value: number) =>
-    toScreenY(value, project.stageHeight, isAudienceOnTop);
+  const screenY = makeScreenY(project.stageHeight, isAudienceOnTop);
 
   return (
     <Stage widthUnits={project.stageWidth} heightUnits={project.stageHeight}>

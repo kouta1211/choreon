@@ -36,6 +36,14 @@ export function toScreenY(
   return isAudienceOnTop ? heightUnits - y : y;
 }
 
+/** heightUnits/isAudienceOnTopを固定した、その場で使うtoScreenY */
+export function makeScreenY(
+  heightUnits: number,
+  isAudienceOnTop: boolean,
+): (y: number) => number {
+  return (y) => toScreenY(y, heightUnits, isAudienceOnTop);
+}
+
 /** 画面のYとステージのYの向き。反転中は逆 */
 export function stageYSign(isAudienceOnTop: boolean): 1 | -1 {
   return isAudienceOnTop ? -1 : 1;
