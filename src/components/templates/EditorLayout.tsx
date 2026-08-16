@@ -14,6 +14,7 @@ import { EditorSidePanel } from "@/components/organisms/EditorSidePanel";
 import { EditorShortcuts } from "@/components/organisms/EditorShortcuts";
 import { EditorTour } from "@/components/organisms/EditorTour";
 import { UnsavedChangesGuard } from "@/components/organisms/UnsavedChangesGuard";
+import { useGuestDraftAutosave } from "@/features/project/hooks/useGuestDraftAutosave";
 import { useSceneThumbnails } from "@/features/scene/hooks/useSceneThumbnails";
 import { SceneScrubProvider } from "@/features/canvas/hooks/useSceneScrub";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
@@ -74,6 +75,10 @@ export function EditorLayout({
   // この端末に控えてある曲を戻す。作品ごとに1曲なので、別の作品を開いたら
   // 入れ替わる(useMusicStore.restore)。音源はサーバーへ上げていないので、
   // 共有された相手の端末では何も戻らない
+  /* 下書きを触ったぶんを、手が止まってからブラウザへ書き戻す。
+     ログインして開いた作品では何もしない */
+  useGuestDraftAutosave();
+
   const isExportSheetOpen = useUIStore((state) => state.isExportSheetOpen);
   const setExportSheetOpen = useUIStore((state) => state.setExportSheetOpen);
 

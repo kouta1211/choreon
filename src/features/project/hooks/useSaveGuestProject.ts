@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { saveGuestProject } from "@/features/project/api/saveGuestProject";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
+import { forgetGuestDraft } from "@/features/project/lib/guestDraft";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import type { ProjectSnapshot } from "@/features/project/lib/guestProject";
 
@@ -44,6 +45,10 @@ export function useSaveGuestProject() {
       // 離脱ガード(beforeunload)を先に外してから移動する。
       // 付けたままだとページ遷移でブラウザの確認が出てしまう
       markSaved();
+      /* ブラウザに残していた下書きは捨てる。**クラウドへ移った時点で
+         こちらは「古い方」にしかならない** — 残すと次に開いたときに
+         保存前の姿へ戻ってしまう */
+      forgetGuestDraft();
       showToast({ message: "作品を保存しました", type: "success" });
       router.push(`/projects/${saved.id}`);
       router.refresh();

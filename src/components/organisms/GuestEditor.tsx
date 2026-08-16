@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+
+import { loadGuestDraft } from "@/features/project/lib/guestDraft";
 import { EditorLayout } from "@/components/templates/EditorLayout";
 import { createGuestProject } from "@/features/project/lib/guestProject";
 import { useT } from "@/features/i18n/LocaleProvider";
@@ -23,10 +25,18 @@ import { useT } from "@/features/i18n/LocaleProvider";
  */
 export function GuestEditor() {
   const t = useT();
-  const [snapshot] = useState(() => createGuestProject({
-      title: t.projects.guestTitle,
-      sceneName: t.projects.sceneName,
-    }));
+  /* 残してある下書きがあれば、そちらから始める。無いときだけ種を作る。
+     **useState の初期化関数なのでブラウザで1回だけ走る** — サーバー側では
+     localStorage を読めないので、種で描いてから差し替えるのではなく、
+     ここで一度に決める（Guest 側は動的に描かれるため食い違わない） */
+  const [snapshot] = useState(
+    () =>
+      loadGuestDraft() ??
+      createGuestProject({
+        title: t.projects.guestTitle,
+        sceneName: t.projects.sceneName,
+      }),
+  );
 
   return (
     <EditorLayout
