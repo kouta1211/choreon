@@ -125,6 +125,9 @@ export const en: Messages = {
   history: {
     undo: '↩ Undo',
     redo: '↪ Redo',
+    undoFailed: 'Could not undo it. The positions are unchanged.',
+    redoFailed: 'Could not redo it. The positions are unchanged.',
+    targetGone: 'What this would undo is gone (it looks deleted)',
   },
 
   music: {

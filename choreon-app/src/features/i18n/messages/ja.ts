@@ -146,6 +146,9 @@ export const ja = {
   history: {
     undo: '↩ 元に戻す',
     redo: '↪ やり直す',
+    undoFailed: '元に戻せませんでした。位置はそのままです',
+    redoFailed: 'やり直せませんでした。位置はそのままです',
+    targetGone: '戻す相手が見つかりません（消されたようです）',
   },
 
   music: {

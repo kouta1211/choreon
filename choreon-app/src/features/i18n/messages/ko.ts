@@ -125,6 +125,9 @@ export const ko: Messages = {
   history: {
     undo: '↩ 되돌리기',
     redo: '↪ 다시 실행',
+    undoFailed: '되돌리지 못했습니다. 위치는 그대로입니다',
+    redoFailed: '다시 실행하지 못했습니다. 위치는 그대로입니다',
+    targetGone: '되돌릴 대상을 찾을 수 없습니다(삭제된 것 같습니다)',
   },
 
   music: {
