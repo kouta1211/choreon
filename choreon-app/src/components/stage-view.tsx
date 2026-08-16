@@ -532,13 +532,6 @@ export function StageView({
 }
 
 /**
- * 格子。1マス = 実寸90cm で、これが距離の手がかりになる。
- *
- * Web版は背景の linear-gradient を繰り返して描いていた。React Native に
- * 背景画像は無いので、線を1本ずつ置く。マス目の数だけ View が増えるが、
- * ステージは最大30マスなので数十本で収まる。
- */
-/**
  * 吸い付く先の格子線。掴んでいる間だけ、その1本（か2本）を光らせる。
  *
  * ■ なぜ光らせるのか
@@ -581,6 +574,13 @@ function SnapLines({
   );
 }
 
+/**
+ * 格子。1マス = 実寸90cm で、これが距離の手がかりになる。
+ *
+ * Web版は背景の linear-gradient を繰り返して描いていた。React Native に
+ * 背景画像は無いので、線を1本ずつ置く。マス目の数だけ View が増えるが、
+ * ステージは最大30マスなので数十本で収まる。
+ */
 function GridLines({
   widthUnits,
   heightUnits,
