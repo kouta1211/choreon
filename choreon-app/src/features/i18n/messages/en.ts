@@ -55,6 +55,18 @@ export const en: Messages = {
     signIn: 'Sign in and open your own work',
   },
 
+  crash: {
+    title: 'The screen stopped',
+    safe: 'Nothing you made is lost. Your draft is on this device, and pieces you are signed in to are on the server. Opening it again brings it back.',
+    retry: 'Try again',
+    detail: 'When reporting this, paste the line below as it is',
+  },
+  notFound: {
+    title: 'There is no such screen',
+    body: 'The link may be old, or mistyped. Check with whoever sent it.',
+    home: 'Back to the start',
+  },
+
   common: {
     on: 'On',
     off: 'Off',

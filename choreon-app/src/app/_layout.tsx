@@ -8,6 +8,7 @@ import '@/global.css';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { AppearanceProvider } from '@/components/appearance-provider';
+import { CrashScreen } from '@/components/crash-screen';
 import { configureAudioMode } from '@/features/music/lib/audioMode';
 
 SplashScreen.preventAutoHideAsync();
@@ -45,3 +46,12 @@ export default function RootLayout() {
     </AppearanceProvider>
   );
 }
+
+/**
+ * 描いている途中で例外が出たときの受け皿。**expo-router がこの名前を
+ * 見て**、この下の画面が落ちたら差し替える。
+ *
+ * 無いと真っ白になる（開発中は赤い画面が出るが、配ったアプリでは何も
+ * 出ない）。稽古の最中に画面が消えて、何が起きたか分からないまま終わる。
+ */
+export { CrashScreen as ErrorBoundary };
