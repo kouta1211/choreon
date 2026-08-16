@@ -408,6 +408,10 @@ export const ja = {
         circle: '円（サークル）',
         none: 'なし',
       },
+      centerLine: {
+        label: 'センターライン',
+        description: '中央の1本だけ色を変えて出す。隊形の基準になる線（目盛りを「なし」にしていると出ません）',
+      },
       snap: {
         label: '格子に吸着させる',
         description: '切ると、どこにでも置けます',
@@ -469,6 +473,13 @@ export const ja = {
     app: {
       title: 'アプリ',
       summary: 'テーマ・言語・自動保存',
+      scheme: {
+        label: '見た目の明るさ',
+        description: '10種のテーマから選ぶのは下のパレット。ここは暗いか明るいかだけを決めます',
+        dark: '暗い',
+        light: '明るい',
+        system: '端末に合わせる',
+      },
       autoSave: {
         label: '自動保存',
         description: '切ると、変更は「いま保存する」を押すまで送られません',

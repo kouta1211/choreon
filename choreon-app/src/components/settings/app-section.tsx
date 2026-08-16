@@ -1,16 +1,26 @@
-import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Text, useColorScheme, View } from 'react-native';
 
 import { LanguagePicker } from '@/components/language-picker';
 import { ThemePicker } from '@/components/theme-picker';
 import { Button } from '@/components/ui/button';
-import { SettingsGroup, SettingsSwitchRow } from '@/components/ui/settings-row';
+import {
+  SettingsGroup,
+  SettingsSegmentRow,
+  SettingsSwitchRow,
+} from '@/components/ui/settings-row';
 import { useT } from '@/features/i18n/store/useLocaleStore';
 import {
   flushPendingWrites,
   pendingWriteCount,
 } from '@/features/project/lib/persistence';
+import {
+  schemeForTheme,
+  themeForScheme,
+} from '@/features/settings/lib/colorScheme';
+import type { ColorScheme } from '@/features/settings/lib/settings';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
+import { useCurrentTheme, useThemeStore } from '@/features/theme/store/useThemeStore';
 
 /**
  * 設定の「アプリ」。テーマ・言語・自動保存。
@@ -62,8 +72,50 @@ export function SettingsAppSection() {
     else setPending(pendingWriteCount());
   };
 
+  /**
+   * 見た目の明るさ。テーマ10種の上に置く**粗い1問**。
+   *
+   * 答えは保存された値ではなく【いまのテーマ】から導く。パレットで紙を
+   * 選んだ人の設定画面が「暗い」のままだと、見えているものと食い違う。
+   * 「端末に合わせる」だけはテーマから導けない意思表示なので、そこだけ
+   * 保存された値を使う。
+   */
+  const theme = useCurrentTheme();
+  const setTheme = useThemeStore((state) => state.setTheme);
+  const savedScheme = useSettingsStore((state) => state.colorScheme);
+  const scheme = savedScheme === 'system' ? 'system' : schemeForTheme(theme);
+  const systemScheme = useColorScheme();
+
+  const chooseScheme = (next: ColorScheme) => {
+    update('colorScheme', next);
+    setTheme(themeForScheme(theme, next, systemScheme === 'light'));
+  };
+
+  // 「端末に合わせる」を選んでいる間は、端末側が変わったら追う
+  // 同じ明るさのままなら themeForScheme はいまのテーマを返すので、
+  // ここが繰り返し走っても set は起きない（無限には回らない）
+  useEffect(() => {
+    if (savedScheme !== 'system') return;
+    const next = themeForScheme(theme, 'system', systemScheme === 'light');
+    if (next !== theme) setTheme(next);
+  }, [savedScheme, systemScheme, theme, setTheme]);
+
   return (
     <View className="gap-4">
+      <SettingsGroup>
+        <SettingsSegmentRow
+          label={t.settings.app.scheme.label}
+          description={t.settings.app.scheme.description}
+          value={scheme}
+          options={[
+            { value: 'dark' as const, label: t.settings.app.scheme.dark },
+            { value: 'light' as const, label: t.settings.app.scheme.light },
+            { value: 'system' as const, label: t.settings.app.scheme.system },
+          ]}
+          onChange={chooseScheme}
+        />
+      </SettingsGroup>
+
       <ThemePicker />
       <LanguagePicker />
 

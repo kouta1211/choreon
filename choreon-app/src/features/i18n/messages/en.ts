@@ -370,6 +370,10 @@ export const en: Messages = {
         circle: 'Circle',
         none: 'None',
       },
+      centerLine: {
+        label: 'Centre line',
+        description: 'Marks the middle column in its own colour — the line formations are built around (hidden when the grid is off)',
+      },
       snap: {
         label: 'Snap to the grid',
         description: 'Turn it off to place dancers anywhere',
@@ -432,6 +436,13 @@ export const en: Messages = {
     app: {
       title: 'App',
       summary: 'Theme, language, auto-save',
+      scheme: {
+        label: 'Brightness',
+        description: 'Pick from the ten themes in the palette below. This only decides dark or light',
+        dark: 'Dark',
+        light: 'Light',
+        system: 'Match device',
+      },
       autoSave: {
         label: 'Auto-save',
         description: 'With this off, nothing is sent until you press “Save now”',

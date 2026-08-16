@@ -68,6 +68,7 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
   const isSwipeEnabled = useUIStore((state) => state.isSwipeSceneChangeEnabled);
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
   const isSnapEnabled = useSettingsStore((state) => state.isSnapEnabled);
+  const isCenterLineVisible = useSettingsStore((state) => state.isCenterLineVisible);
   const isBlindSpotCheckVisible = useUIStore((state) => state.isBlindSpotCheckVisible);
   const focusedDancerId = useUIStore((state) => state.focusedDancerId);
   const dancerNameDisplay = useSettingsStore((state) => state.dancerNameDisplay);
@@ -297,6 +298,22 @@ export function StageView({ stageWidthUnits, stageHeightUnits }: Props) {
       >
         {gridMode === 'square' && (
           <GridLines widthUnits={stageWidthUnits} heightUnits={stageHeightUnits} />
+        )}
+
+        {/* センターライン。中央（0の列）は隊形の基準になるので、
+            **格子とは種類の違う線**にする。同じ白の濃さ違いにすると、
+            消しても差が読み取れず、切り替えた手応えが無い（Web版が
+            一度そうなっていた）。アクセントを薄く敷いて、格子の中で
+            1本だけ意味を持つ線として拾えるようにする。
+
+            目盛りを「なし」にしているときは出さない — 拠りどころの線を
+            全部消したい人が選ぶ設定なので、1本だけ残ると意図とずれる */}
+        {isCenterLineVisible && gridMode !== 'none' && (
+          <View
+            pointerEvents="none"
+            className="absolute top-0 bottom-0 w-px bg-accent opacity-55"
+            style={{ left: '50%' }}
+          />
         )}
 
         {/* 円や弧を組むときの目盛り。格子の代わりで、同時には出ない */}

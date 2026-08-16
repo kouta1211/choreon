@@ -366,6 +366,11 @@ export const ko: Messages = {
         circle: '원',
         none: '없음',
       },
+      centerLine: {
+        label: '센터 라인',
+        description:
+          "가운데 한 줄만 색을 바꿔 표시합니다. 대형의 기준이 되는 선입니다(눈금을 '없음'으로 하면 표시되지 않습니다)",
+      },
       snap: {
         label: '격자에 붙이기',
         description: '끄면 어디에나 놓을 수 있습니다',
@@ -427,6 +432,13 @@ export const ko: Messages = {
     app: {
       title: '앱',
       summary: '테마·언어·자동 저장',
+      scheme: {
+        label: '화면 밝기',
+        description: '10가지 테마는 아래 팔레트에서 고릅니다. 여기서는 어두운지 밝은지만 정합니다',
+        dark: '어둡게',
+        light: '밝게',
+        system: '기기에 맞춤',
+      },
       autoSave: {
         label: '자동 저장',
         description: '끄면 「지금 저장」을 누를 때까지 보내지 않습니다',
