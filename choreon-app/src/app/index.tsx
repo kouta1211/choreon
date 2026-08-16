@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useWindowDimensions, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ConfirmDialog } from '@/components/confirm-dialog';
@@ -212,6 +212,14 @@ export default function EditorScreen() {
   }
 
   return (
+    /* キーボードが出たら画面ごと持ち上げる。**下端の帯に入力欄がある**
+       （選んでいる人の名前・シーン名）ので、そのままだとキーボードの下に
+       隠れて、打っている字が見えない。iOS だけ指定する — Android は
+       OS 側が既に縮めてくれるので、重ねると二重に上がる */
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      className="flex-1"
+    >
     <SafeAreaView className="flex-1 bg-page">
       <EditorHeader
         onOpenDancers={() => setOpenSheet('dancers')}
@@ -304,5 +312,6 @@ export default function EditorScreen() {
           「消す」を押したときに、確認の板がその上に出る必要がある */}
       <ConfirmDialog />
     </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { SwitchTrack } from '@/components/ui/switch';
@@ -45,7 +45,24 @@ export function WelcomeScreen({ onGuestStart, onOpenAccount }: Props) {
   };
 
   return (
-    <SafeAreaView className="flex-1 justify-center bg-page px-6">
+    /* 横向きだと、この中身は画面の高さに収まらない（端末を回せる作りに
+       したので、実機でも起きる）。**中央寄せのまま、入らなければ流す** —
+       `flexGrow` と `justifyContent` を container 側に置くのがその形で、
+       素の View だと入らないぶんが切れてボタンに届かなくなる */
+    <SafeAreaView className="flex-1 bg-page">
+      <ScrollView
+        /* クラスではなく素の style。ここは**初出のクラスを増やしたくない**
+           場所で、NativeWind はそのとき見えていたクラス名しか焼かないため、
+           新しい名前を足すと Metro を積み直すまで黙って効かない
+           （choreon-app/CLAUDE.md）。並べ方だけの指定なら style で足りる */
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'center',
+          paddingHorizontal: 24,
+          paddingVertical: 32,
+        }}
+        keyboardShouldPersistTaps="handled"
+      >
       <View className="w-full max-w-[420px] gap-8 self-center">
         <View className="gap-1.5">
           <Text className="text-center text-3xl text-fg-strong">{t.app.title}</Text>
@@ -98,6 +115,7 @@ export function WelcomeScreen({ onGuestStart, onOpenAccount }: Props) {
           <Text className="text-base text-fg-strong">{t.welcome.signIn}</Text>
         </Pressable>
       </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

@@ -1,5 +1,14 @@
 import type { ReactNode } from 'react';
-import { Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { vars } from 'nativewind';
 
@@ -71,7 +80,17 @@ export function Sheet({
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <View
+      {/* キーボードが出たら板ごと持ち上げる。
+          **これが無いと、下寄せのシートでは入力欄がキーボードの下に隠れる**
+          （ログインのパスワード欄・作品名・BPM など、下の方にあるものほど
+          打っている字が見えない）。ブラウザでは起きないので、実機で
+          触るまで気づけない類の抜け。
+
+          `behavior` は iOS だけ `padding`。Android は OS 側が
+          `windowSoftInputMode=adjustResize` で既に縮めてくれるので、
+          重ねて指定すると二重に上がる */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={vars(THEME_VARS[theme])}
         className={`flex-1 ${isWide ? 'items-center justify-center p-6' : 'justify-end'}`}
       >
@@ -142,15 +161,20 @@ export function Sheet({
             </Pressable>
           </View>
 
+          {/* `keyboardShouldPersistTaps` が要る。既定（"never"）だと、
+              キーボードが出ている間の**最初の1回はキーボードを閉じるだけで
+              終わり**、ボタンには届かない。名前を打って「作る」を押したのに
+              何も起きない（もう一度押すと動く）、という形で出る */}
           <ScrollView
             className="min-h-0"
             contentContainerClassName="gap-5 p-4"
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
             {children}
           </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
