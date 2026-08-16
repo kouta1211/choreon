@@ -128,7 +128,6 @@ export function Stage({
           {isCenterLineVisible && gridMode !== "none" && (
             <div
               aria-hidden
-              data-testid="stage-center-line"
               className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-[color-mix(in_oklab,var(--accent)_55%,transparent)]"
             />
           )}
@@ -148,7 +147,6 @@ export function Stage({
               縦横どちらも出ていれば交差点への吸着だと分かる */}
           {dragSnapLine.x !== null && (
             <div
-              data-testid="stage-snap-line-x"
               aria-hidden
               className="pointer-events-none absolute inset-y-0 w-0.5 -translate-x-1/2 bg-accent-soft shadow-[0_0_6px_1px_color-mix(in_oklab,var(--accent-soft)_90%,transparent)]"
               style={{ left: `${(dragSnapLine.x / widthUnits) * 100}%` }}
@@ -156,7 +154,6 @@ export function Stage({
           )}
           {dragSnapLine.y !== null && (
             <div
-              data-testid="stage-snap-line-y"
               aria-hidden
               className="pointer-events-none absolute inset-x-0 h-0.5 -translate-y-1/2 bg-accent-soft shadow-[0_0_6px_1px_color-mix(in_oklab,var(--accent-soft)_90%,transparent)]"
               style={{ top: `${(dragSnapLine.y / heightUnits) * 100}%` }}

@@ -37,7 +37,6 @@ export function DancerBlindSpotBadge({ dancerName }: Props) {
   return (
     <>
     <motion.div
-      data-testid="dancer-blind-spot-badge"
       role="img"
       aria-label={description}
       tabIndex={0}

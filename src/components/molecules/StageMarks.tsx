@@ -47,7 +47,6 @@ export function StageMarks({ stageWidthUnits, stageHeightUnits }: Props) {
   return (
     <div
       aria-hidden
-      data-testid="stage-marks"
       className="pointer-events-none absolute inset-0"
     >
       {marks.map((mark) => {

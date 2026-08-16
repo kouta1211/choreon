@@ -187,7 +187,6 @@ function DancerMarkerImpl({
               選択中(isSelected)は実線リングと重なって見づらいので出さない */}
           {hasKeyboardFocus && !isSelected && (
             <circle
-              data-testid="dancer-keyboard-focus-ring"
               cx={16}
               cy={16}
               r={15}
@@ -230,7 +229,6 @@ function DancerMarkerImpl({
             className={bodyColorTransition}
           />
           <circle
-            data-testid="dancer-body-outline"
             cx={16}
             cy={16}
             r={8}

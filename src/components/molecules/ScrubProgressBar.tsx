@@ -47,7 +47,6 @@ export function ScrubProgressBar() {
   return (
     <div
       aria-hidden
-      data-testid="scrub-progress"
       className="pointer-events-none absolute inset-x-0 top-1 flex justify-center px-4"
     >
       {/* ステージ面の上に浮くので、下に敷かないとダンサーや格子と重なって

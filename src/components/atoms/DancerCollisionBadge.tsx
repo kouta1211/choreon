@@ -49,7 +49,6 @@ export function DancerCollisionBadge({
   return (
     <>
     <motion.div
-      data-testid="dancer-collision-badge"
       role="img"
       aria-label={description}
       tabIndex={0}
