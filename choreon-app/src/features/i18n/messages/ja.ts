@@ -101,10 +101,6 @@ export const ja = {
     saveDraftFailed: '保存できませんでした',
     saved: (title: string) => `「${title}」として保存しました`,
     unsaved: 'まだ保存していない変更があります',
-    discardDraftTitle: 'この下書きは消えます',
-    discardDraftDescription:
-      '下書きはこのアプリの中だけにあり、別の作品を開くと元に戻せません。残したいときは、やめてから「この下書きを自分の作品にする」を押してください。',
-    discardDraftConfirm: '開く',
   },
 
   /** 取り消せない操作の前に出す確認。Web版と同じ文言 */

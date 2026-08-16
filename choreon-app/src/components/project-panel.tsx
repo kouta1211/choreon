@@ -17,6 +17,7 @@ import {
   type ProjectListItem,
 } from '@/features/project/api/load';
 import { forgetMusic } from '@/features/music/lib/musicStorage';
+import { forgetGuestDraft } from '@/features/project/lib/guestDraft';
 import { useMusicStore } from '@/features/music/store/useMusicStore';
 import { discardPendingWrites } from '@/features/project/lib/persistence';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
@@ -101,37 +102,12 @@ export function ProjectPanel({ userId, onProjectLoaded }: Props) {
     // 一覧はログインしている人のもの。相手が変わったら読み直す
   }, [userId]);
 
-  /**
-   * 開く前に、**消える下書きがあれば止める。**
-   *
-   * ゲストの下書きはこのアプリの中だけにあって、別の作品を開いた瞬間に
-   * 上書きされる。Web版はタブを閉じるときにブラウザ標準の確認を出して
-   * いる（UnsavedChangesGuard）が、こちらで失われるのは閉じたときでは
-   * なく**この操作**なので、ここで訊く。
-   *
-   * 逃げ道（この下書きを自分の作品にする）も文面で示す。止めるだけで
-   * 「ではどうすれば残せるのか」を言わないと、結局どちらかを捨てることに
-   * なる。
-   */
-  const confirmLosingDraft = () =>
-    new Promise<boolean>((resolve) => {
-      const state = useProjectStore.getState();
-      if (!state.isGuest || !state.hasUnsavedChanges) {
-        resolve(true);
-        return;
-      }
-      requestConfirm({
-        title: t.projects.discardDraftTitle,
-        description: t.projects.discardDraftDescription,
-        confirmLabel: t.projects.discardDraftConfirm,
-        onConfirm: () => resolve(true),
-        onCancel: () => resolve(false),
-      });
-    });
 
   /** 開く。ストアへ入れて、最初のシーンを選ぶ */
+  /* 下書きは端末に残るので、作品を開く前に止める必要は無くなった
+     （以前は「この下書きは消えます」と確認していた。いまは次にアプリを
+     開いたときに戻る — `guestDraft.ts`） */
   const open = async (item: ProjectListItem) => {
-    if (!(await confirmLosingDraft())) return;
     setError(null);
     setNotice(null);
     setBusyId(item.id);
@@ -172,9 +148,6 @@ export function ProjectPanel({ userId, onProjectLoaded }: Props) {
   const create = async () => {
     const title = newTitle.trim();
     if (!title) return;
-    // 作るところで先に訊く。作ってから訊くと、断ったときに空の作品だけが
-    // 残る（open の中でも訊くので、ここで通れば向こうは素通りになる）
-    if (!(await confirmLosingDraft())) return;
     setError(null);
     setNotice(null);
     setIsCreating(true);
@@ -261,6 +234,10 @@ export function ProjectPanel({ userId, onProjectLoaded }: Props) {
       await refresh();
       await open({ id: saved.id, title: saved.title, updatedAt: saved.updatedAt });
       markSaved();
+      /* 端末に残していた下書きは捨てる。**クラウドへ移った時点で、
+         こちらの控えは「古い方」にしかならない** — 残しておくと、
+         次に開いたときに保存前の姿へ戻ってしまう */
+      void forgetGuestDraft();
       setNotice(t.projects.saved(saved.title));
     } catch {
       setError(t.projects.saveDraftFailed);

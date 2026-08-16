@@ -84,10 +84,6 @@ export const en: Messages = {
     saveDraftFailed: 'Could not save it',
     saved: (title: string) => `Saved as “${title}”`,
     unsaved: 'There are unsaved changes',
-    discardDraftTitle: 'This draft will be lost',
-    discardDraftDescription:
-      'The draft lives only inside this app, and opening another piece cannot be undone. To keep it, cancel and press "Save this draft as my own work" first.',
-    discardDraftConfirm: 'Open',
   },
 
   confirm: {

@@ -84,10 +84,6 @@ export const ko: Messages = {
     saveDraftFailed: '저장하지 못했습니다',
     saved: (title: string) => `「${title}」(으)로 저장했습니다`,
     unsaved: '아직 저장하지 않은 변경이 있습니다',
-    discardDraftTitle: '이 초안은 사라집니다',
-    discardDraftDescription:
-      '초안은 이 앱 안에만 있고, 다른 작품을 열면 되돌릴 수 없습니다. 남기려면 취소하고 「이 초안을 내 작품으로 저장」을 먼저 누르세요.',
-    discardDraftConfirm: '열기',
   },
 
   confirm: {

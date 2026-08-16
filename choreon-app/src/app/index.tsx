@@ -17,6 +17,8 @@ import { PlaybackControls } from '@/components/playback-controls';
 import { SongSettings } from '@/components/song-settings';
 import { WelcomeScreen } from '@/components/welcome-screen';
 import { useSessionStore } from '@/features/auth/store/useSessionStore';
+import { loadGuestDraft } from '@/features/project/lib/guestDraft';
+import { useGuestDraftAutosave } from '@/features/project/hooks/useGuestDraftAutosave';
 import { SceneDock } from '@/components/scene-dock';
 import { SceneEditor } from '@/components/scene-editor';
 import { SettingsSheet } from '@/components/settings-sheet';
@@ -150,6 +152,35 @@ export default function EditorScreen() {
     // 選択も、その時点ではまだ受け取れていない）
     if (isWelcoming) return;
 
+    let alive = true;
+    void (async () => {
+      /* 端末に残っている下書きがあれば、そちらを戻す。
+         **無いときだけ**サンプルから始める（始め方の画面が
+         「作ったものはこの端末にだけ残ります」と約束しているので、
+         毎回サンプルへ戻していては話が違う） */
+      const saved = await loadGuestDraft();
+      if (!alive) return;
+      if (saved) {
+        hydrate({ ...saved, isGuest: true });
+        const first = [...saved.scenes].sort(
+          (a, b) => a.timeSeconds - b.timeSeconds || a.orderIndex - b.orderIndex,
+        )[0];
+        useUIStore.getState().selectScene(first?.id ?? null);
+        void useMusicStore.getState().restore('local');
+        return;
+      }
+      startFromSample();
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [hydrate, isWelcoming]);
+
+  /** 触ったぶんを、手が止まってから端末へ書き戻す */
+  useGuestDraftAutosave();
+
+  /** サンプルの隊形で始める（残してある下書きが無いとき） */
+  function startFromSample() {
     const now = new Date().toISOString();
     hydrate({
       project: {
@@ -197,7 +228,7 @@ export default function EditorScreen() {
     useUIStore.getState().selectScene('scene-1');
     // 下書きに覚えさせた曲があれば戻す（作品を開けば入れ替わる）
     void useMusicStore.getState().restore('local');
-  }, [hydrate, isWelcoming]);
+  }
 
   if (isWelcoming) {
     return (
