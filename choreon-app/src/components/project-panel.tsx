@@ -11,6 +11,7 @@ import {
   updateProjectTitle,
 } from '@/features/project/api/projects';
 import { saveGuestProject } from '@/features/project/api/saveGuestProject';
+import { sortScenes } from '@/features/scene/lib/sceneTiming';
 import {
   listMyProjects,
   loadProject,
@@ -127,9 +128,7 @@ export function ProjectPanel({ userId, onProjectLoaded }: Props) {
       // その作品に専用のテーマが入っていれば、開いた時点で切り替わる
       useThemeStore.getState().setProjectId(loaded.project.id);
       // 時刻の順で最初のシーンを選ぶ（Web版 useHydrateProject と同じ規則）
-      const first = [...loaded.scenes].sort(
-        (a, b) => a.timeSeconds - b.timeSeconds || a.orderIndex - b.orderIndex,
-      )[0];
+      const first = sortScenes(loaded.scenes)[0];
       useUIStore.getState().selectScene(first?.id ?? null);
       useUIStore.getState().selectDancer(null);
       onProjectLoaded({

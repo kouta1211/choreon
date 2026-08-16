@@ -27,6 +27,7 @@ import { Toast } from '@/components/toast';
 import { Sheet } from '@/components/ui/sheet';
 import { useMusicStore } from '@/features/music/store/useMusicStore';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
+import { sortScenes } from '@/features/scene/lib/sceneTiming';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useSettingsStore } from '@/features/settings/store/useSettingsStore';
 import { useLocaleStore, useT } from '@/features/i18n/store/useLocaleStore';
@@ -162,9 +163,7 @@ export default function EditorScreen() {
       if (!alive) return;
       if (saved) {
         hydrate({ ...saved, isGuest: true });
-        const first = [...saved.scenes].sort(
-          (a, b) => a.timeSeconds - b.timeSeconds || a.orderIndex - b.orderIndex,
-        )[0];
+        const first = sortScenes(saved.scenes)[0];
         useUIStore.getState().selectScene(first?.id ?? null);
         void useMusicStore.getState().restore('local');
         return;

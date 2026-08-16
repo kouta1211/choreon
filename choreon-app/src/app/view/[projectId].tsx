@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { useUIStore } from '@/features/canvas/store/useUIStore';
 import { useT } from '@/features/i18n/store/useLocaleStore';
 import { useProjectStore } from '@/features/project/store/useProjectStore';
+import { sortScenes } from '@/features/scene/lib/sceneTiming';
 import {
   getSharedProject,
   type SharedProject,
@@ -83,9 +84,7 @@ export default function SharedViewerScreen() {
       // **isGuest で入れる。** これで書き込みの窓口（persist）が
       // 何も送らなくなる — 相手の作品を触ってしまう道を塞ぐ
       hydrate({ ...shared, isGuest: true });
-      const first = [...shared.scenes].sort(
-        (a, b) => a.timeSeconds - b.timeSeconds || a.orderIndex - b.orderIndex,
-      )[0];
+      const first = sortScenes(shared.scenes)[0];
       useUIStore.getState().selectScene(first?.id ?? null);
       useUIStore.getState().selectDancer(null);
       setStage({ width: shared.project.stageWidth, height: shared.project.stageHeight });
