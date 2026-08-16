@@ -37,16 +37,28 @@ choreon-app を除外している）。
 
 Web 版が無事かは**ルートで** `npm run verify`。
 
-# 実機へ配るとき（まだ一度もやっていない）
+# 実機へ配るとき
 
-`eas.json` と識別子（`app.vercel.choreon`）は入れてあるが、**ビルドはまだ
-通していない**。試すときに詰まるのはたぶんここ。
+識別子（`app.vercel.choreon`）と `eas.json` は入れてあり、**設定が正しい
+ことはローカルで確かめた**（`npx expo prebuild --platform android` が
+アプリ名「Choreon」・アイコン・暗い地のスプラッシュを生成する。
+生成物は `.gitignore` 済みなので、確かめたら消してよい。
+**prebuild は package.json の `android` / `ios` スクリプトを書き換える**ので、
+Expo Go を使い続けるなら戻すこと）。
 
-- **鍵を渡す口が要る。** アプリは `EXPO_PUBLIC_SUPABASE_URL` /
-  `EXPO_PUBLIC_SUPABASE_ANON_KEY` を `.env.local` から読んでいる。
-  EAS のビルド機には `.env.local` が無いので、`eas.json` の `env` へ書くか
-  `eas secret` へ入れる。`EXPO_PUBLIC_` の付いた値は**バンドルに入る**
-  （＝配った先で読める）ので、anon キー以外をここへ置かないこと。
+残っているのは、アカウントが要る2つだけ。
+
+```bash
+npx eas-cli login
+# 鍵を EAS 側へ置く（.env.local はビルド機に届かない）
+npx eas-cli env:create --environment preview --name EXPO_PUBLIC_SUPABASE_URL --value "…"
+npx eas-cli env:create --environment preview --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "…"
+npx eas-cli build --profile preview --platform android
+```
+
+`EXPO_PUBLIC_` の付いた値は**バンドルに入る**（＝配った先で読める）ので、
+anon キー以外をここへ置かないこと。`eas.json` は値を持たず、
+`environment` でどちらの束を使うかだけを指している。
 - **背景で音を鳴らすなら申告が要る。** いまは画面を点けている間だけ
   （`audioMode.ts`）。続けたいなら `expo-audio` の config plugin と
   `UIBackgroundModes` を足す — 審査で見られる項目が増える。
