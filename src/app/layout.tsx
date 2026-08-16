@@ -110,7 +110,10 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               (fixed で全面を覆うので位置は関係ない)、読んだときに
               「まずこれが出る」と分かるようにするため */}
           <SplashScreen />
-          {children}
+          {/* 本文の目印。**画面の見た目は何も変えない**が、これが無いと
+              読み上げソフトに「本文へ飛ぶ」の行き先が無く、毎回いちばん上の
+              ロゴから順に読むことになる。div ではなく main にするだけで済む */}
+          <main className="contents">{children}</main>
           {/* 画面をまたいで使う重ね物はここで1回だけ描く。
               以前はエディタ画面だけがToastを持っていたため、プロジェクト一覧の
               失敗はページ内のテキストで知らせる、という別扱いになっていた */}

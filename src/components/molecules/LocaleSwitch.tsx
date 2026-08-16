@@ -66,7 +66,10 @@ export function LocaleSwitch() {
             aria-pressed={isOn}
             onClick={() => handleChange(value)}
             className={`relative h-8 rounded-md px-2 text-label transition-colors ${
-              isOn ? "text-fg-strong" : "text-fg-muted hover:text-fg"
+              // 選ばれていない側も**読める濃さ**にする。--text-muted は
+              // 白46%で、地に対して 4.5:1 を割っていた（Lighthouse が
+              // 拾った2件がこれ）。押せるものを、読めない色で書かない
+              isOn ? "text-fg-strong" : "text-fg-sub hover:text-fg"
             }`}
           >
             {LOCALE_LABELS[value]}

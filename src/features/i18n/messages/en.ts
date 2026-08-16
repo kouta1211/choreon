@@ -284,6 +284,8 @@ export const en = {
   },
 
   welcome: {
+    tagline: "The formation sheets you hand out at rehearsal, moving in time with the track.",
+    pitch: "Send one link. Nobody has to install anything.",
     guestStart: "Start as a guest",
     withTour: "Start with the walkthrough",
     guestNote: "No account needed. What you make stays on this device.",
