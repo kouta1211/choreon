@@ -577,6 +577,7 @@ export const en = {
       busy: "The notes service is busy. Please wait a moment and try again",
       tooSlow: "The notes took too long. Please try again",
       empty: "The notes came back empty. Please try again",
+      garbled: "The reply was cut off. Please try again",
     },
     title: "Ask for notes",
     note: "Only the positions in the scene you have open are sent. The name of the piece and the dancers' colours are not. What comes back is something to think with, not a verdict.",

@@ -262,6 +262,14 @@ ${REPLY_LANGUAGE[locale]}`,
     userText: target.userText,
     schema: target.schema,
     errors: t.review.errors,
+    /**
+     * ■ 2000 では足りなかった（2026-08-18、実機報告 16-7）
+     * **考えるぶんが同じ上限から引かれる。** 作品ぜんぶは指摘が最大6件で、
+     * `formationShape` を足したぶん1件が長くなり、途中で切られた JSON が
+     * 返るようになった。**操作の口で踏んだのと同じ穴**（あちらは 8000 に
+     * 上げて通った）。
+     */
+    maxOutputTokens: 8000,
   });
 
   if (!result.ok) {
@@ -278,9 +286,25 @@ ${REPLY_LANGUAGE[locale]}`,
    */
   const review = target.parse(result.text);
   if (!review) {
-    // 形が崩れていても、読める文章は手元にある。待った時間を捨てない
+    console.error(
+      `[review] 返事を指摘に分解できませんでした(切られた=${result.wasTruncated} 型付き=${result.wasStructured} 長さ=${result.text.length})`,
+    );
+
+    /**
+     * ■ 読めない返事を、そのまま画面へ出さない（実機報告 16-7）
+     * 「形が崩れていても読める文章は手元にある」として本文を summary に
+     * 入れていたが、**型付きで頼んだ返事は崩れると JSON の破片になる**。
+     * 実機では `{"summary":"…","findings":[{"sceneNumber":0,…` が
+     * そのまま画面に出た。読める文章どころか、user から見れば故障の跡。
+     *
+     * 型付きで頼んだのに分解できないなら、**断りとして返す**。
+     * 型なしの返事（梯子の下段）は素の文章なので、これまでどおり出す。
+     */
     if (result.wasStructured) {
-      console.error("[review] 返事を指摘に分解できませんでした");
+      return NextResponse.json(
+        { error: t.review.errors.garbled },
+        { status: 502 },
+      );
     }
     return NextResponse.json({
       text: result.text,

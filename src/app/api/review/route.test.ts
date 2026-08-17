@@ -358,3 +358,63 @@ describe("POST /api/review（作品ぜんぶ）", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * 崩れた返事を、そのまま画面へ出さない。
+ *
+ * ■ 実機報告 16-7
+ * 作品ぜんぶを見てもらったら、画面に
+ * `{"summary":"…","findings":[{"sceneNumber":0,…` がそのまま出た。
+ * 「形が崩れていても読める文章は手元にある」として本文を出していたが、
+ * **型付きで頼んだ返事が崩れると JSON の破片になる**。読める文章どころか、
+ * user から見れば故障の跡。
+ *
+ * 原因は上限（考えるぶんに食われて途中で切れた）。上限は上げたが、
+ * **切れても画面へ出さない**方の守りも要る。
+ */
+describe("崩れた返事", () => {
+  const cutOffJson =
+    '{"summary":"同じ配置が続きます","findings":[{"sceneNumber":0,"tone":"good","text":"途中で';
+
+  it("型付きで頼んで崩れていたら、断りとして返す（生の JSON を出さない）", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(upstream(cutOffJson)));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const response = await POST(pieceRequest());
+    const data = (await response.json()) as { error?: string; text?: string };
+
+    expect(response.status).toBe(502);
+    expect(data.error).toContain("途中で切れました");
+    // 破片が画面へ渡らないこと
+    expect(JSON.stringify(data)).not.toContain("sceneNumber");
+  });
+
+  /** 型なしの返事（梯子の下段）は素の文章なので、これまでどおり出す */
+  it("型なしで返ってきた文章は、そのまま出す", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(upstream("", 400))
+      .mockResolvedValueOnce(upstream("綺麗に並んでいます"));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const data = (await (await POST(pieceRequest())).json()) as {
+      review: { summary: string };
+    };
+
+    expect(data.review.summary).toBe("綺麗に並んでいます");
+  });
+
+  it("上限に余裕を持たせて頼む", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(upstream(PIECE_REPLY));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(pieceRequest());
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string) as {
+      generationConfig: { maxOutputTokens: number };
+    };
+    // 2000 では作品ぜんぶの返事が途中で切れた（実機報告 16-7）
+    expect(body.generationConfig.maxOutputTokens).toBeGreaterThan(2000);
+  });
+});

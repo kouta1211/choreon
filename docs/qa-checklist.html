@@ -2266,17 +2266,32 @@
   };
 
   // ── 描く ──
-  // v2 → v3: 先頭に「起動画面と、始め方を選ぶ」を差し込んだため、
-  // 以降のセクション番号が1つずつ後ろへずれた。チェックは番号で覚えて
-  // いるので、そのままだと別の項目に付いたまま残る。作り直してもらう
-  const KEY = (device) => "choreon.checklist.v3." + device;
-  const MEMO_KEY = (device) => "choreon.checklist.v3.memo." + device;
+  //
+  // ■ v3 → v4: 覚え方を「番号」から「項目の文」へ変えた（2026-08-18）
+  // v3 までは `章-配列の番号` で覚えていた。**章の途中に項目を差し込むと、
+  // 以降のチェックとメモが1つずつ後ろの項目へずれる。**
+  // 実際それで事故が起きた — 提出済みのメモが別の項目に付き直し、
+  // 「まだ提出していないメモ」として57件まとめて再浮上した。
+  // 「作品名の右の鉛筆を押す」という項目に「変更できるボタンなどない」という
+  // 昔のメモが付く、という形で。
+  //
+  // v4 は**項目の文から作った印**で覚える。項目を差し込んでも、並べ替えても
+  // 動かない。文を書き換えた項目だけがチェックとメモを失うが、
+  // それは**別の質問になったということ**なので、失うのが正しい。
+  const KEY = (device) => "choreon.checklist.v4." + device;
+  const MEMO_KEY = (device) => "choreon.checklist.v4.memo." + device;
   /** どちらの台本を見ていたか。開き直すたびに選び直さなくてよいように覚える */
-  const DEVICE_KEY = "choreon.checklist.v3.device";
+  const DEVICE_KEY = "choreon.checklist.v4.device";
+  /** v3 の中身。引き継ぎに1回だけ使う */
+  const OLD_KEY = (device) => "choreon.checklist.v3." + device;
+  const OLD_MEMO_KEY = (device) => "choreon.checklist.v3.memo." + device;
 
   let device = "phone";
   try {
-    const saved = localStorage.getItem(DEVICE_KEY);
+    // v4 に無ければ v3 のものを引き継ぐ（選び直させない）
+    const saved =
+      localStorage.getItem(DEVICE_KEY) ??
+      localStorage.getItem("choreon.checklist.v3.device");
     if (saved === "phone" || saved === "pc") device = saved;
   } catch {
     /* プライベートモード等。既定のままで進む */
@@ -2285,6 +2300,32 @@
   let state = {};
   /** { items: { "3-2": "…" }, global: "…" } */
   let memos = { items: {}, global: "" };
+
+  /**
+   * 項目の印。**文から作るので、差し込みや並べ替えで動かない。**
+   *
+   * 同じ文の項目が8組ある（「そのボタンを押す」など）ので、同文には
+   * 現れた順に連番を付ける。同文どうしの間だけは順番に依存するが、
+   * そこは避けられないし、影響も同じ文の中に閉じる。
+   */
+  function makeItemIds(acts) {
+    const usedCount = new Map();
+    for (const act of acts) {
+      for (const item of act.items) {
+        const text = plain(item.do);
+        // FNV-1a。短くて衝突しにくければ何でもよい
+        let hash = 0x811c9dc5;
+        for (let i = 0; i < text.length; i += 1) {
+          hash ^= text.charCodeAt(i);
+          hash = Math.imul(hash, 0x01000193) >>> 0;
+        }
+        const base = hash.toString(36);
+        const seen = usedCount.get(base) ?? 0;
+        usedCount.set(base, seen + 1);
+        item._id = seen === 0 ? base : `${base}~${seen}`;
+      }
+    }
+  }
 
   /** 項目文から見出し用の素の文を作る（<em> や <code> を落とす） */
   function plain(html) {
@@ -2299,6 +2340,81 @@
   const $fill = document.getElementById("fill");
   const $count = document.getElementById("count");
   const $empty = document.getElementById("empty");
+
+  /**
+   * v3 から1回だけ引き継ぐ。**端末ごとに**呼ぶ。
+   *
+   * ■ チェックは引き継げる
+   * v3 の番号は「そのとき見ていた台本の並び順」。**いま開いている台本を
+   * 通し終えた直後**なので、いまの並びに当てれば正しい項目に戻る。
+   *
+   * ■ 提出済みメモは、項目に戻さない
+   * あれは**ずれたまま溜まったもの**。いまの並びに当てると、また別の項目に
+   * 付く（それが今回の事故そのもの）。中身は捨てず、下の「これまでのメモ」へ
+   * まとめて移す。**どの項目のものか分からない、と分かる形にする**のが
+   * いちばん正直。
+   *
+   * localStorage へ書くところまでやって、読むのは load() に任せる
+   * （2つの道で同じものを組み立てない）。
+   */
+  function migrateFromV3(forDevice) {
+    let oldState = null;
+    let oldMemos = null;
+    try {
+      const rawState = localStorage.getItem(OLD_KEY(forDevice));
+      const rawMemos = localStorage.getItem(OLD_MEMO_KEY(forDevice));
+      if (!rawState && !rawMemos) return null;
+      oldState = rawState ? JSON.parse(rawState) : null;
+      oldMemos = rawMemos ? JSON.parse(rawMemos) : null;
+    } catch {
+      return null;
+    }
+
+    const carried = {};
+    let checks = 0;
+    DATA[forDevice].acts.forEach((act, ai) => {
+      act.items.forEach((item, ii) => {
+        if (oldState && oldState[`${ai}-${ii}`] === true) {
+          carried[item._id] = true;
+          checks += 1;
+        }
+      });
+    });
+
+    const strayMemos = [];
+    if (oldMemos && typeof oldMemos === "object") {
+      // 下書きも提出済みも、まとめて「これまでのメモ」へ
+      for (const text of Object.values(oldMemos.items ?? {})) {
+        if (typeof text === "string" && text.trim()) strayMemos.push(text);
+      }
+      for (const list of Object.values(oldMemos.sent ?? {})) {
+        for (const text of Array.isArray(list) ? list : []) {
+          if (typeof text === "string" && text.trim()) strayMemos.push(text);
+        }
+      }
+      for (const text of oldMemos.globalSent ?? []) {
+        if (typeof text === "string" && text.trim()) strayMemos.push(text);
+      }
+    }
+
+    try {
+      localStorage.setItem(KEY(forDevice), JSON.stringify(carried));
+      localStorage.setItem(
+        MEMO_KEY(forDevice),
+        JSON.stringify({
+          items: {},
+          global: "",
+          sent: {},
+          globalSent: strayMemos,
+        }),
+      );
+      localStorage.removeItem(OLD_KEY(forDevice));
+      localStorage.removeItem(OLD_MEMO_KEY(forDevice));
+    } catch {
+      return null;
+    }
+    return { checks, memos: strayMemos.length };
+  }
 
   function load() {
     try {
@@ -2368,7 +2484,7 @@
           <div class="items">
             ${act.items
               .map((item, ii) => {
-                const id = `${ai}-${ii}`;
+                const id = item._id;
                 const done = state[id] === true;
                 const memo = memos.items[id] || "";
                 const sent = memos.sent[id] || [];
@@ -2558,7 +2674,7 @@
 
     acts.forEach((act, ai) => {
       act.items.forEach((item, ii) => {
-        const id = `${ai}-${ii}`;
+        const id = item._id;
         const no = `${String(ai + 1).padStart(2, "0")}-${ii + 1}`;
         const isDone = state[id] === true;
         total += 1;
@@ -2983,6 +3099,44 @@
     button.setAttribute("aria-pressed", String(button.dataset.device === device));
   });
 
+  // 印は文から作る。**描く前に、両方の台本ぶん**（端末を切り替えても同じ印）
+  makeItemIds(DATA.phone.acts);
+  makeItemIds(DATA.pc.acts);
+
+  /* 引き継ぎは**両方の端末ぶん**。片方だけ直すと、端末を切り替えた瞬間に
+     古い番号のまま読み込むことになる */
+  const carried = ["phone", "pc"]
+    .map((item) => migrateFromV3(item))
+    .filter(Boolean)
+    .reduce(
+      (sum, one) => ({
+        checks: sum.checks + one.checks,
+        memos: sum.memos + one.memos,
+      }),
+      { checks: 0, memos: 0 },
+    );
+
   load();
   render();
+
+  /* 引き継ぎが起きた回だけ、何が起きたのかを画面で伝える。
+     黙って中身が変わると、user は自分の操作を疑うことになる */
+  if (carried.checks > 0 || carried.memos > 0) {
+    const notice = document.createElement("p");
+    notice.className = "note";
+    notice.style.marginTop = "12px";
+    notice.innerHTML =
+      "<b>覚え方を変えました。</b>チェック（" +
+      carried.checks +
+      "件）はそのまま引き継いでいます。" +
+      (carried.memos > 0
+        ? "これまでのメモ" +
+          carried.memos +
+          "件は、<b>どの項目のものか分からなくなっていた</b>ので、ページのいちばん下の「これまでのメモ」へまとめて移しました。以前は項目を差し込むとメモが隣の項目へずれる作りで、それで提出済みのメモが「新しいメモ」として出てきていました。<b>いまは項目の文で覚えるので、ずれません。</b>"
+        : "");
+    const host = document.getElementById("count");
+    if (host && host.parentNode) {
+      host.parentNode.insertBefore(notice, host.nextSibling);
+    }
+  }
 </script>
