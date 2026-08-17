@@ -23,7 +23,62 @@ export type FrameColors = {
   label: string;
   /** ダンサーの保存色 → いまのテーマでの実測値 */
   dancer: (color: string) => string;
+  /**
+   * 紙・黒板系のテーマで、印を「塗り」から「輪郭」に変えるための素材色
+   * (`--marker-fill`)。暗い系のテーマでは `none` が入っていて、そのときは
+   * 塗ったままにする。画面側(DancerIcon)が同じ変数で同じ分岐をしている。
+   */
+  markerFill: string;
+  /** 輪郭の太さ(`--marker-stroke-width`)。SVGの32単位系での値 */
+  markerStrokeWidth: number;
 };
+
+/**
+ * 真上から見た人物のシルエット(頭＋鼻先)を、いまの位置に描く道を作る。
+ *
+ * ■ 画面と同じ形にする(2026-08-17)
+ * ここは以前、丸と「向きを指す短い線」だった。**画面のダンサーは
+ * 頭＋鼻先の人型**(DancerIcon.tsx)なので、書き出した動画だけ別の記号に
+ * なっていた。おまけに線の向きが 180 度ずれていて、0 度(客席を向く)の
+ * ダンサーが奥を向いて写っていた。
+ *
+ * 形の数値は DancerIcon の SVG(viewBox 32、頭は中心(16,16)の半径8、
+ * 鼻先は (16,28)(12,22)(20,22))をそのまま半径からの比に直したもの:
+ *   頭   … 半径 r
+ *   鼻先 … 先端 1.5r / 付け根 ±0.5r・0.75r
+ *
+ * 回転の中心は頭の中心。SVG の rotate と同じ向き(画面上で時計回り)に
+ * 揃えてあるので、0 度は画面の下＝客席側を向く。
+ */
+function tracePerformer(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  radius: number,
+  rotationAngle: number,
+): void {
+  const radians = (rotationAngle * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  /** 頭の中心を原点にした座標(下向きが正)を、回転させて画面へ置く */
+  const place = (localX: number, localY: number): [number, number] => [
+    x + localX * cos - localY * sin,
+    y + localX * sin + localY * cos,
+  ];
+
+  context.beginPath();
+  // 鼻先。頭と重なる部分は塗りでひとつながりになる
+  const [tipX, tipY] = place(0, radius * 1.5);
+  const [leftX, leftY] = place(-radius * 0.5, radius * 0.75);
+  const [rightX, rightY] = place(radius * 0.5, radius * 0.75);
+  context.moveTo(tipX, tipY);
+  context.lineTo(leftX, leftY);
+  context.lineTo(rightX, rightY);
+  context.closePath();
+  // 頭
+  context.moveTo(x + radius, y);
+  context.arc(x, y, radius, 0, Math.PI * 2);
+}
 
 export type FrameDancer = {
   id: string;
@@ -110,23 +165,23 @@ export function drawFrame(
     const x = rect.x + position.x * rect.unit;
     const y = rect.y + position.y * rect.unit;
 
-    context.beginPath();
-    context.arc(x, y, radius, 0, Math.PI * 2);
-    context.fillStyle = colors.dancer(dancer.color);
+    const bodyColor = colors.dancer(dancer.color);
+
+    tracePerformer(context, x, y, radius, position.rotationAngle);
+    context.fillStyle = bodyColor;
     context.fill();
 
-    // 向き。丸だけだと、回転している作品で何が起きているか分からない
-    const angle = ((position.rotationAngle - 90) * Math.PI) / 180;
-    context.beginPath();
-    context.moveTo(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius);
-    context.lineTo(
-      x + Math.cos(angle) * radius * 1.45,
-      y + Math.sin(angle) * radius * 1.45,
-    );
-    context.strokeStyle = colors.dancer(dancer.color);
-    context.lineWidth = Math.max(2, radius * 0.28);
-    context.lineCap = "round";
-    context.stroke();
+    // 紙・黒板系のテーマは、塗りではなく輪郭で描く。画面側は同じことを
+    // 「素材色で塗り潰した同じ形を重ねる」形でやっている(DancerIcon.tsx)
+    if (colors.markerFill !== "none" && colors.markerStrokeWidth > 0) {
+      tracePerformer(context, x, y, radius, position.rotationAngle);
+      context.fillStyle = colors.markerFill;
+      context.fill();
+      context.strokeStyle = bodyColor;
+      // SVGの32単位系での太さ。頭の半径8がここでは radius なので、その比で直す
+      context.lineWidth = (colors.markerStrokeWidth * radius) / 8;
+      context.stroke();
+    }
 
     if (showNames && dancer.name) {
       const nameSize = Math.max(9, rect.unit * 0.26);

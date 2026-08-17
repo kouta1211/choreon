@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import Link from "next/link";
 import { Pencil } from "lucide-react";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { useT } from "@/features/i18n/LocaleProvider";
@@ -21,6 +22,14 @@ type Props = {
   textClassName?: string;
   /** 枠を横幅いっぱいに広げるか(プロジェクト名のように長い場合) */
   fullWidth?: boolean;
+  /**
+   * 渡すと、表示中の文字がその行き先へのリンクになる(一覧の作品名など)。
+   *
+   * 「文字は押せない、入り口は鉛筆だけ」という約束はそのまま。押したときに
+   * 起きるのが**編集ではなく移動**なので、読もうとして触った人が入力欄と
+   * キーボードに出くわす、という元の事故は起きない。
+   */
+  href?: string;
 };
 
 /**
@@ -48,6 +57,7 @@ export function InlineEditableText({
   prefix,
   textClassName = "",
   fullWidth = false,
+  href,
 }: Props) {
   const t = useT();
   const [draft, setDraft] = useState<string | null>(null);
@@ -86,9 +96,18 @@ export function InlineEditableText({
       }`}
     >
       {prefix}
-      <span className={`min-w-0 truncate text-fg-strong ${textClassName}`}>
-        {value}
-      </span>
+      {href ? (
+        <Link
+          href={href}
+          className={`min-w-0 truncate text-fg-strong ${textClassName}`}
+        >
+          {value}
+        </Link>
+      ) : (
+        <span className={`min-w-0 truncate text-fg-strong ${textClassName}`}>
+          {value}
+        </span>
+      )}
       <PressableButton
         kind="icon"
         onClick={() => setDraft(value)}

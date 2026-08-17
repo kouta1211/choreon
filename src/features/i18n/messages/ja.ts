@@ -326,6 +326,7 @@ export const ja = {
     deleteMetaDancers: (n: number) => `${n} 人`,
     deleteMetaPositions: (n: number) => `${n} 配置`,
     deleteFailed: "プロジェクトの削除に失敗しました",
+    renameFailed: "名前の変更に失敗しました",
     guestTitle: "はじめてのフォーメーション",
     sceneName: (index: number) => `シーン${index}`,
   },
@@ -490,6 +491,11 @@ export const ja = {
       noFormation: "隊形がありません",
       emptyScene: "このシーンにはまだ誰も居ません",
       unavailable: "診断が取れませんでした。しばらくしてからお試しください",
+      // 待っても直らないもの。文言で「こちらの直しが要る」と分かるようにする
+      modelMissing: "診断の相手が見つかりませんでした。設定の直しが必要です",
+      rejected: "診断の鍵が断られました。設定の直しが必要です",
+      // こちらは待てば直る
+      busy: "診断が混み合っています。少し待ってからお試しください",
       empty: "診断が空でした。もう一度お試しください",
     },
     title: "隊形を見てもらう",

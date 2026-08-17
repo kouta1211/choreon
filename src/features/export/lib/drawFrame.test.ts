@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { drawFrame, type DrawFrameInput } from "./drawFrame";
+import { stageRect } from "./frameLayout";
 
 /**
  * 呼ばれた順に記録するだけの偽キャンバス。
@@ -12,13 +13,16 @@ function fakeContext() {
   const calls: string[] = [];
   const texts: string[] = [];
   const fills: string[] = [];
+  /** 直線を引いた先。鼻先がどちらを向いているかを見るのに使う */
+  const moves: { x: number; y: number }[] = [];
 
   const context = {
     clearRect: vi.fn(() => calls.push("clearRect")),
     fillRect: vi.fn(() => calls.push(`fillRect:${context.fillStyle}`)),
     strokeRect: vi.fn(() => calls.push(`strokeRect:${context.strokeStyle}`)),
     beginPath: vi.fn(() => calls.push("beginPath")),
-    moveTo: vi.fn(),
+    closePath: vi.fn(),
+    moveTo: vi.fn((x: number, y: number) => moves.push({ x, y })),
     lineTo: vi.fn(),
     arc: vi.fn(() => calls.push("arc")),
     fill: vi.fn(() => {
@@ -39,7 +43,7 @@ function fakeContext() {
     textBaseline: "alphabetic" as CanvasTextBaseline,
   };
 
-  return { context, calls, texts, fills };
+  return { context, calls, texts, fills, moves };
 }
 
 const COLORS = {
@@ -50,6 +54,9 @@ const COLORS = {
   label: "#eee",
   // 保存色 → いまのテーマでの実測値。ここを通っているかを見たいので目印を付ける
   dancer: (color: string) => `themed(${color})`,
+  // 暗い系のテーマ。印は塗ったままにする
+  markerFill: "none",
+  markerStrokeWidth: 0,
 };
 
 function input(overrides: Partial<DrawFrameInput> = {}): DrawFrameInput {
@@ -98,6 +105,82 @@ describe("drawFrame", () => {
     drawFrame(context as unknown as CanvasRenderingContext2D, input());
 
     expect(fills).toContain("themed(#ff0000)");
+  });
+
+  /**
+   * 以前ここは丸＋短い線で、しかも線の向きが 180 度ずれていた。
+   * 画面のダンサー(DancerIcon)は 0 度で客席＝画面の下を向くので、
+   * 書き出した動画だけ全員が奥を向いて写っていた。
+   */
+  describe("ダンサーの形は画面と同じ(頭＋鼻先)", () => {
+    /** 頭の中心と、その作品での半径 */
+    function head(stageWidth: number, stageHeight: number, x: number, y: number) {
+      const rect = stageRect(640, 360, stageWidth, stageHeight);
+      return {
+        x: rect.x + x * rect.unit,
+        y: rect.y + y * rect.unit,
+        radius: rect.unit * 0.34,
+      };
+    }
+
+    it("0度(客席を向く)なら、鼻先は頭の真下に出る", () => {
+      const { context, moves } = fakeContext();
+
+      drawFrame(context as unknown as CanvasRenderingContext2D, input());
+
+      const { x, y, radius } = head(8, 6, 2, 3);
+      expect(moves).toContainEqual({
+        x: expect.closeTo(x, 6),
+        y: expect.closeTo(y + radius * 1.5, 6),
+      });
+    });
+
+    it("180度なら、鼻先は頭の真上に出る", () => {
+      const { context, moves } = fakeContext();
+
+      drawFrame(
+        context as unknown as CanvasRenderingContext2D,
+        input({
+          positions: [{ dancerId: "d1", x: 2, y: 3, rotationAngle: 180 }],
+        }),
+      );
+
+      const { x, y, radius } = head(8, 6, 2, 3);
+      expect(moves).toContainEqual({
+        x: expect.closeTo(x, 6),
+        y: expect.closeTo(y - radius * 1.5, 6),
+      });
+    });
+  });
+
+  /**
+   * 紙・黒板系のテーマは、印を塗りではなく輪郭で描く。画面側は同じ形を
+   * 素材色で塗り潰して重ねているので、書き出しも同じ手順を踏む。
+   */
+  it("紙系のテーマでは、素材色で塗り直してから輪郭を引く", () => {
+    const { context, fills, calls } = fakeContext();
+
+    drawFrame(
+      context as unknown as CanvasRenderingContext2D,
+      input({
+        colors: { ...COLORS, markerFill: "#fdfbf5", markerStrokeWidth: 2 },
+      }),
+    );
+
+    expect(fills).toContain("themed(#ff0000)");
+    expect(fills).toContain("#fdfbf5");
+    // 塗り直しのあとに輪郭。順が逆だと線が塗りに隠れる
+    expect(calls.lastIndexOf("stroke")).toBeGreaterThan(
+      calls.lastIndexOf("fill"),
+    );
+  });
+
+  it("暗い系のテーマでは、塗ったままにする(輪郭を重ねない)", () => {
+    const { context, fills } = fakeContext();
+
+    drawFrame(context as unknown as CanvasRenderingContext2D, input());
+
+    expect(fills).not.toContain("none");
   });
 
   it("名前を出さない設定なら、名前は書かない", () => {

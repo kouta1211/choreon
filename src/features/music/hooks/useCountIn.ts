@@ -14,6 +14,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
  * メトロノームの音そのものは AudioContext の時計で鳴らしている
  * (useMetronome)。ここが数えているのは「あと何拍残っているか」という
  * 画面の表示だけなので、多少ずれても音はずれない。
+ *
+ * ■ 数え終わりと再生開始は【同じ更新で】起こす(2026-08-17)
+ * 以前は「0 になった」ことを別の useEffect が見てから再生を始めていた。
+ * すると **数え終わったが、まだ再生は始まっていない**という一瞬の描画が
+ * 挟まる。その一瞬、メトロノームの isActive
+ * (`(isPlaying && …) || isCountingIn`) が両方 false になるので、
+ * useMetronome の後片付けが走って AudioContext が suspend され、
+ * 直後の resume と競り合って**カウントインのあと音が出なくなっていた**。
+ * 最後の1拍を数え終えるその場で再生も始めれば、間が空かない。
  */
 export function useCountIn(bpm: number) {
   const [remainingBeats, setRemainingBeats] = useState(0);
@@ -23,21 +32,18 @@ export function useCountIn(bpm: number) {
   useEffect(() => {
     if (remainingBeats <= 0) return;
 
-    const timer = setTimeout(
-      () => setRemainingBeats((beats) => beats - 1),
-      (60 / bpm) * 1000,
-    );
+    const timer = setTimeout(() => {
+      const next = remainingBeats - 1;
+      setRemainingBeats(next);
+      if (next > 0) return;
+      // ここは同じタイマーの中なので、React は上の setState と
+      // まとめて1回で描き直す。「数え終わったが再生前」の描画が出ない
+      const done = onDoneRef.current;
+      onDoneRef.current = null;
+      done?.();
+    }, (60 / bpm) * 1000);
     return () => clearTimeout(timer);
   }, [remainingBeats, bpm]);
-
-  // 0 になった瞬間に本来やりたかったこと(再生)へ移る。
-  // 取り消されたときは onDoneRef が空になっているので何も起きない
-  useEffect(() => {
-    if (remainingBeats !== 0) return;
-    const done = onDoneRef.current;
-    onDoneRef.current = null;
-    done?.();
-  }, [remainingBeats]);
 
   const start = useCallback((beats: number, onDone: () => void) => {
     if (beats <= 0) {

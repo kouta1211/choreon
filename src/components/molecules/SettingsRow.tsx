@@ -226,9 +226,16 @@ export function SettingsNumberRow({
           </span>
         </span>
       </label>
-      {description && (
-        <p className="text-caption leading-snug text-fg-muted">{description}</p>
-      )}
+      {/* 入れられる範囲を必ず出す。以前は書いていなかったので、下限より
+          小さい数を打った人には「打った数が消えた」ようにしか見えず、
+          「キーボードで入力できない」という報告になって返ってきた */}
+      <p className="text-caption leading-snug text-fg-muted">
+        {description ? `${description} · ` : ""}
+        <span className="font-mono">
+          {min}–{max}
+          {unit}
+        </span>
+      </p>
     </div>
   );
 }

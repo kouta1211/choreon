@@ -109,6 +109,56 @@ describe("ProjectList", () => {
     expect(useUIStore.getState().confirm).toBeNull();
   });
 
+  /**
+   * ここに改名が無かったので、名前を直すには作品を開くしかなかった
+   * (動作確認の台本は、一覧で直せる前提で書いてある)。
+   */
+  describe("一覧から名前を変える", () => {
+    it("鉛筆から書き換えると、保存して一覧を取り直す", async () => {
+      const renameSpy = vi
+        .spyOn(projectsApi, "updateProjectTitle")
+        .mockResolvedValue(undefined);
+      const user = userEvent.setup();
+      renderList([makeProject({ id: "1", title: "発表会A" })]);
+
+      await user.click(screen.getByLabelText("プロジェクト名を変更"));
+      const field = screen.getByLabelText("プロジェクト名");
+      await user.clear(field);
+      await user.type(field, "発表会2026{Enter}");
+
+      await waitFor(() => {
+        expect(renameSpy).toHaveBeenCalledWith(
+          expect.anything(),
+          "1",
+          "発表会2026",
+        );
+      });
+      expect(refresh).toHaveBeenCalled();
+      // 取り直しが返るまでは手元で覚えた名前を出す
+      expect(screen.getByText("発表会2026")).toBeInTheDocument();
+    });
+
+    it("保存に失敗したら元の名前へ戻し、トーストで知らせる", async () => {
+      vi.spyOn(projectsApi, "updateProjectTitle").mockRejectedValue(
+        new Error("network"),
+      );
+      const user = userEvent.setup();
+      renderList([makeProject({ id: "1", title: "発表会A" })]);
+
+      await user.click(screen.getByLabelText("プロジェクト名を変更"));
+      const field = screen.getByLabelText("プロジェクト名");
+      await user.clear(field);
+      await user.type(field, "発表会2026{Enter}");
+
+      await waitFor(() => {
+        expect(useUIStore.getState().toast?.message).toBe(
+          "名前の変更に失敗しました",
+        );
+      });
+      expect(screen.getByText("発表会A")).toBeInTheDocument();
+    });
+  });
+
   it("削除に失敗したらトーストで知らせる", async () => {
     vi.spyOn(projectsApi, "deleteProject").mockRejectedValue(
       new Error("network"),

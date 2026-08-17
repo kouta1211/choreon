@@ -6,7 +6,11 @@ import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toUserMessage } from "@/lib/supabase/errors";
-import { deleteProject } from "@/features/project/api/projects";
+import {
+  deleteProject,
+  updateProjectTitle,
+} from "@/features/project/api/projects";
+import { InlineEditableText } from "@/components/molecules/InlineEditableText";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import type { ProjectSummary } from "@/features/project/types";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
@@ -29,13 +33,43 @@ type Props = {
  * シーン・ダンサー・位置まで巻き込む重い操作なので、楽観的に消して見せてから
  * 失敗で戻す(＝一瞬消えたものが復活する)より、確実に消えたことを確認して
  * から反映する方が納得しやすいため。
+ *
+ * ■ 改名は「先に見せて、失敗したら戻す」(削除とは逆。2026-08-17に追加)
+ * 名前を書き換えるだけなら巻き添えが無く、押した直後に新しい名前が見えた方が
+ * 手応えがある。**ここに改名が無かったので、名前を直すにはいちいち作品を
+ * 開くしかなかった**(動作確認の台本は、一覧で直せる前提で書いてある)。
+ * 一覧はServer Componentが取ってくるので、書き換えた名前は
+ * router.refresh() が返ってくるまで手元(renamed)で覚えておく。
  */
 export function ProjectList({ projects }: Props) {
   const t = useT();
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  /** 改名したがまだ取り直せていない名前。id → 新しい名前 */
+  const [renamed, setRenamed] = useState<Record<string, string>>({});
   const requestConfirm = useUIStore((state) => state.requestConfirm);
   const showToast = useUIStore((state) => state.showToast);
+
+  const handleRename = async (project: ProjectSummary, next: string) => {
+    setRenamed((current) => ({ ...current, [project.id]: next }));
+    try {
+      const supabase = createClient();
+      await updateProjectTitle(supabase, project.id, next);
+      router.refresh();
+    } catch (caught) {
+      // 元の名前へ戻す。取り直しの結果が入るまでの覚え書きなので、
+      // 失敗したら覚えていること自体を消せばよい
+      setRenamed((current) => {
+        const { [project.id]: _reverted, ...rest } = current;
+        void _reverted;
+        return rest;
+      });
+      showToast({
+        message: toUserMessage(caught, t.projects.renameFailed),
+        type: "error",
+      });
+    }
+  };
 
   const handleDelete = (project: ProjectSummary) => {
     requestConfirm({
@@ -87,13 +121,28 @@ export function ProjectList({ projects }: Props) {
           >
             <Link
               href={`/projects/${project.id}`}
-              className="flex min-w-0 flex-1 items-center gap-gutter"
+              className="shrink-0"
+              aria-hidden
+              tabIndex={-1}
             >
               <ProjectThumbnail project={project} />
-              <span className="flex min-w-0 flex-1 flex-col gap-base">
-                <span className="truncate text-title text-fg-strong">
-                  {project.title}
-                </span>
+            </Link>
+            <div className="flex min-w-0 flex-1 flex-col gap-base">
+              {/* 名前だけリンクの外に出す。中に鉛筆ボタンを入れると
+                  「リンクの中のボタン」になり、押したときにどちらが
+                  効くのかブラウザ任せになる */}
+              <InlineEditableText
+                value={renamed[project.id] ?? project.title}
+                onCommit={(next) => void handleRename(project, next)}
+                label={t.editor.projectName}
+                href={`/projects/${project.id}`}
+                textClassName="text-title"
+                fullWidth
+              />
+              <Link
+                href={`/projects/${project.id}`}
+                className="flex min-w-0 flex-col gap-base"
+              >
                 <span className="font-mono text-mono-s text-fg-sub">
                   {t.projects.cardSummary(
                     project.sceneCount,
@@ -124,8 +173,8 @@ export function ProjectList({ projects }: Props) {
                     {t.projects.tapToStart}
                   </span>
                 )}
-              </span>
-            </Link>
+              </Link>
+            </div>
             {/* 削除は赤い面にしない。赤いダンサーが隣に並ぶので、
                 面が赤いと「危険」ではなく「誰かの色」に見える */}
             <PressableButton

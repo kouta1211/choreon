@@ -26,7 +26,18 @@ import {
  * (formationSummary.ts)。
  */
 
-const MODEL = process.env.GEMINI_MODEL ?? "gemini-2.0-flash";
+/**
+ * 使うモデル。環境変数で差し替えられる。
+ *
+ * ■ 既定を上げた理由(2026-08-17)
+ * 以前の既定 `gemini-2.0-flash` は **2026-06-01 に停止**していて、
+ * 呼ぶと上流が 404 を返す。画面には「診断が取れませんでした」としか
+ * 出ないので、止まっていることに気づけなかった。
+ *
+ * モデルには寿命がある。**次にここが黙って壊れたときに原因が分かるよう、
+ * 下の failureMessage で上流のステータスごとに文言を分けてある。**
+ */
+const MODEL = process.env.GEMINI_MODEL ?? "gemini-3.5-flash";
 
 const SYSTEM_PROMPT = `あなたはダンスのフォーメーションを見る振付の相談相手です。
 渡されるのは、ある1シーンの立ち位置と、アプリが計算で出した事実です。
@@ -49,6 +60,34 @@ const REPLY_LANGUAGE: Record<Locale, string> = {
 };
 
 type RequestBody = { summary?: FormationSummary };
+
+/**
+ * 上流が断ってきたときの文言を、ステータスごとに選ぶ。
+ *
+ * ■ なぜ分けるのか
+ * 以前はどの理由でも「診断が取れませんでした。しばらくしてからお試しください」
+ * の一文だった。**モデルが停止していた3か月間、その一文しか出ていない**ので、
+ * 報告を受けても「混んでいるのか」「壊れているのか」が分からない。
+ * 待てば直るもの(429)と、こちらが直すまで直らないもの(404/403)は別の話なので、
+ * 画面の言葉も分ける。
+ *
+ * **相手のエラー本文は返さない**(キーや内部の事情が混ざりうる)。
+ * 分けているのはステータスだけ。
+ */
+function failureMessage(
+  status: number,
+  errors: {
+    modelMissing: string;
+    rejected: string;
+    busy: string;
+    unavailable: string;
+  },
+): string {
+  if (status === 404) return errors.modelMissing;
+  if (status === 401 || status === 403) return errors.rejected;
+  if (status === 429) return errors.busy;
+  return errors.unavailable;
+}
 
 export async function POST(request: Request) {
   // 返す言葉も、エラーの文言も、画面と同じ言語で
@@ -148,9 +187,14 @@ ${REPLY_LANGUAGE[locale]}`,
     );
 
     if (!response.ok) {
+      // サーバーのログには残す。画面へ出せるのは「どの種類の断りか」までで、
+      // どのモデル名で断られたのかはここでしか分からない
+      console.error(
+        `[review] ${MODEL} を呼んで ${response.status} が返りました`,
+      );
       // 相手のエラー本文はそのまま返さない(キーや内部の事情が混ざりうる)
       return NextResponse.json(
-        { error: t.review.errors.unavailable },
+        { error: failureMessage(response.status, t.review.errors) },
         { status: 502 },
       );
     }

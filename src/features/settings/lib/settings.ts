@@ -88,8 +88,15 @@ export const DEFAULT_SETTINGS: Settings = {
   isAutoSaveEnabled: true,
 };
 
-/** ステージの広さの範囲。狭すぎると隊形が組めず、広すぎると点が潰れる */
-export const MIN_STAGE_UNITS = 6;
+/**
+ * ステージの広さの範囲。狭すぎると隊形が組めず、広すぎると点が潰れる。
+ *
+ * 下限は 6 マス(5.4m)だったが、「2 くらいまで下げたい」という声を受けて
+ * **4 マス(3.6m)** にした。2 マスまで許すと 2×2 の格子＝置ける場所が
+ * 4 つしかなく、ダンサーが3人いる時点で隊形にならない。稽古場の
+ * いちばん狭い区画がだいたい 3.6m 四方なので、そこを底にしている。
+ */
+export const MIN_STAGE_UNITS = 4;
 export const MAX_STAGE_UNITS = 30;
 /** シーンの間隔。0.1未満だと2つのシーンが同じ時刻に重なる */
 export const MIN_SEGMENT_SETTING = 0.5;

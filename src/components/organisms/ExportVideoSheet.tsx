@@ -230,6 +230,10 @@ function resolveColors(): FrameColors {
     line: read("--line-strong", "#3f3f46"),
     label: read("--text-muted", "#71717a"),
     dancer: (color) => dancerColors.get(color) ?? color,
+    // 紙・黒板系のテーマでは印を輪郭で描く。画面と同じ変数を読むので、
+    // テーマを足しても書き出し側を直す必要はない
+    markerFill: read("--marker-fill", "none"),
+    markerStrokeWidth: Number(read("--marker-stroke-width", "0")) || 0,
   };
 }
 

@@ -42,8 +42,16 @@ export function useMetronome({ isActive, bpm, beatsPerBar = 4 }: Params) {
   const contextRef = useRef<AudioContext | null>(null);
   /** どこまで予約し終えたか(AudioContextの時計) */
   const scheduledUntilRef = useRef(0);
+  /**
+   * いま鳴らしたいかどうか。suspend/resume はどちらも約束(Promise)で、
+   * **止める約束が、そのあとに出した起こす約束より遅れて片付くことがある**。
+   * 順番が入れ替わると、鳴らしたいのに止まったままになる。片付いた時点で
+   * もう一度ここを見て、食い違っていたら直す。
+   */
+  const wantsSoundRef = useRef(false);
 
   useEffect(() => {
+    wantsSoundRef.current = isActive;
     if (!isActive) return;
 
     if (!contextRef.current) {
@@ -98,8 +106,14 @@ export function useMetronome({ isActive, bpm, beatsPerBar = 4 }: Params) {
 
     return () => {
       clearInterval(timer);
-      // 予約済みの音は鳴り切ってしまうので、止めた時点で黙らせる
-      void context.suspend().catch(() => {});
+      // 予約済みの音は鳴り切ってしまうので、止めた時点で黙らせる。
+      // 黙らせ終わった時点でまた鳴らしたくなっていたら、その場で起こし直す
+      void context
+        .suspend()
+        .catch(() => {})
+        .then(() => {
+          if (wantsSoundRef.current) void context.resume().catch(() => {});
+        });
     };
   }, [isActive, bpm, beatsPerBar]);
 
