@@ -6,10 +6,13 @@ import {
   OVERLAY_FADE_IN_SECONDS,
   resolveTransitionDuration,
 } from "@/features/canvas/constants";
+import { useClearBlindSpot } from "@/features/canvas/hooks/useClearBlindSpot";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   dancerName: string;
+  /** 直しを当てる相手。逃げ先はアプリが計算する(useClearBlindSpot) */
+  dancerId: string;
 };
 
 /**
@@ -25,14 +28,28 @@ type Props = {
  * 画面を見ても理由が見つからなかった。目の前の配置と印が一致していない
  * 警告は、正しくても誤検知として扱われる。
  */
-export function DancerBlindSpotBadge({ dancerName }: Props) {
+export function DancerBlindSpotBadge({ dancerName, dancerId }: Props) {
   const t = useT();
   const description = t.dancer.badges.blindSpot.text(dancerName);
+  const { suggestedX, moveOut } = useClearBlindSpot(dancerId);
+
   // 長押し(PCはホバー)で説明を出す。title属性はタッチで出ないうえ、
   // テーマの色も当たらない(Popover.tsx)
   const { triggerProps, popover } = usePopover({
     heading: t.dancer.badges.blindSpot.heading,
     body: t.dancer.badges.blindSpot.body,
+    /* 逃げ場があるときだけ出す。前が塞がりきっているときは
+       押しても動けないので、ボタンそのものを置かない。
+       **わざと重ねている振付**（前の人の影から出てくる）もあるので、
+       押されるまで何もしない */
+    action:
+      suggestedX === null
+        ? undefined
+        : {
+            label: t.dancer.badges.blindSpot.moveOut,
+            note: t.dancer.badges.blindSpot.moveOutNote,
+            onAction: () => void moveOut(),
+          },
   });
   return (
     <>

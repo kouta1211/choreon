@@ -609,6 +609,8 @@ export const ko = {
       blindSpot: {
         text: (name: string) => `${name}: 앞사람에 가려 객석에서 보이지 않습니다`,
         heading: "가림 확인",
+        moveOut: "옆으로 비켜 얼굴을 보이게",
+        moveOutNote: "가장 적게 움직이는 쪽으로. 실행 취소로 되돌아갑니다",
         body: "객석에서 볼 때 앞사람 바로 뒤에 선 사람에게 표시됩니다. 지금 화면에 보이는 대형만 보고, 이동 중은 세지 않습니다.",
       },
       collision: {

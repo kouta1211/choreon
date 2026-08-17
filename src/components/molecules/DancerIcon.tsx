@@ -263,7 +263,9 @@ function DancerMarkerImpl({
         (nameDisplay === "selected" && isSelected)) && (
         <DancerNameLabel name={dancer.name} />
       )}
-      {isBlocked && <DancerBlindSpotBadge dancerName={dancer.name} />}
+      {isBlocked && (
+        <DancerBlindSpotBadge dancerName={dancer.name} dancerId={dancer.id} />
+      )}
       {collision && (
         <DancerCollisionBadge
           collision={collision}

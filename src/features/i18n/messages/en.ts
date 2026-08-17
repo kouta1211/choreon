@@ -615,6 +615,8 @@ export const en = {
         text: (name: string) =>
           `${name}: hidden behind someone, out of sight from the audience`,
         heading: "Blocked-view check",
+        moveOut: "Step aside to be seen",
+        moveOutNote: "Moves the shortest way. Undo removes it",
         body: "Marks anyone standing directly behind someone as seen from the audience. It only looks at the formation on screen, not at what happens mid-move.",
       },
       collision: {

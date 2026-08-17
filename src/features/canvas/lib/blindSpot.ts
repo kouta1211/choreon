@@ -28,6 +28,72 @@ const MIN_DEPTH_GAP_UNITS = 0.5;
 
 type Point = { xCoordinate: number; yCoordinate: number };
 
+/** 直しを提案するときに、境目ちょうどでは止めない余白。
+ * ぴったり overlapUnits だけ動かすと、判定が「>」なのか「>=」なのかで
+ * 印が消えるかどうかが変わる。目で見て分かるだけ余分に逃がす */
+const CLEARANCE_MARGIN_UNITS = 0.1;
+
+/**
+ * 隠れている人を、**横へいちばん少なく動かして**顔を出す位置。
+ *
+ * ■ なぜアプリが計算するのか
+ * 「8番を少し左へ」という直しは、AI に座標を作らせると当たらない
+ * (プロンプトが「数を作らない」と禁じているのと同じ理由)。
+ * 顔被りは「真後ろに居るかどうか」という単純な規則なので、**逃げる先は
+ * 計算で出る**。AI が要るのは「これは直す価値があるか」の判断だけ。
+ *
+ * ■ 前後には動かさない
+ * 奥行きを変えると隊形の形そのものが変わる。横へ逃がすだけなら、
+ * 列の並びは保たれる。
+ *
+ * @returns 動かし先のX座標。動かす必要が無い/逃げ場が無いなら null
+ */
+export function clearBlindSpotX(
+  blocked: Point,
+  others: Point[],
+  stageWidth: number,
+  {
+    shoulderHalfUnits = SHOULDER_HALF_UNITS,
+    faceHalfUnits = FACE_HALF_UNITS,
+    minDepthGapUnits = MIN_DEPTH_GAP_UNITS,
+  }: BlindSpotOptions = {},
+): number | null {
+  const overlapUnits = shoulderHalfUnits + faceHalfUnits;
+
+  /** その人を隠している(＝手前に居て横が重なっている)人たち */
+  const blockers = others.filter(
+    (other) =>
+      other.yCoordinate - blocked.yCoordinate > minDepthGapUnits &&
+      Math.abs(other.xCoordinate - blocked.xCoordinate) < overlapUnits,
+  );
+  if (blockers.length === 0) return null;
+
+  /** その X なら、手前の誰にも隠れないか */
+  const isClear = (x: number) =>
+    others.every(
+      (other) =>
+        other.yCoordinate - blocked.yCoordinate <= minDepthGapUnits ||
+        Math.abs(other.xCoordinate - x) >= overlapUnits,
+    );
+
+  const needed = overlapUnits + CLEARANCE_MARGIN_UNITS;
+
+  /* 隠している人のすぐ隣（左右それぞれ）を候補にして、近い方から試す。
+     いちばん少なく動かす、が狙いなので距離で並べる */
+  const candidates = blockers
+    .flatMap((blocker) => [
+      blocker.xCoordinate - needed,
+      blocker.xCoordinate + needed,
+    ])
+    .filter((x) => x >= 0 && x <= stageWidth)
+    .sort(
+      (a, b) =>
+        Math.abs(a - blocked.xCoordinate) - Math.abs(b - blocked.xCoordinate),
+    );
+
+  return candidates.find(isClear) ?? null;
+}
+
 export type BlindSpotOptions = {
   shoulderHalfUnits?: number;
   faceHalfUnits?: number;

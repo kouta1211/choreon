@@ -624,6 +624,8 @@ export const ja = {
       blindSpot: {
         text: (name: string) => `${name}: 手前の人に重なって、客席から見えません`,
         heading: "顔被りチェック",
+        moveOut: "横へずらして顔を出す",
+        moveOutNote: "いちばん少なく動く方へ。元に戻すで消えます",
         body: "客席から見て、手前の人の真後ろに入っている人に付きます。いま画面に出ている隊形だけを見ていて、移動の途中は数えません。",
       },
       collision: {
