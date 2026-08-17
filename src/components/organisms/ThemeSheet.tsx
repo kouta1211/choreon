@@ -70,7 +70,14 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
         wideMaxWidthClassName="min-[1200px]:max-w-md"
       >
         <div className="flex flex-col gap-4 px-[18px] py-4">
-          <ThemePreview themeId={detailTheme.id} size="large" />
+          {/* 質感も一緒に描く。**質感は body の後ろに敷く1枚なので、
+              このシートが開いている間は板に隠れて見えない** — 切り替えても
+              手応えが無く、いちいち閉じて確かめることになっていた */}
+          <ThemePreview
+            themeId={detailTheme.id}
+            size="large"
+            textureId={current.texture}
+          />
 
           <div>
             <p className="mb-2 text-label font-medium text-fg-sub">
@@ -100,6 +107,17 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
               {t.themeSheet.textureNote}
             </p>
           </div>
+
+          {/* 選んだ時点で既に当たっているので、これは「決定」ではなく
+              **見に行くための出口**。押す先が無いと、決め終わったのに
+              閉じ方(幕・引き下げ・Escape)を探すことになる */}
+          <PressableButton
+            kind="primary"
+            onClick={handleClose}
+            className="h-target-lg w-full rounded-lg bg-accent text-headline text-accent-fg"
+          >
+            {t.themeSheet.apply}
+          </PressableButton>
         </div>
       </BottomSheet>
     );

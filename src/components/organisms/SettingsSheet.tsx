@@ -173,7 +173,18 @@ export function SettingsSheet({
       title={current ? current.title : t.settings.title}
       isTall
     >
-      <div className="flex flex-col gap-gutter-lg px-gutter py-gutter">
+      {/* 潜る/戻るを横スライドで見せる。**以前はその場で中身が
+          差し替わっていた**ので、1枚目へ戻ったのか別の束へ移ったのかが
+          動きから読めなかった。束は右から入り、戻ると右へ出る
+          (iOSの設定と同じ向き)。
+          key を付け替えて出入りを描き分けている — 同じ要素の中身だけを
+          替えると、出て行く方が描かれないので片道しか動かない */}
+      <div
+        key={openSection ?? "index"}
+        className={`flex flex-col gap-gutter-lg px-gutter py-gutter ${
+          current ? "settings-pane-in-right" : "settings-pane-in-left"
+        }`}
+      >
         {current ? (
           current.body
         ) : (

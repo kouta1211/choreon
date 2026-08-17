@@ -63,6 +63,16 @@
 
      階層は【大きさ】ではなく【太さと色】で作る。
      大きさを増やして目立たせたくなったら、まず色を上げること */
+  /* 9段目。**アプリ名を名乗る1箇所にだけ使う**(AuthScreen の
+     「Choreon」)。ここは画面の主役そのもので、下の display を使うと
+     カードの中の見出しと同じ強さになってしまう。
+     一点物を増やさないために段として置いてある — 別の画面で
+     「ちょっと大きくしたい」ときにこれを持ち出さないこと */
+  --text-hero: 44px;
+  --text-hero--line-height: 48px;
+  --text-hero--font-weight: 700;
+  --text-hero--letter-spacing: -0.035em;
+
   --text-display: 32px;
   --text-display--line-height: 36px;
   --text-display--font-weight: 700;
@@ -298,6 +308,44 @@ body::before {
 
 .splash {
   animation: splash-out 0.32s ease-in 1s forwards;
+}
+
+/* 設定の階層移動(SettingsSheet.tsx)。潜ると右から、戻ると左から。
+   出ていく方は描かない — 1枚しか無い場所で入れ替えているので、
+   入ってくる側の動きだけで「どちらへ移ったか」は伝わる。
+   距離を短く(12px)しているのは、シートの中で大きく動かすと
+   板ごと揺れているように見えるため */
+@keyframes settings-pane-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}
+@keyframes settings-pane-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+.settings-pane-in-right {
+  animation: settings-pane-in-right 0.18s ease-out;
+}
+.settings-pane-in-left {
+  animation: settings-pane-in-left 0.18s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .settings-pane-in-right,
+  .settings-pane-in-left {
+    animation: none;
+  }
+}
+
+/* このタブで既に見た人には出さない。属性は <head> の同期スクリプトが
+   描画の前に書くので(themeScript.ts)、一瞬だけ見える、が起きない。
+   React 側は毎回同じものを描いてから外す — 描くものをサーバーと
+   食い違わせないため(SplashScreen.tsx) */
+[data-splash="seen"] .splash {
+  display: none;
 }
 
 /* 動きを減らす設定のとき、上の @media は再生時間だけを潰して

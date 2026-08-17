@@ -38,13 +38,14 @@ export function AuthScreen({ children }: Props) {
         {/* 板の中に入れる。ブランドを外に置くと、カードとの間隔が
             画面の高さによって伸び縮みして、置き場所が定まらない */}
         <div className="overlay-panel flex flex-col gap-gutter-lg rounded-2xl p-8">
-          {/* キャッチコピーを外した。その空きをマークとタイトルに回す。
-              **文字の大きさは増やさない** — text-display はタイポの8段の
-              最上段で、ここに一点物を足すと「同じ役割の文字が画面ごとに
-              違う」が戻る。代わりにマークを大きくして重心を上げている */}
+          {/* タイトルを強く。**ここはこのアプリが名乗る唯一の場所**で、
+              下の説明より弱く見えていた(display は板の中の見出しと同じ段)。
+              一点物を足さないよう、タイポに hero という段を1つ設けて
+              そこから取っている(globals.css)。マークも一回り大きくして、
+              名前と一緒に1つの塊に見えるようにした */}
           <div className="flex flex-col items-center gap-unit py-unit">
-            <BrandMark className="mb-gutter scale-125" />
-            <h1 className="text-display text-fg-strong">Choreon</h1>
+            <BrandMark className="mb-gutter scale-[1.4]" />
+            <h1 className="text-hero text-fg-strong">Choreon</h1>
           </div>
 
           {children}

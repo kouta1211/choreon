@@ -1,6 +1,6 @@
 "use client";
 
-import type { ThemeId } from "@/features/theme/catalog";
+import type { TextureId, ThemeId } from "@/features/theme/catalog";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 /** ミニチュアに立たせる6人。実際の隊形(V字)をそのまま小さくしたもの */
@@ -17,6 +17,15 @@ type Props = {
   themeId: ThemeId;
   /** 大きめに出すかどうか(詳細シートは大、一覧はミニチュア) */
   size?: "small" | "large";
+  /**
+   * 背景の質感も一緒に見せる。
+   *
+   * 質感は body の後ろに敷く1枚(globals.css の `body::before`)なので、
+   * **シートを開いている間は板に隠れて何も見えない**。切り替えても
+   * 変化が伝わらず、いちいち閉じて確かめることになっていた。
+   * ここへ渡すと、ミニチュアの地の上に同じ模様を描く。
+   */
+  textureId?: TextureId;
 };
 
 /**
@@ -28,17 +37,29 @@ type Props = {
  * themes.css がこの中だけを別のテーマとして塗る。テーマを増やしても
  * このファイルは変わらない。
  */
-export function ThemePreview({ themeId, size = "small" }: Props) {
+export function ThemePreview({
+  themeId,
+  size = "small",
+  textureId,
+}: Props) {
   const t = useT();
   const isLarge = size === "large";
 
   return (
     <div
       data-theme={themeId}
+      data-texture={textureId}
       aria-hidden
-      className={`overflow-hidden bg-page ${isLarge ? "p-3" : "p-2"} rounded-[max(0px,calc(var(--radius)-2px))]`}
+      className={`relative overflow-hidden bg-page ${isLarge ? "p-3" : "p-2"} rounded-[max(0px,calc(var(--radius)-2px))]`}
     >
-      <div className={`flex flex-col ${isLarge ? "gap-2" : "gap-1.5"}`}>
+      {/* 質感の1枚。本物と同じ変数(--bg-texture)を読むので、
+          質感を足してもここは変わらない。地の色の手前・中身の後ろ */}
+      {textureId && (
+        <span
+          className="pointer-events-none absolute inset-0 bg-[image:var(--bg-texture)] bg-[length:var(--bg-texture-size)]"
+        />
+      )}
+      <div className={`relative flex flex-col ${isLarge ? "gap-2" : "gap-1.5"}`}>
         {/* ヘッダー: プロジェクト名とモードピル */}
         <div className="flex items-center gap-1.5">
           <span

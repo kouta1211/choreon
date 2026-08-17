@@ -83,6 +83,7 @@ export const en = {
     material: "Paper and material",
     selected: "Selected",
     deviceOnly: "Saved on this device only",
+    apply: "Use this look",
   },
 
   themes: {
@@ -90,12 +91,12 @@ export const en = {
     neon: "Neon Cyan",
     amber: "Amber Stage",
     mono: "Monochrome",
-    chalk: "Blackboard & Chalk",
-    paper: "Paper Chart",
-    gridnote: "Grid Notebook & Blue Ink",
-    kraft: "Kraft Paper & Letterpress",
-    tracing: "Tracing Paper",
-    whiteboard: "Whiteboard & Marker",
+    chalk: "Chalkboard",
+    paper: "Cream Paper",
+    gridnote: "Graph Note",
+    kraft: "Kraft Press",
+    tracing: "Tracing Sheet",
+    whiteboard: "Marker Board",
   },
 
   themeSubtitles: {
@@ -162,7 +163,7 @@ export const en = {
       share: "Share",
       review: "Ask for notes",
       exportVideo: "Make a video",
-      tour: "Show me around again",
+      tour: "Start the tutorial",
       settings: "Settings",
       override: {
         label: "A different look for this piece only",
@@ -285,7 +286,6 @@ export const en = {
 
   welcome: {
     tagline: "The formation sheets you hand out at rehearsal, moving in time with the track.",
-    pitch: "Send one link. Nobody has to install anything.",
     guestStart: "Start as a guest",
     withTour: "Start with the walkthrough",
     guestNote: "No account needed. What you make stays on this device.",
@@ -721,7 +721,7 @@ export const en = {
 
     data: {
       title: "Data",
-      summary: "Export, import, empty this piece",
+      summary: "Export, import, erase everything inside",
       description:
         "Music is not included — the audio never leaves this device. Importing makes a separate piece rather than overwriting this one.",
       export: {
@@ -730,8 +730,8 @@ export const en = {
       },
       import: "Import from a file",
       reset: {
-        label: "Empty this piece",
-        description: "Deletes every scene and every dancer.",
+        label: "Erase everything in this piece",
+        description: "Deletes every scene and every dancer. The piece itself stays.",
       },
     },
 

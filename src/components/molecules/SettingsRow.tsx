@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { SegmentedControl } from "@/components/atoms/SegmentedControl";
 import { SwitchTrack } from "@/components/atoms/Switch";
 import { usePressable } from "@/components/hooks/usePressable";
 
@@ -110,29 +111,15 @@ export function SettingsSegmentRow<T extends string | number>({
     <div className="flex min-h-target flex-col gap-unit px-gutter py-unit">
       <div className="flex items-center gap-gutter">
         <span className="min-w-0 flex-1 text-body text-fg-strong">{label}</span>
-        <div
-          role="group"
-          aria-label={label}
-          className="flex shrink-0 overflow-hidden rounded-lg bg-surface-raised p-base"
-        >
-          {options.map((option) => {
-            const isOn = option.value === value;
-            return (
-              <PressableButton
-                key={String(option.value)}
-                aria-pressed={isOn}
-                onClick={() => onChange(option.value)}
-                className={`h-8 min-w-11 rounded-md px-3 text-label transition-colors ${
-                  isOn
-                    ? "bg-surface-strong text-fg-strong"
-                    : "text-fg-muted hover:text-fg"
-                }`}
-              >
-                {option.label}
-              </PressableButton>
-            );
-          })}
-        </div>
+        {/* 入口の言語切り替えと同じ部品。**以前はここだけ面が瞬間移動して
+            いた** — 同じ形のものが画面によって違う動きをしていた */}
+        <SegmentedControl
+          value={value}
+          options={options}
+          onChange={onChange}
+          label={label}
+          className="w-[min(60%,13rem)] shrink-0"
+        />
       </div>
       {description && (
         <p className="text-caption leading-snug text-fg-muted">{description}</p>

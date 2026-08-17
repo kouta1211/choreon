@@ -51,20 +51,17 @@ export function WelcomeScreen({ onGuestStart }: Props) {
   return (
     <AuthScreen>
       <div className="flex flex-col gap-gutter">
-        {/* 何のアプリかを、押す前に書く。
+        {/* 何のアプリかを、押す前に1行だけ書く。
             **URLを渡された人は、ここしか読まない。** ブランドマークと
             「Choreon」だけでは、踊る人の道具なのかどうかも分からない。
-            マークの下（読み始める位置）に置くのはそのため。
 
-            文字の大きさは既にある段（body / label）から選ぶ。ここに
-            一点物を足すと「同じ役割の文字が画面ごとに違う」が戻る
-            （AuthScreen のコメントと同じ約束）。 */}
-        <div className="flex flex-col gap-unit text-center">
-          <p className="text-body leading-relaxed text-fg-strong">
-            {t.welcome.tagline}
-          </p>
-          <p className="text-label leading-relaxed text-fg-sub">{t.welcome.pitch}</p>
-        </div>
+            以前は2行あったが「長い、そのぶんタイトルを強調して」という
+            指摘を受けて1行にした。消したのは
+            「メンバーに渡すのはURL1本…」の方 — 何のアプリかは残し、
+            使い方の説明は落とす、という分け方。 */}
+        <p className="text-center text-body leading-relaxed text-fg-strong">
+          {t.welcome.tagline}
+        </p>
 
         <div className="flex flex-col gap-unit">
           <PressableButton

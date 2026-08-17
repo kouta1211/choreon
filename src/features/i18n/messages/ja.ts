@@ -94,6 +94,7 @@ export const ja = {
     material: "紙・素材系",
     selected: "選択中",
     deviceOnly: "この端末だけに保存",
+    apply: "この見た目にする",
   },
 
   themes: {
@@ -101,12 +102,12 @@ export const ja = {
     neon: "ネオン・シアン",
     amber: "アンバー・ステージ",
     mono: "モノクローム",
-    chalk: "黒板＋チョーク",
-    paper: "紙の隊形図",
-    gridnote: "方眼ノート＋青インク",
-    kraft: "クラフト紙＋活版",
-    tracing: "トレーシングペーパー",
-    whiteboard: "ホワイトボード＋マーカー",
+    chalk: "チョークボード",
+    paper: "クリーム・ペーパー",
+    gridnote: "グラフ・ノート",
+    kraft: "クラフト・プレス",
+    tracing: "トレーシング・シート",
+    whiteboard: "マーカー・ボード",
   },
 
   themeSubtitles: {
@@ -173,7 +174,7 @@ export const ja = {
       share: "共有",
       review: "隊形を見てもらう",
       exportVideo: "動画にする",
-      tour: "使い方をもう一度見る",
+      tour: "チュートリアルを開始する",
       settings: "設定",
       override: {
         label: "このプロジェクトだけ別の見た目",
@@ -298,7 +299,6 @@ export const ja = {
   /** 未ログインで開いたときに最初に出る、始め方を選ぶ画面 */
   welcome: {
     tagline: "稽古場で配る隊形図を、曲に合わせて動く形に。",
-    pitch: "メンバーに渡すのはURL1本。アプリを入れてもらう必要はありません。",
     guestStart: "ゲストで始める",
     withTour: "使い方の案内から始める",
     guestNote: "登録は要りません。作ったものはこの端末にだけ残ります。",
@@ -356,7 +356,7 @@ export const ja = {
     last: "はじめる",
     next: "次へ",
     nextWithProgress: "次へ（{current}/{total}）",
-    skip: "とばす",
+    skip: "skip",
   },
 
   offline: {
@@ -614,7 +614,7 @@ export const ja = {
         text: (name: string, meters: string, seconds: number, speed: string) =>
           `${name}: 次のシーンまで約${meters}mを${seconds}秒。約${speed}m/s は走らないと間に合いません`,
         heading: "移動が速すぎます",
-        body: "次のシーンまでの距離と秒数から出した速さです。歩いて間に合う速さを超えています。時間軸でこのシーンを右へ引くと、移動に使える時間が延びます。",
+        body: "歩いて間に合いません。時間軸でこのシーンを右へ引くと、移動に使える時間が延びます。",
       },
     },
   },
@@ -724,7 +724,7 @@ export const ja = {
 
     data: {
       title: "データ",
-      summary: "書き出し・取り込み・この作品を空にする",
+      summary: "書き出し・取り込み・中身を全部消す",
       description:
         "曲は入りません(音源はこの端末から出ないため)。取り込みは、いまの作品を上書きせず別の作品として作ります。",
       export: {
@@ -732,9 +732,11 @@ export const ja = {
         description: "JSONで手元に保存します",
       },
       import: "ファイルから取り込む",
+      // 「削除」にはしない。**作品そのものは残る**(消えるのは中身だけ)。
+       // 作品を消すのは一覧のゴミ箱で、そちらと同じ言葉にすると取り違える
       reset: {
-        label: "この作品を空にする",
-        description: "シーンとダンサーを全部消します",
+        label: "この作品の中身を全部消す",
+        description: "シーンとダンサーが全部消えます。作品そのものは残ります",
       },
     },
 

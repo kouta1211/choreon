@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { PressableButton } from "@/components/atoms/PressableButton";
+import { SegmentedControl } from "@/components/atoms/SegmentedControl";
 import { useLocale, useT, writeLocaleCookie } from "@/features/i18n/LocaleProvider";
 import { LOCALE_LABELS, LOCALES, type Locale } from "@/features/i18n/lib/locale";
 
@@ -34,48 +34,17 @@ export function LocaleSwitch() {
     router.refresh();
   };
 
-  const selectedIndex = LOCALES.indexOf(locale);
-
+  // 見た目と動き(明るい面が滑る)は SegmentedControl が持つ。設定シートの
+  // 段も同じ部品を使うので、同じ形のものが画面によって違う動きをしない
   return (
-    <div
-      role="group"
-      aria-label={t.language.label}
-      // 3つを等幅にする。ラベルの長さ(日本語 / English / 한국어)がばらばらの
-      // ままだと、明るい面を滑らせる先が言語ごとに変わってしまう
-      className="relative grid grid-cols-3 rounded-lg bg-surface-raised p-base"
-    >
-      {/* 選ばれているところを示す明るい面。以前は選ばれたボタン自身が
-          色を持っていたので、押すたびに面が瞬間移動していた。1枚だけ
-          置いて動かすと、どこからどこへ移ったかが目で追える。
-          幅と位置は inline に書いている — 桁の計算(3等分・両側の余白ぶん)を
-          クラス名の中に畳むと、読んで確かめられなくなるため */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute top-base bottom-base left-base rounded-md bg-surface-strong transition-transform duration-200 ease-out"
-        style={{
-          width: "calc((100% - var(--spacing-base) * 2) / 3)",
-          transform: `translateX(${selectedIndex * 100}%)`,
-        }}
-      />
-
-      {LOCALES.map((value) => {
-        const isOn = value === locale;
-        return (
-          <PressableButton
-            key={value}
-            aria-pressed={isOn}
-            onClick={() => handleChange(value)}
-            className={`relative h-8 rounded-md px-2 text-label transition-colors ${
-              // 選ばれていない側も**読める濃さ**にする。--text-muted は
-              // 白46%で、地に対して 4.5:1 を割っていた（Lighthouse が
-              // 拾った2件がこれ）。押せるものを、読めない色で書かない
-              isOn ? "text-fg-strong" : "text-fg-sub hover:text-fg"
-            }`}
-          >
-            {LOCALE_LABELS[value]}
-          </PressableButton>
-        );
-      })}
-    </div>
+    <SegmentedControl
+      value={locale}
+      options={LOCALES.map((value) => ({
+        value,
+        label: LOCALE_LABELS[value],
+      }))}
+      onChange={handleChange}
+      label={t.language.label}
+    />
   );
 }

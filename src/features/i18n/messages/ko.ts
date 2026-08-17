@@ -82,6 +82,7 @@ export const ko = {
     material: "종이·재질 계열",
     selected: "선택됨",
     deviceOnly: "이 기기에만 저장",
+    apply: "이 모양으로 하기",
   },
 
   themes: {
@@ -89,12 +90,12 @@ export const ko = {
     neon: "네온 시안",
     amber: "앰버 스테이지",
     mono: "모노크롬",
-    chalk: "칠판＋분필",
-    paper: "종이 대형도",
-    gridnote: "모눈 노트＋파란 잉크",
-    kraft: "크라프트지＋활판",
-    tracing: "트레이싱지",
-    whiteboard: "화이트보드＋마커",
+    chalk: "초크보드",
+    paper: "크림 페이퍼",
+    gridnote: "그래프 노트",
+    kraft: "크라프트 프레스",
+    tracing: "트레이싱 시트",
+    whiteboard: "마커 보드",
   },
 
   themeSubtitles: {
@@ -161,7 +162,7 @@ export const ko = {
       share: "공유",
       review: "대형 봐 달라고 하기",
       exportVideo: "영상으로 만들기",
-      tour: "사용법 다시 보기",
+      tour: "튜토리얼 시작하기",
       settings: "설정",
       override: {
         label: "이 작품만 다른 화면 모양",
@@ -284,7 +285,6 @@ export const ko = {
 
   welcome: {
     tagline: "연습실에서 나눠 주는 대형도를, 곡에 맞춰 움직이는 형태로.",
-    pitch: "전달하는 건 링크 하나. 앱을 깔게 할 필요가 없습니다.",
     guestStart: "게스트로 시작하기",
     withTour: "사용법 안내부터 시작하기",
     guestNote: "가입하지 않아도 됩니다. 만든 것은 이 기기에만 남습니다.",
@@ -342,7 +342,7 @@ export const ko = {
     last: "시작하기",
     next: "다음",
     nextWithProgress: "다음（{current}/{total}）",
-    skip: "건너뛰기",
+    skip: "skip",
   },
 
   offline: {
@@ -714,7 +714,7 @@ export const ko = {
 
     data: {
       title: "데이터",
-      summary: "내보내기 · 가져오기 · 작품 비우기",
+      summary: "내보내기 · 가져오기 · 내용 전부 지우기",
       description:
         "음악은 포함되지 않습니다(음원은 이 기기 밖으로 나가지 않습니다). 가져오기는 지금 작품을 덮어쓰지 않고 별도의 작품으로 만듭니다.",
       export: {
@@ -723,8 +723,8 @@ export const ko = {
       },
       import: "파일에서 가져오기",
       reset: {
-        label: "이 작품 비우기",
-        description: "장면과 댄서를 모두 삭제합니다.",
+        label: "이 작품의 내용 전부 지우기",
+        description: "장면과 댄서를 모두 삭제합니다. 작품 자체는 남습니다.",
       },
     },
 

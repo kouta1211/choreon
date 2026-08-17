@@ -77,7 +77,14 @@ export function Stage({
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-unit">
+    /* 下に 56px 空けてある。**枠の外に垂れ下がっている常設のボタン
+       (テンプレートの入口・元に戻す)のぶん**で、ここを取っておかないと
+       ボタンがシーンの帯に食い込む。以前は場所を取らせずに垂らしていたので、
+       下の帯と重なって「ゆとりが無い」という指摘になった。
+       ダンサーを選んだときの帯も同じ空きに乗るので、ステージの面に
+       被らなくなる(帯に高さを持たせるとステージが縮んで、選んだ瞬間に
+       全員の位置がずれて見えるため、高さは持たせない) */
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-unit pb-14">
       <p className="text-center text-caption tracking-[0.16em] text-fg-muted uppercase">
         {isAudienceOnTop ? t.editor.downstage : t.editor.upstage}
       </p>
@@ -123,13 +130,18 @@ export function Stage({
               以前は --line-strong(白18%)で、格子の --stage-grid(白6%)と
               「同じ白い線の濃さ違い」でしかなかった。そのため消しても差が
               読み取れず、設定を切り替えた手応えが無かった。アクセントを
-              薄く混ぜると、格子の中で1本だけ意味を持つ線として拾える
-              (color-mix なので10テーマそれぞれの色に追従する) */}
+              混ぜると、格子の中で1本だけ意味を持つ線として拾える
+              (color-mix なので10テーマそれぞれの色に追従する)。
+
+              **それでも「ほとんど変化が感じられない」という指摘が来た**ので、
+              1px・55% から 2px・80% へ上げた。格子は1マスごとに引かれていて
+              線の本数が多く、その中の1本を色だけで見分けさせるには
+              太さも要る。切ったときに何が消えたのかが分かる強さが要る */}
           {isCenterLineVisible && gridMode !== "none" && (
             <div
               aria-hidden
               data-testid="stage-center-line"
-              className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-[color-mix(in_oklab,var(--accent)_55%,transparent)]"
+              className="pointer-events-none absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-[color-mix(in_oklab,var(--accent)_80%,transparent)]"
             />
           )}
           {gridMode === "circle" && (
@@ -177,12 +189,12 @@ export function Stage({
               ステージから遠くへ離れてしまい、スマートフォンでは何十pxも下に
               取り残されていた。枠に付ければ、どの画面幅でも同じ距離に付く */}
           {belowStageLeft && (
-            <span className="absolute top-full left-0 mt-1.5">
+            <span className="absolute top-full left-0 mt-2.5">
               {belowStageLeft}
             </span>
           )}
           {belowStageRight && (
-            <span className="absolute top-full right-0 mt-1.5">
+            <span className="absolute top-full right-0 mt-2.5">
               {belowStageRight}
             </span>
           )}

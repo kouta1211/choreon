@@ -126,8 +126,12 @@ export function ViewerLayout({
         </PressableButton>
       </header>
 
-      {/* 横持ちと広い画面では、ステージの右に道順を置く */}
-      <div className="flex min-h-0 flex-1 flex-col gap-2 px-3.5 landscape:flex-row md:flex-row">
+      {/* 横持ちと広い画面では、ステージの右に道順を置く。
+          **justify-center を入れてある** — 入れないと、ステージが 640px で
+          頭打ちになったあとの余りが右端に溜まり、ステージ＋道順の塊が
+          画面の左に寄る。広い画面ほど左に寄って見えるので、
+          「ステージを真ん中に」という指摘になった */}
+      <div className="flex min-h-0 flex-1 flex-col justify-center gap-2 px-3.5 landscape:flex-row md:flex-row">
         {/* Stage は「親の高さいっぱいに伸びて、そこから幅を決める」作り。
             ここを items-center の横フレックスにすると、Stage が交差軸で
             伸びずに中身(ラベル)の高さまで縮み、盤面が高さ0になって

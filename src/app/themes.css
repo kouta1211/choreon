@@ -658,9 +658,15 @@
  * ■ backdrop-filter を掛ける先
  * 重なる板にだけ使う。ドックやヘッダーへ常設で掛けると、ステージを
  * ドラッグしている間じゅう再合成が走ってスクロールが重くなる。 */
+/* ■ 濃さを上げた(2026-08-17)
+ * 0.84 では**ステージの格子と目盛りの数字が透けて読めた**。ダンサーを
+ * 選んだときの帯も「表示とモード」も同じこの素材なので、どちらも
+ * 「透明で見えづらい」という報告になって返ってきた。ぼかしは効いて
+ * いるが、格子のような規則正しい線はぼかしても形が残る。
+ * ぼかしの効かない環境向けに 0.96 という数字が下にあるので、そこへ寄せる。 */
 :root,
 [data-theme] {
-  --overlay-bg: rgba(31, 31, 35, 0.84);
+  --overlay-bg: rgba(31, 31, 35, 0.96);
   --overlay-blur: blur(20px) saturate(1.4);
   --overlay-line: rgba(255, 255, 255, 0.11);
   --overlay-sheen: inset 0 1px 0 rgba(255, 255, 255, 0.13);
@@ -675,7 +681,7 @@
 [data-theme="kraft"],
 [data-theme="tracing"],
 [data-theme="whiteboard"] {
-  --overlay-bg: rgba(253, 251, 245, 0.9);
+  --overlay-bg: rgba(253, 251, 245, 0.97);
   --overlay-blur: blur(6px);
   --overlay-line: rgba(90, 74, 58, 0.22);
   --overlay-sheen: inset 0 1px 0 rgba(255, 255, 255, 0.8);
@@ -684,7 +690,7 @@
 
 /* 曇ったアクリル。黒板の上に置くものは白い板になる(白黒が反転する) */
 [data-theme="chalk"] {
-  --overlay-bg: rgba(232, 240, 233, 0.9);
+  --overlay-bg: rgba(232, 240, 233, 0.97);
   --overlay-blur: blur(10px);
   --overlay-line: rgba(20, 40, 28, 0.18);
   --overlay-sheen: inset 0 1px 0 rgba(255, 255, 255, 0.9);
