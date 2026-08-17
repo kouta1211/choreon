@@ -129,3 +129,61 @@ describe("clearBlindSpotX", () => {
     expect(clearBlindSpotX(blocked, [sameRow], 10)).toBeNull();
   });
 });
+
+/**
+ * 本番で見つけた取りこぼし（2026-08-17）。
+ *
+ * 8人・前列7人が横一列に詰まった隊形で、**逃げ場があるのにボタンが
+ * 出なかった**。隠している人のすぐ隣しか候補にしていなかったので、
+ * その両隣に塞がれた時点で諦めていた。列の端の外側は空いている。
+ */
+describe("clearBlindSpotX（前列が詰まっているとき）", () => {
+  /** 前列は 4〜10 に1マス間隔で7人。隠れているのは 7 の真後ろ */
+  const DENSE_ROW = [4, 5, 6, 7, 8, 9, 10].map((x) => ({
+    xCoordinate: x,
+    yCoordinate: 2,
+  }));
+
+  it("列の外へ逃がす（諦めない）", () => {
+    const x = clearBlindSpotX(
+      { xCoordinate: 7, yCoordinate: 1 },
+      DENSE_ROW,
+      15,
+    );
+
+    expect(x).not.toBeNull();
+    // 逃げた先で本当に顔が出ているか
+    const positions: Record<string, { xCoordinate: number; yCoordinate: number }> =
+      { moved: { xCoordinate: x as number, yCoordinate: 1 } };
+    DENSE_ROW.forEach((point, index) => {
+      positions[`front${index}`] = point;
+    });
+    expect(findBlockedDancerIds(positions).has("moved")).toBe(false);
+  });
+
+  /** 動かす量がいちばん少ない側を選ぶ、は変わっていない */
+  it("近い側の端へ出る", () => {
+    // 4〜10 の列で、隠れているのは 5 の真後ろ。左端(4)の外の方が近い
+    const x = clearBlindSpotX(
+      { xCoordinate: 5, yCoordinate: 1 },
+      DENSE_ROW,
+      15,
+    );
+
+    expect(x).not.toBeNull();
+    expect(x as number).toBeLessThan(5);
+  });
+
+  /** 逃げ場が本当に無いときは、これまでどおり null */
+  it("列がステージの端から端まで詰まっていれば null", () => {
+    // 0〜6 に1マス間隔で7人。ステージも幅6なので、列の外はステージの外
+    const wallToWall = [0, 1, 2, 3, 4, 5, 6].map((x) => ({
+      xCoordinate: x,
+      yCoordinate: 2,
+    }));
+
+    expect(
+      clearBlindSpotX({ xCoordinate: 3, yCoordinate: 1 }, wallToWall, 6),
+    ).toBeNull();
+  });
+});

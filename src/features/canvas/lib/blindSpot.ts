@@ -60,13 +60,16 @@ export function clearBlindSpotX(
 ): number | null {
   const overlapUnits = shoulderHalfUnits + faceHalfUnits;
 
-  /** その人を隠している(＝手前に居て横が重なっている)人たち */
-  const blockers = others.filter(
+  /** 手前に居る人たち。**この人が横へ動いたときに邪魔になりうる**全員 */
+  const inFront = others.filter(
+    (other) => other.yCoordinate - blocked.yCoordinate > minDepthGapUnits,
+  );
+  /** そのうち、いま実際に隠している人。1人も居なければ動かす必要が無い */
+  const isBlockedNow = inFront.some(
     (other) =>
-      other.yCoordinate - blocked.yCoordinate > minDepthGapUnits &&
       Math.abs(other.xCoordinate - blocked.xCoordinate) < overlapUnits,
   );
-  if (blockers.length === 0) return null;
+  if (!isBlockedNow) return null;
 
   /** その X なら、手前の誰にも隠れないか */
   const isClear = (x: number) =>
@@ -78,12 +81,22 @@ export function clearBlindSpotX(
 
   const needed = overlapUnits + CLEARANCE_MARGIN_UNITS;
 
-  /* 隠している人のすぐ隣（左右それぞれ）を候補にして、近い方から試す。
-     いちばん少なく動かす、が狙いなので距離で並べる */
-  const candidates = blockers
-    .flatMap((blocker) => [
-      blocker.xCoordinate - needed,
-      blocker.xCoordinate + needed,
+  /* 手前に居る**全員**の隣（左右それぞれ）を候補にして、近い方から試す。
+     いちばん少なく動かす、が狙いなので距離で並べる。
+
+     ■ なぜ「隠している人の隣」だけでは足りないのか
+     本番で 8人・前列7人が横一列に詰まった隊形を見てもらったら、
+     **逃げ場があるのにボタンが出なかった**。隠している人のすぐ隣は
+     その両隣に塞がれていて、そこで諦めていた。列の端の外側は空いている
+     のに、そこまで探していなかった。
+
+     前列が詰まっていると逃げ先が遠くなる（列の外へ出ることになる）が、
+     **押すかどうかは user が決める**し、元に戻す1回で消える。
+     「遠いから何も出さない」より、出して選ばせる方が筋が通る。 */
+  const candidates = inFront
+    .flatMap((other) => [
+      other.xCoordinate - needed,
+      other.xCoordinate + needed,
     ])
     .filter((x) => x >= 0 && x <= stageWidth)
     .sort(
