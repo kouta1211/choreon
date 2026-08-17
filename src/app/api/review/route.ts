@@ -179,7 +179,18 @@ ${REPLY_LANGUAGE[locale]}`,
           contents: [
             { role: "user", parts: [{ text: formatSummaryForPrompt(summary) }] },
           ],
-          generationConfig: { temperature: 0.6, maxOutputTokens: 400 },
+          /**
+           * ■ 上限が 400 では足りない(2026-08-17)
+           * 200字ほどの返事に 400 トークンあれば足りる、という見積もりで
+           * 決めた数字だったが、**いまのモデルは考えるぶんのトークンも
+           * ここから使う**。実機で試したら、思考で使い切って
+           * 「綺麗に並んでいる。 - 良い点：後」のように**文の途中で
+           * 切れた返事**が返ってきた。
+           *
+           * 長さを抑えるのは上限ではなく指示(SYSTEM_PROMPT の「200字程度」)の
+           * 仕事なので、上限は余裕を持たせる。
+           */
+          generationConfig: { temperature: 0.6, maxOutputTokens: 2000 },
         }),
         // 返ってこないまま画面を待たせない
         signal: AbortSignal.timeout(20_000),
@@ -200,12 +211,29 @@ ${REPLY_LANGUAGE[locale]}`,
     }
 
     const data = (await response.json()) as {
-      candidates?: { content?: { parts?: { text?: string }[] } }[];
+      candidates?: {
+        content?: { parts?: { text?: string }[] };
+        finishReason?: string;
+      }[];
     };
-    const text = data.candidates?.[0]?.content?.parts
+    const candidate = data.candidates?.[0];
+    const text = candidate?.content?.parts
       ?.map((part) => part.text ?? "")
       .join("")
       .trim();
+
+    /**
+     * 上限で打ち切られたら、**そうと分かるようにログへ残す**。
+     *
+     * 打ち切られた返事は文の途中で終わるが、文字列としては returns できて
+     * しまうので、画面には「短い診断」として何食わぬ顔で出る。
+     * 上の maxOutputTokens はそれで一度やられている。
+     */
+    if (candidate?.finishReason === "MAX_TOKENS") {
+      console.error(
+        `[review] ${MODEL} の返事が上限で切れました(${text?.length ?? 0}文字)`,
+      );
+    }
 
     if (!text) {
       return NextResponse.json(
