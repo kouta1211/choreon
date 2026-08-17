@@ -82,8 +82,13 @@ export function InlineEditableText({
           if (event.key === "Enter") event.currentTarget.blur();
           if (event.key === "Escape") setDraft(null);
         }}
+        /* **幅に上限を置く。** `w-full` だけだと親（ヘッダーの flex-1）に
+           引き伸ばされて、名前の欄が画面幅いっぱいの枠になっていた
+           — 元の題字は小さいのに、押した瞬間に1200pxの枠が出る
+           （実機報告 02-12「変更中の枠の表示が変」）。
+           名前を打つのに要る幅はこれで足りる */
         className={`h-[34px] min-w-0 rounded-[calc(var(--radius)*0.75)] border border-accent bg-surface-strong px-2.5 text-fg-strong ring-[3px] ring-accent/15 outline-none ${
-          fullWidth ? "w-full" : "w-40"
+          fullWidth ? "w-full max-w-[22rem]" : "w-40"
         } ${textClassName}`}
       />
     );

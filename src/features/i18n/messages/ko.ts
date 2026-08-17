@@ -57,6 +57,7 @@ export const ko = {
     emptySpots: (n: number) => `${n}자리가 비게 됩니다(앞줄부터 채웁니다).`,
     title: "포메이션",
     needsTwo: "2명 이상",
+    spacingLabel: "간격",
     spacing: { narrow: "좁게", normal: "기본", wide: "넓게" },
     flipX: "좌우 반전",
     flipY: "앞뒤 반전",

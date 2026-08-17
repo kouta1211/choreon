@@ -1,7 +1,7 @@
 "use client";
 
 import { useBpm } from "@/features/music/hooks/useBpm";
-import { PressableButton } from "@/components/atoms/PressableButton";
+import { SegmentedControl } from "@/components/atoms/SegmentedControl";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
@@ -31,29 +31,19 @@ export function BeatsPerBarSegment() {
   const { beatsPerBar, setBeatsPerBar } = useBpm();
 
   return (
-    <div
-      role="group"
-      aria-label={t.music.beatsPerBar}
-      className="flex shrink-0 overflow-hidden rounded-[calc(var(--radius)*0.8333)] border border-line-strong"
-    >
-      {CHOICES.map((choice, index) => {
-        const isOn = beatsPerBar === choice;
-        return (
-          <PressableButton
-            key={choice}
-            type="button"
-            aria-pressed={isOn}
-            onClick={() => setBeatsPerBar(choice)}
-            className={`h-8 min-w-11 px-2 font-mono text-label transition-colors ${
-              index < CHOICES.length - 1 ? "border-r border-line-strong" : ""
-            } ${
-              isOn ? "bg-accent/16 text-accent-soft" : "text-fg-muted"
-            }`}
-          >
-            {choice}/4
-          </PressableButton>
-        );
-      })}
-    </div>
+    /* 見た目は「ダンサー名」などの3択と共通(SegmentedControl)。
+       以前はここだけ自前で枠を描いていて、**同じ意味のものが画面によって
+       違う見え方**をしていた（実機報告 03-18「すべてこれで実装して」）。
+       等幅で明るい面が滑るのも、他の3択と同じになる */
+    <SegmentedControl
+      label={t.music.beatsPerBar}
+      value={beatsPerBar}
+      onChange={setBeatsPerBar}
+      options={CHOICES.map((choice) => ({
+        value: choice,
+        label: `${choice}/4`,
+      }))}
+      className="w-40 shrink-0"
+    />
   );
 }

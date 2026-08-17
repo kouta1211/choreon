@@ -4,6 +4,7 @@ import { useState } from "react";
 import { FlipHorizontal2, FlipVertical2, RotateCw } from "lucide-react";
 import { BottomSheet } from "@/components/molecules/BottomSheet";
 import { FormationPreview } from "@/components/molecules/FormationPreview";
+import { SegmentedControl } from "@/components/atoms/SegmentedControl";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useApplyTemplate } from "@/features/canvas/hooks/useApplyTemplate";
@@ -303,23 +304,17 @@ function TransformControls({
         </PressableButton>
       ))}
 
-      <div className="flex overflow-hidden rounded-full border border-line-strong">
-        {SPACING_VALUES.map((option) => (
-          <PressableButton
-            key={option}
-            type="button"
-            aria-pressed={transform.spacing === option}
-            onClick={() => onChange({ ...transform, spacing: option })}
-            className={`h-8 px-3 text-caption font-medium whitespace-nowrap ${
-              transform.spacing === option
-                ? "bg-accent/12 text-accent-soft"
-                : "text-fg-sub"
-            }`}
-          >
-            {t.templateSheet.spacing[option]}
-          </PressableButton>
-        ))}
-      </div>
+      {/* 間隔の3択。どの画面でも同じ形にする（実機報告 03-18） */}
+      <SegmentedControl
+        label={t.templateSheet.spacingLabel}
+        value={transform.spacing}
+        onChange={(spacing) => onChange({ ...transform, spacing })}
+        options={SPACING_VALUES.map((option) => ({
+          value: option,
+          label: t.templateSheet.spacing[option],
+        }))}
+        className="w-44"
+      />
     </div>
   );
 }

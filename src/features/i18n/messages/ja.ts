@@ -69,6 +69,7 @@ export const ja = {
     emptySpots: (n: number) => `${n}点は空きになります（前列から埋めます）。`,
     title: "フォーメーション",
     needsTwo: "2人以上",
+    spacingLabel: "間隔",
     spacing: { narrow: "狭い", normal: "標準", wide: "広い" },
     flipX: "左右反転",
     flipY: "前後反転",

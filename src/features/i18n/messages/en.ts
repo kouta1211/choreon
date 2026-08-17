@@ -57,6 +57,7 @@ export const en = {
     emptySpots: (n: number) => `${n} spots stay empty (filled from the front).`,
     title: "Formations",
     needsTwo: "two or more",
+    spacingLabel: "Spacing",
     spacing: { narrow: "Tight", normal: "Normal", wide: "Wide" },
     flipX: "Flip left–right",
     flipY: "Flip front–back",

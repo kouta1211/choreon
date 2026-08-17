@@ -5,6 +5,7 @@ import { Film } from "lucide-react";
 import { BottomSheet } from "@/components/molecules/BottomSheet";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { Switch } from "@/components/atoms/Switch";
+import { SegmentedControl } from "@/components/atoms/SegmentedControl";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
@@ -168,23 +169,18 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
               <span className="flex-1 text-label text-fg">
                 {t.exportVideo.size}
               </span>
-              <div className="flex shrink-0 overflow-hidden rounded-[calc(var(--radius)*0.8333)] border border-line-strong">
-                {SIZES.map((size) => (
-                  <PressableButton
-                    key={size.height}
-                    aria-pressed={height === size.height}
-                    disabled={isRunning}
-                    onClick={() => setHeight(size.height)}
-                    className={`h-8 min-w-11 px-2 font-mono text-label ${
-                      height === size.height
-                        ? "bg-accent/16 text-accent-soft"
-                        : "text-fg-muted"
-                    }`}
-                  >
-                    {size.label}
-                  </PressableButton>
-                ))}
-              </div>
+              {/* 3択以下の選び替えは、どの画面でも同じ形（SegmentedControl）。
+                  以前はここだけ自前で枠を描いていた（実機報告 03-18） */}
+              <SegmentedControl
+                label={t.exportVideo.size}
+                value={height}
+                onChange={setHeight}
+                options={SIZES.map((size) => ({
+                  value: size.height,
+                  label: size.label,
+                }))}
+                className="w-36 shrink-0"
+              />
             </div>
 
             <Switch
