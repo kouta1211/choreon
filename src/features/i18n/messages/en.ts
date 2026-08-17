@@ -496,6 +496,7 @@ export const en = {
       modelMissing: "The notes service could not be found. This needs a fix on our side",
       rejected: "The notes service refused the key. This needs a fix on our side",
       busy: "The notes service is busy. Please wait a moment and try again",
+      tooSlow: "The notes took too long. Please try again",
       empty: "The notes came back empty. Please try again",
     },
     title: "Ask for notes",

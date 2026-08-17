@@ -192,8 +192,20 @@ ${REPLY_LANGUAGE[locale]}`,
            */
           generationConfig: { temperature: 0.6, maxOutputTokens: 2000 },
         }),
-        // 返ってこないまま画面を待たせない
-        signal: AbortSignal.timeout(20_000),
+        /**
+         * 返ってこないまま画面を待たせない。
+         *
+         * ■ 20秒では足りなかった(2026-08-17)
+         * 上限を 400 → 2000 に上げたら、モデルが考える時間も伸びて
+         * **20秒の打ち切りに引っかかるようになった**。上限が低いうちは
+         * 途中で止まるので速く返っていただけで、直したのは症状の片方
+         * だった。待つ画面(「見てもらっています…」)は既にあるので、
+         * ここは伸ばす方を選ぶ。
+         *
+         * それでも間に合わないなら、次の手は考える量そのものを抑えること
+         * (generationConfig.thinkingConfig)。まずは伸ばして様子を見る。
+         */
+        signal: AbortSignal.timeout(45_000),
       },
     );
 
@@ -243,9 +255,25 @@ ${REPLY_LANGUAGE[locale]}`,
     }
 
     return NextResponse.json({ text });
-  } catch {
+  } catch (error) {
+    /**
+     * 打ち切りだけは分けて出す。
+     *
+     * 「診断が取れませんでした」に混ぜていたので、**待ち時間で落ちたのか、
+     * 相手に断られたのか**が報告からは分からなかった。実際それで一度
+     * 遠回りしている(上限を上げたら打ち切りに引っかかった、と気づくのに
+     * 実機で2往復かかった)。
+     */
+    const isTimeout = error instanceof Error && error.name === "TimeoutError";
+    if (isTimeout) {
+      console.error(`[review] ${MODEL} が時間内に返しませんでした`);
+    }
     return NextResponse.json(
-      { error: t.review.errors.unavailable },
+      {
+        error: isTimeout
+          ? t.review.errors.tooSlow
+          : t.review.errors.unavailable,
+      },
       { status: 502 },
     );
   }
