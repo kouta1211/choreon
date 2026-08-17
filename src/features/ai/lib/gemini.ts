@@ -33,6 +33,8 @@ export const MODEL = process.env.GEMINI_MODEL ?? "gemini-3.5-flash";
 export type AiErrorMessages = {
   modelMissing: string;
   rejected: string;
+  /** 回数の上限（429）。**混雑とは別物** — 待ちはするが理由が違う */
+  rateLimited: string;
   busy: string;
   unavailable: string;
   tooSlow: string;
@@ -57,10 +59,15 @@ export function failureMessage(
 ): string {
   if (status === 404) return errors.modelMissing;
   if (status === 401 || status === 403) return errors.rejected;
-  // 429(混みすぎ)と 503(需要が高い)は、どちらも**待てば直る**。
-  // 本番で 503 が「うまくいきませんでした」と出て、待てば直るのかどちらとも
-  // 読めなかった（実際の文面: This model is currently experiencing high demand）
-  if (status === 429 || status === 503) return errors.busy;
+  /* 429 と 503 は**どちらも待てば直る**が、理由が違う。
+     - 429: こちらの**回数の上限**（本番の文面: You exceeded your current
+       quota）。他の人が混んでいるのではなく、こちらが使いすぎている
+     - 503: 相手が**混み合っている**（This model is currently experiencing
+       high demand）
+     どちらも「混み合っています」と出していたが、429 で待っても直らない
+     ことがある（上限の区切りまで待つ話）ので、言葉を分ける */
+  if (status === 429) return errors.rateLimited;
+  if (status === 503) return errors.busy;
   return errors.unavailable;
 }
 

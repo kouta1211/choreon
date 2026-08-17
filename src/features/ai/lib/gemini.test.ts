@@ -17,6 +17,7 @@ import { callGemini, failureMessage } from "./gemini";
 const ERRORS = {
   modelMissing: "相手が見つかりません",
   rejected: "鍵が断られました",
+  rateLimited: "回数の上限に達しました",
   busy: "混み合っています",
   unavailable: "うまくいきませんでした",
   tooSlow: "時間がかかりすぎました",
@@ -210,9 +211,10 @@ describe("failureMessage", () => {
   it("こちらの直しが要るものと、待てば直るものを分ける", () => {
     expect(failureMessage(404, ERRORS)).toBe(ERRORS.modelMissing);
     expect(failureMessage(403, ERRORS)).toBe(ERRORS.rejected);
-    expect(failureMessage(429, ERRORS)).toBe(ERRORS.busy);
-    // 503「高負荷です」も待てば直る。本番でこれが「うまくいきませんでした」
-    // と出て、待てばよいのか分からなかった
+    /* 429 と 503 は**どちらも待つ**が、理由が違う。
+       429 はこちらの使いすぎ（本番の文面: You exceeded your current quota）、
+       503 は相手の混雑。同じ言葉で出すと、待てば直るのか分からない */
+    expect(failureMessage(429, ERRORS)).toBe(ERRORS.rateLimited);
     expect(failureMessage(503, ERRORS)).toBe(ERRORS.busy);
     expect(failureMessage(500, ERRORS)).toBe(ERRORS.unavailable);
   });

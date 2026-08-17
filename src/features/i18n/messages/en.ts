@@ -552,6 +552,8 @@ export const en = {
       modelMissing:
         "The service could not be found. This needs a fix on our side",
       rejected: "The service refused the key. This needs a fix on our side",
+      rateLimited:
+        "The request limit has been reached. Please leave it a while and try again",
       busy: "It is busy right now. Please wait a moment and try again",
       tooSlow: "The reply took too long. Please try again",
       empty: "The reply came back empty. Please try again",
@@ -568,6 +570,8 @@ export const en = {
       unavailable: "No notes came back. Please try again in a moment",
       modelMissing: "The notes service could not be found. This needs a fix on our side",
       rejected: "The notes service refused the key. This needs a fix on our side",
+      rateLimited:
+        "The request limit has been reached. Please leave it a while and try again",
       busy: "The notes service is busy. Please wait a moment and try again",
       tooSlow: "The notes took too long. Please try again",
       empty: "The notes came back empty. Please try again",

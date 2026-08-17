@@ -163,8 +163,18 @@ describe("POST /api/review", () => {
     expect(data.error).toContain("設定の直し");
   });
 
-  it("混み合っているときは、待てば直ると言う", async () => {
+  /** 429 はこちらの使いすぎ、503 は相手の混雑。待つ理由が違うので分ける */
+  it("回数の上限に当たったときは、そう言う", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(upstream("", 429)));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const data = (await (await POST(request())).json()) as { error: string };
+
+    expect(data.error).toContain("回数の上限");
+  });
+
+  it("相手が混み合っているときは、そう言う", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(upstream("", 503)));
     vi.spyOn(console, "error").mockImplementation(() => {});
 
     const data = (await (await POST(request())).json()) as { error: string };
