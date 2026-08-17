@@ -2,6 +2,7 @@
 
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
+import { useHistoryStore } from "@/features/canvas/store/useHistoryStore";
 import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
 import {
@@ -38,6 +39,7 @@ export function useSceneActions() {
   const selectScene = useUIStore((state) => state.selectScene);
   const setIsPlaying = useUIStore((state) => state.setIsPlaying);
   const showToast = useUIStore((state) => state.showToast);
+  const pushHistory = useHistoryStore((state) => state.push);
   const requestConfirm = useUIStore((state) => state.requestConfirm);
 
   const renameSceneTo = async (scene: Scene, name: string) => {
@@ -95,15 +97,26 @@ export function useSceneActions() {
     scene: Scene,
     seconds: number,
     ripple: boolean,
+    /** 提案をボタンで当てたときだけ立てる。元に戻す1回で消えるようにする */
+    recordHistory = false,
   ) => {
     const index = scenes.findIndex((s) => s.id === scene.id);
     if (index === -1) return;
-    await commitTimes(retimeScene(scenes, index, seconds, ripple).timesById);
+    await commitTimes(
+      retimeScene(scenes, index, seconds, ripple).timesById,
+      recordHistory,
+    );
   };
 
   /** 楽観的更新 → 保存 → 失敗したら元の時刻へ戻す。
    * 動いたシーンだけを送る(全件送ると、触っていない行まで書き換わる) */
-  const commitTimes = async (timesById: Map<string, number>) => {
+  const commitTimes = async (
+    timesById: Map<string, number>,
+    /** 履歴へ積むか。**提案をボタンで当てたときだけ true。**
+     * 手で時刻の欄を打つ操作は、打った本人が打ち直せるので積まない
+     * (積むと、数字を1つ直すたびに履歴が1段増える) */
+    recordHistory = false,
+  ) => {
     const changed = scenes
       .filter((scene) => {
         const next = timesById.get(scene.id);
@@ -117,6 +130,18 @@ export function useSceneActions() {
 
     const previous = new Map(scenes.map((s) => [s.id, s.timeSeconds]));
     applySceneTimes(timesById);
+
+    if (recordHistory) {
+      pushHistory({
+        kind: "retime",
+        changes: [],
+        sceneTimes: changed.map((scene) => ({
+          sceneId: scene.id,
+          before: previous.get(scene.id) ?? scene.timeSeconds,
+          after: scene.timeSeconds,
+        })),
+      });
+    }
 
     try {
       await persist((supabase) => updateSceneTimes(supabase, changed));

@@ -12,14 +12,35 @@ export type PositionChange = {
   after: Position;
 };
 
+/**
+ * シーンの時刻に対する「操作前」と「操作後」。
+ *
+ * 位置とは別の軸なので、PositionChange には混ぜない。時刻を動かすと
+ * **以降のシーンも一緒にずれることがある**(ripple)ので、こちらも配列。
+ */
+export type SceneTimeChange = {
+  sceneId: string;
+  before: number;
+  after: number;
+};
+
 /** 履歴1ステップ。シンメトリーモードのペア移動のように、1回の操作で複数の
  * positionが同時に変わることがあるためchangesは配列 */
 export type HistoryEntry = {
   /** 連続する同種の操作をまとめる(coalesce)ための種別。
    * 特に矢印キーの微調整は1キーごとに履歴へ積むと、元に戻すのに
    * 何十回も押す羽目になるため、まとめる判断に使う */
-  kind: "move" | "nudge" | "rotate" | "curve" | "template";
+  kind: "move" | "nudge" | "rotate" | "curve" | "template" | "retime";
   changes: PositionChange[];
+  /**
+   * シーンの時刻を動かした操作なら入る。
+   *
+   * ■ なぜ足したか(2026-08-17)
+   * 「移動が速すぎます」の直しを**ボタンで当てられる**ようにしたので、
+   * 当てたものを1回で戻せないと「取り入れるかどうかを最後に決められる」
+   * という約束が守れない。時刻の変更はそれまで履歴を通っていなかった。
+   */
+  sceneTimes?: SceneTimeChange[];
 };
 
 /** 保持する履歴の上限。編集し続けると際限なく増えるため頭を抑える。
@@ -67,10 +88,14 @@ function hasSameTargets(a: HistoryEntry, b: HistoryEntry): boolean {
  * このstoreがReactにもSupabaseにも依存しない純粋なデータ構造のままになり、
  * テストがそのまま書けるため。
  *
- * 対象はpositions(位置・向き・曲線制御点)に限定している。ダンサーやシーンの
- * 削除まで元に戻せるようにすると、複数シーンぶんの行を作り直す処理になり、
- * 「消えたものが戻ってくる」までの整合性の担保が一気に難しくなるため、
- * MVPでは扱わない(削除は確認ダイアログを挟む方針でカバーする)。
+ * 対象はpositions(位置・向き・曲線制御点)と**シーンの時刻**。
+ * ダンサーやシーンの削除まで元に戻せるようにすると、複数シーンぶんの行を
+ * 作り直す処理になり、「消えたものが戻ってくる」までの整合性の担保が
+ * 一気に難しくなるため扱わない(削除は確認ダイアログを挟む方針でカバーする)。
+ *
+ * 時刻を後から足したのは、指摘の直しを**ボタンで当てられる**ようにした
+ * ため。当てたものを1回で戻せないと、「取り入れるかどうかを最後に決める」
+ * という形が成り立たない。
  */
 export const useHistoryStore = create<HistoryState>((set, get) => ({
   past: [],

@@ -627,6 +627,8 @@ export const en = {
         text: (name: string, meters: string, seconds: number, speed: string) =>
           `${name}: about ${meters}m in ${seconds}s. ${speed}m/s means running`,
         heading: "Too fast to walk",
+        extend: (seconds: number) => `Give it ${seconds}s`,
+        extendNote: "Later scenes shift back too. Undo removes it",
         body: "The speed comes from the distance and the seconds to the next scene, and it is faster than walking. Drag this scene to the right on the timeline to give the move more time.",
       },
     },

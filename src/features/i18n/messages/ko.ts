@@ -621,6 +621,8 @@ export const ko = {
         text: (name: string, meters: string, seconds: number, speed: string) =>
           `${name}: 다음 장면까지 약 ${meters}m를 ${seconds}초에. 약 ${speed}m/s는 뛰어야 합니다`,
         heading: "이동이 너무 빠릅니다",
+        extend: (seconds: number) => `${seconds}초로 늘리기`,
+        extendNote: "이후 장면도 함께 뒤로 밀립니다. 실행 취소로 되돌아갑니다",
         body: "다음 장면까지의 거리와 초에서 계산한 속도입니다. 걸어서 갈 수 있는 속도를 넘었습니다. 타임라인에서 이 장면을 오른쪽으로 끌면 이동에 쓸 시간이 늘어납니다.",
       },
     },

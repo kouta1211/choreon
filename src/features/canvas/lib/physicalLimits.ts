@@ -23,6 +23,38 @@ const METERS_PER_STAGE_UNIT = 0.9;
  */
 const MAX_REALISTIC_SPEED_METERS_PER_SECOND = 3.5;
 
+/**
+ * 「歩いて間に合う」と言える速さ(m/s)。
+ *
+ * 上限(3.5m/s = 小走り)ちょうどに合わせると、警告が消えるだけで
+ * 走らされる状態は変わらない。**直しを提案するときはこちらを使う**。
+ * 早歩き(2m/s)より少し余裕を見て 1.8m/s にしている。
+ */
+const COMFORTABLE_SPEED_METERS_PER_SECOND = 1.8;
+
+/** 提案する秒数の刻み。0.1秒刻みで「2.7秒に延ばす」と言われても、
+ * 何を根拠にした数字なのか読めない */
+const SUGGESTION_STEP_SECONDS = 0.5;
+
+/**
+ * その距離を歩いて移動するのに要る秒数。**直しの提案に使う値。**
+ *
+ * ■ なぜ上限ぎりぎりを返さないのか
+ * 警告は 3.5m/s(小走り)を超えたときに出る。そこへ合わせて秒数を返すと、
+ * 印は消えるが「走ることになる」状態のままで、直したことにならない。
+ * 歩いて間に合う速さから逆算する。
+ *
+ * 0.5秒刻みへ切り上げるのは、提案の数字を読める形にするため。
+ */
+export function comfortableSeconds(
+  distanceMeters: number,
+  comfortableSpeed: number = COMFORTABLE_SPEED_METERS_PER_SECOND,
+  step: number = SUGGESTION_STEP_SECONDS,
+): number {
+  const needed = distanceMeters / comfortableSpeed;
+  return Math.max(step, Math.ceil(needed / step) * step);
+}
+
 /** そのダンサーの移動が速すぎるかどうかと、実際の数値 */
 export type MoveStrain = {
   distanceMeters: number;

@@ -636,6 +636,8 @@ export const ja = {
         text: (name: string, meters: string, seconds: number, speed: string) =>
           `${name}: 次のシーンまで約${meters}mを${seconds}秒。約${speed}m/s は走らないと間に合いません`,
         heading: "移動が速すぎます",
+        extend: (seconds: number) => `${seconds}秒に延ばす`,
+        extendNote: "以降のシーンも一緒に後ろへずれます。元に戻すで消えます",
         body: "歩いて間に合いません。時間軸でこのシーンを右へ引くと、移動に使える時間が延びます。",
       },
     },

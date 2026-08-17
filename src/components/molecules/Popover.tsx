@@ -59,8 +59,14 @@ export function usePopover({
 }: {
   heading: string;
   body: string;
-  /** 下に出す主ボタン。押すと閉じる */
-  action?: { label: string; note?: string };
+  /**
+   * 下に出す主ボタン。押すと閉じる。
+   *
+   * `onAction` を渡すと、閉じる前にそれを呼ぶ。**指摘に「直し」を
+   * 付けるための口**で、押されるまで何も起きない — 取り入れるかどうかを
+   * 決めるのは最後まで使う人。
+   */
+  action?: { label: string; note?: string; onAction?: () => void };
 }) {
   const [placement, setPlacement] = useState<Placement | null>(null);
   const [isAuto, setIsAuto] = useState(false);
@@ -199,7 +205,7 @@ function PopoverPanel({
   placement: Placement;
   heading: string;
   body: string;
-  action?: { label: string; note?: string };
+  action?: { label: string; note?: string; onAction?: () => void };
   onClose: () => void;
 }): ReactNode {
   return (
@@ -244,7 +250,10 @@ function PopoverPanel({
         <div className="mt-2.5">
           <PressableButton
             kind="primary"
-            onClick={onClose}
+            onClick={() => {
+              action.onAction?.();
+              onClose();
+            }}
             className="flex h-[30px] w-full items-center justify-center rounded-[calc(var(--radius)*0.6)] bg-accent text-label font-semibold text-accent-fg"
           >
             {action.label}
