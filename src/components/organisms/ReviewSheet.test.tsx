@@ -436,3 +436,165 @@ describe("ReviewSheet の作品ぜんぶ", () => {
     expect(screen.queryByTestId("review-finding")).not.toBeInTheDocument();
   });
 });
+
+/**
+ * 「こう並べると」の図。
+ *
+ * ここで守りたいのは2つ。
+ *   1. **図はアプリが描く。** AI が返すのは隊形の名前だけで、点の位置は
+ *      FORMATION_TEMPLATES から引く
+ *   2. 押すまで並び替えない。押したらそのシーンへ当たる
+ */
+function setUpForFormation() {
+  const positions: Record<string, Position> = {};
+  // 4人。横1列や円が組める人数にする
+  [1, 3, 5, 7].forEach((x, index) => {
+    positions[`d${index}`] = position(`d${index}`, x, 5);
+  });
+  useProjectStore.setState({
+    isGuest: false,
+    project: PROJECT,
+    scenes: [
+      makeScene({ id: "s1", name: "シーン1", timeSeconds: 0 }),
+      makeScene({ id: "s2", name: "シーン2", timeSeconds: 4 }),
+    ],
+    dancers: Object.fromEntries(
+      [0, 1, 2, 3].map((index) => [
+        `d${index}`,
+        makeDancer({ id: `d${index}`, name: `${index + 1}` }),
+      ]),
+    ),
+    positionsBySceneId: { s1: positions, s2: positions },
+  });
+  useUIStore.setState({ selectedSceneId: "s1" });
+  useHistoryStore.setState({ past: [], future: [] });
+}
+
+describe("ReviewSheet の隊形の例", () => {
+  beforeEach(() => {
+    setUpForFormation();
+  });
+
+  it("名前と、ステージの図を出す", async () => {
+    replyWith({
+      summary: "",
+      findings: [
+        {
+          tone: "watch",
+          text: "横一列だと奥行きが出ません",
+          fix: null,
+          formationShape: "diamond",
+        },
+      ],
+    });
+    render(
+      <ReviewSheet project={PROJECT} isOpen onClose={() => {}} />,
+    );
+
+    await ask();
+
+    await waitFor(() => {
+      expect(screen.getByText("こう並べると")).toBeInTheDocument();
+    });
+    // 名前はアプリの辞書から引いている（返事には入っていない）
+    // 名前はアプリの辞書から引いている（返事には shape しか入っていない）
+    expect(screen.getByText("ダイヤ")).toBeInTheDocument();
+    // 図の中に、人数ぶんの点が置かれている
+    const card = screen.getByTestId("review-finding");
+    expect(card.querySelectorAll("span[style*='left']").length).toBeGreaterThan(
+      0,
+    );
+    expect(screen.getByText("客席側")).toBeInTheDocument();
+  });
+
+  it("押すまで並び替えない", async () => {
+    const spy = vi.spyOn(positionsApi, "upsertPositions");
+    replyWith({
+      summary: "",
+      findings: [
+        { tone: "watch", text: "ダイヤにすると", fix: null, formationShape: "diamond" },
+      ],
+    });
+    render(<ReviewSheet project={PROJECT} isOpen onClose={() => {}} />);
+
+    await ask();
+    await waitFor(() => {
+      expect(screen.getByText("この並びにする")).toBeInTheDocument();
+    });
+
+    expect(spy).not.toHaveBeenCalled();
+    expect(
+      useProjectStore.getState().positionsBySceneId.s1.d0.xCoordinate,
+    ).toBe(1);
+  });
+
+  it("押すと、その並びに変わる", async () => {
+    vi.spyOn(positionsApi, "upsertPositions").mockResolvedValue(undefined);
+    replyWith({
+      summary: "",
+      findings: [
+        { tone: "watch", text: "ダイヤにすると", fix: null, formationShape: "diamond" },
+      ],
+    });
+    render(<ReviewSheet project={PROJECT} isOpen onClose={() => {}} />);
+
+    await ask();
+    await waitFor(() => {
+      expect(screen.getByText("この並びにする")).toBeInTheDocument();
+    });
+    await act(async () => {
+      screen.getByText("この並びにする").click();
+    });
+
+    await waitFor(() => {
+      const after = useProjectStore.getState().positionsBySceneId.s1;
+      // 4人のうち誰かは動いている（横一列 → 円）
+      const moved = Object.values(after).some(
+        (item) => item.yCoordinate !== 5,
+      );
+      expect(moved).toBe(true);
+    });
+  });
+
+  /** 知らない名前は口が落とすが、画面側でも組めない形は描かない */
+  it("いまの人数で組めない形は、図を出さない", async () => {
+    replyWith({
+      summary: "",
+      findings: [
+        {
+          tone: "watch",
+          text: "何か",
+          fix: null,
+          // 4人のシーンに、4人では組めない形が来た場合
+          formationShape: "wShape",
+        },
+      ],
+    });
+    render(<ReviewSheet project={PROJECT} isOpen onClose={() => {}} />);
+
+    await ask();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("review-finding")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("こう並べると")).not.toBeInTheDocument();
+  });
+
+  it("誰も居ないシーンには、図を出さない", async () => {
+    useProjectStore.setState({ positionsBySceneId: { s1: {}, s2: {} } });
+    replyWith({
+      summary: "",
+      findings: [
+        { tone: "watch", text: "ダイヤにすると", fix: null, formationShape: "diamond" },
+      ],
+    });
+    render(<ReviewSheet project={PROJECT} isOpen onClose={() => {}} />);
+
+    await ask();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("review-finding")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("こう並べると")).not.toBeInTheDocument();
+  });
+});

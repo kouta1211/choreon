@@ -6,13 +6,19 @@ import { BottomSheet } from "@/components/molecules/BottomSheet";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { SegmentedControl } from "@/components/atoms/SegmentedControl";
 import { ReviewFindingCard } from "@/components/molecules/ReviewFindingCard";
+import { FormationPreview } from "@/components/molecules/FormationPreview";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useExtendMoveTime } from "@/features/canvas/hooks/useExtendMoveTime";
 import { useClearBlindSpot } from "@/features/canvas/hooks/useClearBlindSpot";
 import { findExcessiveMoves } from "@/features/canvas/lib/physicalLimits";
+import { useApplyTemplate } from "@/features/canvas/hooks/useApplyTemplate";
+import { templatesForCount } from "@/features/canvas/lib/formationTemplates";
+import { themedDancerColor } from "@/features/dancer/lib/themedColor";
+import { formationName } from "@/features/i18n/lib/formationName";
 import { buildFormationSummary } from "@/features/review/lib/formationSummary";
 import { buildPieceSummary } from "@/features/review/lib/pieceSummary";
+import { DEFAULT_TRANSFORM } from "@/features/canvas/lib/formationTemplates";
 import type {
   ReviewFinding,
   ReviewResult,
@@ -74,6 +80,7 @@ export function ReviewSheet({ project, isOpen, onClose }: Props) {
 
   const { suggestFor, extendTo } = useExtendMoveTime();
   const { suggestXFor, moveOut } = useClearBlindSpot();
+  const { applyTemplate } = useApplyTemplate(project);
 
   const index = scenes.findIndex((item) => item.id === selectedSceneId);
   const scene = index >= 0 ? scenes[index] : null;
@@ -208,6 +215,47 @@ export function ReviewSheet({ project, isOpen, onClose }: Props) {
     }
   };
 
+  /**
+   * 「こう並べると」の図。
+   *
+   * ■ 名前だけでは並びが読めない
+   * 「V字（後1-3-4前）」と言われても、どんな形なのか目に浮かばない。
+   * **点の位置はアプリが持っている**（FORMATION_TEMPLATES）ので、
+   * AI が選んだ名前から図を描く。AI に形を作らせてはいない。
+   *
+   * ■ 当てる先は、その指摘のシーン
+   * 作品ぜんぶのときは別のシーンの話になる。開いていないシーンへ当てる
+   * のは分かりにくいので、**そのシーンを開いてから**当てる。
+   */
+  const formationFor = (finding: ReviewFinding) => {
+    if (!finding.formationShape) return null;
+    const target = sceneFor(finding);
+    if (!target) return null;
+
+    const positions = positionsBySceneId[target.id] ?? {};
+    const onStage = Object.values(positions);
+    if (onStage.length === 0) return null;
+
+    const template = templatesForCount(onStage.length).find(
+      (item) => item.label.shape === finding.formationShape,
+    );
+    if (!template) return null;
+
+    return {
+      template,
+      dancerCount: onStage.length,
+      dancerColors: onStage.map((position) =>
+        themedDancerColor(dancers[position.dancerId]?.color ?? ""),
+      ),
+      name: formationName(template.label, t),
+      apply: async () => {
+        // 当てる前にそのシーンを開く。どこが変わったのか見えないと確かめられない
+        if (target.id !== selectedSceneId) selectScene(target.id);
+        await applyTemplate(template, DEFAULT_TRANSFORM);
+      },
+    };
+  };
+
   const hasFix = review?.findings.some((finding) => actionFor(finding));
 
   return (
@@ -251,6 +299,7 @@ export function ReviewSheet({ project, isOpen, onClose }: Props) {
         {review?.findings.map((finding, position) => {
           const action = actionFor(finding);
           const target = finding.sceneNumber ? sceneFor(finding) : null;
+          const example = formationFor(finding);
           return (
             <ReviewFindingCard
               key={position}
@@ -284,6 +333,51 @@ export function ReviewSheet({ project, isOpen, onClose }: Props) {
                     void action.run();
                   },
                 }
+              }
+              formation={
+                example && (
+                  <div className="mt-2.5 flex flex-col gap-1.5">
+                    <p className="flex flex-wrap items-baseline gap-x-1 text-caption text-fg-muted">
+                      <span>{t.review.formationExample}</span>
+                      <span className="font-semibold text-fg-sub">
+                        {example.name}
+                      </span>
+                    </p>
+                    {/* 幅を抑える。ステージの縦横比のまま横幅いっぱいにすると
+                        シートの半分以上を図が占めて、指摘が読めなくなる
+                        （テンプレートの一覧では小さな枠の中なので起きない） */}
+                    <FormationPreview
+                      formation={example.template}
+                      dancerCount={example.dancerCount}
+                      stageWidth={project.stageWidth}
+                      stageHeight={project.stageHeight}
+                      dancerColors={example.dancerColors}
+                      audienceLabel={t.review.audienceSide}
+                      className="max-w-[240px]"
+                    />
+                    {/* 図を見て決められるようにする。押すまで何も起きない */}
+                    {!appliedIndexes.includes(position) && (
+                      <>
+                        <PressableButton
+                          kind="primary"
+                          onClick={() => {
+                            setAppliedIndexes((current) => [
+                              ...current,
+                              position,
+                            ]);
+                            void example.apply();
+                          }}
+                          className="flex h-8 w-full items-center justify-center rounded-[calc(var(--radius)*0.6)] border border-accent bg-accent/12 text-label font-semibold text-accent-soft"
+                        >
+                          {t.review.formationApply}
+                        </PressableButton>
+                        <p className="text-caption text-fg-muted">
+                          {t.review.formationNote}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                )
               }
             />
           );

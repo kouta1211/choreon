@@ -601,6 +601,11 @@ export const ja = {
     decide:
       "直しのボタンは、押したときだけ当たります。取り入れるかどうかは自分で決めてください（元に戻すで消えます）。",
     applied: "当てました",
+    /** 隊形の例（図つき）。名前だけでは並びが読めないので図を出す */
+    formationExample: "こう並べると",
+    formationApply: "この並びにする",
+    formationNote: "いまの位置から、いちばん近い場所へ割り当てます",
+    audienceSide: "客席側",
     /** このシーンだけ / 作品ぜんぶ */
     scope: "見てもらう範囲",
     scopeScene: "このシーン",

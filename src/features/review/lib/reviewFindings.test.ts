@@ -276,3 +276,109 @@ describe("parsePieceResponse", () => {
     expect(result?.findings[0].fix).toBeNull();
   });
 });
+
+/**
+ * 「こう並べると」の例。
+ *
+ * **アプリが持っている隊形の名前だけ**を通す。知らない名前を通しても
+ * 図を描く先が無いので、説明だけ残って例が出ない — 落とす方が読める。
+ * 点の位置は AI に作らせない（FORMATION_TEMPLATES から引く）。
+ */
+const FORMATIONS = ["row", "circle", "v"];
+
+describe("隊形の例", () => {
+  it("組める隊形の名前なら通す", () => {
+    const result = parseReviewResponse(
+      raw([
+        {
+          tone: "watch",
+          text: "横に広げると奥行きが出ます",
+          fixKind: "none",
+          fixDancerName: "",
+          formationShape: "circle",
+        },
+      ]),
+      FACTS,
+      FORMATIONS,
+    );
+
+    expect(result?.findings[0].formationShape).toBe("circle");
+  });
+
+  it("知らない名前は落とす（文は残す）", () => {
+    const result = parseReviewResponse(
+      raw([
+        {
+          tone: "watch",
+          text: "螺旋にすると面白いです",
+          fixKind: "none",
+          fixDancerName: "",
+          formationShape: "spiral",
+        },
+      ]),
+      FACTS,
+      FORMATIONS,
+    );
+
+    expect(result?.findings[0].text).toBe("螺旋にすると面白いです");
+    expect(result?.findings[0].formationShape).toBeUndefined();
+  });
+
+  it("空文字なら例を出さない", () => {
+    const result = parseReviewResponse(
+      raw([
+        {
+          tone: "good",
+          text: "揃っています",
+          fixKind: "none",
+          fixDancerName: "",
+          formationShape: "",
+        },
+      ]),
+      FACTS,
+      FORMATIONS,
+    );
+
+    expect(result?.findings[0].formationShape).toBeUndefined();
+  });
+
+  /** 組める形を渡していないときは、何も通さない */
+  it("一覧を渡していなければ、例は出ない", () => {
+    const result = parseReviewResponse(
+      raw([
+        {
+          tone: "watch",
+          text: "円にすると",
+          fixKind: "none",
+          fixDancerName: "",
+          formationShape: "circle",
+        },
+      ]),
+      FACTS,
+    );
+
+    expect(result?.findings[0].formationShape).toBeUndefined();
+  });
+
+  it("作品ぜんぶでも、そのシーンの例として通す", () => {
+    const result = parsePieceResponse(
+      raw([
+        {
+          sceneNumber: 2,
+          tone: "watch",
+          text: "サビは広げると見せ場になります",
+          fixKind: "none",
+          fixDancerName: "",
+          formationShape: "row",
+        },
+      ]),
+      PIECE_SCENES,
+      FORMATIONS,
+    );
+
+    expect(result?.findings[0]).toMatchObject({
+      sceneNumber: 2,
+      formationShape: "row",
+    });
+  });
+});

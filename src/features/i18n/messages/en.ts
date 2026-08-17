@@ -583,6 +583,10 @@ export const en = {
     decide:
       "A fix button only changes anything when you press it. Whether to take it is yours to decide (undo removes it).",
     applied: "Applied",
+    formationExample: "Arranged like this",
+    formationApply: "Use this arrangement",
+    formationNote: "Everyone goes to the nearest open spot",
+    audienceSide: "Audience",
     scope: "What to look at",
     scopeScene: "This scene",
     scopePiece: "Whole piece",

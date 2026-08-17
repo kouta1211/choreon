@@ -38,6 +38,13 @@ export type ReviewFinding = {
   text: string;
   fix: ReviewFix | null;
   /**
+   * 「こう並べるとどうか」の例。**アプリが持っている隊形の名前**だけ。
+   *
+   * 隊形の点そのものは AI に作らせない（FORMATION_TEMPLATES から引く）。
+   * 名前だけ選ばせて、**図はアプリが描く** — 座標を作らせないのと同じ理由。
+   */
+  formationShape?: string;
+  /**
    * どのシーンの話か。1から。作品ぜんぶを見てもらったときだけ入る。
    *
    * **名前ではなく番号で受ける** — 名前は user が変えられるし、同じ名前を
@@ -87,9 +94,23 @@ export const REVIEW_RESPONSE_SCHEMA = {
           fixKind: { type: "STRING", enum: ["retime", "clearBlindSpot", "none"] },
           /** 直しが要らないときは空文字。null を許すと相手が迷う */
           fixDancerName: { type: "STRING" },
+          /** 「こう並べるとどうか」の例。要らないときは空文字 */
+          formationShape: { type: "STRING" },
         },
-        required: ["tone", "text", "fixKind", "fixDancerName"],
-        propertyOrdering: ["tone", "text", "fixKind", "fixDancerName"],
+        required: [
+          "tone",
+          "text",
+          "fixKind",
+          "fixDancerName",
+          "formationShape",
+        ],
+        propertyOrdering: [
+          "tone",
+          "text",
+          "fixKind",
+          "fixDancerName",
+          "formationShape",
+        ],
       },
     },
   },
@@ -119,6 +140,7 @@ export const PIECE_RESPONSE_SCHEMA = {
           text: { type: "STRING" },
           fixKind: { type: "STRING", enum: ["retime", "clearBlindSpot", "none"] },
           fixDancerName: { type: "STRING" },
+          formationShape: { type: "STRING" },
         },
         required: [
           "sceneNumber",
@@ -126,6 +148,7 @@ export const PIECE_RESPONSE_SCHEMA = {
           "text",
           "fixKind",
           "fixDancerName",
+          "formationShape",
         ],
         propertyOrdering: [
           "sceneNumber",
@@ -133,6 +156,7 @@ export const PIECE_RESPONSE_SCHEMA = {
           "text",
           "fixKind",
           "fixDancerName",
+          "formationShape",
         ],
       },
     },
@@ -146,6 +170,7 @@ type RawFinding = {
   text?: unknown;
   fixKind?: unknown;
   fixDancerName?: unknown;
+  formationShape?: unknown;
   sceneNumber?: unknown;
 };
 
@@ -200,6 +225,22 @@ function readEnvelope(
   };
 }
 
+/**
+ * 「こう並べるとどうか」の例を1つ通すか、落とすか。
+ *
+ * **アプリが持っている隊形の名前だけ**を通す。知らない名前を通すと、
+ * 図を描く先が無いので何も出ない（=説明だけ残って、例が無い）。
+ * 落とすなら、指摘の文だけ残す方が読める。
+ */
+function formationFor(
+  raw: RawFinding,
+  available: string[],
+): string | undefined {
+  const shape =
+    typeof raw.formationShape === "string" ? raw.formationShape.trim() : "";
+  return shape && available.includes(shape) ? shape : undefined;
+}
+
 /** 1件を、文と tone まで読む。文が空なら null */
 function readFinding(
   item: unknown,
@@ -223,6 +264,8 @@ function readFinding(
 export function parseReviewResponse(
   raw: string,
   facts: FormationSummary["facts"],
+  /** いまの人数で組める隊形の名前。渡さなければ例は出さない */
+  formations: string[] = [],
 ): ReviewResult | null {
   const envelope = readEnvelope(raw);
   if (!envelope) return null;
@@ -231,11 +274,13 @@ export function parseReviewResponse(
     .flatMap((item): ReviewFinding[] => {
       const read = readFinding(item);
       if (!read) return [];
+      const formationShape = formationFor(read.raw, formations);
       return [
         {
           tone: read.tone,
           text: read.text,
           fix: fixFor(read.raw, read.tone, facts),
+          ...(formationShape ? { formationShape } : {}),
         },
       ];
     })
@@ -260,6 +305,8 @@ export function parseReviewResponse(
 export function parsePieceResponse(
   raw: string,
   scenes: { number: number; facts: FormationSummary["facts"] }[],
+  /** いまの人数で組める隊形の名前。渡さなければ例は出さない */
+  formations: string[] = [],
 ): ReviewResult | null {
   const envelope = readEnvelope(raw);
   if (!envelope) return null;
@@ -278,6 +325,7 @@ export function parsePieceResponse(
           : 0;
       const facts = byNumber.get(number);
 
+      const formationShape = formationFor(read.raw, formations);
       return [
         {
           tone: read.tone,
@@ -285,6 +333,7 @@ export function parsePieceResponse(
           // 知らない番号なら、そのシーンの事実が引けない = 濾せない
           fix: facts ? fixFor(read.raw, read.tone, facts) : null,
           ...(facts ? { sceneNumber: number } : {}),
+          ...(formationShape ? { formationShape } : {}),
         },
       ];
     })

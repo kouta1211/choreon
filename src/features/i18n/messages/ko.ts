@@ -578,6 +578,10 @@ export const ko = {
     decide:
       "고치기 버튼은 누를 때만 반영됩니다. 받아들일지는 직접 정해 주세요(되돌리기로 사라집니다).",
     applied: "반영했습니다",
+    formationExample: "이렇게 세우면",
+    formationApply: "이 배치로 하기",
+    formationNote: "지금 위치에서 가장 가까운 자리로 배정합니다",
+    audienceSide: "객석 쪽",
     scope: "봐 달라고 할 범위",
     scopeScene: "이 장면",
     scopePiece: "작품 전체",

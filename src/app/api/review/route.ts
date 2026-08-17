@@ -19,6 +19,8 @@ import {
   formatPieceForPrompt,
   type PieceSummary,
 } from "@/features/review/lib/pieceSummary";
+import { templatesForCount } from "@/features/canvas/lib/formationTemplates";
+import { formationName } from "@/features/i18n/lib/formationName";
 
 const SYSTEM_PROMPT = `あなたはダンスのフォーメーションを見る振付の相談相手です。
 渡されるのは、ある1シーンの立ち位置と、アプリが計算で出した事実です。
@@ -42,7 +44,14 @@ fixKind の付け方(【重要】):
     言うとき。移動に使える秒数を延ばす
 - それ以外は fixKind="none"、fixDancerName="" にする。
 - **どこへ動かすか・何秒に延ばすかは書かない。アプリが計算する。**
-  名前は渡されたものをそのまま写す(作らない)。`;
+  名前は渡されたものをそのまま写す(作らない)。
+
+formationShape の付け方:
+- 「こう並べるとどうか」という**並べ方の提案**をするときは、渡された
+  「組める隊形」の shape をそのまま入れる。**アプリが図で描きます。**
+- 隊形の形や座標は書かない。**点の位置はアプリが持っています。**
+- 並べ方の話をしていない指摘は、formationShape="" にする。
+- 1回の返事で formationShape を入れるのは**1〜2件まで**。`;
 
 /**
  * 作品ぜんぶを見てもらうときの指示。
@@ -88,7 +97,14 @@ fixKind の付け方(【重要】):
   - "retime": そのシーンの「速すぎる移動」に名前がある人
 - それ以外は fixKind="none"、fixDancerName="" にする。
 - **どこへ動かすか・何秒に延ばすかは書かない。アプリが計算する。**
-  名前とシーン番号は渡されたものをそのまま写す(作らない)。`;
+  名前とシーン番号は渡されたものをそのまま写す(作らない)。
+
+formationShape の付け方:
+- 「このシーンはこう並べるとどうか」という**並べ方の提案**をするときは、
+  渡された「組める隊形」の shape をそのまま入れる。**アプリが図で描きます。**
+- 隊形の形や座標は書かない。**点の位置はアプリが持っています。**
+- 並べ方の話をしていない指摘は、formationShape="" にする。
+- 1回の返事で formationShape を入れるのは**1〜2件まで**。`;
 
 /**
  * どの言語で返すか。UIが英語なのに講評だけ日本語、を避ける。
@@ -158,6 +174,41 @@ export async function POST(request: Request) {
     parse: (text: string) => ReturnType<typeof parseReviewResponse>;
   };
 
+  /**
+   * いまの人数で組める隊形の一覧。
+   *
+   * **AI に選ばせるのは名前だけ**で、点の位置はアプリが持っている
+   * (FORMATION_TEMPLATES)。だから一覧もこちらで作って渡す —
+   * 送ってもらう形にすると、画面と食い違ったものが来る余地が残る。
+   *
+   * 同じ形で人数の内訳が違うものは複数あるので、形ごとに1つへ畳む。
+   */
+  const formationChoices = (dancerCount: number) => {
+    const seen = new Set<string>();
+    return templatesForCount(dancerCount).flatMap((template) => {
+      const shape = template.label.shape;
+      if (seen.has(shape)) return [];
+      seen.add(shape);
+      return [{ shape, name: formationName(template.label, t) }];
+    });
+  };
+
+  const formationLines = (choices: { shape: string; name: string }[]) => {
+    if (choices.length === 0) {
+      // 組める形が無いのに例を出させると、知らない名前が返ってくるだけ
+      return `
+
+いまの人数で組める隊形はありません。formationShape は必ず空文字にしてください。`;
+    }
+    const list = choices
+      .map((item) => `- ${item.shape} = ${item.name}`)
+      .join("\n");
+    return `
+
+組める隊形（shape=名前。この中からだけ選ぶ）:
+${list}`;
+  };
+
   let target: Target;
   if (piece) {
     if (!Array.isArray(piece.scenes) || piece.scenes.length === 0) {
@@ -173,11 +224,17 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+    const choices = formationChoices(piece.dancerNames?.length ?? 0);
     target = {
       systemPrompt: PIECE_PROMPT,
-      userText: formatPieceForPrompt(piece),
+      userText: formatPieceForPrompt(piece) + formationLines(choices),
       schema: PIECE_RESPONSE_SCHEMA,
-      parse: (text) => parsePieceResponse(text, piece.scenes),
+      parse: (text) =>
+        parsePieceResponse(
+          text,
+          piece.scenes,
+          choices.map((item) => item.shape),
+        ),
     };
   } else {
     if (!summary || !Array.isArray(summary.dancers)) {
@@ -192,11 +249,17 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+    const choices = formationChoices(summary.dancers.length);
     target = {
       systemPrompt: SYSTEM_PROMPT,
-      userText: formatSummaryForPrompt(summary),
+      userText: formatSummaryForPrompt(summary) + formationLines(choices),
       schema: REVIEW_RESPONSE_SCHEMA,
-      parse: (text) => parseReviewResponse(text, summary.facts),
+      parse: (text) =>
+        parseReviewResponse(
+          text,
+          summary.facts,
+          choices.map((item) => item.shape),
+        ),
     };
   }
 

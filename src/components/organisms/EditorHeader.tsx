@@ -9,7 +9,6 @@ import { SaveToCloudButton } from "@/components/organisms/SaveToCloudButton";
 import { SaveChangesButton } from "@/components/organisms/SaveChangesButton";
 import { MusicSheet } from "@/components/organisms/MusicSheet";
 import { ReviewSheet } from "@/components/organisms/ReviewSheet";
-import { AssistSheet } from "@/components/organisms/AssistSheet";
 import { ShareSheet } from "@/components/organisms/ShareSheet";
 import { SettingsSheet } from "@/components/organisms/SettingsSheet";
 import { useProjectData } from "@/features/settings/hooks/useProjectData";
@@ -47,7 +46,7 @@ export function EditorHeader({ project }: Props) {
   const isGuest = useProjectStore((state) => state.isGuest);
 
   const [openSheet, setOpenSheet] = useState<
-    "share" | "review" | "settings" | "assist" | null
+    "share" | "review" | "settings" | null
   >(null);
   const isMusicSheetOpen = useUIStore((state) => state.isMusicSheetOpen);
   const setMusicSheetOpen = useUIStore((state) => state.setMusicSheetOpen);
@@ -96,7 +95,6 @@ export function EditorHeader({ project }: Props) {
         onOpenMusic={() => setMusicSheetOpen(true)}
         onOpenShare={isGuest ? undefined : () => setOpenSheet("share")}
         onOpenReview={() => setOpenSheet("review")}
-        onOpenAssist={() => setOpenSheet("assist")}
         onOpenSettings={() => setOpenSheet("settings")}
       />
 
@@ -111,14 +109,6 @@ export function EditorHeader({ project }: Props) {
         project={project}
         isOpen={openSheet === "review"}
         onClose={() => setOpenSheet(null)}
-      />
-      {/* 言葉で頼む。共有・見てもらう・設定はここが持っているので、
-          「開いて」と頼まれたときは onOpenSheet で橋を渡す */}
-      <AssistSheet
-        project={project}
-        isOpen={openSheet === "assist"}
-        onClose={() => setOpenSheet(null)}
-        onOpenSheet={(target) => setOpenSheet(target)}
       />
       {!isGuest && (
         <ShareSheet

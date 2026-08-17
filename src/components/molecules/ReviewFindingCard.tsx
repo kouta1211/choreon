@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Check, CircleAlert, ThumbsUp } from "lucide-react";
 import { PressableButton } from "@/components/atoms/PressableButton";
 
@@ -15,6 +16,11 @@ type Props = {
   isApplied?: boolean;
   /** 作品ぜんぶを見てもらったときだけ。どのシーンの話か */
   scene?: { label: string; onOpen?: () => void };
+  /**
+   * 「こう並べると」の図。**呼ぶ側が描いたものを置くだけ。**
+   * 名前だけでは並びが読めないので、ステージの図で見せる。
+   */
+  formation?: ReactNode;
 };
 
 /**
@@ -37,6 +43,7 @@ export function ReviewFindingCard({
   appliedLabel,
   isApplied = false,
   scene,
+  formation,
 }: Props) {
   const Icon = tone === "good" ? ThumbsUp : CircleAlert;
   return (
@@ -68,6 +75,8 @@ export function ReviewFindingCard({
           ))}
       </div>
       <p className="mt-1.5 text-label leading-[1.75] text-fg">{text}</p>
+
+      {formation}
 
       {isApplied ? (
         <p className="mt-2 flex items-center gap-1 text-caption font-semibold text-fg-sub">
