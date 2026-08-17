@@ -74,96 +74,68 @@ const MAX_FINDINGS = 4;
 const MAX_PIECE_FINDINGS = 6;
 
 /**
- * Gemini へ渡す返答の型（OpenAPI の部分集合）。
+ * Gemini へ渡す返答の型（OpenAPI の部分集合）を組む。
  *
- * 「JSON で返して」と文章で頼むだけだと、前置きや ```json の囲みが付いてくる。
- * responseSchema を渡せば相手側で形が保証されるので、こちらの解析が
- * 「たまに失敗する処理」にならない。
+ * ■ なぜ関数にしてあるか
+ * 1シーンぶんと作品ぜんぶで、違うのは **`sceneNumber` が要るかどうかだけ**。
+ * 手で2つ書いていたら、項目を1つ足すのに2箇所直すことになった
+ * （`formationShape` を足したときに実際そうなった）。片方を忘れれば、
+ * その範囲だけ静かに項目が来なくなる。
+ *
+ * ■ それでも型は2つに分ける
+ * **1シーンの返事に番号が混ざってはいけない** — 混ざると「いま開いている
+ * シーンの話なのに、別のシーンへ飛ぶボタン」が出かねない。
+ * 分かれているのは意図で、重複はその手段でしかなかった。
+ *
+ * ■ 「JSON で返して」と文章で頼むだけでは足りない
+ * 前置きや ```json の囲みが付いてくる。型を渡せば相手側で形が保証され、
+ * こちらの解析が「たまに失敗する処理」にならない。
  */
-export const REVIEW_RESPONSE_SCHEMA = {
-  type: "OBJECT",
-  properties: {
-    summary: { type: "STRING" },
-    findings: {
-      type: "ARRAY",
-      items: {
-        type: "OBJECT",
-        properties: {
-          tone: { type: "STRING", enum: ["good", "watch"] },
-          text: { type: "STRING" },
-          fixKind: { type: "STRING", enum: ["retime", "clearBlindSpot", "none"] },
-          /** 直しが要らないときは空文字。null を許すと相手が迷う */
-          fixDancerName: { type: "STRING" },
-          /** 「こう並べるとどうか」の例。要らないときは空文字 */
-          formationShape: { type: "STRING" },
-        },
-        required: [
-          "tone",
-          "text",
-          "fixKind",
-          "fixDancerName",
-          "formationShape",
-        ],
-        propertyOrdering: [
-          "tone",
-          "text",
-          "fixKind",
-          "fixDancerName",
-          "formationShape",
-        ],
-      },
-    },
-  },
-  required: ["summary", "findings"],
-  propertyOrdering: ["summary", "findings"],
-} as const;
+function responseSchema({ withSceneNumber }: { withSceneNumber: boolean }) {
+  /** null を許すと相手が迷うので、**要らないときは空文字**で揃える */
+  const fields = {
+    ...(withSceneNumber
+      ? // 何番目のシーンの話か。作品ぜんぶに関わる話なら 0
+        { sceneNumber: { type: "INTEGER" } }
+      : {}),
+    tone: { type: "STRING", enum: ["good", "watch"] },
+    text: { type: "STRING" },
+    fixKind: { type: "STRING", enum: ["retime", "clearBlindSpot", "none"] },
+    fixDancerName: { type: "STRING" },
+    /** 「こう並べるとどうか」の例。要らないときは空文字 */
+    formationShape: { type: "STRING" },
+  };
+  // 全部 required。「入れないこともある」を許すと、来ない理由が読めなくなる
+  const keys = Object.keys(fields);
 
-/**
- * 作品ぜんぶを見てもらったときの型。
- *
- * 1シーンぶんとの違いは `sceneNumber` だけ。**別の型にしてあるのは、
- * 1シーンの返事に番号が混ざらないようにするため** — 混ざると「いま開いて
- * いるシーンの話なのに、別のシーンへ飛ぶボタン」が出かねない。
- */
-export const PIECE_RESPONSE_SCHEMA = {
-  type: "OBJECT",
-  properties: {
-    summary: { type: "STRING" },
-    findings: {
-      type: "ARRAY",
-      items: {
-        type: "OBJECT",
-        properties: {
-          /** 何番目のシーンの話か。作品ぜんぶに関わる話なら 0 */
-          sceneNumber: { type: "INTEGER" },
-          tone: { type: "STRING", enum: ["good", "watch"] },
-          text: { type: "STRING" },
-          fixKind: { type: "STRING", enum: ["retime", "clearBlindSpot", "none"] },
-          fixDancerName: { type: "STRING" },
-          formationShape: { type: "STRING" },
+  return {
+    type: "OBJECT",
+    properties: {
+      summary: { type: "STRING" },
+      findings: {
+        type: "ARRAY",
+        items: {
+          type: "OBJECT",
+          properties: fields,
+          required: keys,
+          propertyOrdering: keys,
         },
-        required: [
-          "sceneNumber",
-          "tone",
-          "text",
-          "fixKind",
-          "fixDancerName",
-          "formationShape",
-        ],
-        propertyOrdering: [
-          "sceneNumber",
-          "tone",
-          "text",
-          "fixKind",
-          "fixDancerName",
-          "formationShape",
-        ],
       },
     },
-  },
-  required: ["summary", "findings"],
-  propertyOrdering: ["summary", "findings"],
-} as const;
+    required: ["summary", "findings"],
+    propertyOrdering: ["summary", "findings"],
+  };
+}
+
+/** 1シーンぶん。**番号は入れない**（別のシーンへ飛ばせてはいけない） */
+export const REVIEW_RESPONSE_SCHEMA = responseSchema({
+  withSceneNumber: false,
+});
+
+/** 作品ぜんぶ。どのシーンの話かを番号で受ける */
+export const PIECE_RESPONSE_SCHEMA = responseSchema({
+  withSceneNumber: true,
+});
 
 type RawFinding = {
   tone?: unknown;
@@ -255,17 +227,33 @@ function readFinding(
 }
 
 /**
- * 1シーンぶんの返事を、指摘の並びへ。
+ * 返事を、指摘の並びへ。1シーンぶんと作品ぜんぶで共通の骨。
  *
- * 読めなかったら null を返す。**呼ぶ側は本文をそのまま summary として
- * 出す**ので、解析に失敗しても「診断が取れませんでした」にはしない
+ * 違うのは**濾す相手の引き方**だけ:
+ * - 1シーンぶん … 事実は1組。番号は付けない
+ * - 作品ぜんぶ … 番号から**そのシーンの事実**を引く。引けなければ濾せない
+ *
+ * 読めなかったら null を返す。**呼ぶ側は本文をそのまま summary として出す**
+ * ので、解析に失敗しても「取れませんでした」にはしない
  * （読める文章が手元にあるのに捨てるのは、user の待ち時間を無駄にする）。
  */
-export function parseReviewResponse(
+function parseFindings(
   raw: string,
-  facts: FormationSummary["facts"],
-  /** いまの人数で組める隊形の名前。渡さなければ例は出さない */
-  formations: string[] = [],
+  {
+    maxFindings,
+    formations,
+    factsFor,
+  }: {
+    maxFindings: number;
+    formations: string[];
+    /**
+     * その指摘を濾す相手。**null なら濾せない** = ボタンを落とす。
+     * 番号を返すと、指摘に「どのシーンの話か」が付く
+     */
+    factsFor: (
+      raw: RawFinding,
+    ) => { facts: FormationSummary["facts"]; sceneNumber?: number } | null;
+  },
 ): ReviewResult | null {
   const envelope = readEnvelope(raw);
   if (!envelope) return null;
@@ -274,21 +262,39 @@ export function parseReviewResponse(
     .flatMap((item): ReviewFinding[] => {
       const read = readFinding(item);
       if (!read) return [];
+
+      const target = factsFor(read.raw);
       const formationShape = formationFor(read.raw, formations);
       return [
         {
           tone: read.tone,
           text: read.text,
-          fix: fixFor(read.raw, read.tone, facts),
+          fix: target ? fixFor(read.raw, read.tone, target.facts) : null,
+          ...(target?.sceneNumber ? { sceneNumber: target.sceneNumber } : {}),
           ...(formationShape ? { formationShape } : {}),
         },
       ];
     })
-    .slice(0, MAX_FINDINGS);
+    .slice(0, maxFindings);
 
   // 中身が何も無いなら、解析できたと言えない
   if (!envelope.summary && findings.length === 0) return null;
   return { summary: envelope.summary, findings };
+}
+
+/** 1シーンぶんの返事を、指摘の並びへ */
+export function parseReviewResponse(
+  raw: string,
+  facts: FormationSummary["facts"],
+  /** いまの人数で組める隊形の名前。渡さなければ例は出さない */
+  formations: string[] = [],
+): ReviewResult | null {
+  return parseFindings(raw, {
+    maxFindings: MAX_FINDINGS,
+    formations,
+    // 事実は1組しかない。番号は付けない（別のシーンへ飛ばせてはいけない）
+    factsFor: () => ({ facts }),
+  });
 }
 
 /**
@@ -308,39 +314,21 @@ export function parsePieceResponse(
   /** いまの人数で組める隊形の名前。渡さなければ例は出さない */
   formations: string[] = [],
 ): ReviewResult | null {
-  const envelope = readEnvelope(raw);
-  if (!envelope) return null;
-
   const byNumber = new Map(scenes.map((scene) => [scene.number, scene.facts]));
 
-  const findings = envelope.list
-    .flatMap((item): ReviewFinding[] => {
-      const read = readFinding(item);
-      if (!read) return [];
-
+  return parseFindings(raw, {
+    maxFindings: MAX_PIECE_FINDINGS,
+    formations,
+    factsFor: (raw) => {
       const number =
-        typeof read.raw.sceneNumber === "number" &&
-        Number.isInteger(read.raw.sceneNumber)
-          ? read.raw.sceneNumber
+        typeof raw.sceneNumber === "number" && Number.isInteger(raw.sceneNumber)
+          ? raw.sceneNumber
           : 0;
       const facts = byNumber.get(number);
-
-      const formationShape = formationFor(read.raw, formations);
-      return [
-        {
-          tone: read.tone,
-          text: read.text,
-          // 知らない番号なら、そのシーンの事実が引けない = 濾せない
-          fix: facts ? fixFor(read.raw, read.tone, facts) : null,
-          ...(facts ? { sceneNumber: number } : {}),
-          ...(formationShape ? { formationShape } : {}),
-        },
-      ];
-    })
-    .slice(0, MAX_PIECE_FINDINGS);
-
-  if (!envelope.summary && findings.length === 0) return null;
-  return { summary: envelope.summary, findings };
+      // 知らない番号なら、そのシーンの事実が引けない = 濾せない
+      return facts ? { facts, sceneNumber: number } : null;
+    },
+  });
 }
 
 /**

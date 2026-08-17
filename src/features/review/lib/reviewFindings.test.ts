@@ -3,6 +3,8 @@ import {
   flattenReview,
   parsePieceResponse,
   parseReviewResponse,
+  PIECE_RESPONSE_SCHEMA,
+  REVIEW_RESPONSE_SCHEMA,
   type ReviewResult,
 } from "./reviewFindings";
 import type { FormationSummary } from "./formationSummary";
@@ -380,5 +382,53 @@ describe("隊形の例", () => {
       sceneNumber: 2,
       formationShape: "row",
     });
+  });
+});
+
+/**
+ * 型は2つに分かれている、が**意図**。
+ *
+ * 1シーンぶんの返事に番号が混ざってはいけない — 混ざると「いま開いている
+ * シーンの話なのに、別のシーンへ飛ぶボタン」が出かねない。
+ * 1つの関数から組むようにしたので、その分かれ方をここで留める。
+ */
+describe("返答の型", () => {
+  const keysOf = (schema: unknown) =>
+    (
+      schema as {
+        properties: { findings: { items: { properties: object } } };
+      }
+    ).properties.findings.items.properties;
+
+  it("1シーンぶんには sceneNumber を入れない", () => {
+    expect(keysOf(REVIEW_RESPONSE_SCHEMA)).not.toHaveProperty("sceneNumber");
+  });
+
+  it("作品ぜんぶには sceneNumber を入れる", () => {
+    expect(keysOf(PIECE_RESPONSE_SCHEMA)).toHaveProperty("sceneNumber");
+  });
+
+  /** 項目を1つ足すのに2箇所直す、をやめたので、揃っていることを見る */
+  it("それ以外の項目は同じ", () => {
+    const scene = Object.keys(keysOf(REVIEW_RESPONSE_SCHEMA));
+    const piece = Object.keys(keysOf(PIECE_RESPONSE_SCHEMA)).filter(
+      (key) => key !== "sceneNumber",
+    );
+
+    expect(piece).toEqual(scene);
+  });
+
+  /** 「入れないこともある」を許すと、来ない理由が読めなくなる */
+  it("どの項目も required にする", () => {
+    for (const schema of [REVIEW_RESPONSE_SCHEMA, PIECE_RESPONSE_SCHEMA]) {
+      const items = (
+        schema as {
+          properties: {
+            findings: { items: { properties: object; required: string[] } };
+          };
+        }
+      ).properties.findings.items;
+      expect(items.required).toEqual(Object.keys(items.properties));
+    }
   });
 });

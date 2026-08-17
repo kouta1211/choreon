@@ -19,7 +19,7 @@ import {
   formatPieceForPrompt,
   type PieceSummary,
 } from "@/features/review/lib/pieceSummary";
-import { templatesForCount } from "@/features/canvas/lib/formationTemplates";
+import { formationChoices } from "@/features/canvas/lib/formationChoices";
 import { formationName } from "@/features/i18n/lib/formationName";
 
 const SYSTEM_PROMPT = `あなたはダンスのフォーメーションを見る振付の相談相手です。
@@ -180,25 +180,6 @@ export async function POST(request: Request) {
     parse: (text: string) => ReturnType<typeof parseReviewResponse>;
   };
 
-  /**
-   * いまの人数で組める隊形の一覧。
-   *
-   * **AI に選ばせるのは名前だけ**で、点の位置はアプリが持っている
-   * (FORMATION_TEMPLATES)。だから一覧もこちらで作って渡す —
-   * 送ってもらう形にすると、画面と食い違ったものが来る余地が残る。
-   *
-   * 同じ形で人数の内訳が違うものは複数あるので、形ごとに1つへ畳む。
-   */
-  const formationChoices = (dancerCount: number) => {
-    const seen = new Set<string>();
-    return templatesForCount(dancerCount).flatMap((template) => {
-      const shape = template.label.shape;
-      if (seen.has(shape)) return [];
-      seen.add(shape);
-      return [{ shape, name: formationName(template.label, t) }];
-    });
-  };
-
   const formationLines = (choices: { shape: string; name: string }[]) => {
     if (choices.length === 0) {
       // 組める形が無いのに例を出させると、知らない名前が返ってくるだけ
@@ -230,7 +211,9 @@ ${list}`;
         { status: 400 },
       );
     }
-    const choices = formationChoices(piece.dancerNames?.length ?? 0);
+    const choices = formationChoices(piece.dancerNames?.length ?? 0, (template) =>
+      formationName(template.label, t),
+    );
     target = {
       systemPrompt: PIECE_PROMPT,
       userText: formatPieceForPrompt(piece) + formationLines(choices),
@@ -255,7 +238,9 @@ ${list}`;
         { status: 400 },
       );
     }
-    const choices = formationChoices(summary.dancers.length);
+    const choices = formationChoices(summary.dancers.length, (template) =>
+      formationName(template.label, t),
+    );
     target = {
       systemPrompt: SYSTEM_PROMPT,
       userText: formatSummaryForPrompt(summary) + formationLines(choices),

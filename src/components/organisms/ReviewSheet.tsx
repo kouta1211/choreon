@@ -7,22 +7,12 @@ import { PressableButton } from "@/components/atoms/PressableButton";
 import { SegmentedControl } from "@/components/atoms/SegmentedControl";
 import { ReviewFindingCard } from "@/components/molecules/ReviewFindingCard";
 import { FormationPreview } from "@/components/molecules/FormationPreview";
+import { useReviewActions } from "@/features/review/hooks/useReviewActions";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import { useExtendMoveTime } from "@/features/canvas/hooks/useExtendMoveTime";
-import { useClearBlindSpot } from "@/features/canvas/hooks/useClearBlindSpot";
-import { findExcessiveMoves } from "@/features/canvas/lib/physicalLimits";
-import { useApplyTemplate } from "@/features/canvas/hooks/useApplyTemplate";
-import { templatesForCount } from "@/features/canvas/lib/formationTemplates";
-import { themedDancerColor } from "@/features/dancer/lib/themedColor";
-import { formationName } from "@/features/i18n/lib/formationName";
 import { buildFormationSummary } from "@/features/review/lib/formationSummary";
 import { buildPieceSummary } from "@/features/review/lib/pieceSummary";
-import { DEFAULT_TRANSFORM } from "@/features/canvas/lib/formationTemplates";
-import type {
-  ReviewFinding,
-  ReviewResult,
-} from "@/features/review/lib/reviewFindings";
+import type { ReviewResult } from "@/features/review/lib/reviewFindings";
 import type { Project } from "@/features/project/types";
 import type { Scene } from "@/features/scene/types";
 import { useT } from "@/features/i18n/LocaleProvider";
@@ -78,82 +68,13 @@ export function ReviewSheet({ project, isOpen, onClose }: Props) {
   /** 当てた指摘。何件目か（同じ文が2つ返ることは無いが、番号の方が安い） */
   const [appliedIndexes, setAppliedIndexes] = useState<number[]>([]);
 
-  const { suggestFor, extendTo } = useExtendMoveTime();
-  const { suggestXFor, moveOut } = useClearBlindSpot();
-  const { applyTemplate } = useApplyTemplate(project);
+  /* 指摘1件に対して**いま何ができるか**の判断は、まとめて外に出してある
+     （useReviewActions）。約束が集まっている場所なので、画面を描かずに
+     試せるようにした */
+  const { sceneFor, actionFor, formationFor } = useReviewActions(project);
 
   const index = scenes.findIndex((item) => item.id === selectedSceneId);
   const scene = index >= 0 ? scenes[index] : null;
-
-  /**
-   * 名前 → ID。
-   *
-   * AI へ ID は送っていない(送らない約束)ので、返ってくるのは名前だけ。
-   * **同じ名前が2人いるときは当てない** — どちらを動かすか決められない
-   * まま片方を動かすのは、当たらない直しより悪い。
-   */
-  const idForName = (name: string): string | null => {
-    const matches = Object.values(dancers).filter(
-      (dancer) => dancer.name === name,
-    );
-    return matches.length === 1 ? matches[0].id : null;
-  };
-
-  /**
-   * その指摘が指しているシーン。
-   *
-   * 作品ぜんぶのときは返事の番号（1から）で、このシーンのときはいま開いて
-   * いるシーン。**番号は画面左の 01 / 02 と同じ並び順**にしてある。
-   */
-  const sceneFor = (finding: ReviewFinding): Scene | null =>
-    finding.sceneNumber ? (scenes[finding.sceneNumber - 1] ?? null) : scene;
-
-  /**
-   * 直しのボタンを1件ぶん作る。作らない（undefined）こともある。
-   *
-   * ここが**いまの隊形**を見ている点が要点。返事を待っている間に user が
-   * 自分で直していれば、速すぎる移動も顔被りも消えているので、
-   * ボタンは出ない。返ってきた時点の状態でボタンを出すと、
-   * 押しても何も起きない／別の場所が動く、になる。
-   *
-   * 作品ぜんぶのときは、**指摘が指しているシーンへ当てる**（いま開いて
-   * いるシーンではない）。ここを取り違えると、関係の無い場面が動く。
-   */
-  const actionFor = (finding: ReviewFinding) => {
-    if (!finding.fix) return undefined;
-    const target = sceneFor(finding);
-    if (!target) return undefined;
-    const dancerId = idForName(finding.fix.dancerName);
-    if (!dancerId) return undefined;
-
-    if (finding.fix.kind === "clearBlindSpot") {
-      if (suggestXFor(dancerId, target.id) === null) return undefined;
-      return {
-        label: t.dancer.badges.blindSpot.moveOut,
-        run: () => moveOut(dancerId, target.id),
-      };
-    }
-
-    // retime: 何秒に延ばすかはアプリが計算する
-    const targetIndex = scenes.findIndex((item) => item.id === target.id);
-    const nextScene = scenes[targetIndex + 1] ?? null;
-    if (!nextScene) return undefined;
-    const segmentSeconds = nextScene.timeSeconds - target.timeSeconds;
-    if (segmentSeconds <= 0) return undefined;
-
-    const strain = findExcessiveMoves(
-      positionsBySceneId[target.id] ?? {},
-      positionsBySceneId[nextScene.id] ?? {},
-      segmentSeconds,
-    ).get(dancerId);
-    if (!strain) return undefined;
-    const seconds = suggestFor(strain, target.id);
-    if (seconds === null) return undefined;
-    return {
-      label: t.dancer.badges.excessiveMove.extend(seconds),
-      run: () => extendTo(seconds, target.id),
-    };
-  };
 
   /** 送るもの。どちらの範囲でも**座標は最小限**にしてある */
   const buildBody = (current: Scene) =>
@@ -213,47 +134,6 @@ export function ReviewSheet({ project, isOpen, onClose }: Props) {
     } finally {
       setIsRunning(false);
     }
-  };
-
-  /**
-   * 「こう並べると」の図。
-   *
-   * ■ 名前だけでは並びが読めない
-   * 「V字（後1-3-4前）」と言われても、どんな形なのか目に浮かばない。
-   * **点の位置はアプリが持っている**（FORMATION_TEMPLATES）ので、
-   * AI が選んだ名前から図を描く。AI に形を作らせてはいない。
-   *
-   * ■ 当てる先は、その指摘のシーン
-   * 作品ぜんぶのときは別のシーンの話になる。開いていないシーンへ当てる
-   * のは分かりにくいので、**そのシーンを開いてから**当てる。
-   */
-  const formationFor = (finding: ReviewFinding) => {
-    if (!finding.formationShape) return null;
-    const target = sceneFor(finding);
-    if (!target) return null;
-
-    const positions = positionsBySceneId[target.id] ?? {};
-    const onStage = Object.values(positions);
-    if (onStage.length === 0) return null;
-
-    const template = templatesForCount(onStage.length).find(
-      (item) => item.label.shape === finding.formationShape,
-    );
-    if (!template) return null;
-
-    return {
-      template,
-      dancerCount: onStage.length,
-      dancerColors: onStage.map((position) =>
-        themedDancerColor(dancers[position.dancerId]?.color ?? ""),
-      ),
-      name: formationName(template.label, t),
-      apply: async () => {
-        // 当てる前にそのシーンを開く。どこが変わったのか見えないと確かめられない
-        if (target.id !== selectedSceneId) selectScene(target.id);
-        await applyTemplate(template, DEFAULT_TRANSFORM);
-      },
-    };
   };
 
   const hasFix = review?.findings.some((finding) => actionFor(finding));

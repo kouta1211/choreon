@@ -12,10 +12,8 @@
  * 隊形そのものを見てもらうのは別機能（formationSummary.ts）。
  */
 
-import {
-  templatesForCount,
-  type FormationTemplate,
-} from "@/features/canvas/lib/formationTemplates";
+/* 一覧の作り方は canvas 側に置いてある（見てもらう口も同じものを使う） */
+export { formationChoices } from "@/features/canvas/lib/formationChoices";
 
 export type AssistContext = {
   sceneCount: number;
@@ -38,21 +36,6 @@ export type AssistContext = {
   /** いまの人数で組める隊形の名前（AI はこの中からしか選べない） */
   formations: { shape: string; name: string }[];
 };
-
-/** 人数から、選べる隊形の一覧を作る */
-export function formationChoices(
-  dancerCount: number,
-  nameOf: (template: FormationTemplate) => string,
-): { shape: string; name: string }[] {
-  const seen = new Set<string>();
-  return templatesForCount(dancerCount).flatMap((template) => {
-    const shape = template.label.shape;
-    // 同じ形で人数の内訳が違うものは複数あるので、形ごとに1つへ畳む
-    if (seen.has(shape)) return [];
-    seen.add(shape);
-    return [{ shape, name: nameOf(template) }];
-  });
-}
 
 const GRID_WORDS: Record<AssistContext["view"]["grid"], string> = {
   square: "格子",
