@@ -459,8 +459,10 @@ export const en = {
   share: {
     title: "Share",
     enable: "Anyone with the link can view",
-    enabledNote: "People who open the link get a view-only screen",
-    disabledNote: "While this is off, the link will not open for anyone",
+    resume: "Share with this link again",
+    stop: "Stop sharing",
+    enabledNote: "Sharing is on. People who open the link get a view-only screen",
+    disabledNote: "Not sharing right now. The link will not open, even for people who have it",
     noKey:
       "This piece does not have a sharing key yet. Run supabase/schema.sql from the Supabase SQL Editor to enable it.",
     everyone: "Link for everyone",
@@ -541,6 +543,7 @@ export const en = {
       "Hear the tempo of the choreography before you have a track. It only sounds while playback is running.",
     metronome: "Metronome",
     click: "Sound the click",
+    clickWithMusic: "No click while a track is loaded (the track keeps time)",
     bpm: "Tempo (BPM)",
     beatsPerBar: "Time signature",
     beatsPerBarNote:

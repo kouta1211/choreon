@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Check, Copy, Link2, RefreshCw } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check, Copy, Link2Off, RefreshCw } from "lucide-react";
 import { BottomSheet } from "@/components/molecules/BottomSheet";
 import { PressableButton } from "@/components/atoms/PressableButton";
-import { Switch } from "@/components/atoms/Switch";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { persist } from "@/features/project/lib/persistence";
@@ -43,6 +42,15 @@ type Props = {
  * `?p=` はポジションを選ぶ手間を省くだけで、書き換えれば他の人の道順も
  * 見られます。「この人にはこの人のぶんしか見せない」という仕組みでは
  * ないことを、配る側が誤解しないように書いてあります。
+ *
+ * ■ オン/オフのスイッチは外した(2026-08-17)
+ * 「共有」を開いた人は配りたくて開いている。そこからもう一度スイッチを
+ * 入れさせるのは、**押す前から答えの分かっている問い**でしかなかった
+ * (「この導線の意味は？」という指摘はここ)。開いた時点でリンクを出し、
+ * 逆向きの操作(共有をやめる)を下に置く形にしてある。
+ *
+ * やめても**鍵は作り直さない**ので、もう一度共有すると同じリンクが戻る。
+ * 配った相手のリンクを恒久的に切るのは「リンクを作り直す」の役。
  */
 export function ShareSheet({ project, isOpen, onClose }: Props) {
   const t = useT();
@@ -80,10 +88,9 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
     setTimeout(() => setCopiedKey((current) => (current === key ? null : current)), 1600);
   };
 
-  const toggleSharing = () => {
-    const next = !stored.isShared;
+  const setSharingTo = (next: boolean) => {
     // 楽観的更新。リンクの表示がすぐ切り替わらないと、
-    // オンにしたのか分からないまま二度押しされる
+    // 効いたのか分からないまま二度押しされる
     setSharing(next);
 
     void persist((supabase) =>
@@ -96,6 +103,17 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
       });
     });
   };
+
+  /* 開いたら、その場で共有を始める。
+     **鍵がまだ無い作品では何もしない** — 出せるリンクが無いので、
+     オンにしても「共有中なのにリンクが無い」という読めない状態になる。 */
+  useEffect(() => {
+    if (!isOpen || stored.isShared || !stored.shareToken) return;
+    setSharingTo(true);
+    // 開いた瞬間の一度だけ。stored.isShared を依存に入れると、
+    // 「やめる」を押した直後にまた点いてしまう
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   const rotate = () => {
     requestConfirm({
@@ -123,25 +141,24 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title={t.share.title}>
       <div className="flex flex-col gap-4 px-3.5 py-3">
-        <div>
-          <Switch
-            checked={stored.isShared}
-            onChange={toggleSharing}
-            label={t.share.enable}
-            description={
-              stored.isShared
-                ? t.share.enabledNote
-                : t.share.disabledNote
-            }
-            icon={Link2}
-            fullWidth
-          />
-          {!stored.shareToken && (
-            <p className="mt-2 rounded-xl border border-line px-3 py-2.5 text-caption leading-snug text-fg-muted">
-              {t.share.noKey}
-            </p>
-          )}
-        </div>
+        {/* いまどの状態かを1行で。スイッチではなく状態の表示にしてある */}
+        <p className="text-label leading-relaxed text-fg-sub">
+          {stored.isShared ? t.share.enabledNote : t.share.disabledNote}
+        </p>
+        {!stored.shareToken && (
+          <p className="rounded-xl border border-line px-3 py-2.5 text-caption leading-snug text-fg-muted">
+            {t.share.noKey}
+          </p>
+        )}
+        {stored.shareToken && !stored.isShared && (
+          <PressableButton
+            kind="primary"
+            onClick={() => setSharingTo(true)}
+            className="h-target-lg w-full rounded-lg bg-accent text-body font-semibold text-accent-fg"
+          >
+            {t.share.resume}
+          </PressableButton>
+        )}
 
         {stored.isShared && link && (
           <>
@@ -217,13 +234,25 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
               </div>
             )}
 
-            <PressableButton
-              onClick={rotate}
-              className="flex h-11 items-center justify-center gap-2 rounded-xl border border-line-strong text-label text-fg-sub"
-            >
-              <RefreshCw size={15} />
-              {t.share.regenerate}
-            </PressableButton>
+            <div className="flex flex-col gap-1.5">
+              <PressableButton
+                onClick={rotate}
+                className="flex h-11 items-center justify-center gap-2 rounded-xl border border-line-strong text-label text-fg-sub"
+              >
+                <RefreshCw size={15} />
+                {t.share.regenerate}
+              </PressableButton>
+              {/* 逆向きの操作。**鍵は作り直さない**ので、もう一度共有すれば
+                  同じリンクが戻る。だから確認は挟まない(取り返せる操作に
+                  確認を付けると、本当に取り返せない操作の確認が軽くなる) */}
+              <PressableButton
+                onClick={() => setSharingTo(false)}
+                className="flex h-11 items-center justify-center gap-2 rounded-xl text-label text-fg-muted"
+              >
+                <Link2Off size={15} />
+                {t.share.stop}
+              </PressableButton>
+            </div>
           </>
         )}
 

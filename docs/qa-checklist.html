@@ -365,6 +365,29 @@
     line-height: 1.6;
     padding: 0.6rem 0.7rem;
   }
+  /* 提出済みのメモ。**読めるが、次の報告には入らない**。
+     入力欄と同じ濃さで出すと、まだ出していないものと見分けが付かない */
+  .sent-memos {
+    border-left: 2px solid var(--line);
+    padding-left: 0.7rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .sent-head {
+    margin: 0;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: var(--fg-mute);
+  }
+  .sent-line {
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: var(--fg-mute);
+    white-space: pre-wrap;
+  }
+
   textarea.memo::placeholder { color: var(--fg-mute); }
   textarea.memo:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   [hidden] { display: none !important; }
@@ -496,9 +519,14 @@
 
     <div class="notice">
       <p>
-        <b>PCの報告52件のうち、50件を直しました。</b>
-        残る2件は「よくわからない」「この導線の意味は？」で、
-        何が分からなかったのかを聞いてから直します（12章・17章）。
+        <b>PCの報告52件すべてに手を入れました。</b>
+      </p>
+      <p>
+        <b>この台本自体も変わりました。「コピーする」を押すと、
+        そのとき書いてあったメモは履歴へ移ります。</b>
+        履歴は各項目の下に薄く残って読めますが、<b>次の報告には入りません</b>
+        （同じ話を2回渡さないためです）。押し間違えたら「戻す」で戻せます。
+        相談したいことは、メモに <b>要検討</b> と書いてください。
       </p>
       <p>
         確認は <b>iPhone / Android の Safari・Chrome</b> と <b>PCのブラウザ</b>で行います。
@@ -546,7 +574,9 @@
         <li>チュートリアルは<b>「ゲストで始める」を押したあとに聞く</b>形へ（01章）</li>
         <li>シーンの複製が<b>「〜のコピー」ではなく通し番号</b>に。カードの名前は<b>ダブルクリックでも</b>直せます（08章）</li>
         <li>数を入れる欄は、直したときに<b>理由が出る</b>ようになりました（04・12章）</li>
-        <li>下のバーに<b>♪（曲）</b>のボタンが増えました（08・12章）</li>
+        <li>下のバーに<b>♪（曲）</b>と<b>音の波（クリック）</b>のボタンが増えました（08・10・12章）</li>
+        <li><b>共有のオン/オフのスイッチを外しました</b>（17章）—
+          開いた時点でリンクが出ます。やめる操作は下にあります</li>
       </ul>
       <p class="dim">
         ※ 01〜16章のあちこちに項目を差し込んだので、
@@ -596,6 +626,15 @@
       ここに書いたものと、チェックの付いていない項目をまとめて、
       そのまま Claude Code に貼れる文章にします。
     </p>
+    <p class="why">
+      <b>「コピーする」を押すと、そのとき書いてあったメモは履歴へ移ります。</b>
+      履歴は各項目の下に薄く残って読めますが、<b>次の報告には入りません</b>
+      （同じ話を2回渡さないためです）。押し間違えたら、その場の「戻す」で戻せます。
+    </p>
+    <p class="why dim">
+      相談したいこと・案を出してほしいことは、メモに <b>要検討</b> と書いてください。
+      その項目は「決めずに一緒に考える」ものとして扱われます。
+    </p>
     <label for="global-memo" class="why">
       <b>項目に紐づかない気づき</b>（全体を通して思ったこと、やりたいこと）
     </label>
@@ -609,6 +648,10 @@
       <button type="button" id="make-report">報告の文章を作る</button>
       <button type="button" class="ghost" id="copy-report" hidden>コピーする</button>
       <span class="said" id="copied" hidden>コピーしました</span>
+    </div>
+    <div class="actions">
+      <span class="said" id="archived" hidden></span>
+      <button type="button" class="ghost" id="undo-archive" hidden>戻す</button>
     </div>
     <textarea id="report-out" class="out" readonly hidden></textarea>
   </section>
@@ -1418,8 +1461,16 @@
             ok: "その場で止まり、いちばん近いシーンへ寄る（シーンとシーンの間で止まったままにならない）",
           },
           {
-            do: "曲を入れていない作品で、表示とモード → 曲 の中の<em>メトロノーム</em>を入れて再生",
-            ok: "拍の音が鳴りながら進む",
+            n: true,
+            do: "曲を入れていない作品で、<b>下のバーの</b> <em>音の波のアイコン</em> を押してから <em>再生ボタン</em>",
+            ok: "アイコンがアクセント色になり、拍が鳴りながら進む",
+            ng: "<b>今回、下のバーに出しました。</b>これまでは「表示とモード → 曲」の中と、時間軸の下（曲が無いときだけ）にしかなく、どちらも再生ボタンから遠い場所でした",
+          },
+          {
+            n: true,
+            do: "<b>曲を入れている作品</b>で、同じアイコンを見る",
+            ok: "<b>押せない状態（薄い）</b>になっている。マウスを乗せると「クリックは鳴りません（曲に合わせるため）」と出る",
+            ng: "曲があるときは曲が時間の物差しなので、2つの拍が同時に鳴らないようにしています。<b>押しても何も起きないボタンを並べない</b>ために、押せないことと理由を出しています",
           },
         ],
       },
@@ -1459,8 +1510,10 @@
             ok: "赤い知らせが出ずに保存される",
           },
           {
-            do: "そのまま<em>ページをリロード</em>する",
-            ok: "開始位置が 12.5 のまま残っている",
+            n: true,
+            do: "そのまま<em>ページをリロード</em>して、もう一度 下のバーの <em>♪（音符）</em> から曲のシートを開く",
+            ok: "<b>「曲の開始位置」の欄が 12.5 のまま</b>",
+            ng: "<b>今回、確かめる場所を書き足しました。</b>「リロードする」としか書いていなかったので、どこを見ればよいのか分からない、という指摘への答えです",
           },
           {
             do: "リロード後に<em>曲そのもの</em>を見る",
@@ -1728,8 +1781,21 @@
             ng: "「まだ共有用の鍵がありません」と出る場合は、DBのスキーマが古いままです。その旨を控えてください",
           },
           {
-            do: "<em>共有をオン</em>にする",
-            ok: "「リンクを知っている人が見られる」状態になり、みんなに配るリンクが出る",
+            n: true,
+            do: "開いたシートの<b>上から順に</b>見る",
+            ok: "<b>オン/オフのスイッチは無く</b>、「いま共有中です」と出て、<b>みんなに配るリンクがすぐ出ている</b>",
+            ng: "<b>今回、スイッチを外しました。</b>「共有」を開いた人は配りたくて開いているので、もう一度オンにさせるのは答えの分かっている問いでしかありませんでした。<b>開いた時点で共有が始まります</b>",
+          },
+          {
+            n: true,
+            do: "シートのいちばん下の <em>共有をやめる</em> を押す",
+            ok: "リンクが消えて「いまは共有していません」に変わる。<b>確認は挟まらない</b>",
+            ng: "やめても<b>鍵は作り直さない</b>ので、もう一度共有すれば同じリンクが戻ります（取り返せるので確認を挟みません）。配った相手のリンクを恒久的に切るのは「リンクを作り直す」の役です",
+          },
+          {
+            n: true,
+            do: "<em>もう一度このリンクで共有する</em> を押す",
+            ok: "<b>さっきと同じリンク</b>が戻る",
           },
           {
             do: "<em>リンクをコピー</em>して、ログアウトした別のブラウザ（またはプライベートウィンドウ）で開く",
@@ -2008,9 +2074,14 @@
       memos = null;
     }
     // 壊れた値が入っていても画面が真っ白にならないよう、形を必ず整える
-    if (!memos || typeof memos !== "object") memos = { items: {}, global: "" };
+    //
+    // items / global … いま書いている下書き。**報告に入るのはここだけ**
+    // sent / globalSent … 既に提出したもの。読めるように残すが、報告には入らない
+    if (!memos || typeof memos !== "object") memos = {};
     if (!memos.items || typeof memos.items !== "object") memos.items = {};
     if (typeof memos.global !== "string") memos.global = "";
+    if (!memos.sent || typeof memos.sent !== "object") memos.sent = {};
+    if (!Array.isArray(memos.globalSent)) memos.globalSent = [];
     document.getElementById("global-memo").value = memos.global;
   }
 
@@ -2028,6 +2099,15 @@
     } catch {
       /* 同上 */
     }
+  }
+
+  /** user が打った文字をそのまま流し込まないための逃がし。
+   *  メモは自由記述で、< を書く人がいる */
+  function escapeText(text) {
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
   }
 
   function render() {
@@ -2051,6 +2131,7 @@
                 const id = `${ai}-${ii}`;
                 const done = state[id] === true;
                 const memo = memos.items[id] || "";
+                const sent = memos.sent[id] || [];
                 return `
                 <article class="item${done ? " done" : ""}${memo ? " has-memo" : ""}" data-id="${id}" data-new="${item.n ? "1" : "0"}">
                   <button type="button" class="head" aria-pressed="${done}">
@@ -2067,6 +2148,19 @@
                         ? `<div class="line">
                              <span class="tag ng mono">補足</span>
                              <p>${item.ng}</p>
+                           </div>`
+                        : ""
+                    }
+                    ${
+                      sent.length > 0
+                        ? `<div class="sent-memos">
+                             <p class="sent-head">提出済み（${sent.length}件・報告には入りません）</p>
+                             ${sent
+                               .map(
+                                 (past) =>
+                                   `<p class="sent-line">${escapeText(past)}</p>`,
+                               )
+                               .join("")}
                            </div>`
                         : ""
                     }
@@ -2243,9 +2337,11 @@
     lines.push("");
     lines.push(`- 進み具合: ${done} / ${total} 項目`);
     lines.push(`- 気づきを書いた項目: ${withMemo.length} 件`);
+    lines.push("- ここに入っているのは**まだ提出していないメモだけ**です（提出済みのものは台本の履歴に残しています）");
     lines.push("");
 
     lines.push("## 気づいたこと");
+    lines.push("<!-- 「要検討」と書いたものは、決め打ちで直さずに案を出して相談してください -->");
     if (withMemo.length === 0) {
       lines.push("（項目ごとのメモはありません）");
     } else {
@@ -2299,6 +2395,77 @@
     $out.scrollIntoView({ block: "nearest", behavior: "smooth" });
   });
 
+  /**
+   * 提出したメモを履歴へ送る。
+   *
+   * ■ なぜ要るのか
+   * メモは書いたまま残るので、次に報告を作ると**前に出したものがもう一度
+   * 入ってくる**。受け取る側からは同じ話が2回来たように見えて、直したはずの
+   * ものをまた直そうとすることになる。出したものは履歴へ落とし、
+   * 欄は空にして「ここから先が新しい話」と分かる状態にする。
+   *
+   * ■ きっかけは「コピーする」
+   * コピー＝持っていった、と見なすのがいちばん取り違えが少ない。
+   * ただし押し間違いはあるので、**その場で戻せる**ようにしてある
+   * (下の undo)。作った時点(報告の文章を作る)では送らない —
+   * 中身を見るだけのつもりで押した人のメモが消えてしまう。
+   */
+  let archiveUndo = null;
+
+  function archiveMemos() {
+    const hasSomething =
+      memos.global.trim() !== "" ||
+      Object.values(memos.items).some((text) => text.trim() !== "");
+    if (!hasSomething) return 0;
+
+    // 戻せるように、送る前の姿を控える
+    archiveUndo = JSON.parse(JSON.stringify(memos));
+
+    let moved = 0;
+    for (const [id, text] of Object.entries(memos.items)) {
+      if (!text.trim()) continue;
+      if (!Array.isArray(memos.sent[id])) memos.sent[id] = [];
+      memos.sent[id].push(text);
+      delete memos.items[id];
+      moved += 1;
+    }
+    if (memos.global.trim()) {
+      memos.globalSent.push(memos.global);
+      memos.global = "";
+      moved += 1;
+    }
+
+    saveMemos();
+    document.getElementById("global-memo").value = "";
+    render();
+    return moved;
+  }
+
+  const $archived = document.getElementById("archived");
+  const $undo = document.getElementById("undo-archive");
+
+  function showArchived(moved) {
+    if (moved === 0) {
+      $archived.hidden = true;
+      $undo.hidden = true;
+      return;
+    }
+    $archived.textContent = `${moved}件のメモを履歴へ送りました（次の報告には入りません）`;
+    $archived.hidden = false;
+    $undo.hidden = false;
+  }
+
+  $undo.addEventListener("click", () => {
+    if (!archiveUndo) return;
+    memos = archiveUndo;
+    archiveUndo = null;
+    saveMemos();
+    document.getElementById("global-memo").value = memos.global;
+    render();
+    $archived.hidden = true;
+    $undo.hidden = true;
+  });
+
   $copy.addEventListener("click", async () => {
     // クリップボードが使えない環境（埋め込みの制限など）でも渡せるよう、
     // 失敗したら全選択して「手でコピーしてください」の状態にする
@@ -2311,6 +2478,9 @@
       $copied.textContent = "選択しました。手でコピーしてください";
       $copied.hidden = false;
     }
+    // コピーできてもできても（手でコピーする形になっても）、
+    // ここから先は「持っていった」扱いにする
+    showArchived(archiveMemos());
   });
 
   // ── 短いコード（チェックだけ） ──

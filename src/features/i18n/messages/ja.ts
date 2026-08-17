@@ -469,8 +469,10 @@ export const ja = {
   share: {
     title: "共有",
     enable: "リンクを知っている人が見られる",
-    enabledNote: "リンクを開いた人は、見るだけの画面になります",
-    disabledNote: "オフの間は、リンクを持っていても開けません",
+    resume: "もう一度このリンクで共有する",
+    stop: "共有をやめる",
+    enabledNote: "いま共有中です。リンクを開いた人は、見るだけの画面になります",
+    disabledNote: "いまは共有していません。リンクを持っている人も開けません",
     noKey:
       "この作品にはまだ共有用の鍵がありません。supabase/schema.sql をSupabaseのSQL Editorで実行すると使えるようになります。",
     everyone: "みんなに配るリンク",
@@ -551,6 +553,7 @@ export const ja = {
       "曲を用意する前でも、振付の速さを耳で確かめられます。再生ボタンを押している間だけ鳴ります。",
     metronome: "メトロノーム",
     click: "クリックを鳴らす",
+    clickWithMusic: "クリックは鳴りません（曲に合わせるため）",
     bpm: "速さ(BPM)",
     beatsPerBar: "拍子",
     beatsPerBarNote:

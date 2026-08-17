@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import {
+  AudioLines,
   ChevronDown,
   List,
   Music4,
@@ -91,6 +92,7 @@ export function SceneDock({ project }: Props) {
   );
   const isTimelineVisible = useUIStore((state) => state.isTimelineVisible);
   const setMusicSheetOpen = useUIStore((state) => state.setMusicSheetOpen);
+  const toggleMetronome = useMusicStore((state) => state.toggleMetronome);
   const toggleTimelineVisible = useUIStore(
     (state) => state.toggleTimelineVisible,
   );
@@ -274,6 +276,33 @@ export function SceneDock({ project }: Props) {
             className="flex h-10 w-10 items-center justify-center rounded-md text-fg-sub transition-colors hover:bg-surface-strong hover:text-fg md:hidden"
           >
             <List size={20} />
+          </PressableButton>
+          <span aria-hidden className="h-5 w-px bg-line" />
+          {/* クリック(メトロノーム)。**鳴らしたいのは再生する瞬間**なので、
+              その隣に置く。以前は「表示とモード → 曲」の中と、時間軸の
+              下(曲が無いときだけ)の2箇所にしか無く、どちらも再生ボタンから
+              遠かった。
+
+              曲があるときは押せなくする。曲が時間の物差しなので鳴らさない
+              のが仕様だが、**押しても何も起きないボタン**を並べると
+              「壊れている」と読まれる。理由は名前に入れてある */}
+          <PressableButton
+            kind="icon"
+            role="switch"
+            aria-checked={isMetronomeEnabled}
+            disabled={hasMusic}
+            onClick={toggleMetronome}
+            aria-label={
+              hasMusic ? t.music.clickWithMusic : t.music.click
+            }
+            title={hasMusic ? t.music.clickWithMusic : t.music.click}
+            className={`flex h-10 w-10 items-center justify-center rounded-md transition-colors disabled:opacity-40 ${
+              isMetronomeEnabled && !hasMusic
+                ? "bg-accent/16 text-accent-soft"
+                : "text-fg-sub hover:bg-surface-strong hover:text-fg"
+            }`}
+          >
+            <AudioLines size={20} />
           </PressableButton>
           <span aria-hidden className="h-5 w-px bg-line" />
           {/* 曲。**時間軸の主役なのに、入口が畳んだメニューの中にしか

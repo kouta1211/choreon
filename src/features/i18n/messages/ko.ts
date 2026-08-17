@@ -455,8 +455,10 @@ export const ko = {
   share: {
     title: "공유",
     enable: "링크를 아는 사람이 볼 수 있음",
-    enabledNote: "링크를 연 사람에게는 보기 전용 화면이 열립니다",
-    disabledNote: "꺼져 있는 동안에는 링크가 있어도 열리지 않습니다",
+    resume: "이 링크로 다시 공유하기",
+    stop: "공유 그만두기",
+    enabledNote: "지금 공유 중입니다. 링크를 연 사람에게는 보기 전용 화면이 열립니다",
+    disabledNote: "지금은 공유하고 있지 않습니다. 링크를 가진 사람도 열 수 없습니다",
     noKey:
       "이 작품에는 아직 공유용 키가 없습니다. Supabase SQL Editor에서 supabase/schema.sql 을 실행하면 사용할 수 있습니다.",
     everyone: "모두에게 줄 링크",
@@ -536,6 +538,7 @@ export const ko = {
       "곡을 준비하기 전에도 안무의 속도를 귀로 확인할 수 있습니다. 재생 중에만 소리가 납니다.",
     metronome: "메트로놈",
     click: "클릭음 켜기",
+    clickWithMusic: "음악이 있을 때는 클릭이 울리지 않습니다(음악에 맞추기 때문)",
     bpm: "속도(BPM)",
     beatsPerBar: "박자",
     beatsPerBarNote:
