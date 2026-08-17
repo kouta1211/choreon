@@ -162,6 +162,7 @@ export const en = {
       music: "Music",
       share: "Share",
       review: "Ask for notes",
+      assist: "Ask in words",
       exportVideo: "Make a video",
       tour: "Start the tutorial",
       settings: "Settings",
@@ -483,6 +484,78 @@ export const en = {
     musicNote:
       "The track does not travel with it (the audio never leaves this device). The start position is shared, so once they pick the same track it will line up.",
     sharing: "Shared. Open the link",
+  },
+
+  assist: {
+    title: "Ask in words",
+    note: "Write what you want to do. It picks from what the app can do, and shows you the plan first.",
+    inputLabel: "What you want to do",
+    placeholder: "Fix all the hidden faces",
+    ask: "Ask",
+    asking: "Thinking…",
+    again: "Ask again",
+    examples: "For example",
+    exampleList: [
+      "Fix all the hidden faces",
+      "Show the floor spots",
+      "Open the third scene",
+      "Line everyone up in one row",
+      "Make the floor lines circles",
+    ],
+    confirm: "Go ahead",
+    cancel: "Cancel",
+    undoHint: "Undo removes it",
+    targets: {
+      paths: "Paths",
+      blindSpot: "Hidden-face check",
+      marks: "Floor spots",
+      music: "Music",
+      share: "Sharing",
+      video: "Make a video",
+      settings: "Settings",
+      review: "Ask for notes",
+      template: "Pick a formation",
+      addDancer: "Add dancers",
+    },
+    plan: {
+      clearBlindSpots: (count: number) => `Free the hidden faces (${count})`,
+      movesSideways: (name: string, from: number, to: number) =>
+        `${name} moves ${from} → ${to} (sideways only)`,
+      noEscape: (name: string) => `${name} has nowhere to go, so stays put`,
+      thisSceneOnly:
+        "Only the scene you have open. Nothing before or after moves",
+      extendFastMoves: (count: number) => `Add time for the moves (${count})`,
+      retime: (sceneName: string, from: number, to: number) =>
+        `"${sceneName}" goes from ${from}s to ${to}s`,
+      walkable: (name: string) => `${name} can walk it`,
+      rippleNote: "Later scenes shift back by the same amount",
+      applyFormation: (name: string, count: number) =>
+        `Arrange ${count} dancers as "${name}"`,
+      nearestAssignment: "Everyone goes to the nearest open spot",
+      setGrid: (name: string) => `Floor lines set to "${name}"`,
+      turnedOn: (name: string) => `${name} is now showing`,
+      turnedOff: (name: string) => `${name} is now hidden`,
+      alreadyOn: (name: string) => `${name} is already showing`,
+      alreadyOff: (name: string) => `${name} is already hidden`,
+      opened: (name: string) => `Opened ${name}`,
+      selectScene: (number: number, name: string) => `Opened ${number}. ${name}`,
+    },
+    nothingToDo: "There is nothing to do right now",
+    errors: {
+      notConfigured: "This is not set up on this server",
+      needsSignIn: "Please sign in first",
+      unreadable: "Could not read the request",
+      tooLong: "That is too long. Please keep it short",
+      notUnderstood:
+        "I could not work that out. Try one thing at a time, like asking to fix all the hidden faces.",
+      unavailable: "That did not work. Please try again in a moment",
+      modelMissing:
+        "The service could not be found. This needs a fix on our side",
+      rejected: "The service refused the key. This needs a fix on our side",
+      busy: "It is busy right now. Please wait a moment and try again",
+      tooSlow: "The reply took too long. Please try again",
+      empty: "The reply came back empty. Please try again",
+    },
   },
 
   review: {

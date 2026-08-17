@@ -173,6 +173,7 @@ export const ja = {
       music: "曲",
       share: "共有",
       review: "隊形を見てもらう",
+      assist: "言葉で頼む",
       exportVideo: "動画にする",
       tour: "チュートリアルを開始する",
       settings: "設定",
@@ -493,6 +494,82 @@ export const ja = {
     musicNote:
       "曲は付いていきません(音源はこの端末から出ないため)。相手の画面では曲の開始位置は共有されるので、選んでもらえれば位置は合います。",
     sharing: "共有中。リンクを開く",
+  },
+
+  /** 言葉で頼む（操作のサポート）。AIが選ぶのは操作だけで、数はアプリが出す */
+  assist: {
+    title: "言葉で頼む",
+    note: "したいことを書いてください。できることの中から選んで、やることを先に見せます。",
+    inputLabel: "したいこと",
+    placeholder: "顔被りを全部直して",
+    ask: "頼む",
+    asking: "考えています...",
+    again: "もう一度頼む",
+    examples: "たとえば",
+    exampleList: [
+      "顔被りを全部直して",
+      "バミリを出して",
+      "3番目のシーンを開いて",
+      "横1列に並べて",
+      "床の線を同心円にして",
+    ],
+    /** 確認。押すまで何も起きない */
+    confirm: "これで進める",
+    cancel: "やめる",
+    undoHint: "元に戻すで消えます",
+    /** 表示・場所の呼び名。画面に出ている言葉と同じにする */
+    targets: {
+      paths: "導線",
+      blindSpot: "顔被りチェック",
+      marks: "バミリ",
+      music: "曲",
+      share: "共有",
+      video: "動画にする",
+      settings: "設定",
+      review: "隊形を見てもらう",
+      template: "フォーメーションから選ぶ",
+      addDancer: "ダンサーを追加",
+    },
+    /** やることの説明。**数字はここでアプリが入れる** */
+    plan: {
+      clearBlindSpots: (count: number) => `顔被りを直す（${count}人）`,
+      movesSideways: (name: string, from: number, to: number) =>
+        `${name}番を ${from} → ${to} へ（横だけ）`,
+      noEscape: (name: string) => `${name}番は逃げ場が無いので、そのまま`,
+      thisSceneOnly: "いま開いているシーンだけ。前後は動きません",
+      extendFastMoves: (count: number) => `移動に時間を足す（${count}件）`,
+      retime: (sceneName: string, from: number, to: number) =>
+        `「${sceneName}」を ${from}秒 → ${to}秒 へ`,
+      walkable: (name: string) => `${name}番が歩ける速さになります`,
+      rippleNote: "以降のシーンも一緒に後ろへずれます",
+      applyFormation: (name: string, count: number) =>
+        `${count}人を「${name}」に並べる`,
+      nearestAssignment: "いまの位置から、いちばん近い場所へ割り当てます",
+      setGrid: (name: string) => `床の線を「${name}」にしました`,
+      turnedOn: (name: string) => `${name}を出しました`,
+      turnedOff: (name: string) => `${name}を消しました`,
+      alreadyOn: (name: string) => `${name}はもう出ています`,
+      alreadyOff: (name: string) => `${name}はもう消えています`,
+      opened: (name: string) => `${name}を開きました`,
+      selectScene: (number: number, name: string) =>
+        `${number}番「${name}」を開きました`,
+    },
+    /** 何もすることが無かったとき */
+    nothingToDo: "いまは、することがありません",
+    errors: {
+      notConfigured: "この機能はまだ設定されていません",
+      needsSignIn: "ログインしてからお試しください",
+      unreadable: "読み取れませんでした",
+      tooLong: "頼み事が長すぎます。短く書いてください",
+      notUnderstood:
+        "うまく読み取れませんでした。「顔被りを全部直して」のように、したいことを1つだけ書いてみてください",
+      unavailable: "うまくいきませんでした。しばらくしてからお試しください",
+      modelMissing: "頼む相手が見つかりませんでした。設定の直しが必要です",
+      rejected: "頼むための鍵が断られました。設定の直しが必要です",
+      busy: "いま混み合っています。少し待ってからお試しください",
+      tooSlow: "返事に時間がかかりすぎました。もう一度お試しください",
+      empty: "返事が空でした。もう一度お試しください",
+    },
   },
 
   review: {

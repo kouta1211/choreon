@@ -10,6 +10,7 @@ import {
   Share2,
   SlidersHorizontal,
   Sparkles,
+  Wand2,
   EyeOff,
   Spline,
   Target,
@@ -63,6 +64,7 @@ type Props = {
   onOpenMusic?: () => void;
   onOpenShare?: () => void;
   onOpenReview?: () => void;
+  onOpenAssist?: () => void;
   onOpenSettings?: () => void;
 };
 
@@ -70,6 +72,7 @@ export function DisplayModeMenu({
   onOpenMusic,
   onOpenShare,
   onOpenReview,
+  onOpenAssist,
   onOpenSettings,
 }: Props) {
   const t = useT();
@@ -249,6 +252,12 @@ export function DisplayModeMenu({
         <DropdownMenuItem onSelect={() => onOpenReview?.()}>
           <Sparkles size={16} className="shrink-0 text-fg-muted" />
           {t.editor.view.review}
+        </DropdownMenuItem>
+        {/* 言葉で頼む。見てもらう(講評)の隣に置く — どちらもAIに頼むもので、
+            片方は「見て」、もう片方は「やって」 */}
+        <DropdownMenuItem onSelect={() => onOpenAssist?.()}>
+          <Wand2 size={16} className="shrink-0 text-fg-muted" />
+          {t.editor.view.assist}
         </DropdownMenuItem>
         {/* 動画は「アプリを開かない人にも渡せる」形。リンクとは
             届く相手が違うので、共有とは別の項目にしてある */}
