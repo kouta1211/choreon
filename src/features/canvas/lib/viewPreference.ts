@@ -23,6 +23,18 @@ export function isGridMode(value: unknown): value is GridMode {
 /** localStorageのキー。値の形を変えるときはここも変えて、古い形を無視させる */
 export const VIEW_STORAGE_KEY = "choreon.view.v1";
 
+/**
+ * 作品ごとの選択を書くキー。
+ *
+ * **土台とは別のキーに分けてある。** 1つのキーに入れ子で持つと、
+ * 作品を1つ触るたびに全部の作品ぶんを読んで書き直すことになり、
+ * どこか1件の中身が壊れたときに全部が既定へ落ちる。
+ * 分けておけば、壊れた作品だけが土台へ戻る。
+ */
+export function projectViewKey(projectId: string): string {
+  return `${VIEW_STORAGE_KEY}:${projectId}`;
+}
+
 export type ViewPreference = {
   gridMode: GridMode;
   isPathVisible: boolean;

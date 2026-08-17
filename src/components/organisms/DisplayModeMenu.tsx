@@ -6,7 +6,6 @@ import {
   Grid3x3,
   Hand,
   Music4,
-  Palette,
   Settings,
   Share2,
   SlidersHorizontal,
@@ -109,24 +108,16 @@ export function DisplayModeMenu({
     loadViewPreference();
   }, [loadViewPreference]);
 
-  // 見た目の上書きは「どのプロジェクトの上書きか」が要るので、
-  // 開いているプロジェクトをテーマ側へ知らせる。ホーム(ThemeButton)は
-  // 開いているプロジェクトが無いため、ここが唯一の知らせ手になる
+  // 開いているプロジェクトをテーマ側へ知らせる。切り替えるスイッチは
+  // ここから外したが(下のコメント)、**既に上書きを持っている人の作品は
+  // これまでどおりその見た目で開く**ので、知らせ手は残す
   const loadTheme = useThemeStore((state) => state.load);
   const setThemeProjectId = useThemeStore((state) => state.setProjectId);
-  const isThemeLoaded = useThemeStore((state) => state.isLoaded);
-  const themeProjectId = useThemeStore((state) => state.projectId);
-  const hasProjectOverride = useThemeStore(
-    (state) =>
-      state.projectId !== null && state.projectId in state.preference.byProject,
-  );
-  const setProjectOverride = useThemeStore((state) => state.setProjectOverride);
 
   useEffect(() => {
     loadTheme();
     setThemeProjectId(projectIdFromPath(window.location.pathname));
   }, [loadTheme, setThemeProjectId]);
-
 
   const modes = [
     {
@@ -276,36 +267,12 @@ export function DisplayModeMenu({
           {t.editor.view.settings}
         </DropdownMenuItem>
 
-        {/* 見た目(テーマ)の選択そのものはホームにある。ここに置くのは
-            「この1件だけ端末の既定から外す」というスイッチだけ。
-            対象のプロジェクトが必要なので、下書き(ゲスト)では出せない */}
-        {isThemeLoaded && themeProjectId !== null && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuCheckboxItem
-              checked={hasProjectOverride}
-              onCheckedChange={(checked) => setProjectOverride(checked === true)}
-              onSelect={(event) => event.preventDefault()}
-            >
-              <Palette
-                size={16}
-                aria-hidden
-                className={`shrink-0 ${hasProjectOverride ? "text-accent-soft" : "text-fg-muted"}`}
-              />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate">
-                  {t.editor.view.override.label}
-                </span>
-                <span className="mt-0.5 block text-caption leading-snug text-fg-muted">
-                  {hasProjectOverride
-                    ? t.editor.view.override.on
-                    : t.editor.view.override.off}
-                </span>
-              </span>
-              <SwitchTrack checked={hasProjectOverride} />
-            </DropdownMenuCheckboxItem>
-          </>
-        )}
+        {/* 「このプロジェクトだけ別の見た目」はここから外した(2026-08-17)。
+            2026-08-10 に一度「到達できないUIを残さない」として消したものが
+            戻っていて、今回また「この機能いらない」という指摘をもらった。
+            見た目は端末に1つで足りる、というのが2度出た答え。
+            **保存の形(byProject)と解決の順(resolveAppearance)は残してある**
+            ので、入口の置き場所さえ決まれば呼ぶだけで戻せる */}
       </DropdownMenuContent>
     </DropdownMenu>
   );

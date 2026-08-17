@@ -3,6 +3,8 @@ import {
   DEFAULT_VIEW_PREFERENCE,
   defaultViewPreference,
   parseViewPreference,
+  projectViewKey,
+  VIEW_STORAGE_KEY,
 } from "./viewPreference";
 
 describe("parseViewPreference", () => {
@@ -81,5 +83,21 @@ describe("defaultViewPreference", () => {
   it("保存が無いときは、その既定がそのまま返る", () => {
     stubPointer(true);
     expect(parseViewPreference(null).isSwipeSceneChangeEnabled).toBe(true);
+  });
+});
+
+describe("projectViewKey", () => {
+  /**
+   * 作品ごとの選択を土台と同じキーへ入れ子で持つと、作品を1つ触るたびに
+   * 全部の作品ぶんを読んで書き直すことになり、どこか1件が壊れたときに
+   * 全部が既定へ落ちる。分けておけば、壊れた作品だけが土台へ戻る。
+   */
+  it("土台とは別のキーになる", () => {
+    expect(projectViewKey("project-1")).toBe(`${VIEW_STORAGE_KEY}:project-1`);
+    expect(projectViewKey("project-1")).not.toBe(VIEW_STORAGE_KEY);
+  });
+
+  it("作品ごとに違うキーになる", () => {
+    expect(projectViewKey("a")).not.toBe(projectViewKey("b"));
   });
 });

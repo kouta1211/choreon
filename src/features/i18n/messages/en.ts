@@ -165,11 +165,6 @@ export const en = {
       exportVideo: "Make a video",
       tour: "Start the tutorial",
       settings: "Settings",
-      override: {
-        label: "A different look for this piece only",
-        on: "Changing the theme on the home screen will not change this one",
-        off: "Turn on to pin the current look to this piece",
-      },
     },
 
     dock: {
@@ -614,6 +609,16 @@ export const en = {
   settings: {
     title: "Settings",
 
+    scope: {
+      project: "Changes here apply to this piece only.",
+      home: "Changes here apply to every piece.",
+      newProjectOnly:
+        "Stage size and default tempo are starting values for pieces you make from now on.",
+      hasOverride: (n: number) => `${n} setting(s) are set for this piece only`,
+      clear: "Stop using piece-only settings",
+      cleared: "Piece-only settings removed",
+    },
+
     stage: {
       title: "Stage",
       summary: "Audience side, size of new pieces",
@@ -705,12 +710,6 @@ export const en = {
       summary: "Language, look, autosave",
       description:
         "Light gives you the look of a paper chart. For a finer choice, use the palette on the home screen.",
-      colorScheme: {
-        label: "Appearance",
-        dark: "Dark",
-        light: "Light",
-        system: "System",
-      },
       autoSave: {
         label: "Autosave",
         description:

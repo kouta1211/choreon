@@ -2,6 +2,7 @@ import { create } from "zustand";
 import {
   DEFAULT_VIEW_PREFERENCE,
   parseViewPreference,
+  projectViewKey,
   VIEW_STORAGE_KEY,
   type GridMode,
   type ViewPreference,
@@ -139,15 +140,35 @@ type UIState = {
   closeConfirm: () => void;
   openAuthDialog: (mode: "login" | "signup") => void;
   closeAuthDialog: () => void;
+  /**
+   * いま開いている作品。null ならホーム。
+   *
+   * ここが入っている間、「表示とモード」の切り替えは**その作品だけ**に
+   * 効く。設定(useSettingsStore の scope)と同じ決まり。
+   */
+  viewScopeProjectId: string | null;
   /** 端末に覚えてある「表示とモード」の選択を読み込む。画面が出てから
-   * 1回だけ呼ぶ(サーバー側にlocalStorageは無いので、描画前には読めない) */
-  loadViewPreference: () => void;
+   * 1回だけ呼ぶ(サーバー側にlocalStorageは無いので、描画前には読めない)。
+   * 作品を渡すと、土台の上にその作品の選択を重ねて読む */
+  loadViewPreference: (projectId?: string | null) => void;
 };
 
-/** 「表示とモード」の選択を端末へ書き戻す */
-function persistViewPreference(preference: ViewPreference) {
+/**
+ * 「表示とモード」の選択を端末へ書き戻す。
+ *
+ * 作品を開いていれば**その作品のキー**へ、ホームなら土台へ。
+ * 設定(useSettingsStore)と同じ決まりで、
+ * 「ホームで変えたら全部の作品へ、作品を開いて変えたらその作品だけ」。
+ */
+function persistViewPreference(
+  preference: ViewPreference,
+  projectId: string | null,
+) {
   try {
-    localStorage.setItem(VIEW_STORAGE_KEY, JSON.stringify(preference));
+    localStorage.setItem(
+      projectId ? projectViewKey(projectId) : VIEW_STORAGE_KEY,
+      JSON.stringify(preference),
+    );
   } catch {
     // プライベートモードや容量超過で書けないことがある。次回に残らない
     // だけなので、今の画面はそのまま動かす(見た目の設定と同じ扱い)
@@ -163,17 +184,20 @@ function persistFromState(
   state: UIState,
   changed: Partial<ViewPreference>,
 ): void {
-  persistViewPreference({
-    gridMode: state.gridMode,
-    isPathVisible: state.isPathVisible,
-    isStageMarksVisible: state.isStageMarksVisible,
-    isBlindSpotCheckVisible: state.isBlindSpotCheckVisible,
-    isSwipeSceneChangeEnabled: state.isSwipeSceneChangeEnabled,
-    ...changed,
-  });
+  persistViewPreference(
+    {
+      gridMode: state.gridMode,
+      isPathVisible: state.isPathVisible,
+      isStageMarksVisible: state.isStageMarksVisible,
+      isBlindSpotCheckVisible: state.isBlindSpotCheckVisible,
+      isSwipeSceneChangeEnabled: state.isSwipeSceneChangeEnabled,
+      ...changed,
+    },
+    state.viewScopeProjectId,
+  );
 }
 
-export const useUIStore = create<UIState>((set) => ({
+export const useUIStore = create<UIState>((set, get) => ({
   selectedSceneId: null,
   previousSceneId: null,
   selectedDancerId: null,
@@ -187,6 +211,7 @@ export const useUIStore = create<UIState>((set) => ({
   isStageMarksVisible: DEFAULT_VIEW_PREFERENCE.isStageMarksVisible,
   isBlindSpotCheckVisible: DEFAULT_VIEW_PREFERENCE.isBlindSpotCheckVisible,
   isSwipeSceneChangeEnabled: DEFAULT_VIEW_PREFERENCE.isSwipeSceneChangeEnabled,
+  viewScopeProjectId: null,
   isTransitioning: false,
   dragSnapLine: { x: null, y: null },
   isPlaying: false,
@@ -246,14 +271,34 @@ export const useUIStore = create<UIState>((set) => ({
       persistFromState(state, { isPathVisible });
       return { isPathVisible };
     }),
-  loadViewPreference: () => {
+  loadViewPreference: (projectId) => {
+    // 引数を省いたときは**いまの範囲を保つ**。読み込みは2箇所から呼ばれ
+    // (アプリ全体の SettingsLoader と、作品を開いた EditorLayout)、
+    // React は子の効果を先に走らせる。省略を「ホーム」と解すると、
+    // あとから走る親側の呼び出しが作品の範囲を毎回消してしまう
+    const scope = projectId === undefined ? get().viewScopeProjectId : projectId;
     let preference = DEFAULT_VIEW_PREFERENCE;
     try {
+      // 土台をまず読み、作品を開いていればその上に重ねる。
+      // 重ねる形にしているのは、**まだ触っていない項目は土台に従わせる**
+      // ため(作品ごとに全項目を丸ごと持つと、ホームで変えた設定が
+      // 一度でも開いた作品には二度と届かなくなる)
       preference = parseViewPreference(localStorage.getItem(VIEW_STORAGE_KEY));
+      if (scope) {
+        const scoped = localStorage.getItem(projectViewKey(scope));
+        if (scoped) {
+          preference = parseViewPreference(
+            JSON.stringify({
+              ...preference,
+              ...(JSON.parse(scoped) as Record<string, unknown>),
+            }),
+          );
+        }
+      }
     } catch {
       // localStorage自体が触れない環境。既定のまま動かす
     }
-    set(preference);
+    set({ ...preference, viewScopeProjectId: scope });
   },
   // 中身が前回と同じなら何も書き換えない(空オブジェクトを返す=状態は不変)。
   // これはドラッグ中に毎pointermoveごとに呼ばれるため、素直に

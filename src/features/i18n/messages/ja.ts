@@ -176,11 +176,6 @@ export const ja = {
       exportVideo: "動画にする",
       tour: "チュートリアルを開始する",
       settings: "設定",
-      override: {
-        label: "このプロジェクトだけ別の見た目",
-        on: "ホームでテーマを変えても、ここは変わりません",
-        off: "オンにすると、いまの見た目をこのプロジェクトに固定します",
-      },
     },
 
     dock: {
@@ -622,6 +617,16 @@ export const ja = {
   settings: {
     title: "設定",
 
+    /** 効く範囲の案内。ホームと作品の中で文が入れ替わる */
+    scope: {
+      project: "ここで変えたものは、この作品にだけ効きます。",
+      home: "ここで変えたものは、すべての作品に効きます。",
+      newProjectOnly: "広さと既定の速さだけは、これから作る作品への初期値です。",
+      hasOverride: (n: number) => `この作品だけの設定が ${n} 件あります`,
+      clear: "この作品だけの設定をやめる",
+      cleared: "この作品だけの設定をやめました",
+    },
+
     stage: {
       title: "舞台",
       summary: "客席の向き・新しい作品の広さ",
@@ -709,12 +714,6 @@ export const ja = {
       summary: "言語・見た目・自動保存",
       description:
         "「明るい」は紙の隊形図の見た目になります。細かく選ぶときはホームのパレットから。",
-      colorScheme: {
-        label: "見た目",
-        dark: "暗い",
-        light: "明るい",
-        system: "端末",
-      },
       autoSave: {
         label: "自動保存",
         description: "切ると、変更はヘッダーの保存を押すまで送られません",

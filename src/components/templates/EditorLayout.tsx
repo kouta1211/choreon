@@ -19,6 +19,10 @@ import { useSceneThumbnails } from "@/features/scene/hooks/useSceneThumbnails";
 import { SceneScrubProvider } from "@/features/canvas/hooks/useSceneScrub";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
+import {
+  GUEST_SCOPE,
+  useSettingsStore,
+} from "@/features/settings/store/useSettingsStore";
 import type { Project } from "@/features/project/types";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position, Scene } from "@/features/scene/types";
@@ -86,6 +90,26 @@ export function EditorLayout({
   useEffect(() => {
     void restoreMusic(project.id);
   }, [restoreMusic, project.id]);
+
+  /* いま開いている作品を設定へ知らせる。ここで変えた設定は
+     **この作品だけ**に効くようになる(ホームで変えたぶんは全部の作品へ)。
+     出るときに null へ戻すのを忘れると、一覧へ帰ったあとの設定変更が
+     直前に開いていた作品へ吸い込まれる。
+
+     場所をここにしたのは、**パスからは判断できない**ため —
+     下書き(ゲスト)のエディタもホームの一覧も同じ "/" にいる。
+     作品を持っているこの層だけが、その2つを見分けられる */
+  const setSettingsScope = useSettingsStore((state) => state.setScope);
+  const loadViewPreference = useUIStore((state) => state.loadViewPreference);
+  useEffect(() => {
+    const scope = isGuest ? GUEST_SCOPE : project.id;
+    setSettingsScope(scope);
+    loadViewPreference(scope);
+    return () => {
+      setSettingsScope(null);
+      loadViewPreference(null);
+    };
+  }, [setSettingsScope, loadViewPreference, isGuest, project.id]);
 
   return (
     <SceneScrubProvider>

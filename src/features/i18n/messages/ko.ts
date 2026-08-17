@@ -164,11 +164,6 @@ export const ko = {
       exportVideo: "영상으로 만들기",
       tour: "튜토리얼 시작하기",
       settings: "설정",
-      override: {
-        label: "이 작품만 다른 화면 모양",
-        on: "홈에서 테마를 바꿔도 여기는 바뀌지 않습니다",
-        off: "켜면 지금 화면 모양을 이 작품에 고정합니다",
-      },
     },
 
     dock: {
@@ -608,6 +603,15 @@ export const ko = {
   settings: {
     title: "설정",
 
+    scope: {
+      project: "여기서 바꾼 것은 이 작품에만 적용됩니다.",
+      home: "여기서 바꾼 것은 모든 작품에 적용됩니다.",
+      newProjectOnly: "무대 크기와 기본 속도는 앞으로 만들 작품의 초기값입니다.",
+      hasOverride: (n: number) => `이 작품에만 적용된 설정이 ${n}개 있습니다`,
+      clear: "이 작품만의 설정 그만두기",
+      cleared: "이 작품만의 설정을 지웠습니다",
+    },
+
     stage: {
       title: "무대",
       summary: "객석 방향 · 새 작품의 크기",
@@ -698,12 +702,6 @@ export const ko = {
       summary: "언어 · 화면 모양 · 자동 저장",
       description:
         "'밝게'는 종이 대형도 같은 화면이 됩니다. 자세히 고르려면 홈의 팔레트에서 선택하세요.",
-      colorScheme: {
-        label: "화면 모드",
-        dark: "어둡게",
-        light: "밝게",
-        system: "기기 설정",
-      },
       autoSave: {
         label: "자동 저장",
         description:

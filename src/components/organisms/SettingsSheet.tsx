@@ -19,6 +19,8 @@ import { SettingsPlaybackSection } from "@/components/organisms/SettingsPlayback
 import { SettingsDisplaySection } from "@/components/organisms/SettingsDisplaySection";
 import { SettingsAppSection } from "@/components/organisms/SettingsAppSection";
 import { SettingsAccountSection } from "@/components/organisms/SettingsAccountSection";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
+import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
@@ -29,6 +31,54 @@ type Props = {
   onImport?: () => void;
   onResetProject?: () => void;
 };
+
+/**
+ * この設定がどこまで効くのかを、1枚目にも束の中にも出す。
+ *
+ * ホームと作品の中で同じ画面が出るので、**どちらで開いたかによって
+ * 効く先が変わる**ことは書かないと分からない。書いていなかったときは
+ * 「ホームで変えたのに開いている作品が変わらない」と受け取られていた。
+ *
+ * 作品だけの値を持っているときは件数を出し、やめる道も添える
+ * (増やしただけで戻せない設定にしない)。
+ */
+function ScopeNotice() {
+  const t = useT();
+  const scope = useSettingsStore((state) => state.scope);
+  const overrideCount = useSettingsStore((state) =>
+    state.scope ? Object.keys(state.byProject[state.scope] ?? {}).length : 0,
+  );
+  const clearOverrides = useSettingsStore((state) => state.clearOverrides);
+  const showToast = useUIStore((state) => state.showToast);
+
+  return (
+    <p className="px-base text-caption leading-relaxed text-fg-muted">
+      {scope ? t.settings.scope.project : t.settings.scope.home}
+      {scope && ` ${t.settings.scope.newProjectOnly}`}
+      {overrideCount > 0 && (
+        <>
+          <br />
+          <span className="text-accent-soft">
+            {t.settings.scope.hasOverride(overrideCount)}
+          </span>{" "}
+          <button
+            type="button"
+            onClick={() => {
+              clearOverrides();
+              showToast({
+                message: t.settings.scope.cleared,
+                type: "success",
+              });
+            }}
+            className="underline underline-offset-2"
+          >
+            {t.settings.scope.clear}
+          </button>
+        </>
+      )}
+    </p>
+  );
+}
 
 /** 束の名前。開いている束をこれで覚える */
 type SectionId =
@@ -185,6 +235,7 @@ export function SettingsSheet({
           current ? "settings-pane-in-right" : "settings-pane-in-left"
         }`}
       >
+        <ScopeNotice />
         {current ? (
           current.body
         ) : (

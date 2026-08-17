@@ -7,6 +7,13 @@
  * 作品が持つ値(BPM・拍子・曲の頭出し・ステージの広さ)は projects の列にあり、
  * この設定が決めるのは【新しく作るときの初期値】だけ。
  *
+ * ■ 効く範囲は2段(2026-08-17)
+ * 「ホームで変えたら全部の作品へ、作品を開いた状態で変えたらその作品だけ」
+ * という要望を受けて、**土台(base)＋作品ごとの上書き(byProject)** の形にした。
+ * 上書きできるのは「その作品でどう見たいか」に当たるものだけで、
+ * 新しく作るときの初期値(ステージの広さ・既定の速さ)と、アプリの決めごと
+ * (自動保存)は土台にしか持たない — 作品ごとに変えても効く先が無いため。
+ *
  * ■ 外部入力として扱う
  * localStorage は書き換えられる。知っている値だけを通し、それ以外は
  * 既定へ落とす(themePreference / viewPreference と同じ作法)。
@@ -19,10 +26,6 @@ const DANCER_NAME_DISPLAYS: DancerNameDisplay[] = [
   "selected",
   "never",
 ];
-
-/** アプリ全体の明るさ。10種のテーマとは別の、粗い選択 */
-export type ColorScheme = "dark" | "light" | "system";
-const COLOR_SCHEMES: ColorScheme[] = ["dark", "light", "system"];
 
 /** 再生前に鳴らす予備拍。0 なら鳴らさない */
 export type CountIn = 0 | 4 | 8;
@@ -69,7 +72,6 @@ export type Settings = {
   dancerNameDisplay: DancerNameDisplay;
 
   // --- アプリ ---
-  colorScheme: ColorScheme;
   /** 触るたびに保存するか。切ると、保存は手で押したときだけになる */
   isAutoSaveEnabled: boolean;
 };
@@ -84,7 +86,6 @@ export const DEFAULT_SETTINGS: Settings = {
   defaultBpm: 120,
   defaultSegmentSeconds: 4,
   dancerNameDisplay: "always",
-  colorScheme: "dark",
   isAutoSaveEnabled: true,
 };
 
@@ -170,9 +171,6 @@ export function parseSettings(raw: string | null): Settings {
     )
       ? (record.dancerNameDisplay as DancerNameDisplay)
       : DEFAULT_SETTINGS.dancerNameDisplay,
-    colorScheme: COLOR_SCHEMES.includes(record.colorScheme as ColorScheme)
-      ? (record.colorScheme as ColorScheme)
-      : DEFAULT_SETTINGS.colorScheme,
     isAutoSaveEnabled: boolean(
       record.isAutoSaveEnabled,
       DEFAULT_SETTINGS.isAutoSaveEnabled,
@@ -180,17 +178,103 @@ export function parseSettings(raw: string | null): Settings {
   };
 }
 
-export function loadSettings(): Settings {
+/**
+ * 作品ごとに変えられる項目。
+ *
+ * ここに無いものは、作品を開いた状態で変えても土台へ書く:
+ * - `defaultStageWidth` / `defaultStageHeight` / `defaultBpm`
+ *   … **新しく作るときの初期値**。既にある作品には元から効かない
+ * - `isAutoSaveEnabled` … この端末の決めごと。作品ごとに切り替えると
+ *   「どの作品を開いていたか」で保存の挙動が変わり、事故になる
+ */
+export const PROJECT_SCOPED_KEYS = [
+  "isAudienceOnTop",
+  "isSnapEnabled",
+  "isCenterLineVisible",
+  "countIn",
+  "defaultSegmentSeconds",
+  "dancerNameDisplay",
+] as const satisfies readonly (keyof Settings)[];
+
+export type ProjectScopedKey = (typeof PROJECT_SCOPED_KEYS)[number];
+
+export function isProjectScopedKey(key: keyof Settings): key is ProjectScopedKey {
+  return (PROJECT_SCOPED_KEYS as readonly string[]).includes(key);
+}
+
+/** 端末に書いてある形。土台と、作品ごとの上書き */
+export type StoredSettings = {
+  base: Settings;
+  byProject: Record<string, Partial<Settings>>;
+};
+
+/**
+ * 保存されている文字列を読む。
+ *
+ * **古い形(Settings がそのまま入っているもの)も読む。** 2階層にする前から
+ * 使っている人の設定を、更新した瞬間に既定へ戻さないため。
+ */
+export function parseStoredSettings(raw: string | null): StoredSettings {
+  const empty: StoredSettings = { base: DEFAULT_SETTINGS, byProject: {} };
+  if (!raw) return empty;
+
+  let parsed: unknown;
   try {
-    return parseSettings(localStorage.getItem(SETTINGS_STORAGE_KEY));
+    parsed = JSON.parse(raw);
   } catch {
-    return DEFAULT_SETTINGS;
+    return empty;
+  }
+  if (typeof parsed !== "object" || parsed === null) return empty;
+
+  const record = parsed as Record<string, unknown>;
+  // 新しい形かどうかは base の有無で決まる。古い形はここが無い
+  const hasBase = typeof record.base === "object" && record.base !== null;
+  const base = parseSettings(JSON.stringify(hasBase ? record.base : record));
+
+  const byProject: Record<string, Partial<Settings>> = {};
+  const stored = record.byProject;
+  if (typeof stored === "object" && stored !== null) {
+    for (const [projectId, value] of Object.entries(
+      stored as Record<string, unknown>,
+    )) {
+      if (typeof value !== "object" || value === null) continue;
+      // 上書きも外部入力。**まず土台に重ねて丸めてから**、
+      // 実際に入っていたキーだけを取り出す。こうすると範囲外の数や
+      // 知らない文字列が、土台と同じ規則で直る
+      const merged = parseSettings(JSON.stringify({ ...base, ...value }));
+      const partial: Partial<Settings> = {};
+      for (const key of PROJECT_SCOPED_KEYS) {
+        if (key in (value as Record<string, unknown>)) {
+          // 型の穴を開けずに1つずつ写す
+          Object.assign(partial, { [key]: merged[key] });
+        }
+      }
+      if (Object.keys(partial).length > 0) byProject[projectId] = partial;
+    }
+  }
+
+  return { base, byProject };
+}
+
+/** 土台に、その作品の上書きを重ねた結果。上書きが無ければ土台そのもの */
+export function resolveSettings(
+  base: Settings,
+  override: Partial<Settings> | undefined,
+): Settings {
+  return override ? { ...base, ...override } : base;
+}
+
+export function loadStoredSettings(): StoredSettings {
+  try {
+    return parseStoredSettings(localStorage.getItem(SETTINGS_STORAGE_KEY));
+  } catch {
+    return { base: DEFAULT_SETTINGS, byProject: {} };
   }
 }
 
-export function saveSettings(settings: Settings): void {
+export function saveStoredSettings(stored: StoredSettings): void {
   try {
-    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(stored));
   } catch {
     // プライベートモード等。今の画面はそのまま動き、次回に残らないだけ
   }

@@ -21,14 +21,12 @@ describe("parseSettings", () => {
     const parsed = parseSettings(
       JSON.stringify({
         dancerNameDisplay: "selected",
-        colorScheme: "system",
         countIn: 8,
         isAudienceOnTop: true,
       }),
     );
 
     expect(parsed.dancerNameDisplay).toBe("selected");
-    expect(parsed.colorScheme).toBe("system");
     expect(parsed.countIn).toBe(8);
     expect(parsed.isAudienceOnTop).toBe(true);
   });
@@ -37,14 +35,12 @@ describe("parseSettings", () => {
     const parsed = parseSettings(
       JSON.stringify({
         dancerNameDisplay: "ときどき",
-        colorScheme: 7,
         countIn: 3,
         isSnapEnabled: "はい",
       }),
     );
 
     expect(parsed.dancerNameDisplay).toBe(DEFAULT_SETTINGS.dancerNameDisplay);
-    expect(parsed.colorScheme).toBe(DEFAULT_SETTINGS.colorScheme);
     expect(parsed.countIn).toBe(DEFAULT_SETTINGS.countIn);
     expect(parsed.isSnapEnabled).toBe(DEFAULT_SETTINGS.isSnapEnabled);
   });

@@ -8,13 +8,17 @@ import { DEFAULT_PREFERENCE } from "@/features/theme/lib/themePreference";
 const OVERRIDE_LABEL = "このプロジェクトだけ別の見た目";
 
 /**
- * 見た目の上書きスイッチ。
+ * 見た目の上書きスイッチは**ここから外した**(2026-08-17)。
  *
- * テーマそのものを選ぶ場所はホームのままで、ここに置いてあるのは
- * 「この1件を端末の既定から外すかどうか」だけ。上書きには対象の
- * プロジェクトが要るので、パスから読めるかどうかで出し分けている。
+ * 2026-08-10 に一度「到達できないUIを残さない」として消したものが戻って
+ * いて、また「この機能いらない」という指摘をもらった。2度出た答えなので、
+ * **戻ってきたら気づけるように**テストを消さずに向きを変えてある。
+ *
+ * 保存の形(byProject)と解決の順は残してあるので、既に上書きを持っている
+ * 人の作品はこれまでどおりその見た目で開く。そのための知らせ手
+ * (setProjectId)も残っていることを一緒に見る。
  */
-describe("DisplayModeMenu の見た目の上書き", () => {
+describe("DisplayModeMenu と見た目の上書き", () => {
   beforeEach(() => {
     // このストアはvitest.setupの初期化対象に入っていないので自分で戻す
     useThemeStore.setState({
@@ -29,17 +33,17 @@ describe("DisplayModeMenu の見た目の上書き", () => {
     window.history.pushState({}, "", "/");
   });
 
-  it("プロジェクトを開いていれば、上書きスイッチを出す", async () => {
+  it("プロジェクトを開いていても、上書きスイッチは出さない", async () => {
     window.history.pushState({}, "", "/projects/project-1");
     const user = userEvent.setup();
 
     render(<DisplayModeMenu />);
     await user.click(screen.getByLabelText("表示とモード"));
 
-    expect(screen.getByText(OVERRIDE_LABEL)).toBeInTheDocument();
+    expect(screen.queryByText(OVERRIDE_LABEL)).not.toBeInTheDocument();
   });
 
-  it("下書き(ゲスト)では出さない。上書きの対象になるプロジェクトが無いため", async () => {
+  it("下書き(ゲスト)でも出さない", async () => {
     window.history.pushState({}, "", "/");
     const user = userEvent.setup();
 
@@ -49,28 +53,12 @@ describe("DisplayModeMenu の見た目の上書き", () => {
     expect(screen.queryByText(OVERRIDE_LABEL)).not.toBeInTheDocument();
   });
 
-  it("オンにすると、そのプロジェクトだけが上書き対象になる", async () => {
+  // 既に上書きを持っている人の作品を、その見た目のまま開くために要る
+  it("開いているプロジェクトは、これまでどおりテーマ側へ知らせる", async () => {
     window.history.pushState({}, "", "/projects/project-1");
-    const user = userEvent.setup();
 
     render(<DisplayModeMenu />);
-    await user.click(screen.getByLabelText("表示とモード"));
-    await user.click(screen.getByText(OVERRIDE_LABEL));
 
-    expect(useThemeStore.getState().preference.byProject).toHaveProperty(
-      "project-1",
-    );
-  });
-
-  it("オフに戻すと上書きを消し、端末の既定へ戻す", async () => {
-    window.history.pushState({}, "", "/projects/project-1");
-    const user = userEvent.setup();
-
-    render(<DisplayModeMenu />);
-    await user.click(screen.getByLabelText("表示とモード"));
-    await user.click(screen.getByText(OVERRIDE_LABEL));
-    await user.click(screen.getByText(OVERRIDE_LABEL));
-
-    expect(useThemeStore.getState().preference.byProject).toEqual({});
+    expect(useThemeStore.getState().projectId).toBe("project-1");
   });
 });
