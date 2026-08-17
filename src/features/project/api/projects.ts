@@ -120,6 +120,31 @@ export async function updateProjectBeatsPerBar(
 
 /** 曲の開始オフセット(秒)を保存する。曲そのものは端末側にしか無いので、
  * ここで保存するのは「何秒目から始めるか」だけ */
+/**
+ * ステージの広さを変える。
+ *
+ * ■ 作ったあとでも変えられるようにした(2026-08-18、実機報告 03-10)
+ * これまで `stage_width` / `stage_height` は**作るときにしか書いていなかった**。
+ * 設定の「ステージの幅」は新しく作る作品の初期値で、開いている作品には
+ * 効かない。**変えられない、という報告はそのとおりだった。**
+ *
+ * 狭めるときに外へ出る人が居ないかは、呼ぶ側が先に確かめる
+ * (stageResize.ts)。ここは書くだけ。
+ */
+export async function updateStageSize(
+  supabase: SupabaseClient<Database>,
+  projectId: string,
+  stageWidth: number,
+  stageHeight: number,
+): Promise<void> {
+  const { error } = await supabase
+    .from("projects")
+    .update({ stage_width: stageWidth, stage_height: stageHeight })
+    .eq("id", projectId);
+
+  if (error) throw error;
+}
+
 export async function updateMusicOffset(
   supabase: SupabaseClient<Database>,
   projectId: string,

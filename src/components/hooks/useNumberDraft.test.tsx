@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { useState } from "react";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useNumberDraft } from "./useNumberDraft";
 
@@ -8,6 +8,38 @@ import { useNumberDraft } from "./useNumberDraft";
  * 数を入れる欄の共通の作法。設定の行と曲の頭出しが同じ規則を使うので、
  * ここが正しければ両方が正しい。
  */
+
+/**
+ * 戻り値そのものを見たいとき用。画面ではなく**判断**を確かめる
+ * （`isDirty` / `justApplied` は画面の出し分けに使うだけの値なので、
+ * DOM 越しに読むより直接見た方が分かりやすい）
+ */
+function mountDraft(params: {
+  value: number;
+  min: number;
+  max: number;
+  onChange?: (value: number) => void;
+}) {
+  const seen: ReturnType<typeof useNumberDraft>[] = [];
+  function Probe() {
+    const [value, setValue] = useState(params.value);
+    seen.push(
+      useNumberDraft({
+        value,
+        min: params.min,
+        max: params.max,
+        onChange: (next) => {
+          setValue(next);
+          params.onChange?.(next);
+        },
+      }),
+    );
+    return null;
+  }
+  render(<Probe />);
+  return { latest: () => seen[seen.length - 1] };
+}
+
 function Field({
   min,
   max,
@@ -136,5 +168,68 @@ describe("useNumberDraft", () => {
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("数"), "5");
     expect(screen.getByTestId("correction")).toHaveTextContent("-");
+  });
+});
+
+/**
+ * 「更新」を押すまで変えない（実機報告 12-2 / 12-10）。
+ *
+ * 以前は欄から離れた時点で確定していた。**効いたのかどうかが分からない**
+ * という報告が2回来たので、押されたときだけ変える形にした。
+ * 打ったまま離れても下書きは残る（見えないところで消えない）。
+ */
+describe("useNumberDraft（更新を押すまで）", () => {
+  it("打っている間は、まだ変わっていないと分かる", () => {
+    const onChange = vi.fn();
+    const { latest } = mountDraft({ value: 10, min: 4, max: 30, onChange });
+
+    act(() => latest().setDraft("18"));
+
+    expect(latest().isDirty).toBe(true);
+    expect(latest().justApplied).toBe(false);
+    // **押すまで呼ばない**
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("押すと変わり、押したことが分かる", () => {
+    const onChange = vi.fn();
+    const { latest } = mountDraft({ value: 10, min: 4, max: 30, onChange });
+
+    act(() => latest().setDraft("18"));
+    act(() => latest().commit());
+
+    expect(onChange).toHaveBeenCalledWith(18);
+    expect(latest().isDirty).toBe(false);
+    expect(latest().justApplied).toBe(true);
+  });
+
+  it("同じ数を打ち直しただけなら、更新は出さない", () => {
+    const { latest } = mountDraft({ value: 10, min: 4, max: 30 });
+
+    act(() => latest().setDraft("10"));
+
+    expect(latest().isDirty).toBe(false);
+  });
+
+  /** 丸めたときは「更新しました」ではなく理由を出す（黙って直さない） */
+  it("範囲外を押したら、理由を出して更新扱いにしない", () => {
+    const { latest } = mountDraft({ value: 10, min: 4, max: 30 });
+
+    act(() => latest().setDraft("99"));
+    act(() => latest().commit());
+
+    expect(latest().correction).toBe("tooLarge");
+    expect(latest().draft).toBe("30");
+  });
+
+  it("打ち直すと「更新しました」は消える", () => {
+    const { latest } = mountDraft({ value: 10, min: 4, max: 30 });
+
+    act(() => latest().setDraft("18"));
+    act(() => latest().commit());
+    expect(latest().justApplied).toBe(true);
+
+    act(() => latest().setDraft("19"));
+    expect(latest().justApplied).toBe(false);
   });
 });

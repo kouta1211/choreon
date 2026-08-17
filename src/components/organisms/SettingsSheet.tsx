@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { useProjectStore } from "@/features/project/store/useProjectStore";
 import {
   Database,
   Eye,
   Frame,
   Grid2x2,
   Play,
+  Ruler,
   Settings2,
   UserRoundCog,
 } from "lucide-react";
@@ -14,6 +16,7 @@ import { BottomSheet } from "@/components/molecules/BottomSheet";
 import { SettingsNavRow } from "@/components/molecules/SettingsRow";
 import { SettingsDataSection } from "@/components/molecules/SettingsDataSection";
 import { SettingsStageSection } from "@/components/organisms/SettingsStageSection";
+import { SettingsProjectStageSection } from "@/components/organisms/SettingsProjectStageSection";
 import { SettingsGridSection } from "@/components/organisms/SettingsGridSection";
 import { SettingsPlaybackSection } from "@/components/organisms/SettingsPlaybackSection";
 import { SettingsDisplaySection } from "@/components/organisms/SettingsDisplaySection";
@@ -83,6 +86,8 @@ function ScopeNotice() {
 /** 束の名前。開いている束をこれで覚える */
 type SectionId =
   | "stage"
+  /** いま開いている作品の広さ。"stage"（新しく作る作品の初期値）とは別 */
+  | "projectStage"
   | "grid"
   | "playback"
   | "display"
@@ -145,6 +150,11 @@ export function SettingsSheet({
   }
 
   const hasProjectData = Boolean(onExport || onImport || onResetProject);
+  /* ステージの広さは**作品が開いていれば**触れる。書き出し・取り込みが
+     できるか（= ログイン済みか）とは別の話で、ゲストの下書きにも広さはある
+     （書き込みは persist() がゲストを見て止める） */
+  const hasProject = useProjectStore((state) => state.project !== null);
+  const isGuest = useProjectStore((state) => state.isGuest);
 
   // 束の目次。body の要素を作るだけでは中身は動かないので、
   // 開いていない束のぶんは何もしない
@@ -156,6 +166,20 @@ export function SettingsSheet({
       icon: <Frame size={20} />,
       body: <SettingsStageSection />,
     },
+    /* いま開いている作品の広さ。**新しく作る作品の初期値とは別の束**にする —
+       同じ束に並べると、どちらがどちらか読めない（名前がほとんど同じ）。
+       一覧では開いている作品が無いので、行そのものを出さない */
+    ...(hasProject
+      ? [
+          {
+            id: "projectStage" as const,
+            title: t.settings.projectStage.title,
+            summary: t.settings.projectStage.summary,
+            icon: <Ruler size={20} />,
+            body: <SettingsProjectStageSection />,
+          },
+        ]
+      : []),
     {
       id: "grid",
       title: t.settings.grid.title,
@@ -206,7 +230,11 @@ export function SettingsSheet({
     {
       id: "account",
       title: t.settings.account.title,
-      summary: t.settings.account.summary,
+      /* ゲストには「別のアカウントで入る・ログアウト」と書かない。
+         中身も分けてあるので、束の要約も揃える（実機報告 01-17） */
+      summary: isGuest
+        ? t.settings.account.summaryGuest
+        : t.settings.account.summary,
       icon: <UserRoundCog size={20} />,
       body: <SettingsAccountSection />,
     },

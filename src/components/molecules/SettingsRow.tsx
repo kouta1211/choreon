@@ -182,12 +182,13 @@ export function SettingsNumberRow({
 }) {
   const t = useT();
   // 打っている間の預かりと、確定したときの丸め方は曲の頭出しと共通
-  const { draft, setDraft, commit, correction } = useNumberDraft({
-    value,
-    min,
-    max,
-    onChange,
-  });
+  const { draft, setDraft, commit, correction, isDirty, justApplied } =
+    useNumberDraft({
+      value,
+      min,
+      max,
+      onChange,
+    });
 
   return (
     <div className="flex min-h-target flex-col gap-unit px-gutter py-unit">
@@ -202,10 +203,15 @@ export function SettingsNumberRow({
             step={step}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
-            onBlur={commit}
+            /* **離れた時点では変えない。** 以前はここで確定していたが、
+               効いたのかどうかが分からないという報告が2回来た。
+               下書きは残るので、見えないところで消えることはない */
             onKeyDown={(event) => {
-              // Enter で確定。欄から離れるのと同じ扱いにする
-              if (event.key === "Enter") event.currentTarget.blur();
+              // Enter は「更新」を押したのと同じ扱い
+              if (event.key === "Enter") {
+                event.preventDefault();
+                commit();
+              }
             }}
             className="w-14 bg-transparent text-right outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
@@ -214,6 +220,18 @@ export function SettingsNumberRow({
           </span>
         </span>
       </label>
+
+      {/* 打ち替えている間だけ出す。いつも出していると、押す必要があるのか
+          どうかが読めない */}
+      {isDirty && (
+        <PressableButton
+          kind="primary"
+          onClick={commit}
+          className="flex h-9 w-full items-center justify-center rounded-[calc(var(--radius)*0.6)] border border-accent bg-accent/12 text-label font-semibold text-accent-soft"
+        >
+          {t.common.numberField.apply}
+        </PressableButton>
+      )}
       {/* 入れられる範囲を必ず出す。以前は書いていなかったので、下限より
           小さい数を打った人には「打った数が消えた」ようにしか見えず、
           「キーボードで入力できない」という報告になって返ってきた。
@@ -229,6 +247,11 @@ export function SettingsNumberRow({
           {unit}
         </span>
         {correction && ` · ${numberCorrectionMessage(t, correction, min, max)}`}
+        {/* 押すまで変わらないことと、押して変わったことを、同じ行で伝える */}
+        {!correction && isDirty && ` · ${t.common.numberField.notApplied}`}
+        {!correction && !isDirty && justApplied
+          ? ` · ${t.common.numberField.applied}`
+          : ""}
       </p>
     </div>
   );

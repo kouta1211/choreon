@@ -20,12 +20,21 @@ type Params = {
  * 1文字打つたびに min/max へ丸めると、下限より小さい桁から始まる数が
  * **どうやっても入力できない**(ステージの幅は下限6だったので「10」の
  * 「1」で 6 に化けた)。打っている最中の文字列をここで預かり、
- * **欄から離れた時点で1回だけ**数にして丸める。
+ * **押されたときに1回だけ**数にして丸める。
  *
  * ■ 直したことを黙って済ませない(2026-08-17)
  * 範囲外や数でないものを入れると前の値へ戻していたが、**何も言わずに
  * 戻すので「打った数が消えた」ようにしか見えなかった**。何が起きたかを
  * 呼び出し側が出せるよう、直した理由を返す。
+ *
+ * ■ 「更新」を押すまで変えない(2026-08-18)
+ * 以前は欄から離れた時点で確定していた。**効いたのかどうかが分からない**
+ * という報告が2回来た（12-2「更新や保存ボタンのようなものがあってもいい」/
+ * 12-10「更新ボタンがほしい。それをおしたら、更新する」）。
+ *
+ * 離れた時点で黙って確定するのをやめ、**押されたときだけ**変える。
+ * 打ったまま離れても下書きは残り、ボタンも出たままなので、
+ * 見えないところで消えることはない。Enter は押したのと同じ扱い。
  *
  * 設定の行と曲の頭出しが別々に同じことを書いていたので、ここへ寄せた。
  */
@@ -34,6 +43,8 @@ export function useNumberDraft({ value, min, max, onChange }: Params) {
   // 小数を打っている途中で勝手に整形されてしまう
   const [draft, setDraft] = useState(String(value));
   const [correction, setCorrection] = useState<NumberCorrection>(null);
+  /** 直前に押して変えたか。「更新しました」を出すためだけの印 */
+  const [justApplied, setJustApplied] = useState(false);
 
   // 外から値が変わったとき(設定の初期化など)に追い付く。
   //
@@ -47,14 +58,16 @@ export function useNumberDraft({ value, min, max, onChange }: Params) {
     setLastValue(value);
     setDraft(String(value));
     setCorrection(null);
+    setJustApplied(false);
   }
 
-  /** 欄から離れた/Enterを押した時に1回だけ走る。ここで初めて丸める */
+  /** 「更新」を押した/Enterを押した時に1回だけ走る。ここで初めて丸める */
   const commit = () => {
     const parsed = Number(draft.trim());
     if (draft.trim() === "" || !Number.isFinite(parsed)) {
       setDraft(String(value));
       setCorrection("notANumber");
+      setJustApplied(false);
       return;
     }
     const clamped = Math.min(max, Math.max(min, parsed));
@@ -66,6 +79,7 @@ export function useNumberDraft({ value, min, max, onChange }: Params) {
     // 先に控えておかないと、丸めた値が親から返ってきた時点で上の
     // 追い付き処理が走り、いま出したばかりの理由が消える
     setLastValue(clamped);
+    setJustApplied(clamped !== value);
     if (clamped !== value) onChange(clamped);
   };
 
@@ -75,8 +89,17 @@ export function useNumberDraft({ value, min, max, onChange }: Params) {
     setDraft: (next: string) => {
       setDraft(next);
       setCorrection(null);
+      setJustApplied(false);
     },
     commit,
     correction,
+    /**
+     * まだ押していない下書きがあるか。
+     * **これが立っている間だけ「更新」を出す** — いつも出していると、
+     * 押す必要があるのかどうかが読めない
+     */
+    isDirty: draft.trim() !== String(value),
+    /** 押して変わった直後。「更新しました」を出すのに使う */
+    justApplied,
   };
 }

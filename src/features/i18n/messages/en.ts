@@ -243,6 +243,9 @@ export const en = {
       notANumber: "Please enter a number",
       tooSmall: (min: number) => `Cannot go below ${min}`,
       tooLarge: (max: number) => `Cannot go above ${max}`,
+      apply: "Apply",
+      notApplied: "Nothing changes until you press Apply",
+      applied: "Applied",
     },
     back: "Back",
     loading: "Loading",
@@ -750,12 +753,24 @@ export const en = {
       project: "Changes here apply to this piece only.",
       home: "Changes here apply to every piece.",
       newProjectOnly:
-        "Stage size and default tempo are starting values for pieces you make from now on.",
+        "The size and tempo under \"Stage\" are starting values for pieces you make from now on (this piece's size is under \"This piece's stage\").",
       hasOverride: (n: number) => `${n} setting(s) are set for this piece only`,
       clear: "Stop using piece-only settings",
       cleared: "Piece-only settings removed",
     },
 
+    projectStage: {
+      title: "This piece's stage",
+      summary: "The size of the piece you have open",
+      description: "This size belongs to this piece only. 1 cell = 90cm",
+      width: "Width of this piece",
+      depth: "Depth of this piece",
+      floor: (width: number, height: number) =>
+        `Everyone currently placed fits within ${width}x${height} cells. 1 cell = 90cm`,
+      hasOutside: (count: number) =>
+        `${count} dancer(s) would fall outside, so nothing changed. Move them inside first`,
+      failed: "Could not save the stage size",
+    },
     stage: {
       title: "Stage",
       summary: "Audience side, size of new pieces",
@@ -874,6 +889,7 @@ export const en = {
     account: {
       title: "Account",
       summary: "Another account, sign out, reset settings",
+      summaryGuest: "Sign in, reset settings",
       switch: {
         label: "Sign in with another account",
         description: "Signs out of this account and goes to the sign-in screen.",
@@ -883,6 +899,11 @@ export const en = {
         confirmLabel: "Sign out and continue",
       },
       signOut: "Sign out",
+      signInGuest: {
+        label: "Sign in / Sign up",
+        description:
+          "Your draft stays on this device. Signing in lets you save it as a piece",
+      },
       resetSettings: {
         label: "Reset settings",
         description:

@@ -263,6 +263,10 @@ export const ja = {
       notANumber: "数を入れてください",
       tooSmall: (min: number) => `${min} より小さくはできません`,
       tooLarge: (max: number) => `${max} より大きくはできません`,
+      /** 「更新」を押すまで変わらない形にした（実機報告 12-2 / 12-10） */
+      apply: "更新",
+      notApplied: "更新を押すまで変わりません",
+      applied: "更新しました",
     },
     back: "戻る",
     loading: "読み込み中",
@@ -778,12 +782,29 @@ export const ja = {
     scope: {
       project: "ここで変えたものは、この作品にだけ効きます。",
       home: "ここで変えたものは、すべての作品に効きます。",
-      newProjectOnly: "広さと既定の速さだけは、これから作る作品への初期値です。",
+      newProjectOnly:
+        "「舞台」の広さと既定の速さは、これから作る作品への初期値です（この作品の広さは「この作品のステージ」で変えられます）。",
       hasOverride: (n: number) => `この作品だけの設定が ${n} 件あります`,
       clear: "この作品だけの設定をやめる",
       cleared: "この作品だけの設定をやめました",
     },
 
+    /**
+     * いま開いている作品のステージの広さ（実機報告 03-10）。
+     * すぐ上の「舞台」は**新しく作る作品**の初期値で、別物。
+     */
+    projectStage: {
+      title: "この作品のステージ",
+      summary: "いま開いている作品の広さ",
+      description: "この作品だけの広さです。1マス = 90cm",
+      width: "この作品の幅",
+      depth: "この作品の奥行き",
+      floor: (width: number, height: number) =>
+        `いま置いている人が収まるのは ${width}×${height} マスまでです。1マス = 90cm`,
+      hasOutside: (count: number) =>
+        `${count}人がその外に居るので、変えていません。先にその人を内側へ動かしてください`,
+      failed: "ステージの広さを保存できませんでした",
+    },
     stage: {
       title: "舞台",
       summary: "客席の向き・新しい作品の広さ",
@@ -899,6 +920,7 @@ export const ja = {
     account: {
       title: "アカウント",
       summary: "別のアカウントで入る・ログアウト・設定を戻す",
+      summaryGuest: "ログイン・設定を戻す",
       switch: {
         label: "別のアカウントでログイン",
         description:
@@ -909,6 +931,16 @@ export const ja = {
         confirmLabel: "ログアウトして移る",
       },
       signOut: "ログアウト",
+      /**
+       * ゲスト（未ログイン）のときに出す行。
+       * 以前はログインしていなくても「別のアカウントでログイン」「ログアウト」が
+       * 出ていた（実機報告 01-17）。**いまのアカウントが無いのに「別の」は無い。**
+       */
+      signInGuest: {
+        label: "ログイン / 新規登録",
+        description:
+          "いまの下書きはこの端末に残ります。ログインすると作品として保存できます",
+      },
       resetSettings: {
         label: "設定を既定に戻す",
         description: "この画面の選択だけを戻します。作品には触れません",

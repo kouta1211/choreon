@@ -196,9 +196,13 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
                 step={0.1}
                 value={offsetField.draft}
                 onChange={(event) => offsetField.setDraft(event.target.value)}
-                onBlur={offsetField.commit}
+                /* 離れた時点では変えない（設定の数値欄と同じ作法）。
+                   下の「更新」を押すまで待つ */
                 onKeyDown={(event) => {
-                  if (event.key === "Enter") event.currentTarget.blur();
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    offsetField.commit();
+                  }
                 }}
                 className="w-14 bg-transparent text-center outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               />
@@ -222,7 +226,26 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
             </span>
             {offsetField.correction &&
               ` · ${numberCorrectionMessage(t, offsetField.correction, MIN_MUSIC_OFFSET, MAX_MUSIC_OFFSET)}`}
+            {!offsetField.correction &&
+              offsetField.isDirty &&
+              ` · ${t.common.numberField.notApplied}`}
+            {!offsetField.correction &&
+            !offsetField.isDirty &&
+            offsetField.justApplied
+              ? ` · ${t.common.numberField.applied}`
+              : ""}
           </p>
+
+          {/* 打ち替えている間だけ出す */}
+          {offsetField.isDirty && (
+            <PressableButton
+              kind="primary"
+              onClick={offsetField.commit}
+              className="mt-2 flex h-9 w-full items-center justify-center rounded-[calc(var(--radius)*0.6)] border border-accent bg-accent/12 text-label font-semibold text-accent-soft"
+            >
+              {t.common.numberField.apply}
+            </PressableButton>
+          )}
 
           {/* 数字を打つだけでは**効いているかを確かめられない**（実機報告 12-3）。
               その位置から数秒だけ鳴らす。曲が入っていないときは出さない —

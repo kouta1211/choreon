@@ -242,6 +242,9 @@ export const ko = {
       notANumber: "숫자를 입력해 주세요",
       tooSmall: (min: number) => `${min}보다 작게 할 수 없습니다`,
       tooLarge: (max: number) => `${max}보다 크게 할 수 없습니다`,
+      apply: "업데이트",
+      notApplied: "업데이트를 누를 때까지 바뀌지 않습니다",
+      applied: "업데이트했습니다",
     },
     back: "뒤로",
     loading: "불러오는 중",
@@ -742,12 +745,25 @@ export const ko = {
     scope: {
       project: "여기서 바꾼 것은 이 작품에만 적용됩니다.",
       home: "여기서 바꾼 것은 모든 작품에 적용됩니다.",
-      newProjectOnly: "무대 크기와 기본 속도는 앞으로 만들 작품의 초기값입니다.",
+      newProjectOnly:
+        "「무대」의 크기와 기본 속도는 앞으로 만들 작품의 초기값입니다(이 작품의 크기는 「이 작품의 스테이지」에서 바꿉니다).",
       hasOverride: (n: number) => `이 작품에만 적용된 설정이 ${n}개 있습니다`,
       clear: "이 작품만의 설정 그만두기",
       cleared: "이 작품만의 설정을 지웠습니다",
     },
 
+    projectStage: {
+      title: "이 작품의 스테이지",
+      summary: "지금 열려 있는 작품의 크기",
+      description: "이 작품만의 크기입니다. 1칸 = 90cm",
+      width: "이 작품의 너비",
+      depth: "이 작품의 깊이",
+      floor: (width: number, height: number) =>
+        `지금 배치된 사람이 들어가는 것은 ${width}x${height} 칸까지입니다. 1칸 = 90cm`,
+      hasOutside: (count: number) =>
+        `${count}명이 그 밖에 있으므로 변경하지 않았습니다. 먼저 그 사람을 안쪽으로 옮겨 주세요`,
+      failed: "스테이지 크기를 저장할 수 없었습니다",
+    },
     stage: {
       title: "무대",
       summary: "객석 방향 · 새 작품의 크기",
@@ -865,6 +881,7 @@ export const ko = {
     account: {
       title: "계정",
       summary: "다른 계정으로 로그인 · 로그아웃 · 설정 되돌리기",
+      summaryGuest: "로그인 · 설정 되돌리기",
       switch: {
         label: "다른 계정으로 로그인",
         description: "지금 계정에서 로그아웃하고 로그인 화면으로 이동합니다.",
@@ -874,6 +891,11 @@ export const ko = {
         confirmLabel: "로그아웃하고 이동",
       },
       signOut: "로그아웃",
+      signInGuest: {
+        label: "로그인 / 회원가입",
+        description:
+          "지금의 초안은 이 기기에 남습니다. 로그인하면 작품으로 저장할 수 있습니다",
+      },
       resetSettings: {
         label: "설정 초기화",
         description:
