@@ -62,7 +62,13 @@ export function failureMessage(
 }
 
 export type AiCallResult =
-  | { ok: true; text: string; wasStructured: boolean }
+  | {
+      ok: true;
+      text: string;
+      wasStructured: boolean;
+      /** 上限で切られた。**読めない返事の第一容疑者** */
+      wasTruncated: boolean;
+    }
   | { ok: false; error: string; status: number };
 
 /**
@@ -77,6 +83,7 @@ export async function callGemini({
   userText,
   schema,
   errors,
+  maxOutputTokens = 2000,
 }: {
   apiKey: string;
   label: string;
@@ -85,6 +92,12 @@ export async function callGemini({
   /** 返してほしい型。渡さなければ素の文章で頼む */
   schema?: object;
   errors: AiErrorMessages;
+  /**
+   * 上限。**考えるぶんもここから使われる**ので、返事が短くても
+   * 足りないことがある。短い返事を頼む口ほど、むしろ余裕が要る
+   * （2026-08-17: 操作を1つ選ぶだけの口が、2000 では JSON を返せなかった）。
+   */
+  maxOutputTokens?: number;
 }): Promise<AiCallResult> {
   const call = (structured: boolean) =>
     fetch(
@@ -110,7 +123,7 @@ export async function callGemini({
            */
           generationConfig: {
             temperature: 0.6,
-            maxOutputTokens: 2000,
+            maxOutputTokens,
             /**
              * 形は相手側で保証させる。
              *
@@ -194,7 +207,12 @@ export async function callGemini({
     }
 
     if (!text) return { ok: false, error: errors.empty, status: 502 };
-    return { ok: true, text, wasStructured };
+    return {
+      ok: true,
+      text,
+      wasStructured,
+      wasTruncated: candidate?.finishReason === "MAX_TOKENS",
+    };
   } catch (error) {
     /**
      * 打ち切りだけは分けて出す。

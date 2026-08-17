@@ -129,6 +129,14 @@ ${REPLY_LANGUAGE[locale]}`,
 ${text}`,
     schema: ASSIST_RESPONSE_SCHEMA,
     errors: t.assist.errors,
+    /**
+     * ■ 2000 では足りなかった(2026-08-17、本番で判明)
+     * 返すのは「操作の名前1つ」なので 2000 で足りる、と見積もったが、
+     * **考えるぶんが同じ上限から引かれる**ので、思考で使い切って
+     * JSON が返ってこなかった（読めない返事 → 断りの言葉、が並んだ）。
+     * 講評の口より返事は短いのに、上限はむしろ多く要る。
+     */
+    maxOutputTokens: 8000,
   });
 
   if (!result.ok) {
@@ -150,6 +158,32 @@ ${text}`,
     { sceneCount: context.sceneCount, dancerCount: context.dancerCount },
     t.assist.errors.notUnderstood,
   );
+
+  /**
+   * 読み解けなかったときは、**なぜ読めなかったのかを持たせて返す**。
+   *
+   * この口は本番でしか本物を呼べない（手元に鍵が無い）。「読み取れません
+   * でした」だけが返ってくると、**上限切れなのか、型を断られたのか、
+   * 頼み事が目録の外なのか**が区別できない。それで一度、原因の分からない
+   * まま並んだ断りを見ている。
+   *
+   * 相手の本文そのものは返さない方針だが、**切られたか / 型が通ったか**は
+   * こちらの内部状態なので出してよい。
+   */
+  if (assist.action.kind === "none") {
+    if (result.wasTruncated || !result.wasStructured) {
+      console.error(
+        `[assist] 読み解けませんでした(切られた=${result.wasTruncated} 型付き=${result.wasStructured} 長さ=${result.text.length})`,
+      );
+    }
+    return NextResponse.json({
+      assist,
+      why: {
+        truncated: result.wasTruncated,
+        structured: result.wasStructured,
+      },
+    });
+  }
 
   return NextResponse.json({ assist });
 }

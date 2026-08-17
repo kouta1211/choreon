@@ -179,3 +179,39 @@ describe("needsConfirm", () => {
     expect(needsConfirm({ kind: "selectScene", sceneNumber: 2 })).toBe(false);
   });
 });
+
+/**
+ * 素の文章に混ざった JSON も読む。
+ *
+ * 型を断られたときは型なしで呼び直す作りなので、``` で囲まれた JSON や
+ * 前置きの付いた JSON が返ることがある。**正しい答えが入っているのに
+ * 丸ごと捨てる**のは惜しい。
+ */
+describe("parseAssistResponse（素の文章に混ざっているとき）", () => {
+  it("コードの囲みが付いていても読む", () => {
+    const wrapped = '```json\n{"kind":"setToggle","toggleTarget":"marks","on":true,"reply":""}\n```';
+
+    expect(parseAssistResponse(wrapped, LIMITS, FALLBACK).action).toEqual({
+      kind: "setToggle",
+      target: "marks",
+      on: true,
+    });
+  });
+
+  it("前置きが付いていても読む", () => {
+    const chatty =
+      'わかりました。次の操作をします:\n{"kind":"selectScene","sceneNumber":2,"reply":""}\nよろしいですか?';
+
+    expect(parseAssistResponse(chatty, LIMITS, FALLBACK).action).toEqual({
+      kind: "selectScene",
+      sceneNumber: 2,
+    });
+  });
+
+  /** 途中で切られた JSON は読めない。断りに落とす */
+  it("途中で切れていれば、断りに落とす", () => {
+    const cut = '{"kind":"setToggle","toggleTarget":"ma';
+
+    expect(parseAssistResponse(cut, LIMITS, FALLBACK).action.kind).toBe("none");
+  });
+});

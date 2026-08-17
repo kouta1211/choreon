@@ -202,6 +202,34 @@ function asAction(raw: Raw, limits: AssistLimits): AssistAction | null {
 }
 
 /**
+ * 本文から JSON を1つ取り出す。
+ *
+ * ■ 素の文章が返ってくることがある
+ * 型を断られたとき（400）は型なしで呼び直す作りなので、そのときは
+ * ``` で囲まれた JSON や、前置きの付いた JSON が返る。
+ * **せっかく正しい答えが入っているのに丸ごと捨てる**のは惜しいので、
+ * 最初の `{` から最後の `}` までを試す。
+ */
+function readObject(text: string): Record<string, unknown> | null {
+  const attempts = [text];
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start >= 0 && end > start) attempts.push(text.slice(start, end + 1));
+
+  for (const attempt of attempts) {
+    try {
+      const parsed: unknown = JSON.parse(attempt);
+      if (parsed && typeof parsed === "object") {
+        return parsed as Record<string, unknown>;
+      }
+    } catch {
+      // 次の切り出しを試す
+    }
+  }
+  return null;
+}
+
+/**
  * 返ってきた本文を、操作1つへ。
  *
  * 読めない・引数が範囲外なら **`none` に落とす**（例外にしない）。
@@ -212,15 +240,8 @@ export function parseAssistResponse(
   limits: AssistLimits,
   fallbackReply: string,
 ): AssistResult {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    return { action: { kind: "none" }, reply: fallbackReply };
-  }
-  if (!parsed || typeof parsed !== "object") {
-    return { action: { kind: "none" }, reply: fallbackReply };
-  }
+  const parsed = readObject(text);
+  if (!parsed) return { action: { kind: "none" }, reply: fallbackReply };
 
   const raw = parsed as Raw;
   const reply = typeof raw.reply === "string" ? raw.reply.trim() : "";
