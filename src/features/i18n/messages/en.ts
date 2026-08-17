@@ -135,7 +135,9 @@ export const en = {
     copyCurrent: "Copy this formation into a new scene",
 
     view: {
-      title: "View and modes",
+      title: "Menu",
+      stageGroup: "How the stage looks",
+      appGroup: "App",
       counts: (dancers: number, scenes: number) =>
         `${dancers} dancers · ${scenes} scenes`,
       gridLabel: "Grid",
@@ -649,6 +651,10 @@ export const en = {
       "It does not change the eight-count you count in. It only changes which beat the metronome accents, and which lines are drawn thick on the timeline.",
     offset: "Start position in the track",
     seconds: "s",
+    offsetPreview: (seconds: number) => `Play ${seconds}s from here`,
+    offsetPreviewStop: "Stop",
+    offsetPreviewNote:
+      "The number alone does not tell you where in the song that is. Have a listen.",
     offsetNote:
       "Use this when the choreography starts partway into the track. If the intro is 12.5 seconds, enter 12.5 and playback starts there.",
     offsetFailed: "Could not save the start position",

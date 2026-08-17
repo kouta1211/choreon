@@ -1,8 +1,12 @@
 "use client";
 
 import { useRef } from "react";
-import { Music, Upload, X } from "lucide-react";
+import { Music, Play, Square, Upload, X } from "lucide-react";
 import { BottomSheet } from "@/components/molecules/BottomSheet";
+import {
+  useOffsetPreview,
+  PREVIEW_SECONDS,
+} from "@/features/music/hooks/useOffsetPreview";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
@@ -63,6 +67,7 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
   );
   const setMusicOffset = useProjectStore((state) => state.setMusicOffset);
 
+  const preview = useOffsetPreview();
   const offsetField = useNumberDraft({
     value: storedOffset,
     min: MIN_MUSIC_OFFSET,
@@ -218,6 +223,38 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
             {offsetField.correction &&
               ` · ${numberCorrectionMessage(t, offsetField.correction, MIN_MUSIC_OFFSET, MAX_MUSIC_OFFSET)}`}
           </p>
+
+          {/* 数字を打つだけでは**効いているかを確かめられない**（実機報告 12-3）。
+              その位置から数秒だけ鳴らす。曲が入っていないときは出さない —
+              押しても無音のボタンは、壊れているのと区別が付かない */}
+          {preview.canPreview && (
+            <>
+              <PressableButton
+                kind="secondary"
+                onClick={() =>
+                  preview.isPlaying
+                    ? preview.stop()
+                    : preview.play(Number(offsetField.draft) || 0)
+                }
+                className="mt-2 flex h-9 w-full items-center justify-center gap-1.5 rounded-[calc(var(--radius)*0.6)] border border-line-strong text-label text-fg-sub"
+              >
+                {preview.isPlaying ? (
+                  <>
+                    <Square size={13} />
+                    {t.music.offsetPreviewStop}
+                  </>
+                ) : (
+                  <>
+                    <Play size={13} />
+                    {t.music.offsetPreview(PREVIEW_SECONDS)}
+                  </>
+                )}
+              </PressableButton>
+              <p className="mt-1 text-caption leading-snug text-fg-muted">
+                {t.music.offsetPreviewNote}
+              </p>
+            </>
+          )}
         </div>
 
         <div className="rounded-xl border border-line px-3 py-2.5">

@@ -184,6 +184,10 @@ export function DisplayModeMenu({
           </span>
         </DropdownMenuLabel>
 
+        {/* 3つに仕切る。名前を「メニュー」に変えたぶん、**どこからどこまでが
+            表示の切り替えなのか**を中で示す必要がある（2026-08-17） */}
+        <DropdownMenuLabel>{t.editor.view.stageGroup}</DropdownMenuLabel>
+
         {/* 目盛りは3択なので、オン/オフではなくラジオで持つ。
             矢印キーで選び替えられ、いまどれかも読み上げられる */}
         <div className="flex items-center gap-unit px-2 py-1.5">
@@ -256,6 +260,9 @@ export function DisplayModeMenu({
           <Film size={16} className="shrink-0 text-fg-muted" />
           {t.editor.view.exportVideo}
         </DropdownMenuItem>
+        {/* ここから下はアプリぜんぶの話。作品ごとの操作とは別 */}
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>{t.editor.view.appGroup}</DropdownMenuLabel>
         <DropdownMenuItem onSelect={() => requestTour()}>
           <HelpCircle size={16} className="shrink-0 text-fg-muted" />
           {t.editor.view.tour}

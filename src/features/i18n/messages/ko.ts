@@ -134,7 +134,9 @@ export const ko = {
     copyCurrent: "지금 배치를 복사해서 추가",
 
     view: {
-      title: "표시와 모드",
+      title: "메뉴",
+      stageGroup: "스테이지 보이기",
+      appGroup: "앱",
       counts: (dancers: number, scenes: number) =>
         `${dancers}명 · ${scenes}장면`,
       gridLabel: "눈금",
@@ -643,6 +645,10 @@ export const ko = {
       "세는 단위(여덟 박)는 박자로 바뀌지 않습니다. 여기서 바뀌는 것은 메트로놈에서 세게 울리는 박과 타임라인에 굵게 그리는 선뿐입니다.",
     offset: "곡의 시작 위치",
     seconds: "초",
+    offsetPreview: (seconds: number) => `여기서부터 ${seconds}초 듣기`,
+    offsetPreviewStop: "멈추기",
+    offsetPreviewNote:
+      "숫자만으로는 곡의 어디인지 알 수 없습니다. 들어서 확인해 주세요.",
     offsetNote:
       "안무가 곡 중간부터 시작할 때 사용합니다. 인트로가 12.5초라면 12.5를 넣으면 재생 버튼으로 거기서부터 나옵니다.",
     offsetFailed: "곡의 시작 위치를 저장하지 못했습니다",

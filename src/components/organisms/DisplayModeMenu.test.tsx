@@ -38,7 +38,7 @@ describe("DisplayModeMenu と見た目の上書き", () => {
     const user = userEvent.setup();
 
     render(<DisplayModeMenu />);
-    await user.click(screen.getByLabelText("表示とモード"));
+    await user.click(screen.getByLabelText("メニュー"));
 
     expect(screen.queryByText(OVERRIDE_LABEL)).not.toBeInTheDocument();
   });
@@ -48,7 +48,7 @@ describe("DisplayModeMenu と見た目の上書き", () => {
     const user = userEvent.setup();
 
     render(<DisplayModeMenu />);
-    await user.click(screen.getByLabelText("表示とモード"));
+    await user.click(screen.getByLabelText("メニュー"));
 
     expect(screen.queryByText(OVERRIDE_LABEL)).not.toBeInTheDocument();
   });
