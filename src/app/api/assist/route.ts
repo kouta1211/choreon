@@ -140,8 +140,10 @@ ${text}`,
   });
 
   if (!result.ok) {
+    /* 上流の言い分も添える。**手元では本物を呼べない**ので、これが無いと
+       原因を掴むのに本番を何往復もすることになる（実際そうなった） */
     return NextResponse.json(
-      { error: result.error },
+      { error: result.error, upstream: result.upstream },
       { status: result.status },
     );
   }

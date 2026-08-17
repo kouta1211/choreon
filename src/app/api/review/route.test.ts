@@ -46,15 +46,24 @@ function request(): Request {
   });
 }
 
-/** 上流が返す1件ぶん */
+/**
+ * 上流が返す1件ぶん。
+ *
+ * 断りのときは `text()` と `clone()` も要る — **相手の言い分を控える**
+ * ようにしたため（原因の分からない断りで本番を3往復した反省）。
+ */
 function upstream(text: string, status = 200) {
-  return {
+  const body = JSON.stringify({ error: { message: `upstream said ${status}` } });
+  const response = {
     ok: status === 200,
     status,
     json: async () => ({
       candidates: [{ content: { parts: [{ text }] }, finishReason: "STOP" }],
     }),
+    text: async () => body,
+    clone: () => response,
   };
+  return response;
 }
 
 const STRUCTURED = JSON.stringify({

@@ -61,6 +61,29 @@ export function failureMessage(
   return errors.unavailable;
 }
 
+/**
+ * 上流の断りを、こちらで読める形にする。
+ *
+ * ■ なぜ相手の言い分を持ち帰るのか
+ * これまで「本文は返さない」で通していたが、**それで3回、原因の分からない
+ * まま本番を往復している**。上流が 400 で断るとき、その message には
+ * 「どの項目のどの値が悪いか」が書いてある — つまり**こちらが送ったものの
+ * 説明**で、相手の秘密ではない。
+ *
+ * 鍵だけは念のため塗り潰す（相手は返さないが、こちらの取り違えで混ざる
+ * 可能性を残さない）。
+ */
+function upstreamComplaint(body: string, apiKey: string): string {
+  let message = body;
+  try {
+    const parsed = JSON.parse(body) as { error?: { message?: string } };
+    if (parsed.error?.message) message = parsed.error.message;
+  } catch {
+    // JSON でなければ本文の頭だけ
+  }
+  return message.replaceAll(apiKey, "<KEY>").slice(0, 300);
+}
+
 export type AiCallResult =
   | {
       ok: true;
@@ -69,7 +92,13 @@ export type AiCallResult =
       /** 上限で切られた。**読めない返事の第一容疑者** */
       wasTruncated: boolean;
     }
-  | { ok: false; error: string; status: number };
+  | {
+      ok: false;
+      error: string;
+      status: number;
+      /** 上流が返したステータスと言い分。**次の失敗を1往復で直すための足場** */
+      upstream?: { status: number; message: string };
+    };
 
 /**
  * 1往復。返るのは本文か、画面に出せる断りの言葉。
@@ -159,26 +188,33 @@ export async function callGemini({
     let wasStructured = schema !== undefined;
 
     if (schema && response.status === 400) {
-      /* 断られたのが「型」なのかは本文を見ないと分からないが、本文は
-         画面へ出さない方針。**型を外して1回だけ試す**方が、原因を
-         特定するより早く画面が戻る。機能が1段落ちるだけで止まらない */
+      /* **型を外して1回だけ試す**。機能が1段落ちるだけで止まらない。
+         断られた理由は控えておく — 型が悪いのか、他の項目が悪いのかは
+         ここでしか分からない */
+      const complaint = upstreamComplaint(
+        await response.clone().text().catch(() => ""),
+        apiKey,
+      );
       console.error(
-        `[${label}] ${MODEL} が型付きの依頼を断りました(400)。型なしで再試行します`,
+        `[${label}] ${MODEL} が型付きの依頼を断りました(400): ${complaint}`,
       );
       response = await call(false);
       wasStructured = false;
     }
 
     if (!response.ok) {
-      // サーバーのログには残す。画面へ出せるのは「どの種類の断りか」までで、
-      // どのモデル名で断られたのかはここでしか分からない
+      const complaint = upstreamComplaint(
+        await response.text().catch(() => ""),
+        apiKey,
+      );
       console.error(
-        `[${label}] ${MODEL} を呼んで ${response.status} が返りました`,
+        `[${label}] ${MODEL} を呼んで ${response.status}: ${complaint}`,
       );
       return {
         ok: false,
         error: failureMessage(response.status, errors),
         status: 502,
+        upstream: { status: response.status, message: complaint },
       };
     }
 
