@@ -31,7 +31,8 @@ type Props = {
 export function DancerBlindSpotBadge({ dancerName, dancerId }: Props) {
   const t = useT();
   const description = t.dancer.badges.blindSpot.text(dancerName);
-  const { suggestedX, moveOut } = useClearBlindSpot(dancerId);
+  const { suggestXFor, moveOut } = useClearBlindSpot();
+  const suggestedX = suggestXFor(dancerId);
 
   // 長押し(PCはホバー)で説明を出す。title属性はタッチで出ないうえ、
   // テーマの色も当たらない(Popover.tsx)
@@ -48,7 +49,7 @@ export function DancerBlindSpotBadge({ dancerName, dancerId }: Props) {
         : {
             label: t.dancer.badges.blindSpot.moveOut,
             note: t.dancer.badges.blindSpot.moveOutNote,
-            onAction: () => void moveOut(),
+            onAction: () => void moveOut(dancerId),
           },
   });
   return (

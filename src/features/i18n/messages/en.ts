@@ -501,6 +501,11 @@ export const en = {
     },
     title: "Ask for notes",
     note: "Only the positions in the scene you have open are sent. The name of the piece and the dancers' colours are not. What comes back is something to think with, not a verdict.",
+    good: "Working well",
+    watch: "Worth a look",
+    decide:
+      "A fix button only changes anything when you press it. Whether to take it is yours to decide (undo removes it).",
+    applied: "Applied",
     run: "Ask",
     running: "Asking…",
     again: "Ask again",

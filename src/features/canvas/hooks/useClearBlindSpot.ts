@@ -23,8 +23,13 @@ import { useT } from "@/features/i18n/LocaleProvider";
  *
  * ■ 横だけ動かす
  * 奥行きを変えると列の並びそのものが変わる。横へ逃がすだけなら形は保たれる。
+ *
+ * ■ 誰について、は呼ぶときに渡す
+ * 印は1人に1つだが、**見てもらった結果は指摘が何件も並ぶ**。
+ * hooks は数を変えて呼べないので、相手はフックの引数ではなく関数の引数で
+ * 受ける。逃げ先の計算がここ1箇所に残る形も、そのまま保てる。
  */
-export function useClearBlindSpot(dancerId: string) {
+export function useClearBlindSpot() {
   const t = useT();
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const positionsBySceneId = useProjectStore(
@@ -38,20 +43,23 @@ export function useClearBlindSpot(dancerId: string) {
   const positions = selectedSceneId
     ? (positionsBySceneId[selectedSceneId] ?? {})
     : {};
-  const before = positions[dancerId] ?? null;
 
-  const suggestedX =
-    before && stageWidth !== null
-      ? clearBlindSpotX(
-          before,
-          Object.entries(positions)
-            .filter(([id]) => id !== dancerId)
-            .map(([, position]) => position),
-          stageWidth,
-        )
-      : null;
+  /** 逃げ先の x。逃げ場が無ければ null（＝ボタンを置かない） */
+  const suggestXFor = (dancerId: string): number | null => {
+    const before = positions[dancerId];
+    if (!before || stageWidth === null) return null;
+    return clearBlindSpotX(
+      before,
+      Object.entries(positions)
+        .filter(([id]) => id !== dancerId)
+        .map(([, position]) => position),
+      stageWidth,
+    );
+  };
 
-  const moveOut = async () => {
+  const moveOut = async (dancerId: string) => {
+    const before = positions[dancerId];
+    const suggestedX = suggestXFor(dancerId);
     if (!before || !selectedSceneId || suggestedX === null) return;
     await commitPositions({
       changes: [
@@ -67,5 +75,5 @@ export function useClearBlindSpot(dancerId: string) {
     });
   };
 
-  return { suggestedX, moveOut };
+  return { suggestXFor, moveOut };
 }

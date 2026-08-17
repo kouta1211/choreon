@@ -7,6 +7,11 @@ import {
   formatSummaryForPrompt,
   type FormationSummary,
 } from "@/features/review/lib/formationSummary";
+import {
+  flattenReview,
+  parseReviewResponse,
+  REVIEW_RESPONSE_SCHEMA,
+} from "@/features/review/lib/reviewFindings";
 
 /**
  * 隊形の診断。Gemini へ渡すのは【サーバー側だけ】。
@@ -47,16 +52,33 @@ const SYSTEM_PROMPT = `あなたはダンスのフォーメーションを見る
   渡されていない数字は書かない。
 - 座標はセンターが0。xは正が上手(客席から見て右)、負が下手。
   yは正が客席側、負が奥。1マス=90cm。
-- 指摘は3つまで。良い点を1つ、気になる点を2つまで。
+- findings は3件まで。tone="good" を1件、tone="watch" を2件まで。
 - 「〜すべき」ではなく「〜すると〜になります」と、理由の形で書く。
   振付の正解は1つではないので、判定ではなく材料を出す。
-- 全体で200字程度。箇条書きにする。`;
+- summary は40字程度、findings の text は各60字程度。
 
-/** どの言語で返すか。UIが英語なのに講評だけ日本語、を避ける */
+fixKind の付け方(【重要】):
+- アプリには直しの手が2つだけ用意されている。**渡された事実に載っている
+  ことについて言うときだけ**、その人の名前を fixDancerName に入れる。
+  - "clearBlindSpot": 「アプリが検出した顔被り」に名前がある人について
+    言うとき。横へずらして顔を出す
+  - "retime": 「アプリが検出した速すぎる移動」に名前がある人について
+    言うとき。移動に使える秒数を延ばす
+- それ以外は fixKind="none"、fixDancerName="" にする。
+- **どこへ動かすか・何秒に延ばすかは書かない。アプリが計算する。**
+  名前は渡されたものをそのまま写す(作らない)。`;
+
+/**
+ * どの言語で返すか。UIが英語なのに講評だけ日本語、を避ける。
+ *
+ * かかるのは summary と text だけ。**fixDancerName は訳させない** —
+ * あれは渡した名前をそのまま写すもので、訳された時点でアプリ側の
+ * 突き合わせ(parseReviewResponse)から漏れる。
+ */
 const REPLY_LANGUAGE: Record<Locale, string> = {
-  ja: "- 日本語で書く。",
-  en: "- Write in English.",
-  ko: "- 한국어로 쓸 것.",
+  ja: "- summary と text は日本語で書く。名前は訳さない。",
+  en: "- Write summary and text in English. Do not translate names.",
+  ko: "- summary 와 text 는 한국어로 쓸 것. 이름은 번역하지 않는다.",
 };
 
 type RequestBody = { summary?: FormationSummary };
@@ -158,8 +180,21 @@ export async function POST(request: Request) {
     );
   }
 
-  try {
-    const response = await fetch(
+  /**
+   * 上流を1回叩く。
+   *
+   * ■ structured を切れるようにしてある理由
+   * responseSchema は相手が受けてくれる前提で書いているが、**受けてくれ
+   * なかったら 400 が返り、画面には「診断が取れませんでした」しか出ない。**
+   * このルートは既にモデルの停止・上限切れ・打ち切りの3回、
+   * 「画面からは原因が分からない」形で止まっている。同じ轍は踏まない。
+   *
+   * 型を断られたら、**型なしでもう一度**呼ぶ。返るのは以前と同じ文章で、
+   * 指摘に分解できないぶんボタンは付かないが、**読める講評は出る**。
+   * 機能が1段落ちるだけで、止まらない。
+   */
+  const call = (structured: boolean) =>
+    fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
       {
         method: "POST",
@@ -187,10 +222,27 @@ ${REPLY_LANGUAGE[locale]}`,
            * 「綺麗に並んでいる。 - 良い点：後」のように**文の途中で
            * 切れた返事**が返ってきた。
            *
-           * 長さを抑えるのは上限ではなく指示(SYSTEM_PROMPT の「200字程度」)の
+           * 長さを抑えるのは上限ではなく指示(SYSTEM_PROMPT の字数)の
            * 仕事なので、上限は余裕を持たせる。
            */
-          generationConfig: { temperature: 0.6, maxOutputTokens: 2000 },
+          generationConfig: {
+            temperature: 0.6,
+            maxOutputTokens: 2000,
+            /**
+             * 形は相手側で保証させる。
+             *
+             * 「JSON で返して」と文章で頼むだけだと、前置きや ```json の
+             * 囲みが混ざる。そうなると**こちらの解析が「たまに失敗する処理」**
+             * になり、失敗したときだけボタンが消える、という追いにくい挙動に
+             * なる。型を渡せる口があるなら渡す。
+             */
+            ...(structured
+              ? {
+                  responseMimeType: "application/json",
+                  responseSchema: REVIEW_RESPONSE_SCHEMA,
+                }
+              : {}),
+          },
         }),
         /**
          * 返ってこないまま画面を待たせない。
@@ -208,6 +260,18 @@ ${REPLY_LANGUAGE[locale]}`,
         signal: AbortSignal.timeout(45_000),
       },
     );
+
+  try {
+    let response = await call(true);
+    if (response.status === 400) {
+      // 断られたのが「型」なのかは本文を見ないと分からないが、本文は
+      // 画面へ出さない方針。**型を外して1回だけ試す**方が、原因を
+      // 特定するより早く user の画面が戻る
+      console.error(
+        `[review] ${MODEL} が型付きの依頼を断りました(400)。型なしで再試行します`,
+      );
+      response = await call(false);
+    }
 
     if (!response.ok) {
       // サーバーのログには残す。画面へ出せるのは「どの種類の断りか」までで、
@@ -254,7 +318,24 @@ ${REPLY_LANGUAGE[locale]}`,
       );
     }
 
-    return NextResponse.json({ text });
+    /**
+     * 指摘の並びへ。読めなくても捨てない。
+     *
+     * ■ text も一緒に返し続ける理由
+     * スマホ用アプリ(choreon-app)は **`{ text }` だけを見て**画面に出して
+     * いる。あちらは別に配るものなので、ここで text を落とすと**先に配って
+     * ある版の診断が空になる**。畳んだ文章を添えるだけで済むので添える。
+     */
+    const review = parseReviewResponse(text, summary.facts);
+    if (!review) {
+      // 形が崩れていても、読める文章は手元にある。待った時間を捨てない
+      console.error(`[review] ${MODEL} の返事を指摘に分解できませんでした`);
+      return NextResponse.json({
+        text,
+        review: { summary: text, findings: [] },
+      });
+    }
+    return NextResponse.json({ text: flattenReview(review), review });
   } catch (error) {
     /**
      * 打ち切りだけは分けて出す。
