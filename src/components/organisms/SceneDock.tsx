@@ -277,33 +277,36 @@ export function SceneDock({ project }: Props) {
           >
             <List size={20} />
           </PressableButton>
-          <span aria-hidden className="h-5 w-px bg-line" />
           {/* クリック(メトロノーム)。**鳴らしたいのは再生する瞬間**なので、
               その隣に置く。以前は「表示とモード → 曲」の中と、時間軸の
               下(曲が無いときだけ)の2箇所にしか無く、どちらも再生ボタンから
               遠かった。
 
-              曲があるときは押せなくする。曲が時間の物差しなので鳴らさない
-              のが仕様だが、**押しても何も起きないボタン**を並べると
-              「壊れている」と読まれる。理由は名前に入れてある */}
-          <PressableButton
-            kind="icon"
-            role="switch"
-            aria-checked={isMetronomeEnabled}
-            disabled={hasMusic}
-            onClick={toggleMetronome}
-            aria-label={
-              hasMusic ? t.music.clickWithMusic : t.music.click
-            }
-            title={hasMusic ? t.music.clickWithMusic : t.music.click}
-            className={`flex h-10 w-10 items-center justify-center rounded-md transition-colors disabled:opacity-40 ${
-              isMetronomeEnabled && !hasMusic
-                ? "bg-accent/16 text-accent-soft"
-                : "text-fg-sub hover:bg-surface-strong hover:text-fg"
-            }`}
-          >
-            <AudioLines size={20} />
-          </PressableButton>
+              ■ 曲があるときは出さない(2026-08-17)
+              最初は薄く出して理由を添えていたが、**使えないものを並べない**
+              方を採った。曲のシートと時間軸の操作も曲があると出ないので、
+              これで3箇所とも同じ振る舞いになる。
+              (予備拍のクリック音は別の機能なので、曲があっても鳴る) */}
+          {!hasMusic && (
+            <>
+              <span aria-hidden className="h-5 w-px bg-line" />
+              <PressableButton
+                kind="icon"
+                role="switch"
+                aria-checked={isMetronomeEnabled}
+                onClick={toggleMetronome}
+                aria-label={t.music.click}
+                title={t.music.click}
+                className={`flex h-10 w-10 items-center justify-center rounded-md transition-colors ${
+                  isMetronomeEnabled
+                    ? "bg-accent/16 text-accent-soft"
+                    : "text-fg-sub hover:bg-surface-strong hover:text-fg"
+                }`}
+              >
+                <AudioLines size={20} />
+              </PressableButton>
+            </>
+          )}
           <span aria-hidden className="h-5 w-px bg-line" />
           {/* 曲。**時間軸の主役なのに、入口が畳んだメニューの中にしか
               無かった**ので、時間軸の隣にも出す。曲が入っていれば

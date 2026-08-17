@@ -23,7 +23,8 @@ function fakeContext() {
     beginPath: vi.fn(() => calls.push("beginPath")),
     closePath: vi.fn(),
     moveTo: vi.fn((x: number, y: number) => moves.push({ x, y })),
-    lineTo: vi.fn(),
+    lineTo: vi.fn(() => calls.push("lineTo")),
+    quadraticCurveTo: vi.fn(() => calls.push("quadraticCurveTo")),
     arc: vi.fn(() => calls.push("arc")),
     fill: vi.fn(() => {
       calls.push("fill");
@@ -41,6 +42,7 @@ function fakeContext() {
     font: "",
     textAlign: "start" as CanvasTextAlign,
     textBaseline: "alphabetic" as CanvasTextBaseline,
+    globalAlpha: 1,
   };
 
   return { context, calls, texts, fills, moves };
@@ -215,6 +217,105 @@ describe("drawFrame", () => {
     );
 
     expect(calls).not.toContain("arc");
+  });
+
+  /**
+   * 重ねるものは、書き出しのシートで選んだときだけ描く。
+   * 画面で出していても、選んでいなければ動画には入らない。
+   */
+  describe("重ねるもの(導線・バミリ・顔被り)", () => {
+    it("何も渡さなければ、何も重ねない", () => {
+      const { context, calls } = fakeContext();
+
+      drawFrame(context as unknown as CanvasRenderingContext2D, input());
+
+      expect(calls).not.toContain("quadraticCurveTo");
+    });
+
+    it("導線は、曲げていなければ直線で引く", () => {
+      const { context, calls } = fakeContext();
+
+      drawFrame(
+        context as unknown as CanvasRenderingContext2D,
+        input({
+          overlays: {
+            paths: [
+              { from: { x: 1, y: 1 }, to: { x: 5, y: 5 }, color: "#fff" },
+            ],
+          },
+        }),
+      );
+
+      expect(calls).toContain("lineTo");
+      expect(calls).not.toContain("quadraticCurveTo");
+    });
+
+    // 手で曲げた導線が、画面と違う形で焼かれると別の振付に見える
+    it("制御点があれば、画面と同じ二次ベジェで引く", () => {
+      const { context, calls } = fakeContext();
+
+      drawFrame(
+        context as unknown as CanvasRenderingContext2D,
+        input({
+          overlays: {
+            paths: [
+              {
+                from: { x: 1, y: 1 },
+                to: { x: 5, y: 5 },
+                control: { x: 1, y: 5 },
+                color: "#fff",
+              },
+            ],
+          },
+        }),
+      );
+
+      expect(calls).toContain("quadraticCurveTo");
+    });
+
+    it("バミリは、渡された立ち位置の数だけ点を打つ", () => {
+      const withMarks = fakeContext();
+      drawFrame(
+        withMarks.context as unknown as CanvasRenderingContext2D,
+        input({
+          overlays: {
+            marks: [
+              { x: 1, y: 1 },
+              { x: 2, y: 2 },
+              { x: 3, y: 3 },
+            ],
+          },
+        }),
+      );
+
+      const without = fakeContext();
+      drawFrame(without.context as unknown as CanvasRenderingContext2D, input());
+
+      // ダンサーの頭ぶんは両方に含まれるので、増えたぶんが点の数
+      const marks =
+        withMarks.calls.filter((c) => c === "arc").length -
+        without.calls.filter((c) => c === "arc").length;
+      expect(marks).toBe(3);
+    });
+
+    /** 顔被りの印は、隠れている本人を指すもの。人の【上】に出す */
+    it("顔被りの印は、その人にだけ付く", () => {
+      const marked = fakeContext();
+      drawFrame(
+        marked.context as unknown as CanvasRenderingContext2D,
+        input({ overlays: { blockedDancerIds: new Set(["d1"]) } }),
+      );
+
+      const notMarked = fakeContext();
+      drawFrame(
+        notMarked.context as unknown as CanvasRenderingContext2D,
+        input({ overlays: { blockedDancerIds: new Set(["someone-else"]) } }),
+      );
+
+      expect(marked.calls.filter((c) => c === "arc").length).toBeGreaterThan(
+        notMarked.calls.filter((c) => c === "arc").length,
+      );
+    });
   });
 
   it("時刻は渡されたときだけ書く", () => {

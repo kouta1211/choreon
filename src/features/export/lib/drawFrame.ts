@@ -86,6 +86,31 @@ export type FrameDancer = {
   color: string;
 };
 
+/** ステージ座標系の一点 */
+type StagePoint = { x: number; y: number };
+
+/**
+ * ステージの上に重ねるもの。**どれも「入れる」と選んだときだけ渡ってくる。**
+ *
+ * 画面(表示とモード)で切り替えられるものと同じ3つを、書き出しでも
+ * 選べるようにした。以前は「音が出るのか、導線が出るのか分からない」
+ * まま押すしかなく、しかも書き出しには作品と同じだけ時間がかかるので、
+ * **録り終えてから違うと分かる**のがいちばん高くついた。
+ */
+export type FrameOverlays = {
+  /** バミリ。全シーンの立ち位置を床に重ねた印 */
+  marks?: StagePoint[];
+  /**
+   * 導線。いまの区間の「誰がどこからどこへ」。
+   *
+   * `control` は曲げたときの制御点(二次ベジェ)。画面側と同じ式なので、
+   * 手で曲げた導線もそのまま同じ形で出る(curvePath.ts / PathOverlay)。
+   */
+  paths?: { from: StagePoint; to: StagePoint; control?: StagePoint; color: string }[];
+  /** 顔被り。客席から見えない人に印を付ける */
+  blockedDancerIds?: ReadonlySet<string>;
+};
+
 export type DrawFrameInput = {
   width: number;
   height: number;
@@ -98,6 +123,7 @@ export type DrawFrameInput = {
   showNames: boolean;
   /** 右下に出す時刻。作品全体のどこかを見失わないため */
   clock?: string;
+  overlays?: FrameOverlays;
 };
 
 export function drawFrame(
@@ -112,6 +138,7 @@ export function drawFrame(
     colors,
     showNames,
     clock,
+    overlays,
   }: DrawFrameInput,
 ): void {
   context.clearRect(0, 0, width, height);
@@ -156,8 +183,47 @@ export function drawFrame(
   context.textBaseline = "top";
   context.fillText("客席側", width / 2, rect.y + rect.height + labelSize * 0.5);
 
+  /** ステージ座標 → 画面の座標 */
+  const toX = (x: number) => rect.x + x * rect.unit;
+  const toY = (y: number) => rect.y + y * rect.unit;
+
   // ダンサー
   const radius = rect.unit * 0.34;
+
+  /* バミリと導線は【人より先に】描く。床に敷くものなので、
+     人の上に乗ると隊形そのものが読みにくくなる */
+  if (overlays?.marks?.length) {
+    context.fillStyle = colors.line;
+    for (const mark of overlays.marks) {
+      context.beginPath();
+      context.arc(toX(mark.x), toY(mark.y), radius * 0.22, 0, Math.PI * 2);
+      context.fill();
+    }
+  }
+
+  if (overlays?.paths?.length) {
+    context.lineWidth = Math.max(1.5, radius * 0.16);
+    context.lineCap = "round";
+    for (const path of overlays.paths) {
+      context.strokeStyle = path.color;
+      context.globalAlpha = 0.55;
+      context.beginPath();
+      context.moveTo(toX(path.from.x), toY(path.from.y));
+      if (path.control) {
+        // 画面側と同じ二次ベジェ。手で曲げた導線もそのまま同じ形になる
+        context.quadraticCurveTo(
+          toX(path.control.x),
+          toY(path.control.y),
+          toX(path.to.x),
+          toY(path.to.y),
+        );
+      } else {
+        context.lineTo(toX(path.to.x), toY(path.to.y));
+      }
+      context.stroke();
+      context.globalAlpha = 1;
+    }
+  }
   for (const position of positions) {
     const dancer = dancers[position.dancerId];
     if (!dancer) continue;
@@ -180,6 +246,16 @@ export function drawFrame(
       context.strokeStyle = bodyColor;
       // SVGの32単位系での太さ。頭の半径8がここでは radius なので、その比で直す
       context.lineWidth = (colors.markerStrokeWidth * radius) / 8;
+      context.stroke();
+    }
+
+    /* 顔被りの印。**人の上に出す** — 隠れている本人を指すものなので、
+       下に敷くと当の本人に隠れる。色は意味を運ぶので固定(画面側と同じ) */
+    if (overlays?.blockedDancerIds?.has(position.dancerId)) {
+      context.beginPath();
+      context.arc(x, y, radius * 1.45, 0, Math.PI * 2);
+      context.strokeStyle = "#f87171";
+      context.lineWidth = Math.max(2, radius * 0.2);
       context.stroke();
     }
 

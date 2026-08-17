@@ -1,8 +1,31 @@
 "use client";
 
-import { drawFrame, type FrameColors, type FrameDancer } from "@/features/export/lib/drawFrame";
-import { positionsAtSeconds, type PositionsBySceneId } from "@/features/viewer/lib/interpolate";
+import {
+  drawFrame,
+  type FrameColors,
+  type FrameDancer,
+  type FrameOverlays,
+} from "@/features/export/lib/drawFrame";
+import {
+  positionsAtSeconds,
+  type PositionsBySceneId,
+} from "@/features/viewer/lib/interpolate";
+import { buildPaths, buildStageMarks } from "@/features/export/lib/exportOverlays";
+import { findBlockedDancerIds } from "@/features/canvas/lib/blindSpot";
 import type { Scene } from "@/features/scene/types";
+
+/**
+ * 動画に何を重ねるか。**どれも既定は入れない。**
+ *
+ * 画面(表示とモード)の切り替えとは別に持つ。画面で導線を出していたから
+ * といって動画にも焼かれると、渡した相手には線だらけの画面が届く
+ * — 見せたいのが隊形だけのときが多い。
+ */
+export type ExportOverlayOptions = {
+  showPaths: boolean;
+  showStageMarks: boolean;
+  showBlindSpots: boolean;
+};
 
 /**
  * 隊形の動きを動画にする。
@@ -27,6 +50,7 @@ export type RecordInput = {
   stageHeight: number;
   colors: FrameColors;
   showNames: boolean;
+  overlayOptions: ExportOverlayOptions;
   /** 出力の高さ(px)。幅は 16:9 で決まる */
   height: number;
   fps: number;
@@ -44,6 +68,7 @@ export async function recordFormationVideo({
   stageHeight,
   colors,
   showNames,
+  overlayOptions,
   height,
   fps,
   mimeType,
@@ -63,19 +88,68 @@ export async function recordFormationVideo({
   const context = canvas.getContext("2d");
   if (!context) throw new Error("この端末では書き出せません");
 
+  /* バミリは時刻によらず同じなので、書き出しの前に1回だけ組む
+     (判断は exportOverlays.ts。ここは canvas を触るので、テストから
+     呼べる形にしておきたい部分だけ外へ出してある) */
+  const marks = overlayOptions.showStageMarks
+    ? buildStageMarks(positionsBySceneId)
+    : undefined;
+
+  /** その時刻に描く重ね物。導線と顔被りは時刻ごとに変わる */
+  const overlaysAt = (seconds: number): FrameOverlays | undefined => {
+    if (
+      !overlayOptions.showPaths &&
+      !overlayOptions.showStageMarks &&
+      !overlayOptions.showBlindSpots
+    ) {
+      return undefined;
+    }
+
+    const overlays: FrameOverlays = { marks };
+
+    if (overlayOptions.showPaths) {
+      overlays.paths = buildPaths(
+        scenes,
+        positionsBySceneId,
+        seconds,
+        (dancerId) => {
+          const dancer = dancers[dancerId];
+          return dancer ? colors.dancer(dancer.color) : null;
+        },
+      );
+    }
+
+    return overlays;
+  };
+
   // 1コマ目を先に描く。真っ黒から始まると、書き出しが始まったのか
   // 分からないまま数秒過ぎる
   const draw = (seconds: number) => {
+    const positions = positionsAtSeconds(scenes, positionsBySceneId, seconds);
+    const overlays = overlaysAt(seconds);
+    if (overlays && overlayOptions.showBlindSpots) {
+      // 顔被りは【その瞬間の立ち位置】で決まる。移動の途中で被ることも
+      // あるので、シーンごとではなくコマごとに調べる
+      overlays.blockedDancerIds = findBlockedDancerIds(
+        Object.fromEntries(
+          positions.map((p) => [
+            p.dancerId,
+            { xCoordinate: p.x, yCoordinate: p.y },
+          ]),
+        ),
+      );
+    }
     drawFrame(context, {
       width,
       height,
       stageWidth,
       stageHeight,
-      positions: positionsAtSeconds(scenes, positionsBySceneId, seconds),
+      positions,
       dancers,
       colors,
       showNames,
       clock: formatClock(seconds - fromSeconds),
+      overlays,
     });
   };
   draw(fromSeconds);

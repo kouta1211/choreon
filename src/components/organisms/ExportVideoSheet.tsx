@@ -56,6 +56,16 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
 
   const [height, setHeight] = useState<number>(720);
   const [showNames, setShowNames] = useState(true);
+  /**
+   * 何を重ねるか。**既定はどれも入れない。**
+   *
+   * 画面で導線を出していたからといって動画にも焼かれると、渡した相手には
+   * 線だらけの画面が届く。見せたいのが隊形だけのときが多いので、
+   * ここで選ばせる（「オプションを設定する導線がほしい」への答え）。
+   */
+  const [showPaths, setShowPaths] = useState(false);
+  const [showStageMarks, setShowStageMarks] = useState(false);
+  const [showBlindSpots, setShowBlindSpots] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -81,6 +91,7 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
         stageHeight: project.stageHeight,
         colors: resolveColors(),
         showNames,
+        overlayOptions: { showPaths, showStageMarks, showBlindSpots },
         height,
         fps: 30,
         mimeType: format.mimeType,
@@ -155,6 +166,36 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
               description={t.exportVideo.showNamesNote}
               fullWidth
             />
+
+            {/* 「入れるもの」を1つの束にする。大きさ・名前と混ぜて並べると
+                22行の設定画面と同じことになり、何を決めているのか読めない */}
+            <div className="flex flex-col gap-1.5 border-t border-line pt-3.5">
+              <p className="text-label text-fg">{t.exportVideo.includeTitle}</p>
+              <Switch
+                checked={showPaths}
+                onChange={() => setShowPaths((value) => !value)}
+                label={t.editor.view.path.label}
+                description={t.exportVideo.includePathsNote}
+                fullWidth
+              />
+              <Switch
+                checked={showStageMarks}
+                onChange={() => setShowStageMarks((value) => !value)}
+                label={t.editor.view.stageMarks.label}
+                description={t.editor.view.stageMarks.description}
+                fullWidth
+              />
+              <Switch
+                checked={showBlindSpots}
+                onChange={() => setShowBlindSpots((value) => !value)}
+                label={t.editor.view.blindSpot.label}
+                description={t.editor.view.blindSpot.description}
+                fullWidth
+              />
+              <p className="text-caption leading-snug text-fg-muted">
+                {t.exportVideo.includeNote}
+              </p>
+            </div>
 
             {isRunning ? (
               <div className="flex flex-col gap-2">

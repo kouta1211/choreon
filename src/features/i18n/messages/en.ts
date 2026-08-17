@@ -525,7 +525,11 @@ export const en = {
     contains:
       "In the video: the stage, the grid, the dancers (with their facing triangle), the upstage/downstage labels, and the clock.",
     omits:
-      "Not in the video: sound (neither the track nor the clicks), paths, floor marks, or blind-spot badges. The track lives only on this device and is deliberately not shared, so it is not burned in.",
+      "There is no sound (neither the track nor the clicks). The track lives only on this device and is deliberately not shared, so it is not burned in.",
+    includeTitle: "Also draw",
+    includePathsNote: "Paths you bent by hand come out the same shape as on screen",
+    includeNote:
+      "All off by default. Only what you pick here goes into the video, regardless of what is on screen.",
     saved: "Video saved",
     failed: "Could not record the video",
   },
