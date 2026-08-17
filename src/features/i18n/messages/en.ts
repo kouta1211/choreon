@@ -621,8 +621,14 @@ export const en = {
     contains:
       "In the video: the stage, the grid, the dancers (with their facing triangle), the upstage/downstage labels, and the clock.",
     omits:
-      "There is no sound (neither the track nor the clicks). The track lives only on this device and is deliberately not shared, so it is not burned in.",
+      "The track is included if you turn on \"Sound\" (off by default). Metronome clicks are never included. Share links still never carry the track.",
     includeTitle: "Also draw",
+    includeAudioTitle: "Sound",
+    includeAudio: "Include the track",
+    includeAudioNote:
+      "It starts from the offset you set and runs for the length of the video. Nothing plays while exporting.",
+    includeAudioWarning:
+      "This video will contain the track. Be careful who you hand it to (share links still never carry the track).",
     includePathsNote: "Paths you bent by hand come out the same shape as on screen",
     includeNote:
       "All off by default. Only what you pick here goes into the video, regardless of what is on screen.",

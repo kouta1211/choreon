@@ -7,6 +7,7 @@ import { PressableButton } from "@/components/atoms/PressableButton";
 import { Switch } from "@/components/atoms/Switch";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
+import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { DANCER_COLOR_PALETTE } from "@/features/dancer/constants";
 import { recordFormationVideo } from "@/features/export/lib/recordVideo";
 import {
@@ -41,9 +42,13 @@ const SIZES = [
  * Canvas の録画は実時間で進むので、3分の作品なら3分。仕組み上どうにも
  * ならないので、隠さずに書いて、残り時間を出す。
  *
- * ■ 音は入らない
- * 音源は端末から出さない方針のもの。動画に焼くと、その方針を回り込んで
- * 配ることになる。
+ * ■ 音は「入れる」を選べる(2026-08-18)
+ * 長らく無音にしていた理由は「音源は端末から出さない方針のもの」だったが、
+ * それは**共有リンクの約束**の話。書き出した動画は user が自分の端末に
+ * 保存する自分のファイルで、誰に渡すかは user が決める。
+ * **共有リンクに曲が付いていかないことは変わらない。**
+ *
+ * 既定は入れない。曲が入っていない作品では、スイッチそのものを出さない。
  */
 export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
   const t = useT();
@@ -66,10 +71,21 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
   const [showPaths, setShowPaths] = useState(false);
   const [showStageMarks, setShowStageMarks] = useState(false);
   const [showBlindSpots, setShowBlindSpots] = useState(false);
+  /** 曲を入れるか。**既定は入れない**（重ねるものと同じ作法） */
+  const [includeAudio, setIncludeAudio] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  const format = pickVideoFormat();
+  const musicUrl = useMusicStore((state) => state.objectUrl);
+  const setIsPlaying = useUIStore((state) => state.setIsPlaying);
+
+  /* 音を入れるときは、音声トラックを受ける形式でなければならない。
+     受けない端末では null が返る → スイッチを出さない */
+  const audioFormat = pickVideoFormat({ withAudio: true });
+  const format = includeAudio ? audioFormat : pickVideoFormat();
+  /** 曲が無い / 端末が音を録れない、どちらでもスイッチは出さない。
+      押しても無音のスイッチは、壊れているのと区別が付かない */
+  const canIncludeAudio = musicUrl !== null && audioFormat !== null;
   const durationSeconds =
     scenes.length > 1
       ? scenes[scenes.length - 1].timeSeconds - scenes[0].timeSeconds
@@ -77,6 +93,9 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
 
   const start = async () => {
     if (!format) return;
+    /* 画面の再生を止める。止めないと**2つの音が重なって聞こえる**
+       （録音に入るのは書き出し側の音だけなので、混ざるのは耳だけ） */
+    setIsPlaying(false);
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -95,6 +114,15 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
         height,
         fps: 30,
         mimeType: format.mimeType,
+        /* 動画は先頭のシーンから始まるので、曲の頭出しの位置が
+           そのまま鳴らし始めの位置になる */
+        audio:
+          includeAudio && musicUrl
+            ? {
+                objectUrl: musicUrl,
+                songSeconds: project.musicOffsetSeconds,
+              }
+            : undefined,
         onProgress: setProgress,
         signal: controller.signal,
       });
@@ -196,6 +224,30 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
                 {t.exportVideo.includeNote}
               </p>
             </div>
+
+            {/* 音は重ね物ではないので、別の区切りにする。
+                曲が無い作品と、音を録れない端末では出さない */}
+            {canIncludeAudio && (
+              <div className="flex flex-col gap-2.5 border-t border-line pt-3.5">
+                <p className="text-label text-fg">
+                  {t.exportVideo.includeAudioTitle}
+                </p>
+                <Switch
+                  checked={includeAudio}
+                  onChange={() => setIncludeAudio((value) => !value)}
+                  label={t.exportVideo.includeAudio}
+                  description={t.exportVideo.includeAudioNote}
+                  fullWidth
+                />
+                {/* 入れたときだけ出す。**渡す相手が変わる話**なので、
+                    オフのときに読ませても意味が無い */}
+                {includeAudio && (
+                  <p className="text-caption leading-snug text-[var(--dancer-4)]">
+                    {t.exportVideo.includeAudioWarning}
+                  </p>
+                )}
+              </div>
+            )}
 
             {isRunning ? (
               <div className="flex flex-col gap-2">

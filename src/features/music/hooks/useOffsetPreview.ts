@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
+import { seekFreshAudio } from "@/features/music/lib/seekAudio";
 
 /** 試し聴きの長さ。頭出しが合っているかは、数秒で分かる */
 const PREVIEW_SECONDS = 4;
@@ -46,19 +47,28 @@ export function useOffsetPreview() {
   // シートを閉じたときに鳴り続けさせない
   useEffect(() => stop, []);
 
-  const play = (fromSeconds: number) => {
+  const play = async (fromSeconds: number) => {
     if (!objectUrl) return;
     stop();
 
     const audio = new Audio(objectUrl);
     audioRef.current = audio;
-    // 曲より後ろを指していると鳴らないので、そこは呼ぶ側の範囲制限に任せる
-    audio.currentTime = Math.max(0, fromSeconds);
     setIsPlaying(true);
-    void audio.play().catch(() => {
+
+    /* 長さが分かってから送る。Chrome は読み込み前の代入も覚えてくれるが、
+       Safari は取りこぼすことで知られる。取りこぼすと曲の頭から鳴り、
+       **頭出しを確かめる機能が頭出しを無視する**ことになる。seekAudio.ts */
+    await seekFreshAudio(audio, fromSeconds);
+    // 待っている間に止められたら、鳴らさない
+    if (audioRef.current !== audio) return;
+
+    try {
+      await audio.play();
+    } catch {
       // 端末が音を出せない状態（自動再生の制限など）。黙って止める
       stop();
-    });
+      return;
+    }
     stopTimerRef.current = setTimeout(stop, PREVIEW_SECONDS * 1000);
   };
 
