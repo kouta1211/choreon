@@ -1,11 +1,28 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { SegmentedControl } from "@/components/atoms/SegmentedControl";
 import { SwitchTrack } from "@/components/atoms/Switch";
 import { usePressable } from "@/components/hooks/usePressable";
+import {
+  useNumberDraft,
+  type NumberCorrection,
+} from "@/components/hooks/useNumberDraft";
+import { useT } from "@/features/i18n/LocaleProvider";
+
+/** 直した理由を、その場の言葉にする。範囲は既に隣に出ているので短くてよい */
+export function numberCorrectionMessage(
+  t: ReturnType<typeof useT>,
+  correction: NonNullable<NumberCorrection>,
+  min: number,
+  max: number,
+): string {
+  if (correction === "notANumber") return t.common.numberField.notANumber;
+  if (correction === "tooSmall") return t.common.numberField.tooSmall(min);
+  return t.common.numberField.tooLarge(max);
+}
 
 /**
  * 設定の1行と、その束ね。
@@ -159,34 +176,14 @@ export function SettingsNumberRow({
   unit: string;
   onChange: (value: number) => void;
 }) {
-  // 入力中の【文字列】。数値にしてしまうと "1" と "1." の区別が消え、
-  // 小数を打っている途中で勝手に整形されてしまう
-  const [draft, setDraft] = useState(String(value));
-
-  // 外から値が変わったとき(設定の初期化など)に追い付く。
-  //
-  // useEffect で setDraft する形は使えない。描画が終わってからもう一度
-  // 描き直すことになり、この書き方は lint でも止められる。
-  // **描画の途中で前回の値と比べて直す**のが React の言う正しい形で、
-  // 追加の描画は同じ処理の中で片付く(打っている間は value が動かないので、
-  // ここが入力を邪魔することはない)
-  const [lastValue, setLastValue] = useState(value);
-  if (value !== lastValue) {
-    setLastValue(value);
-    setDraft(String(value));
-  }
-
-  /** 欄から離れた/Enterを押した時に1回だけ走る。ここで初めて丸める */
-  const commit = () => {
-    const parsed = Number(draft.trim());
-    if (draft.trim() === "" || !Number.isFinite(parsed)) {
-      setDraft(String(value)); // 数でないものは、前の値に戻すだけ
-      return;
-    }
-    const clamped = Math.min(max, Math.max(min, parsed));
-    setDraft(String(clamped));
-    if (clamped !== value) onChange(clamped);
-  };
+  const t = useT();
+  // 打っている間の預かりと、確定したときの丸め方は曲の頭出しと共通
+  const { draft, setDraft, commit, correction } = useNumberDraft({
+    value,
+    min,
+    max,
+    onChange,
+  });
 
   return (
     <div className="flex min-h-target flex-col gap-unit px-gutter py-unit">
@@ -215,13 +212,19 @@ export function SettingsNumberRow({
       </label>
       {/* 入れられる範囲を必ず出す。以前は書いていなかったので、下限より
           小さい数を打った人には「打った数が消えた」ようにしか見えず、
-          「キーボードで入力できない」という報告になって返ってきた */}
-      <p className="text-caption leading-snug text-fg-muted">
+          「キーボードで入力できない」という報告になって返ってきた。
+          直したときは、その理由をここへ足す(黙って戻さない) */}
+      <p
+        className={`text-caption leading-snug ${
+          correction ? "text-[var(--dancer-2)]" : "text-fg-muted"
+        }`}
+      >
         {description ? `${description} · ` : ""}
         <span className="font-mono">
           {min}–{max}
           {unit}
         </span>
+        {correction && ` · ${numberCorrectionMessage(t, correction, min, max)}`}
       </p>
     </div>
   );

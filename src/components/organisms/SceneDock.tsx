@@ -1,11 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { List, Pause, Pencil, Play, Plus } from "lucide-react";
+import {
+  ChevronDown,
+  List,
+  Music4,
+  Pause,
+  Pencil,
+  Play,
+  Plus,
+} from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { MusicTimeline } from "@/components/organisms/MusicTimeline";
 import { PlayheadClock } from "@/components/molecules/PlayheadClock";
+import { CountInOverlay } from "@/components/organisms/CountInOverlay";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import {
   seekToSelectedScene,
@@ -13,6 +22,7 @@ import {
 } from "@/features/music/hooks/useMusicPlayback";
 import { useSilentClock } from "@/features/music/hooks/useSilentClock";
 import { useMetronome } from "@/features/music/hooks/useMetronome";
+import { playbackStartIndex } from "@/features/music/lib/playbackStart";
 import { useBpm } from "@/features/music/hooks/useBpm";
 import { usePlaybackToggle } from "@/features/music/hooks/usePlaybackToggle";
 import { useToastOffset } from "@/components/hooks/useToastOffset";
@@ -76,6 +86,14 @@ export function SceneDock({ project }: Props) {
     (state) => state.project?.musicOffsetSeconds ?? project.musicOffsetSeconds,
   );
   const isMetronomeEnabled = useMusicStore((state) => state.isMetronomeEnabled);
+  const playbackStartSceneId = useUIStore(
+    (state) => state.playbackStartSceneId,
+  );
+  const isTimelineVisible = useUIStore((state) => state.isTimelineVisible);
+  const setMusicSheetOpen = useUIStore((state) => state.setMusicSheetOpen);
+  const toggleTimelineVisible = useUIStore(
+    (state) => state.toggleTimelineVisible,
+  );
   const musicDuration = useMusicStore((state) => state.durationSeconds);
   const hasMusic = musicUrl !== null;
   const audioRef = useMusicPlayback();
@@ -111,9 +129,25 @@ export function SceneDock({ project }: Props) {
     // 予備拍の間は曲の有無に関わらず鳴らす。音の出ないカウントインは
     // ただの遅れで、構えるための合図にならない
     isActive: (isPlaying && !hasMusic && isMetronomeEnabled) || isCountingIn,
+    isCountIn: isCountingIn,
     bpm,
     beatsPerBar,
   });
+
+  /* 押したらどこから流れるか。選んでいるところが最後のシーンなら、
+     前回始めた場所へ戻る(playbackStart.ts)。同じ判定をここでも
+     引いて、押す前に読めるようにしている */
+  const playFromLabel = useMemo(() => {
+    const from = playbackStartIndex(
+      scenes,
+      selectedSceneId,
+      playbackStartSceneId,
+    );
+    if (from < 0) return undefined;
+    const fromScene = scenes[from];
+    if (fromScene?.id === selectedSceneId) return t.editor.dock.playFromHere;
+    return t.editor.dock.playFrom(fromScene?.name ?? "");
+  }, [scenes, selectedSceneId, playbackStartSceneId, t]);
 
   // トーストはドックの直上に出す(高さを測ってCSS変数へ流す)
   useToastOffset(dockRef);
@@ -157,17 +191,21 @@ export function SceneDock({ project }: Props) {
                     ? t.editor.dock.pause
                     : t.editor.dock.play
               }
+              /* マウスを乗せたときに【どこから流れるか】を出す。
+                 最後のシーンに居座ったまま押すと前回始めた場所へ戻る、
+                 という決まり(playbackStart.ts)が画面のどこにも
+                 書かれておらず、押してみるまで分からなかった */
+              title={
+                isPlaying || isCountingIn ? undefined : playFromLabel
+              }
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-accent-fg"
             >
-              {/* 数えている間は残りの拍を出す。押したのに何も起きていない
-                  ように見える時間を作らない */}
+              {/* 数えている間の残り拍は、画面の真ん中に大きく出す
+                  (CountInOverlay)。ボタンは 48px の丸で、構えながら
+                  見る数字を置くには小さすぎた。ここでは「もう一度押せば
+                  やめられる」ことだけを形で示す */}
               {isCountingIn ? (
-                <span
-                  role="status"
-                  className="font-mono text-headline tabular-nums"
-                >
-                  {remainingBeats}
-                </span>
+                <Pause size={20} fill="currentColor" />
               ) : isPlaying ? (
                 <Pause size={20} fill="currentColor" />
               ) : (
@@ -237,13 +275,62 @@ export function SceneDock({ project }: Props) {
           >
             <List size={20} />
           </PressableButton>
+          <span aria-hidden className="h-5 w-px bg-line" />
+          {/* 曲。**時間軸の主役なのに、入口が畳んだメニューの中にしか
+              無かった**ので、時間軸の隣にも出す。曲が入っていれば
+              印を点ける(入っているかどうかを開かずに読めるように) */}
+          <PressableButton
+            kind="icon"
+            onClick={() => setMusicSheetOpen(true)}
+            aria-label={t.editor.view.music}
+            className="relative flex h-10 w-10 items-center justify-center rounded-md text-fg-sub transition-colors hover:bg-surface-strong hover:text-fg"
+          >
+            <Music4 size={20} />
+            {hasMusic && (
+              <span
+                aria-hidden
+                className="absolute top-1.5 right-1.5 block h-1.5 w-1.5 rounded-full bg-accent"
+              />
+            )}
+          </PressableButton>
+          <span aria-hidden className="h-5 w-px bg-line" />
+          {/* 時間軸を畳む。PCでは帯が画面の1/4ほどを占めるので、
+              時間の並びが要らないときに畳めるとステージが広く使える。
+              閉じたことが分かるよう、向きの変わる山形1つで示す */}
+          <PressableButton
+            kind="icon"
+            aria-expanded={isTimelineVisible}
+            onClick={toggleTimelineVisible}
+            aria-label={
+              isTimelineVisible
+                ? t.editor.dock.hideTimeline
+                : t.editor.dock.showTimeline
+            }
+            className="flex h-10 w-10 items-center justify-center rounded-md text-fg-sub transition-colors hover:bg-surface-strong hover:text-fg"
+          >
+            <ChevronDown
+              size={20}
+              className={`transition-transform ${isTimelineVisible ? "" : "-rotate-180"}`}
+            />
+          </PressableButton>
         </div>
       </div>
 
-      {/* 曲の時間軸。シーンは「曲の何秒目か」の位置に載る */}
-      <div className="mt-2.5">
-        <MusicTimeline project={project} audioRef={audioRef} />
-      </div>
+      {/* 曲の時間軸。シーンは「曲の何秒目か」の位置に載る。
+          畳んでいるときは【描かない】 — 高さ0で隠すだけだと、中の
+          時間軸が毎フレーム測り直しに走る */}
+      {isTimelineVisible && (
+        <div className="mt-2.5">
+          <MusicTimeline project={project} audioRef={audioRef} />
+        </div>
+      )}
+
+      {/* 数えている間の幕。画面ごと数える */}
+      <CountInOverlay
+        isCountingIn={isCountingIn}
+        remainingBeats={remainingBeats}
+        onCancel={handleTogglePlay}
+      />
 
       {/* 画面全体に重なるシート(狭い画面用)。DOM上の位置は見た目に
           影響しないのでここから描く。広い画面では一覧ボタンを出さないため

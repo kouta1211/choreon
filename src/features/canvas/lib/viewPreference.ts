@@ -42,10 +42,18 @@ export type ViewPreference = {
   isStageMarksVisible: boolean;
   /** 客席から見えなくなる人(顔被り)を警告するか */
   isBlindSpotCheckVisible: boolean;
-  /** ステージを横に払ってシーンを送る操作を受け付けるか。
+  /** ステージを払ってシーンを送る操作を受け付けるか。
    * マウスでは「掴んで動かす」より場所を取る操作になってしまうので、
    * 指のある端末だけ既定でオンにする(defaultViewPreference参照) */
   isSwipeSceneChangeEnabled: boolean;
+  /**
+   * 下端の時間軸(曲とシーンの帯)を出すか。
+   *
+   * PCでは帯が画面の1/4ほどを占め、そのぶんステージが小さくなる。
+   * シーンは左右のペインにも並んでいるので、時間の並びが要らないときは
+   * 畳めた方がステージを広く使える、という指摘を受けて足した。
+   */
+  isTimelineVisible: boolean;
 };
 
 export const DEFAULT_VIEW_PREFERENCE: ViewPreference = {
@@ -54,6 +62,7 @@ export const DEFAULT_VIEW_PREFERENCE: ViewPreference = {
   isStageMarksVisible: false,
   isBlindSpotCheckVisible: false,
   isSwipeSceneChangeEnabled: false,
+  isTimelineVisible: true,
 };
 
 /**
@@ -114,5 +123,9 @@ export function parseViewPreference(raw: string | null): ViewPreference {
       typeof record.isSwipeSceneChangeEnabled === "boolean"
         ? record.isSwipeSceneChangeEnabled
         : fallback.isSwipeSceneChangeEnabled,
+    isTimelineVisible:
+      typeof record.isTimelineVisible === "boolean"
+        ? record.isTimelineVisible
+        : fallback.isTimelineVisible,
   };
 }

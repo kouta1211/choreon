@@ -46,8 +46,10 @@ export function EditorHeader({ project }: Props) {
   const isGuest = useProjectStore((state) => state.isGuest);
 
   const [openSheet, setOpenSheet] = useState<
-    "music" | "share" | "review" | "settings" | null
+    "share" | "review" | "settings" | null
   >(null);
+  const isMusicSheetOpen = useUIStore((state) => state.isMusicSheetOpen);
+  const setMusicSheetOpen = useUIStore((state) => state.setMusicSheetOpen);
   const {
     fileInputRef,
     handleExport,
@@ -90,16 +92,18 @@ export function EditorHeader({ project }: Props) {
       </Tooltip>
 
       <DisplayModeMenu
-        onOpenMusic={() => setOpenSheet("music")}
+        onOpenMusic={() => setMusicSheetOpen(true)}
         onOpenShare={isGuest ? undefined : () => setOpenSheet("share")}
         onOpenReview={() => setOpenSheet("review")}
         onOpenSettings={() => setOpenSheet("settings")}
       />
 
+      {/* 曲のシートだけ開閉をストアに置いている。下端のドックからも
+          開くため(「表示とモード」の中だけだと見つけにくい、という指摘) */}
       <MusicSheet
         project={project}
-        isOpen={openSheet === "music"}
-        onClose={() => setOpenSheet(null)}
+        isOpen={isMusicSheetOpen}
+        onClose={() => setMusicSheetOpen(false)}
       />
       <ReviewSheet
         project={project}

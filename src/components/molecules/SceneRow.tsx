@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Copy, Trash2 } from "lucide-react";
@@ -10,9 +11,10 @@ import {
   SceneTimeField,
 } from "@/components/molecules/SceneTimeField";
 import { PressableButton } from "@/components/atoms/PressableButton";
-import { isDragStartAllowed } from "@/features/scene/lib/sceneRowSensors";
+import { isRowSelectClick } from "@/features/scene/lib/sceneRowSensors";
 import type { Project } from "@/features/project/types";
 import type { Scene } from "@/features/scene/types";
+import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
@@ -64,24 +66,46 @@ export function SceneRow({
   const { listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: scene.id });
 
+  /* 足したばかりのシーンへ寄せて、一拍光らせる。
+     曲が無いときの追加は**選んでいるシーンの隣**へ入るので、末尾へ
+     積まれるのを見慣れた目には「増えたのが見えない」。
+
+     印は少ししたら自分で消す(そのままだと、別の操作をしても光ったまま)。
+     scrollIntoView は掴んでいる最中には呼ばない — 並び替えの途中で
+     一覧が動くと、指の下から行が逃げる。 */
+  const isJustAdded = useUIStore(
+    (state) => state.justAddedSceneId === scene.id,
+  );
+  const markSceneAdded = useUIStore((state) => state.markSceneAdded);
+  const rowRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!isJustAdded) return;
+    rowRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    const timer = setTimeout(() => markSceneAdded(null), 1200);
+    return () => clearTimeout(timer);
+  }, [isJustAdded, markSceneAdded]);
+
   return (
     <div
-      ref={setNodeRef}
+      ref={(node) => {
+        setNodeRef(node);
+        rowRef.current = node;
+      }}
       {...listeners}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       // カードのどこを触ってもそのシーンへ切り替わる。ミニチュアだけが
       // 反応する作りだと、幅いっぱいのカードのうち左端しか押せず、
       // 特に指では押し外しやすい。
       //
-      // ボタン・入力欄の上で押したときは、その操作だけを起こす(判定は
-      // 掴み始めと同じ isDragStartAllowed。境目の定義を1箇所にしている)
+      // ボタン・入力欄の上で押したときは、その操作だけを起こす
+      // (境目の定義は sceneRowSensors に置いて、そこ1箇所で決める)
       onClick={(event) => {
-        if (!isDragStartAllowed(event.target)) return;
+        if (!isRowSelectClick(event.target)) return;
         onSelect();
       }}
       className={`touch-manipulation cursor-pointer overflow-hidden rounded-xl ${
         isDragging ? "relative z-10 opacity-70" : ""
-      } ${
+      } ${isJustAdded ? "scene-row-added" : ""} ${
         isSelected
           ? "border-2 border-accent bg-accent-row"
           : "border border-line bg-surface-raised"

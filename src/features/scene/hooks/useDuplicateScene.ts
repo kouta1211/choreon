@@ -11,6 +11,8 @@ import type { Project } from "@/features/project/types";
 import type { Scene } from "@/features/scene/types";
 import { randomId } from "@/lib/randomId";
 import { duplicateTimeSeconds } from "@/features/scene/lib/sceneTiming";
+import { nextSceneName } from "@/features/scene/lib/sceneName";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
  * 選択したシーンを複製して、その【すぐ後ろ】に差し込む。
@@ -23,6 +25,7 @@ import { duplicateTimeSeconds } from "@/features/scene/lib/sceneTiming";
  * 末尾に足してから何度も並び替えるより短い。
  */
 export function useDuplicateScene(project: Project) {
+  const t = useT();
   const [isDuplicating, setIsDuplicating] = useState(false);
   const addScene = useProjectStore((state) => state.addScene);
   const removeScene = useProjectStore((state) => state.removeScene);
@@ -40,7 +43,9 @@ export function useDuplicateScene(project: Project) {
     const duplicate = {
       id: randomId(),
       projectId: project.id,
-      name: `${source.name} のコピー`,
+      // 「〜のコピー」をやめた。複製を複製すると
+      // 「シーン3 のコピー のコピー」と伸びていく(sceneName.ts)
+      name: nextSceneName(scenes, t.projects.sceneName),
       orderIndex: source.orderIndex + 1,
       // 元のシーンと、その次のシーンのちょうど中間へ置く。
       // 次が無ければ既定の移動時間ぶん後ろへ
@@ -56,6 +61,9 @@ export function useDuplicateScene(project: Project) {
       updateDancerPosition(duplicate.id, position.dancerId, position);
     }
     selectScene(duplicate.id);
+    // 増えた場所を一拍光らせる。曲が無いときは**選んでいるシーンの隣**へ
+    // 入るので、末尾へ積まれるのを見慣れた目には増えたのが見えない
+    useUIStore.getState().markSceneAdded(duplicate.id);
 
     try {
       await persist(async (supabase) => {

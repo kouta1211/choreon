@@ -35,6 +35,14 @@ type Params = {
    * オフでも【叩いて選択を外す】方は生かす。あちらは操作の作法であって
    * シーン送りの機能ではない */
   isSwipeEnabled: boolean;
+  /**
+   * どちらへ払うか。**シーンが画面に並んでいる向きに合わせる**。
+   *
+   * スマホはステージの下に横並びの帯があるので横("x")、PCは左右の
+   * ペインに縦に並ぶので縦("y")。指の向きと目に見える並びが食い違うと、
+   * 「払ったのに、その方向には何も無い」という手触りになる。
+   */
+  axis: ScrubAxis;
   scrub: ReturnType<typeof useSceneScrub>;
 };
 
@@ -55,6 +63,7 @@ export function useStageScrubGesture({
   selectScene,
   selectDancer,
   isSwipeEnabled,
+  axis: scrubAxis,
   scrub,
 }: Params) {
   // ジェスチャ1回ぶんの走り書き。stateに置くと毎pointermoveで再レンダーになる
@@ -69,12 +78,15 @@ export function useStageScrubGesture({
     targetSceneId: string | null;
   } | null>(null);
 
-  /** 「1シーンぶん」とみなす指の移動距離。ステージの横幅そのもの。
+  /** 「1シーンぶん」とみなす指の移動距離。ステージのその向きの実寸。
    * ステージは動かさないので、これは見た目の距離ではなく
    * 「どれだけ引けば隣まで行くか」の目盛りとして使う */
   const span = useCallback(
-    () => stageRef.current?.offsetWidth ?? 0,
-    [stageRef],
+    () =>
+      (scrubAxis === "x"
+        ? stageRef.current?.offsetWidth
+        : stageRef.current?.offsetHeight) ?? 0,
+    [stageRef, scrubAxis],
   );
 
   const onPointerDown = useCallback(
@@ -121,8 +133,9 @@ export function useStageScrubGesture({
       if (current.axis === null) {
         const axis = resolveAxis(dx, dy);
         if (axis === null) return;
-        if (axis === "y") {
-          // 縦に払われた。ページのスクロールや、下のシート操作を邪魔しない
+        if (axis !== scrubAxis) {
+          // 送る向きと違う方へ払われた。ページのスクロールや、
+          // 下のシート操作を邪魔しない
           gesture.current = null;
           return;
         }
@@ -134,19 +147,22 @@ export function useStageScrubGesture({
       if (!isSwipeEnabled) return;
 
       const index = sceneIds.indexOf(selectedSceneId ?? "");
-      // 左へ払う(dx<0) = 次のシーンを引き寄せる
+      // 送りたい向きの移動量だけを見る。左へ払う / 上へ払う のどちらも
+      // 「次のシーンを引き寄せる」— 並びの先は右または下にあるので、
+      // そちらから手前へ引いてくる形になる
+      const along = scrubAxis === "x" ? dx : dy;
       const targetSceneId =
-        (dx < 0 ? sceneIds[index + 1] : sceneIds[index - 1]) ?? null;
+        (along < 0 ? sceneIds[index + 1] : sceneIds[index - 1]) ?? null;
       if (targetSceneId !== current.targetSceneId) {
         current.targetSceneId = targetSceneId;
         scrub.setTargetSceneId(targetSceneId);
       }
 
-      const delta = applyRubberBand(dx, targetSceneId !== null);
+      const delta = applyRubberBand(along, targetSceneId !== null);
       current.delta = delta;
       scrub.progress.set(scrubProgress(delta, span()));
     },
-    [scrub, sceneIds, selectedSceneId, span, isSwipeEnabled],
+    [scrub, sceneIds, selectedSceneId, span, isSwipeEnabled, scrubAxis],
   );
 
   const onPointerUp = useCallback(

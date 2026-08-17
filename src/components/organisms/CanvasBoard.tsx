@@ -20,6 +20,7 @@ import {
   useProjectStore,
 } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
+import { useScreenKind } from "@/components/hooks/useIsWideScreen";
 import {
   clamp,
   isCloseToInteger,
@@ -147,10 +148,15 @@ export function CanvasBoard({
   const setDragSnapLine = useUIStore((state) => state.setDragSnapLine);
   const commitPositions = usePositionCommit();
 
-  // ステージを横に払って前後のシーンへ移るジェスチャ。ダンサーのドラッグ
+  // ステージを払って前後のシーンへ移るジェスチャ。ダンサーのドラッグ
   // (dnd-kit)とは掴む対象で住み分けており、ダンサーとボタンの上から
-  // 始まった指はこちらでは拾わない(useStageScrubGesture参照)
+  // 始まった指はこちらでは拾わない(useStageScrubGesture参照)。
+  //
+  // 払う向きは**シーンが並んでいる向きに合わせる**。スマホはステージの下に
+  // 横並びの帯、PCは左右のペインに縦並びなので、そのまま横/縦が入れ替わる。
+  // 「PCでは横に払っても、その方向にシーンが無い」という指摘への答え
   const scenes = useProjectStore((state) => state.scenes);
+  const screenKind = useScreenKind();
   const scrub = useSceneScrub();
   const isSwipeSceneChangeEnabled = useUIStore(
     (state) => state.isSwipeSceneChangeEnabled,
@@ -163,6 +169,7 @@ export function CanvasBoard({
     selectScene,
     selectDancer,
     isSwipeEnabled: isSwipeSceneChangeEnabled,
+    axis: screenKind === "phone" ? "x" : "y",
     scrub,
   });
 

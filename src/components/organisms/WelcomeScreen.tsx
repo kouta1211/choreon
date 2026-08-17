@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { AuthScreen } from "@/components/molecules/AuthScreen";
 import { PressableButton } from "@/components/atoms/PressableButton";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useT } from "@/features/i18n/LocaleProvider";
 
@@ -35,15 +34,21 @@ export function WelcomeScreen({ onGuestStart }: Props) {
   const setGuestTourIntent = useUIStore((state) => state.setGuestTourIntent);
 
   /**
-   * 既定は「案内から始める」。
+   * 案内を見るかどうかを聞いている最中か。
    *
-   * 端末に覚えてある「もう見た」(hasSeenTutorial)を初期値にはしない。
-   * localStorage はサーバー描画の時点で読めず、初期値に使うと最初の
-   * 描画と食い違う。要らない人が1回外す、という形に倒してある。
+   * ■ 押す前のチェックから、押したあとの板へ戻した(2026-08-17)
+   * 「ゲストで始めるを押した際に、案内を使うかどうかの選択を要求したい」
+   * という指摘。以前は逆に「押したあとに聞くと門が1枚増える」として
+   * チェックボックスにしていたが、**チェックは読まれずに素通りされる**。
+   * 始め方を選ぶ画面まで来た人は選ぶつもりで来ているので、ここで
+   * 一拍聞く方が伝わる、という判断。
+   *
+   * 端末に覚えてある「もう見た」を初期値にはしない。localStorage は
+   * サーバー描画の時点で読めず、初期値に使うと最初の描画と食い違う。
    */
-  const [wantsTour, setWantsTour] = useState(true);
+  const [isAsking, setIsAsking] = useState(false);
 
-  const handleGuestStart = () => {
+  const start = (wantsTour: boolean) => {
     setGuestTourIntent(wantsTour ? "show" : "skip");
     onGuestStart();
   };
@@ -66,23 +71,12 @@ export function WelcomeScreen({ onGuestStart }: Props) {
         <div className="flex flex-col gap-unit">
           <PressableButton
             kind="primary"
-            onClick={handleGuestStart}
+            onClick={() => setIsAsking(true)}
             className="h-target-lg w-full rounded-lg bg-accent text-headline text-accent-fg"
           >
             {t.welcome.guestStart}
           </PressableButton>
 
-          {/* 案内を見るかどうかは、押す前に見えているところで選ばせる。
-              押したあとに「見ますか?」を出すと、面食らったという今回の
-              話の通り、通る門が1枚増えるだけになる。
-              ラベルまで含めて44px以上の的にするのは SceneTimeField と同じ */}
-          <label className="flex min-h-11 items-center gap-2.5 text-label text-fg-sub">
-            <Checkbox
-              checked={wantsTour}
-              onCheckedChange={(checked) => setWantsTour(checked === true)}
-            />
-            <span>{t.welcome.withTour}</span>
-          </label>
           {/* 「登録なしで始められる」ことと「消えること」は同じ重さで
               伝える。後者を伏せると、作った後で裏切ることになる。
               添え物の色(fg-muted)ではなく fg-sub なのはそのため —
@@ -113,6 +107,47 @@ export function WelcomeScreen({ onGuestStart }: Props) {
           </PressableButton>
         </div>
       </div>
+
+      {/* 押したあとに一拍聞く板。幕はシートと同じ濃さ(bg-scrim/60)にする —
+          ここだけ別の暗さにすると、同じ「手前に出る板」が場所によって
+          違う見え方をする */}
+      {isAsking && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={t.welcome.tourAsk.title}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/60 px-4 backdrop-blur-[2px]"
+        >
+          <div className="overlay-panel flex w-full max-w-xs flex-col gap-gutter rounded-2xl p-6">
+            <div className="flex flex-col gap-base text-center">
+              <p className="text-title text-fg-strong">
+                {t.welcome.tourAsk.title}
+              </p>
+              <p className="text-label leading-relaxed text-fg-sub">
+                {t.welcome.tourAsk.body}
+              </p>
+            </div>
+            <div className="flex flex-col gap-unit">
+              <PressableButton
+                kind="primary"
+                autoFocus
+                onClick={() => start(true)}
+                className="h-target-lg w-full rounded-lg bg-accent text-headline text-accent-fg"
+              >
+                {t.welcome.tourAsk.withTour}
+              </PressableButton>
+              {/* skip も同じ大きさの的にする。「見ない」を選ぶ人の方が
+                  急いでいるので、そちらを小さくすると押しにくい */}
+              <PressableButton
+                onClick={() => start(false)}
+                className="h-target w-full rounded-lg border border-line bg-surface-raised text-body text-fg-strong"
+              >
+                {t.tour.skip}
+              </PressableButton>
+            </div>
+          </div>
+        </div>
+      )}
     </AuthScreen>
   );
 }

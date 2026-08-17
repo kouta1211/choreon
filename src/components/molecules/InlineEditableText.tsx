@@ -104,7 +104,16 @@ export function InlineEditableText({
           {value}
         </Link>
       ) : (
-        <span className={`min-w-0 truncate text-fg-strong ${textClassName}`}>
+        /* ダブルクリックでも編集に入れる(2026-08-17)。
+           **1回押しは今までどおり何も起きない** — スマホで名前を読もうと
+           触っただけで入力欄に変わり、キーボードがせり上がる、という
+           元の事故を戻さないため。指に「ダブルタップ」は無いので、
+           これはマウスのある画面だけの近道になる。
+           「鉛筆を触らないといけないのが不便」への答え */
+        <span
+          onDoubleClick={() => setDraft(value)}
+          className={`min-w-0 truncate text-fg-strong ${textClassName}`}
+        >
           {value}
         </span>
       )}

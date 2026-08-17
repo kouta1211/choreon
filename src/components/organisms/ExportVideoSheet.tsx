@@ -196,10 +196,16 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
               </PressableButton>
             )}
 
-            <p className="text-caption leading-snug text-fg-muted">
-              {t.exportVideo.note}
-
-            </p>
+            {/* 何が入って何が入らないかを、押す前に書く。
+                「メトロノームや曲の音が出るのか、導線モードにした際に
+                導線が出るのか」が分からない、という指摘への答え。
+                書き出しには作品と同じだけ時間がかかるので、
+                **録り終えてから違うと分かる**のがいちばん高くつく */}
+            <div className="flex flex-col gap-base text-caption leading-snug text-fg-muted">
+              <p>{t.exportVideo.note}</p>
+              <p>{t.exportVideo.contains}</p>
+              <p>{t.exportVideo.omits}</p>
+            </div>
           </>
         )}
       </div>

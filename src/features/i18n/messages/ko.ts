@@ -155,7 +155,7 @@ export const ko = {
       },
       swipe: {
         label: "밀어서 장면 넘기기",
-        description: "무대를 옆으로 끌면 앞뒤 장면으로",
+        description: "무대를 끌면 앞뒤 장면으로(휴대폰은 옆으로, PC는 위아래로)",
       },
       thisProject: "이 작품",
       music: "음악",
@@ -174,6 +174,10 @@ export const ko = {
       sceneSettings: (name: string) => `'${name}' 설정 열기`,
       moveSeconds: (seconds: number) => ` · ${seconds}초 동안 이동`,
       addScene: "장면 추가",
+      hideTimeline: "시간축 접기",
+      showTimeline: "시간축 펼치기",
+      playFromHere: "지금 보고 있는 장면부터 재생",
+      playFrom: (name: string) => `'${name}'부터 재생(지난번에 시작한 곳)`,
     },
 
     scenes: {
@@ -231,6 +235,11 @@ export const ko = {
 
   common: {
     close: "닫기",
+    numberField: {
+      notANumber: "숫자를 입력해 주세요",
+      tooSmall: (min: number) => `${min}보다 작게 할 수 없습니다`,
+      tooLarge: (max: number) => `${max}보다 크게 할 수 없습니다`,
+    },
     back: "뒤로",
     loading: "불러오는 중",
     rename: (label: string) => `${label} 변경`,
@@ -282,6 +291,11 @@ export const ko = {
     tagline: "연습실에서 나눠 주는 대형도를, 곡에 맞춰 움직이는 형태로.",
     guestStart: "게스트로 시작하기",
     withTour: "사용법 안내부터 시작하기",
+    tourAsk: {
+      title: "사용법 안내를 볼까요?",
+      body: "무대·댄서·장면 세 가지를 실제 화면을 짚어 가며 1분 정도 안내합니다.",
+      withTour: "안내부터 시작하기",
+    },
     guestNote: "가입하지 않아도 됩니다. 만든 것은 이 기기에만 남습니다.",
     or: "또는",
   },
@@ -499,7 +513,11 @@ export const ko = {
     running: (seconds: number) =>
       `내보내는 중… ${seconds}초 남았습니다. 이 화면을 닫지 말고 기다려 주세요.`,
     cancel: "중단",
-    note: "내보내기는 작품과 같은 시간이 걸립니다(실제로 재생하면서 녹화하기 때문입니다). 소리는 들어가지 않습니다.",
+    note: "내보내기는 작품과 같은 시간이 걸립니다(실제로 재생하면서 녹화하기 때문입니다).",
+    contains:
+      "들어가는 것: 무대·격자·댄서(방향 삼각형 포함)·위아래 표시·시각.",
+    omits:
+      "들어가지 않는 것: 소리(음악도 클릭도)·동선·바닥 표시·가림 표시. 음악은 이 기기에만 있고 공유하지 않기로 한 것이라 영상에 굽지 않습니다.",
     saved: "영상을 저장했습니다",
     failed: "내보내지 못했습니다",
   },
@@ -647,7 +665,7 @@ export const ko = {
       summary: "카운트인 · 기본 속도 · 장면 간격",
       countIn: {
         label: "카운트인",
-        description: "재생을 누른 뒤 실제로 움직이기까지 울리는 박입니다.",
+        description: "재생을 누른 뒤 실제로 움직이기까지 울리는 박입니다. 남은 수는 화면 한가운데에 표시됩니다. 음악이 없는 작품에서는 '클릭 소리'가 켜져 있으면 센 뒤에도 박이 이어집니다(음악이 있으면 음악만 재생됩니다).",
         off: "없음",
         beats: (n: number) => `${n}박`,
       },
@@ -693,7 +711,7 @@ export const ko = {
       },
       swipe: {
         label: "밀어서 장면 넘기기",
-        description: "무대를 옆으로 쓸면 앞뒤 장면으로 넘어갑니다.",
+        description: "무대를 쓸면 앞뒤 장면으로 넘어갑니다(휴대폰은 옆으로, PC는 위아래로).",
       },
     },
 

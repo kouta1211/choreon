@@ -65,8 +65,10 @@ type UIState = {
   isStageMarksVisible: boolean;
   /** 客席から見えなくなる人(顔被り)を警告するか。移動中も含めて調べる */
   isBlindSpotCheckVisible: boolean;
-  /** ステージを横に払ってシーンを送る操作を受け付けるか */
+  /** ステージを払ってシーンを送る操作を受け付けるか */
   isSwipeSceneChangeEnabled: boolean;
+  /** 下端の時間軸を出すか。畳むとステージがそのぶん広くなる */
+  isTimelineVisible: boolean;
   /** シーン移動のアニメーションが進行中か。この間はダンサーを掴ませない
    * (掴むと、移動アニメーションとドラッグが同じ座標を取り合う) */
   isTransitioning: boolean;
@@ -85,6 +87,14 @@ type UIState = {
    * 押されたときの戻り先になる(playbackStart.ts)。保存はしない —
    * 開き直したときに、身に覚えのない場所から鳴り出す方が困る */
   playbackStartSceneId: string | null;
+  /**
+   * たったいま足した/複製したシーン。少ししたら消える。
+   *
+   * 曲が無いときの追加は**選んでいるシーンの隣**へ入るので、末尾へ
+   * 積まれるのを見慣れた目には「増えたのが見えない」。増えた場所を
+   * 一拍光らせて、そこへ寄せるために要る(SceneRow が読む)。
+   */
+  justAddedSceneId: string | null;
   /** シーン一覧シート(並び替え・複製・削除)を開いているか */
   isSceneSheetOpen: boolean;
   /** 使い方の案内を頼まれた時刻。まだなら null */
@@ -104,6 +114,15 @@ type UIState = {
   isTemplateSheetOpen: boolean;
   /** 動画の書き出しシートを開いているか */
   isExportSheetOpen: boolean;
+  /**
+   * 曲のシートを開いているか。
+   *
+   * 以前はヘッダー(EditorHeader)の中の state だけで持っていたので、
+   * 「表示とモード」のメニューからしか開けなかった。**曲は時間軸の
+   * 主役なのに入口が畳んだメニューの中**で、見つけにくいという指摘を
+   * もらったので、下端のドックからも開けるようここへ上げた。
+   */
+  isMusicSheetOpen: boolean;
   /** 表示中の確認ダイアログ。nullなら出ていない */
   confirm: ConfirmRequest | null;
   /** 登録/ログインのモーダル。nullなら出ていない。
@@ -121,12 +140,15 @@ type UIState = {
   toggleStageMarks: () => void;
   toggleBlindSpotCheck: () => void;
   toggleSwipeSceneChange: () => void;
+  toggleTimelineVisible: () => void;
   setIsTransitioning: (isTransitioning: boolean) => void;
   setDragSnapLine: (line: DragSnapLine) => void;
   setIsPlaying: (isPlaying: boolean) => void;
   /** 再生ボタンを押したのと同じことを頼む(カウントインを含む) */
   requestTogglePlay: () => void;
   setPlaybackStartScene: (sceneId: string | null) => void;
+  /** 足したことを知らせる。同じシーンをもう一度渡せば光り直す */
+  markSceneAdded: (sceneId: string | null) => void;
   setSceneSheetOpen: (isOpen: boolean) => void;
   /** 使い方の案内を出し直す。押した時刻を入れるだけの合図で、
    * 同じ操作を繰り返しても値が変わるので毎回反応する */
@@ -135,6 +157,7 @@ type UIState = {
   setAddDancerSheetOpen: (isOpen: boolean) => void;
   setTemplateSheetOpen: (isOpen: boolean) => void;
   setExportSheetOpen: (isOpen: boolean) => void;
+  setMusicSheetOpen: (isOpen: boolean) => void;
   /** 確認ダイアログを出す。実行された場合の処理はrequest.onConfirmに持たせる */
   requestConfirm: (request: ConfirmRequest) => void;
   closeConfirm: () => void;
@@ -191,6 +214,7 @@ function persistFromState(
       isStageMarksVisible: state.isStageMarksVisible,
       isBlindSpotCheckVisible: state.isBlindSpotCheckVisible,
       isSwipeSceneChangeEnabled: state.isSwipeSceneChangeEnabled,
+      isTimelineVisible: state.isTimelineVisible,
       ...changed,
     },
     state.viewScopeProjectId,
@@ -211,18 +235,21 @@ export const useUIStore = create<UIState>((set, get) => ({
   isStageMarksVisible: DEFAULT_VIEW_PREFERENCE.isStageMarksVisible,
   isBlindSpotCheckVisible: DEFAULT_VIEW_PREFERENCE.isBlindSpotCheckVisible,
   isSwipeSceneChangeEnabled: DEFAULT_VIEW_PREFERENCE.isSwipeSceneChangeEnabled,
+  isTimelineVisible: DEFAULT_VIEW_PREFERENCE.isTimelineVisible,
   viewScopeProjectId: null,
   isTransitioning: false,
   dragSnapLine: { x: null, y: null },
   isPlaying: false,
   playToggleRequestedAt: null,
   playbackStartSceneId: null,
+  justAddedSceneId: null,
   isSceneSheetOpen: false,
   tourRequestedAt: null,
   guestTourIntent: null,
   isAddDancerSheetOpen: false,
   isTemplateSheetOpen: false,
   isExportSheetOpen: false,
+  isMusicSheetOpen: false,
   confirm: null,
   authDialogMode: null,
 
@@ -264,6 +291,12 @@ export const useUIStore = create<UIState>((set, get) => ({
       const isSwipeSceneChangeEnabled = !state.isSwipeSceneChangeEnabled;
       persistFromState(state, { isSwipeSceneChangeEnabled });
       return { isSwipeSceneChangeEnabled };
+    }),
+  toggleTimelineVisible: () =>
+    set((state) => {
+      const isTimelineVisible = !state.isTimelineVisible;
+      persistFromState(state, { isTimelineVisible });
+      return { isTimelineVisible };
     }),
   togglePathVisible: () =>
     set((state) => {
@@ -314,6 +347,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   setIsPlaying: (isPlaying) => set({ isPlaying }),
   requestTogglePlay: () => set({ playToggleRequestedAt: Date.now() }),
   setPlaybackStartScene: (sceneId) => set({ playbackStartSceneId: sceneId }),
+  markSceneAdded: (sceneId) => set({ justAddedSceneId: sceneId }),
   setSceneSheetOpen: (isOpen) => set({ isSceneSheetOpen: isOpen }),
 
   requestTour: () => set({ tourRequestedAt: Date.now() }),
@@ -321,6 +355,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   setAddDancerSheetOpen: (isOpen) => set({ isAddDancerSheetOpen: isOpen }),
   setTemplateSheetOpen: (isOpen) => set({ isTemplateSheetOpen: isOpen }),
   setExportSheetOpen: (isOpen) => set({ isExportSheetOpen: isOpen }),
+  setMusicSheetOpen: (isOpen) => set({ isMusicSheetOpen: isOpen }),
   requestConfirm: (request) => set({ confirm: request }),
   closeConfirm: () => set({ confirm: null }),
   openAuthDialog: (mode) => set({ authDialogMode: mode }),

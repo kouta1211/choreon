@@ -19,6 +19,7 @@ describe("parseViewPreference", () => {
       isStageMarksVisible: true,
       isBlindSpotCheckVisible: true,
       isSwipeSceneChangeEnabled: true,
+      isTimelineVisible: false,
     });
 
     expect(parseViewPreference(raw)).toEqual({
@@ -27,7 +28,24 @@ describe("parseViewPreference", () => {
       isStageMarksVisible: true,
       isBlindSpotCheckVisible: true,
       isSwipeSceneChangeEnabled: true,
+      isTimelineVisible: false,
     });
+  });
+
+  // 項目を足したときに、前から使っている人の選択が既定へ落ちないこと。
+  // 足りないキーだけを既定で埋める(全部を捨てて既定へ、にしない)
+  it("新しく増えた項目が入っていなくても、ほかの選択は残る", () => {
+    const raw = JSON.stringify({
+      gridMode: "circle",
+      isPathVisible: true,
+    });
+
+    const parsed = parseViewPreference(raw);
+    expect(parsed.gridMode).toBe("circle");
+    expect(parsed.isPathVisible).toBe(true);
+    expect(parsed.isTimelineVisible).toBe(
+      DEFAULT_VIEW_PREFERENCE.isTimelineVisible,
+    );
   });
 
   it("壊れたJSONでも既定に落として画面を止めない", () => {

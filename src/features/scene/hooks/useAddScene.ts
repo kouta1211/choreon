@@ -15,6 +15,8 @@ import {
 } from "@/features/scene/lib/sceneTiming";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
+import { nextSceneName } from "@/features/scene/lib/sceneName";
+import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
  * 「いまの配置をコピーして、新しいシーンを作る」処理。
@@ -41,6 +43,7 @@ import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
  * 直前の配置から始めればシーン切り替えのなめらかな移動アニメーションも活きる。
  */
 export function useAddScene(project: Project) {
+  const t = useT();
   const [isCreating, setIsCreating] = useState(false);
   const scenes = useProjectStore((state) => state.scenes);
   const addScene = useProjectStore((state) => state.addScene);
@@ -83,7 +86,9 @@ export function useAddScene(project: Project) {
     const scene = {
       id: randomId(),
       projectId: project.id,
-      name: `シーン${scenes.length + 1}`,
+      // 件数＋1 ではなく「空いているいちばん小さい番号」。3つ作って
+      // 真ん中を消すと、件数＋1 は既にある名前とぶつかる(sceneName.ts)
+      name: nextSceneName(scenes, t.projects.sceneName),
       // 並び順の正は時刻。order_index は同じ時刻に並んだときの
       // 打ち消し合いを防ぐためだけに残っている
       orderIndex: scenes.length,
@@ -101,6 +106,9 @@ export function useAddScene(project: Project) {
       updateDancerPosition(scene.id, position.dancerId, position);
     }
     selectScene(scene.id);
+    // 増えた場所を一拍光らせる。曲が無いときは**選んでいるシーンの隣**へ
+    // 入るので、末尾へ積まれるのを見慣れた目には増えたのが見えない
+    useUIStore.getState().markSceneAdded(scene.id);
     // 曲が無いときは再生ヘッドも新しいシーンへ動かす。「増えたのが見えない」
     // への答えで、時間軸のピンクの線が新しいコマの上に立つ。
     //

@@ -310,6 +310,50 @@ body::before {
   animation: splash-out 0.32s ease-in 1s forwards;
 }
 
+/* 予備拍の数字(CountInOverlay.tsx)。拍ごとに大きさが落ち着くところまで
+   縮む。映画の頭に出るカウントダウンと同じで、数が変わったことが
+   動きでも分かる。1拍(最短0.25秒)より短く終える */
+@keyframes count-in-beat {
+  from {
+    opacity: 0.2;
+    transform: scale(1.25);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.count-in-beat {
+  animation: count-in-beat 0.22s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .count-in-beat {
+    animation: none;
+  }
+}
+
+/* 足したばかりのシーン(SceneRow.tsx)。曲が無いときの追加は
+   **選んでいるシーンの隣**へ入るので、末尾へ積まれるのを見慣れた目には
+   増えたのが見えない。一拍だけアクセントの縁を広げて、そこを指す。
+   面の色は触らない — 選択中の行と見分けが付かなくなる */
+@keyframes scene-row-added {
+  from {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 70%, transparent);
+  }
+  to {
+    box-shadow: 0 0 0 3px transparent;
+  }
+}
+.scene-row-added {
+  animation: scene-row-added 1.2s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene-row-added {
+    animation: none;
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 70%, transparent);
+  }
+}
+
 /* 設定の階層移動(SettingsSheet.tsx)。潜ると右から、戻ると左から。
    出ていく方は描かない — 1枚しか無い場所で入れ替えているので、
    入ってくる側の動きだけで「どちらへ移ったか」は伝わる。

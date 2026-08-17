@@ -14,7 +14,18 @@ import { MetronomeControls } from "@/components/molecules/MetronomeControls";
 import { BeatsPerBarSegment } from "@/components/molecules/BeatsPerBarSegment";
 import type { Project } from "@/features/project/types";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { useNumberDraft } from "@/components/hooks/useNumberDraft";
+import { numberCorrectionMessage } from "@/components/molecules/SettingsRow";
 import { useT } from "@/features/i18n/LocaleProvider";
+
+/**
+ * 曲の頭出しの範囲(秒)。
+ *
+ * 上限が無いと、指が滑って 100000 と入れた人の曲が二度と鳴らない
+ * (再生位置が曲の終わりより後ろになる)。1時間ぶんあれば足りる。
+ */
+const MIN_MUSIC_OFFSET = 0;
+const MAX_MUSIC_OFFSET = 3600;
 
 type Props = {
   project: Project;
@@ -51,6 +62,13 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
       : project.musicOffsetSeconds,
   );
   const setMusicOffset = useProjectStore((state) => state.setMusicOffset);
+
+  const offsetField = useNumberDraft({
+    value: storedOffset,
+    min: MIN_MUSIC_OFFSET,
+    max: MAX_MUSIC_OFFSET,
+    onChange: (next) => void commitOffset(next),
+  });
 
   const commitOffset = async (value: number) => {
     const previous = storedOffset;
@@ -166,21 +184,14 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
             </span>
             <span className="flex shrink-0 items-center gap-1 rounded-[calc(var(--radius)*0.5833)] border border-line-strong bg-surface-strong px-2 py-1 font-mono text-label text-fg focus-within:border-accent">
               <input
-                key={storedOffset}
                 type="number"
                 inputMode="decimal"
-                min={0}
+                min={MIN_MUSIC_OFFSET}
+                max={MAX_MUSIC_OFFSET}
                 step={0.1}
-                defaultValue={storedOffset}
-                onBlur={(event) => {
-                  const parsed = Number(event.target.value.trim());
-                  // 負の値と数字でない入力は、前の値に戻すだけで何もしない
-                  if (!Number.isFinite(parsed) || parsed < 0) {
-                    event.target.value = String(storedOffset);
-                    return;
-                  }
-                  if (parsed !== storedOffset) void commitOffset(parsed);
-                }}
+                value={offsetField.draft}
+                onChange={(event) => offsetField.setDraft(event.target.value)}
+                onBlur={offsetField.commit}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") event.currentTarget.blur();
                 }}
@@ -191,9 +202,21 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
               </span>
             </span>
           </label>
-          <p className="mt-1.5 text-caption leading-snug text-fg-muted">
-            {t.music.offsetNote}
-
+          {/* 範囲と、直したときの理由。設定の数値欄と同じ作法
+              (useNumberDraft)。**黙って前の値へ戻さない** — 戻すだけだと
+              「打った数が消えた」ようにしか見えない */}
+          <p
+            className={`mt-1.5 text-caption leading-snug ${
+              offsetField.correction ? "text-[var(--dancer-2)]" : "text-fg-muted"
+            }`}
+          >
+            {t.music.offsetNote}{" "}
+            <span className="font-mono">
+              {MIN_MUSIC_OFFSET}–{MAX_MUSIC_OFFSET}
+              {t.music.seconds}
+            </span>
+            {offsetField.correction &&
+              ` · ${numberCorrectionMessage(t, offsetField.correction, MIN_MUSIC_OFFSET, MAX_MUSIC_OFFSET)}`}
           </p>
         </div>
 

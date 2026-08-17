@@ -25,14 +25,47 @@ export const ROW_DRAG_DELAY_MS = 250;
 /** 長押しの間に動いてよい幅。超えたらスクロールのつもりだったと見なす */
 export const ROW_DRAG_TOLERANCE_PX = 8;
 
+function closest(target: EventTarget | null, selector: string): boolean {
+  return target instanceof Element && target.closest(selector) !== null;
+}
+
 /**
- * その場所から掴み始めてよいか。
+ * その場所を押したときに、行を選ぶ操作として扱ってよいか。
  *
- * 行の `onClick`（押した場所がボタンなら選択に飲み込まない）と、下の
- * センサー2つが**同じ判断**を使う。境目の定義が2箇所にあると必ずずれる。
+ * ボタン(鉛筆・複製・削除)と入力欄の上なら、その操作だけを起こす。
  */
-export function isDragStartAllowed(target: EventTarget | null): boolean {
-  return !(target instanceof Element && target.closest("button, input"));
+export function isRowSelectClick(target: EventTarget | null): boolean {
+  return !closest(target, "button, input");
+}
+
+/**
+ * マウスで、その場所から掴み始めてよいか。
+ *
+ * ■ ボタンの上からでも掴める(2026-08-17)
+ * 以前はボタンと入力欄を除いていたので、鉛筆・複製・削除・時刻の欄の上から
+ * 掴むと並び替えが始まらなかった。カードの下半分がほぼボタンなので、
+ * 「カード内のどこをドラッグしてもいいのでは」という指摘はここ。
+ *
+ * マウスは**距離で見分けられる**ので除く理由が無い。8px 動けば並び替え、
+ * 動かずに離せばボタンが押される(距離に届かなければ dnd-kit は
+ * 掴んだことにせず、クリックはそのまま通る)。
+ *
+ * **入力欄だけは除く。** あそこは押したまま横へ引いて文字を選ぶ場所で、
+ * 距離で見分けると文字が選べなくなる。
+ */
+export function isMouseDragStartAllowed(target: EventTarget | null): boolean {
+  return !closest(target, "input");
+}
+
+/**
+ * 指で、その場所から掴み始めてよいか。
+ *
+ * こちらはボタンも除いたまま。指は**長押しで始まる**ので、削除ボタンを
+ * ゆっくり押しただけの人が並び替えを始めてしまい、押したはずのボタンが
+ * 効かない、という取り違えが起きる。距離で見分けられるマウスとは事情が違う。
+ */
+export function isTouchDragStartAllowed(target: EventTarget | null): boolean {
+  return !closest(target, "button, input");
 }
 
 /** マウス用。距離で始まる */
@@ -41,7 +74,7 @@ export class SceneRowMouseSensor extends MouseSensor {
     {
       eventName: "onMouseDown" as const,
       handler: ({ nativeEvent }: ReactMouseEvent) =>
-        isDragStartAllowed(nativeEvent.target),
+        isMouseDragStartAllowed(nativeEvent.target),
     },
   ];
 }
@@ -52,7 +85,7 @@ export class SceneRowTouchSensor extends TouchSensor {
     {
       eventName: "onTouchStart" as const,
       handler: ({ nativeEvent }: ReactTouchEvent) =>
-        isDragStartAllowed(nativeEvent.target),
+        isTouchDragStartAllowed(nativeEvent.target),
     },
   ];
 }

@@ -167,7 +167,7 @@ export const ja = {
       },
       swipe: {
         label: "払ってシーンを送る",
-        description: "ステージを横にドラッグして前後のシーンへ",
+        description: "ステージをドラッグして前後のシーンへ（スマホは横、PCは縦）",
       },
       thisProject: "この作品",
       music: "曲",
@@ -186,6 +186,10 @@ export const ja = {
       sceneSettings: (name: string) => `「${name}」の設定を開く`,
       moveSeconds: (seconds: number) => ` · ${seconds}秒で移動`,
       addScene: "シーンを追加",
+      hideTimeline: "時間軸を畳む",
+      showTimeline: "時間軸を出す",
+      playFromHere: "いま見ているシーンから流す",
+      playFrom: (name: string) => `「${name}」から流す（前回はじめた場所）`,
     },
 
     scenes: {
@@ -244,6 +248,12 @@ export const ja = {
 
   common: {
     close: "閉じる",
+    /** 数を入れる欄で、入れたものを直したときの理由 */
+    numberField: {
+      notANumber: "数を入れてください",
+      tooSmall: (min: number) => `${min} より小さくはできません`,
+      tooLarge: (max: number) => `${max} より大きくはできません`,
+    },
     back: "戻る",
     loading: "読み込み中",
     rename: (label: string) => `${label}を変更`,
@@ -296,6 +306,11 @@ export const ja = {
     tagline: "稽古場で配る隊形図を、曲に合わせて動く形に。",
     guestStart: "ゲストで始める",
     withTour: "使い方の案内から始める",
+    tourAsk: {
+      title: "使い方の案内を見ますか？",
+      body: "ステージ・ダンサー・シーンの3つを、実際の画面を指しながら1分ほどで案内します。",
+      withTour: "案内から始める",
+    },
     guestNote: "登録は要りません。作ったものはこの端末にだけ残ります。",
     or: "または",
   },
@@ -513,7 +528,11 @@ export const ja = {
     running: (seconds: number) =>
       `書き出し中… 残り ${seconds}秒。この画面を閉じずにお待ちください。`,
     cancel: "中止する",
-    note: "書き出しには作品と同じだけ時間がかかります(実際に動かしながら録っているため)。音は入りません。",
+    note: "書き出しには作品と同じだけ時間がかかります(実際に動かしながら録っているため)。",
+    contains:
+      "入るのは、ステージ・格子・ダンサー(向きの三角つき)・上下の札・時刻です。",
+    omits:
+      "入らないもの: 音（曲もクリックも）／導線／バミリ／顔被りの印。曲は端末の中にしか無く、共有しない約束のものなので、動画に焼き込みません。",
     saved: "動画を保存しました",
     failed: "書き出しに失敗しました",
   },
@@ -662,7 +681,7 @@ export const ja = {
       summary: "カウントイン・既定の速さ・シーンの間隔",
       countIn: {
         label: "カウントイン",
-        description: "再生を押してから、実際に動き出すまでに鳴らす拍",
+        description: "再生を押してから、実際に動き出すまでに鳴らす拍。画面の真ん中に残りが出ます。曲を入れていない作品では、数え終わったあとも「クリックを鳴らす」を入れていれば拍が続きます（曲があるときは曲だけが鳴ります）",
         off: "なし",
         beats: (n: number) => `${n}拍`,
       },
@@ -705,7 +724,7 @@ export const ja = {
       },
       swipe: {
         label: "払ってシーンを送る",
-        description: "ステージを横になぞると、前後のシーンへ移ります",
+        description: "ステージをなぞると、前後のシーンへ移ります（スマホは横、PCは縦）",
       },
     },
 

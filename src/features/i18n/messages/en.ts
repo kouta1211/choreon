@@ -156,7 +156,7 @@ export const en = {
       },
       swipe: {
         label: "Swipe to change scene",
-        description: "Drag across the stage for the next or previous scene",
+        description: "Drag the stage for the next or previous scene (sideways on phones, up and down on desktop)",
       },
       thisProject: "This piece",
       music: "Music",
@@ -175,6 +175,10 @@ export const en = {
       sceneSettings: (name: string) => `Open the settings for “${name}”`,
       moveSeconds: (seconds: number) => ` · ${seconds}s to get there`,
       addScene: "Add a scene",
+      hideTimeline: "Collapse the timeline",
+      showTimeline: "Show the timeline",
+      playFromHere: "Play from the scene you are on",
+      playFrom: (name: string) => `Play from "${name}" (where you started last time)`,
     },
 
     scenes: {
@@ -232,6 +236,11 @@ export const en = {
 
   common: {
     close: "Close",
+    numberField: {
+      notANumber: "Please enter a number",
+      tooSmall: (min: number) => `Cannot go below ${min}`,
+      tooLarge: (max: number) => `Cannot go above ${max}`,
+    },
     back: "Back",
     loading: "Loading",
     rename: (label: string) => `Change the ${label}`,
@@ -283,6 +292,11 @@ export const en = {
     tagline: "The formation sheets you hand out at rehearsal, moving in time with the track.",
     guestStart: "Start as a guest",
     withTour: "Start with the walkthrough",
+    tourAsk: {
+      title: "Want a quick walkthrough?",
+      body: "About a minute, pointing at the real screen: the stage, the dancers, and the scenes.",
+      withTour: "Show me around",
+    },
     guestNote: "No account needed. What you make stays on this device.",
     or: "or",
   },
@@ -504,7 +518,11 @@ export const en = {
     running: (seconds: number) =>
       `Recording… ${seconds}s left. Please keep this screen open.`,
     cancel: "Stop",
-    note: "Recording takes as long as the piece itself, because it is played through as it records. There is no sound.",
+    note: "Recording takes as long as the piece itself, because it is played through as it records.",
+    contains:
+      "In the video: the stage, the grid, the dancers (with their facing triangle), the upstage/downstage labels, and the clock.",
+    omits:
+      "Not in the video: sound (neither the track nor the clicks), paths, floor marks, or blind-spot badges. The track lives only on this device and is deliberately not shared, so it is not burned in.",
     saved: "Video saved",
     failed: "Could not record the video",
   },
@@ -655,7 +673,7 @@ export const en = {
       countIn: {
         label: "Count-in",
         description:
-          "Beats to sound after you press play, before anything starts moving.",
+          "Beats to sound after you press play, before anything starts moving. The count shows in the middle of the screen. In pieces with no track, the clicks carry on afterwards if \"Sound the click\" is on (with a track, only the track plays).",
         off: "Off",
         beats: (n: number) => `${n} beats`,
       },
@@ -701,7 +719,7 @@ export const en = {
       },
       swipe: {
         label: "Swipe to change scene",
-        description: "Drag across the stage to move to the next or previous scene.",
+        description: "Drag the stage to move to the next or previous scene (sideways on phones, up and down on desktop).",
       },
     },
 
