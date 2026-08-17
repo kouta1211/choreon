@@ -28,6 +28,11 @@ import { useT } from "@/features/i18n/LocaleProvider";
  * 印は1人に1つだが、**見てもらった結果は指摘が何件も並ぶ**。
  * hooks は数を変えて呼べないので、相手はフックの引数ではなく関数の引数で
  * 受ける。逃げ先の計算がここ1箇所に残る形も、そのまま保てる。
+ *
+ * ■ どのシーンか、も渡せる
+ * 作品ぜんぶを見てもらうと、**指摘の相手が「いま開いていないシーン」**に
+ * なる。開いているシーンを前提にすると、押した瞬間に**別の場面が動く**。
+ * 既定はいま開いているシーンのまま（印から押す道は変わらない）。
  */
 export function useClearBlindSpot() {
   const t = useT();
@@ -40,12 +45,15 @@ export function useClearBlindSpot() {
   );
   const commitPositions = usePositionCommit();
 
-  const positions = selectedSceneId
-    ? (positionsBySceneId[selectedSceneId] ?? {})
-    : {};
+  const positionsIn = (sceneId: string | null) =>
+    sceneId ? (positionsBySceneId[sceneId] ?? {}) : {};
 
   /** 逃げ先の x。逃げ場が無ければ null（＝ボタンを置かない） */
-  const suggestXFor = (dancerId: string): number | null => {
+  const suggestXFor = (
+    dancerId: string,
+    sceneId: string | null = selectedSceneId,
+  ): number | null => {
+    const positions = positionsIn(sceneId);
     const before = positions[dancerId];
     if (!before || stageWidth === null) return null;
     return clearBlindSpotX(
@@ -57,14 +65,17 @@ export function useClearBlindSpot() {
     );
   };
 
-  const moveOut = async (dancerId: string) => {
-    const before = positions[dancerId];
-    const suggestedX = suggestXFor(dancerId);
-    if (!before || !selectedSceneId || suggestedX === null) return;
+  const moveOut = async (
+    dancerId: string,
+    sceneId: string | null = selectedSceneId,
+  ) => {
+    const before = positionsIn(sceneId)[dancerId];
+    const suggestedX = suggestXFor(dancerId, sceneId);
+    if (!before || !sceneId || suggestedX === null) return;
     await commitPositions({
       changes: [
         {
-          sceneId: selectedSceneId,
+          sceneId,
           dancerId,
           before,
           after: { ...before, xCoordinate: suggestedX },

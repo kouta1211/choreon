@@ -23,27 +23,45 @@ import type { MoveStrain } from "@/features/canvas/lib/physicalLimits";
  * この区間だけ延ばすと次のシーンを追い越して順番が入れ替わる。
  * 「間に合わないから時間をください」という直しなので、後ろへ送る方が
  * 意図に近い。
+ *
+ * ■ どのシーンか、を渡せる
+ * 作品ぜんぶを見てもらうと、**指摘の相手が「いま開いていないシーン」**に
+ * なる。開いているシーンを前提にすると、押した瞬間に**別の区間が延びる**。
+ * 既定はいま開いているシーンのまま（印から押す道は変わらない）。
  */
 export function useExtendMoveTime() {
   const scenes = useProjectStore((state) => state.scenes);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const { changeSegmentSeconds } = useSceneActions();
 
-  const index = scenes.findIndex((scene) => scene.id === selectedSceneId);
-  /** 速すぎる移動は「いまのシーン → 次のシーン」なので、延ばすのは次の側 */
-  const nextScene = index >= 0 ? (scenes[index + 1] ?? null) : null;
+  /** 速すぎる移動は「そのシーン → 次のシーン」なので、延ばすのは次の側 */
+  const nextSceneOf = (sceneId: string | null) => {
+    const index = scenes.findIndex((scene) => scene.id === sceneId);
+    return index >= 0 ? (scenes[index + 1] ?? null) : null;
+  };
 
-  const suggestFor = (strain: MoveStrain): number | null => {
-    if (!nextScene) return null;
+  const suggestFor = (
+    strain: MoveStrain,
+    sceneId: string | null = selectedSceneId,
+  ): number | null => {
+    if (!nextSceneOf(sceneId)) return null;
     const seconds = comfortableSeconds(strain.distanceMeters);
     // 既にそれ以上の時間があるなら、延ばす提案にならない
     return seconds > strain.seconds ? seconds : null;
   };
 
-  const extendTo = async (seconds: number) => {
+  const extendTo = async (
+    seconds: number,
+    sceneId: string | null = selectedSceneId,
+  ) => {
+    const nextScene = nextSceneOf(sceneId);
     if (!nextScene) return;
     await changeSegmentSeconds(nextScene, seconds, true, true);
   };
 
-  return { suggestFor, extendTo, canExtend: nextScene !== null };
+  return {
+    suggestFor,
+    extendTo,
+    canExtend: nextSceneOf(selectedSceneId) !== null,
+  };
 }

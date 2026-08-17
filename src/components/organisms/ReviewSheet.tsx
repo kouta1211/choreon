@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import { BottomSheet } from "@/components/molecules/BottomSheet";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { SegmentedControl } from "@/components/atoms/SegmentedControl";
 import { ReviewFindingCard } from "@/components/molecules/ReviewFindingCard";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
@@ -11,11 +12,13 @@ import { useExtendMoveTime } from "@/features/canvas/hooks/useExtendMoveTime";
 import { useClearBlindSpot } from "@/features/canvas/hooks/useClearBlindSpot";
 import { findExcessiveMoves } from "@/features/canvas/lib/physicalLimits";
 import { buildFormationSummary } from "@/features/review/lib/formationSummary";
+import { buildPieceSummary } from "@/features/review/lib/pieceSummary";
 import type {
   ReviewFinding,
   ReviewResult,
 } from "@/features/review/lib/reviewFindings";
 import type { Project } from "@/features/project/types";
+import type { Scene } from "@/features/scene/types";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
@@ -24,8 +27,11 @@ type Props = {
   onClose: () => void;
 };
 
+/** 1シーンだけか、作品ぜんぶか */
+type Scope = "scene" | "piece";
+
 /**
- * いま見ている隊形を、AIに一度だけ見てもらう。
+ * 隊形を、AIに一度だけ見てもらう。
  *
  * ■ 押したときだけ送る
  * 触るたびに送ると、料金も待ち時間も積み上がる。それ以上に、
@@ -35,6 +41,12 @@ type Props = {
  * 振付に正解は無いので、「直すべき」ではなく「こうすると こうなる」を
  * 返させている(プロンプトは /api/review にある)。数字はアプリが
  * 計算したものだけを渡し、AIには数えさせない。
+ *
+ * ■ 範囲が2つある
+ * **このシーン**は「この配置はどう見えるか」。**作品ぜんぶ**は
+ * 「並びと流れ」— 同じ形が続いていないか、移動時間の配り方はどうか。
+ * 作品ぜんぶでは**立ち位置そのものを送らない**（散り具合・重心・警告だけ）。
+ * 30シーン分の座標を送ると、返事の質より先に上限に当たる。
  *
  * ■ 指摘ごとに「当てる／当てない」を決める
  * 指摘が1件ずつ分かれて返ってくるので、当てられるものにはボタンを付ける。
@@ -51,7 +63,9 @@ export function ReviewSheet({ project, isOpen, onClose }: Props) {
     (state) => state.positionsBySceneId,
   );
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
+  const selectScene = useUIStore((state) => state.selectScene);
 
+  const [scope, setScope] = useState<Scope>("scene");
   const [review, setReview] = useState<ReviewResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
@@ -61,16 +75,8 @@ export function ReviewSheet({ project, isOpen, onClose }: Props) {
   const { suggestFor, extendTo } = useExtendMoveTime();
   const { suggestXFor, moveOut } = useClearBlindSpot();
 
-  const index = scenes.findIndex((scene) => scene.id === selectedSceneId);
+  const index = scenes.findIndex((item) => item.id === selectedSceneId);
   const scene = index >= 0 ? scenes[index] : null;
-  const nextScene = scenes[index + 1] ?? null;
-  const positions = scene ? (positionsBySceneId[scene.id] ?? {}) : {};
-  const nextPositions = nextScene
-    ? (positionsBySceneId[nextScene.id] ?? {})
-    : {};
-  /** 次のシーンまでの秒数。速すぎる移動は「いま → 次」の話なので、無ければ0 */
-  const segmentSeconds =
-    scene && nextScene ? nextScene.timeSeconds - scene.timeSeconds : 0;
 
   /**
    * 名前 → ID。
@@ -87,43 +93,90 @@ export function ReviewSheet({ project, isOpen, onClose }: Props) {
   };
 
   /**
-   * 直しのボタンを1件ぶん作る。作らない（null）こともある。
+   * その指摘が指しているシーン。
+   *
+   * 作品ぜんぶのときは返事の番号（1から）で、このシーンのときはいま開いて
+   * いるシーン。**番号は画面左の 01 / 02 と同じ並び順**にしてある。
+   */
+  const sceneFor = (finding: ReviewFinding): Scene | null =>
+    finding.sceneNumber ? (scenes[finding.sceneNumber - 1] ?? null) : scene;
+
+  /**
+   * 直しのボタンを1件ぶん作る。作らない（undefined）こともある。
    *
    * ここが**いまの隊形**を見ている点が要点。返事を待っている間に user が
    * 自分で直していれば、速すぎる移動も顔被りも消えているので、
    * ボタンは出ない。返ってきた時点の状態でボタンを出すと、
    * 押しても何も起きない／別の場所が動く、になる。
+   *
+   * 作品ぜんぶのときは、**指摘が指しているシーンへ当てる**（いま開いて
+   * いるシーンではない）。ここを取り違えると、関係の無い場面が動く。
    */
   const actionFor = (finding: ReviewFinding) => {
     if (!finding.fix) return undefined;
+    const target = sceneFor(finding);
+    if (!target) return undefined;
     const dancerId = idForName(finding.fix.dancerName);
     if (!dancerId) return undefined;
 
     if (finding.fix.kind === "clearBlindSpot") {
-      if (suggestXFor(dancerId) === null) return undefined;
+      if (suggestXFor(dancerId, target.id) === null) return undefined;
       return {
         label: t.dancer.badges.blindSpot.moveOut,
-        run: () => moveOut(dancerId),
+        run: () => moveOut(dancerId, target.id),
       };
     }
 
     // retime: 何秒に延ばすかはアプリが計算する
+    const targetIndex = scenes.findIndex((item) => item.id === target.id);
+    const nextScene = scenes[targetIndex + 1] ?? null;
+    if (!nextScene) return undefined;
+    const segmentSeconds = nextScene.timeSeconds - target.timeSeconds;
     if (segmentSeconds <= 0) return undefined;
+
     const strain = findExcessiveMoves(
-      positions,
-      nextPositions,
+      positionsBySceneId[target.id] ?? {},
+      positionsBySceneId[nextScene.id] ?? {},
       segmentSeconds,
     ).get(dancerId);
     if (!strain) return undefined;
-    const seconds = suggestFor(strain);
+    const seconds = suggestFor(strain, target.id);
     if (seconds === null) return undefined;
     return {
       label: t.dancer.badges.excessiveMove.extend(seconds),
-      run: () => extendTo(seconds),
+      run: () => extendTo(seconds, target.id),
     };
   };
 
+  /** 送るもの。どちらの範囲でも**座標は最小限**にしてある */
+  const buildBody = (current: Scene) =>
+    scope === "piece"
+      ? {
+          piece: buildPieceSummary({
+            scenes,
+            dancers,
+            positionsBySceneId,
+            stageWidth: project.stageWidth,
+            stageHeight: project.stageHeight,
+          }),
+        }
+      : {
+          summary: buildFormationSummary({
+            scene: current,
+            previousScene: scenes[index - 1] ?? null,
+            nextScene: scenes[index + 1] ?? null,
+            dancers,
+            positions: positionsBySceneId[current.id] ?? {},
+            nextPositions: scenes[index + 1]
+              ? (positionsBySceneId[scenes[index + 1].id] ?? {})
+              : {},
+            stageWidth: project.stageWidth,
+            stageHeight: project.stageHeight,
+          }),
+        };
+
   const run = async () => {
+    // 作品ぜんぶでもシーンは要る（1シーンぶんの組み立てに使う）
     if (!scene) return;
     setIsRunning(true);
     setError(null);
@@ -131,21 +184,10 @@ export function ReviewSheet({ project, isOpen, onClose }: Props) {
     setAppliedIndexes([]);
 
     try {
-      const summary = buildFormationSummary({
-        scene,
-        previousScene: scenes[index - 1] ?? null,
-        nextScene,
-        dancers,
-        positions,
-        nextPositions,
-        stageWidth: project.stageWidth,
-        stageHeight: project.stageHeight,
-      });
-
       const response = await fetch("/api/review", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ summary }),
+        body: JSON.stringify(buildBody(scene)),
       });
       const data = (await response.json()) as {
         review?: ReviewResult;
@@ -173,10 +215,32 @@ export function ReviewSheet({ project, isOpen, onClose }: Props) {
       isOpen={isOpen}
       onClose={onClose}
       title={t.review.title}
-      titleRight={scene?.name}
+      titleRight={scope === "piece" ? t.review.wholePiece : scene?.name}
     >
       <div className="flex flex-col gap-3 px-[18px] py-4">
-        <p className="text-label leading-[1.65] text-fg-sub">{t.review.note}</p>
+        {/* シーンが2つ以上ないと「流れ」の話にならない */}
+        {scenes.length > 1 && (
+          <SegmentedControl
+            label={t.review.scope}
+            value={scope}
+            onChange={(next) => {
+              setScope(next);
+              // 範囲を変えたら前の返事は別の話になる。残すと、どちらの
+              // 話なのか読めない板が出たままになる
+              setReview(null);
+              setError(null);
+              setAppliedIndexes([]);
+            }}
+            options={[
+              { value: "scene", label: t.review.scopeScene },
+              { value: "piece", label: t.review.scopePiece },
+            ]}
+          />
+        )}
+
+        <p className="text-label leading-[1.65] text-fg-sub">
+          {scope === "piece" ? t.review.scopePieceNote : t.review.note}
+        </p>
 
         {review?.summary && (
           <p className="text-label leading-[1.75] font-semibold text-fg-strong">
@@ -186,14 +250,32 @@ export function ReviewSheet({ project, isOpen, onClose }: Props) {
 
         {review?.findings.map((finding, position) => {
           const action = actionFor(finding);
+          const target = finding.sceneNumber ? sceneFor(finding) : null;
           return (
             <ReviewFindingCard
               key={position}
               tone={finding.tone}
-              toneLabel={finding.tone === "good" ? t.review.good : t.review.watch}
+              toneLabel={
+                finding.tone === "good" ? t.review.good : t.review.watch
+              }
               text={finding.text}
               appliedLabel={t.review.applied}
               isApplied={appliedIndexes.includes(position)}
+              scene={
+                target && finding.sceneNumber
+                  ? {
+                      label: t.review.inScene(
+                        finding.sceneNumber,
+                        target.name,
+                      ),
+                      // 開いているシーンなら、押しても何も起きない
+                      onOpen:
+                        target.id === selectedSceneId
+                          ? undefined
+                          : () => selectScene(target.id),
+                    }
+                  : undefined
+              }
               action={
                 action && {
                   label: action.label,

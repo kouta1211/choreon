@@ -37,6 +37,13 @@ export type ReviewFinding = {
   tone: "good" | "watch";
   text: string;
   fix: ReviewFix | null;
+  /**
+   * どのシーンの話か。1から。作品ぜんぶを見てもらったときだけ入る。
+   *
+   * **名前ではなく番号で受ける** — 名前は user が変えられるし、同じ名前を
+   * 2つ付けることもできる。番号は画面左の 01 / 02 と同じ並び順。
+   */
+  sceneNumber?: number;
 };
 
 export type ReviewResult = {
@@ -51,6 +58,13 @@ export type ReviewResult = {
  * **受け取る側でも止める**（相手の言うことを上限にしない）。
  */
 const MAX_FINDINGS = 4;
+
+/**
+ * 作品ぜんぶを見てもらったときの上限。
+ * シーンの数だけ言うことがあるので1シーンぶんより多いが、**画面が
+ * 際限なく伸びない**ところで止める。読み切れない量は読まれない。
+ */
+const MAX_PIECE_FINDINGS = 6;
 
 /**
  * Gemini へ渡す返答の型（OpenAPI の部分集合）。
@@ -83,11 +97,56 @@ export const REVIEW_RESPONSE_SCHEMA = {
   propertyOrdering: ["summary", "findings"],
 } as const;
 
+/**
+ * 作品ぜんぶを見てもらったときの型。
+ *
+ * 1シーンぶんとの違いは `sceneNumber` だけ。**別の型にしてあるのは、
+ * 1シーンの返事に番号が混ざらないようにするため** — 混ざると「いま開いて
+ * いるシーンの話なのに、別のシーンへ飛ぶボタン」が出かねない。
+ */
+export const PIECE_RESPONSE_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    summary: { type: "STRING" },
+    findings: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        properties: {
+          /** 何番目のシーンの話か。作品ぜんぶに関わる話なら 0 */
+          sceneNumber: { type: "INTEGER" },
+          tone: { type: "STRING", enum: ["good", "watch"] },
+          text: { type: "STRING" },
+          fixKind: { type: "STRING", enum: ["retime", "clearBlindSpot", "none"] },
+          fixDancerName: { type: "STRING" },
+        },
+        required: [
+          "sceneNumber",
+          "tone",
+          "text",
+          "fixKind",
+          "fixDancerName",
+        ],
+        propertyOrdering: [
+          "sceneNumber",
+          "tone",
+          "text",
+          "fixKind",
+          "fixDancerName",
+        ],
+      },
+    },
+  },
+  required: ["summary", "findings"],
+  propertyOrdering: ["summary", "findings"],
+} as const;
+
 type RawFinding = {
   tone?: unknown;
   text?: unknown;
   fixKind?: unknown;
   fixDancerName?: unknown;
+  sceneNumber?: unknown;
 };
 
 /**
@@ -122,17 +181,10 @@ function fixFor(
   return null;
 }
 
-/**
- * 返ってきた本文を、指摘の並びへ。
- *
- * 読めなかったら null を返す。**呼ぶ側は本文をそのまま summary として
- * 出す**ので、解析に失敗しても「診断が取れませんでした」にはしない
- * （読める文章が手元にあるのに捨てるのは、user の待ち時間を無駄にする）。
- */
-export function parseReviewResponse(
+/** 封筒を開けるところ。読めなければ null（呼ぶ側が本文をそのまま出す） */
+function readEnvelope(
   raw: string,
-  facts: FormationSummary["facts"],
-): ReviewResult | null {
+): { summary: string; list: unknown[] } | null {
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
@@ -142,26 +194,104 @@ export function parseReviewResponse(
   if (!parsed || typeof parsed !== "object") return null;
 
   const object = parsed as { summary?: unknown; findings?: unknown };
-  const summary =
-    typeof object.summary === "string" ? object.summary.trim() : "";
-  const list = Array.isArray(object.findings) ? object.findings : [];
+  return {
+    summary: typeof object.summary === "string" ? object.summary.trim() : "",
+    list: Array.isArray(object.findings) ? object.findings : [],
+  };
+}
 
-  const findings = list
+/** 1件を、文と tone まで読む。文が空なら null */
+function readFinding(
+  item: unknown,
+): { raw: RawFinding; text: string; tone: ReviewFinding["tone"] } | null {
+  if (!item || typeof item !== "object") return null;
+  const raw = item as RawFinding;
+  const text = typeof raw.text === "string" ? raw.text.trim() : "";
+  if (!text) return null;
+  // 未知の値は「気になるところ」に寄せる。良いところとして
+  // 出してしまうより、読んで判断してもらう側が安全
+  return { raw, text, tone: raw.tone === "good" ? "good" : "watch" };
+}
+
+/**
+ * 1シーンぶんの返事を、指摘の並びへ。
+ *
+ * 読めなかったら null を返す。**呼ぶ側は本文をそのまま summary として
+ * 出す**ので、解析に失敗しても「診断が取れませんでした」にはしない
+ * （読める文章が手元にあるのに捨てるのは、user の待ち時間を無駄にする）。
+ */
+export function parseReviewResponse(
+  raw: string,
+  facts: FormationSummary["facts"],
+): ReviewResult | null {
+  const envelope = readEnvelope(raw);
+  if (!envelope) return null;
+
+  const findings = envelope.list
     .flatMap((item): ReviewFinding[] => {
-      if (!item || typeof item !== "object") return [];
-      const raw = item as RawFinding;
-      const text = typeof raw.text === "string" ? raw.text.trim() : "";
-      if (!text) return [];
-      // 未知の値は「気になるところ」に寄せる。良いところとして
-      // 出してしまうより、読んで判断してもらう側が安全
-      const tone = raw.tone === "good" ? "good" : "watch";
-      return [{ tone, text, fix: fixFor(raw, tone, facts) }];
+      const read = readFinding(item);
+      if (!read) return [];
+      return [
+        {
+          tone: read.tone,
+          text: read.text,
+          fix: fixFor(read.raw, read.tone, facts),
+        },
+      ];
     })
     .slice(0, MAX_FINDINGS);
 
   // 中身が何も無いなら、解析できたと言えない
-  if (!summary && findings.length === 0) return null;
-  return { summary, findings };
+  if (!envelope.summary && findings.length === 0) return null;
+  return { summary: envelope.summary, findings };
+}
+
+/**
+ * 作品ぜんぶの返事を、指摘の並びへ。
+ *
+ * ■ 直しは「そのシーンの事実」に当てて濾す
+ * 1シーンぶんとの違いはここ。**シーンを間違えた直しは、当たらないどころか
+ * 関係の無い場面を壊す**（3番のシーンの話だと言って5番のシーンを動かす）。
+ * 番号が読めなかった指摘は、文だけ残してボタンを落とす。
+ *
+ * 番号 0 は「作品ぜんぶに関わる話」。その場合もボタンは出さない
+ * （どのシーンを直すのか決まらない）。
+ */
+export function parsePieceResponse(
+  raw: string,
+  scenes: { number: number; facts: FormationSummary["facts"] }[],
+): ReviewResult | null {
+  const envelope = readEnvelope(raw);
+  if (!envelope) return null;
+
+  const byNumber = new Map(scenes.map((scene) => [scene.number, scene.facts]));
+
+  const findings = envelope.list
+    .flatMap((item): ReviewFinding[] => {
+      const read = readFinding(item);
+      if (!read) return [];
+
+      const number =
+        typeof read.raw.sceneNumber === "number" &&
+        Number.isInteger(read.raw.sceneNumber)
+          ? read.raw.sceneNumber
+          : 0;
+      const facts = byNumber.get(number);
+
+      return [
+        {
+          tone: read.tone,
+          text: read.text,
+          // 知らない番号なら、そのシーンの事実が引けない = 濾せない
+          fix: facts ? fixFor(read.raw, read.tone, facts) : null,
+          ...(facts ? { sceneNumber: number } : {}),
+        },
+      ];
+    })
+    .slice(0, MAX_PIECE_FINDINGS);
+
+  if (!envelope.summary && findings.length === 0) return null;
+  return { summary: envelope.summary, findings };
 }
 
 /**

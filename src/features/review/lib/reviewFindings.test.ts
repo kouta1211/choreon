@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   flattenReview,
+  parsePieceResponse,
   parseReviewResponse,
   type ReviewResult,
 } from "./reviewFindings";
@@ -163,5 +164,115 @@ describe("flattenReview", () => {
     expect(flattenReview(review)).toBe(
       "まとまっています\n- 間隔が揃っています\n- 8番が隠れます",
     );
+  });
+});
+
+/**
+ * 作品ぜんぶの返事。1シーンぶんとの違いは**シーンを取り違えないこと**。
+ *
+ * シーンを間違えた直しは、当たらないどころか**関係の無い場面を壊す**
+ * （3番のシーンの話だと言って5番のシーンを動かす）。ここが濾せていないと、
+ * 「AIに任せたら作品が壊れた」になる。
+ */
+const PIECE_SCENES = [
+  { number: 1, facts: { hiddenDancers: [] as string[], fastMoves: [] as { name: string; meters: number; seconds: number }[] } },
+  { number: 2, facts: { hiddenDancers: ["8"], fastMoves: [] } },
+  { number: 3, facts: { hiddenDancers: [], fastMoves: [{ name: "3", meters: 7.2, seconds: 0.6 }] } },
+];
+
+describe("parsePieceResponse", () => {
+  it("指摘にシーン番号が付く", () => {
+    const result = parsePieceResponse(
+      raw([
+        { sceneNumber: 2, tone: "watch", text: "8番が隠れます", fixKind: "clearBlindSpot", fixDancerName: "8" },
+      ]),
+      PIECE_SCENES,
+    );
+
+    expect(result?.findings[0].sceneNumber).toBe(2);
+    expect(result?.findings[0].fix).toEqual({
+      kind: "clearBlindSpot",
+      dancerName: "8",
+    });
+  });
+
+  /** ★ここが本題 */
+  it("そのシーンの事実に載っていない直しは、落とす", () => {
+    const result = parsePieceResponse(
+      raw([
+        // 8番の顔被りは2番のシーンの話。3番のシーンには無い
+        { sceneNumber: 3, tone: "watch", text: "8番が隠れます", fixKind: "clearBlindSpot", fixDancerName: "8" },
+      ]),
+      PIECE_SCENES,
+    );
+
+    expect(result?.findings[0].sceneNumber).toBe(3);
+    expect(result?.findings[0].fix).toBeNull();
+  });
+
+  it("知らないシーン番号なら、番号も直しも落とす", () => {
+    const result = parsePieceResponse(
+      raw([
+        { sceneNumber: 9, tone: "watch", text: "9番目のシーンが…", fixKind: "clearBlindSpot", fixDancerName: "8" },
+      ]),
+      PIECE_SCENES,
+    );
+
+    // 文は残す。読む価値はある
+    expect(result?.findings[0].text).toBe("9番目のシーンが…");
+    expect(result?.findings[0].sceneNumber).toBeUndefined();
+    expect(result?.findings[0].fix).toBeNull();
+  });
+
+  /** 0 は「作品ぜんぶに関わる話」。どのシーンを直すのか決まらない */
+  it("シーン番号0は、どのシーンも指さない", () => {
+    const result = parsePieceResponse(
+      raw([
+        { sceneNumber: 0, tone: "watch", text: "同じ散りが3シーン続きます", fixKind: "none", fixDancerName: "" },
+      ]),
+      PIECE_SCENES,
+    );
+
+    expect(result?.findings[0].sceneNumber).toBeUndefined();
+    expect(result?.findings[0].fix).toBeNull();
+  });
+
+  it("速すぎる移動の直しも、そのシーンの事実で濾す", () => {
+    const result = parsePieceResponse(
+      raw([
+        { sceneNumber: 3, tone: "watch", text: "3番が急ぎます", fixKind: "retime", fixDancerName: "3" },
+        { sceneNumber: 2, tone: "watch", text: "3番が急ぎます", fixKind: "retime", fixDancerName: "3" },
+      ]),
+      PIECE_SCENES,
+    );
+
+    expect(result?.findings[0].fix).toEqual({ kind: "retime", dancerName: "3" });
+    // 2番のシーンには速すぎる移動が無い
+    expect(result?.findings[1].fix).toBeNull();
+  });
+
+  /** 1シーンぶんより多いが、際限なく伸ばさない */
+  it("多く返ってきても、6件で止める", () => {
+    const many = Array.from({ length: 12 }, (_, i) => ({
+      sceneNumber: 1,
+      tone: "watch",
+      text: `指摘${i}`,
+      fixKind: "none",
+      fixDancerName: "",
+    }));
+
+    expect(parsePieceResponse(raw(many), PIECE_SCENES)?.findings).toHaveLength(6);
+  });
+
+  it("小数のシーン番号は、番号として扱わない", () => {
+    const result = parsePieceResponse(
+      raw([
+        { sceneNumber: 2.5, tone: "watch", text: "どこかの話", fixKind: "clearBlindSpot", fixDancerName: "8" },
+      ]),
+      PIECE_SCENES,
+    );
+
+    expect(result?.findings[0].sceneNumber).toBeUndefined();
+    expect(result?.findings[0].fix).toBeNull();
   });
 });

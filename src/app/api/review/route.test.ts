@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "./route";
 import type { FormationSummary } from "@/features/review/lib/formationSummary";
+import type { PieceSummary } from "@/features/review/lib/pieceSummary";
 
 /**
  * 見てもらう口のテスト。
@@ -189,6 +190,152 @@ describe("POST /api/review", () => {
 
     expect(response.status).toBe(400);
     // 上流を呼んでいない（料金も待ち時間も使わない）
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * 作品ぜんぶを見てもらう側。
+ *
+ * 口は1つのまま（鍵・ログイン・打ち切り・断りの文言は共通）で、
+ * **何を渡してどう濾すか**だけが違う。ここで見るのはその分岐。
+ */
+const PIECE: PieceSummary = {
+  sceneCount: 2,
+  totalSeconds: 4,
+  dancerNames: ["8", "2"],
+  scenes: [
+    {
+      number: 1,
+      name: "出",
+      timeSeconds: 0,
+      segmentSeconds: null,
+      dancerCount: 2,
+      spreadX: 6,
+      spreadY: 0,
+      centreX: 0,
+      centreY: 0,
+      facts: { hiddenDancers: [], fastMoves: [] },
+    },
+    {
+      number: 2,
+      name: "サビ",
+      timeSeconds: 4,
+      segmentSeconds: 4,
+      dancerCount: 2,
+      spreadX: 0,
+      spreadY: 4,
+      centreX: 0,
+      centreY: -2,
+      facts: { hiddenDancers: ["8"], fastMoves: [] },
+    },
+  ],
+};
+
+function pieceRequest(piece: PieceSummary = PIECE): Request {
+  return new Request("http://localhost/api/review", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ piece }),
+  });
+}
+
+const PIECE_REPLY = JSON.stringify({
+  summary: "散りの変化は付いています",
+  findings: [
+    {
+      sceneNumber: 2,
+      tone: "watch",
+      text: "サビで8番が隠れます",
+      fixKind: "clearBlindSpot",
+      fixDancerName: "8",
+    },
+  ],
+});
+
+describe("POST /api/review（作品ぜんぶ）", () => {
+  it("シーン番号付きの指摘を返す", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(upstream(PIECE_REPLY)));
+
+    const data = (await (await POST(pieceRequest())).json()) as {
+      review: { findings: { sceneNumber?: number; fix: unknown }[] };
+    };
+
+    expect(data.review.findings[0].sceneNumber).toBe(2);
+    expect(data.review.findings[0].fix).toEqual({
+      kind: "clearBlindSpot",
+      dancerName: "8",
+    });
+  });
+
+  /** 1シーンぶんとは違う指示・違う型を渡している */
+  it("流れを見る指示と、番号付きの型で頼む", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(upstream(PIECE_REPLY));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await POST(pieceRequest());
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string) as {
+      systemInstruction: { parts: { text: string }[] };
+      contents: { parts: { text: string }[] }[];
+      generationConfig: { responseSchema: { properties: { findings: unknown } } };
+    };
+    expect(body.systemInstruction.parts[0].text).toContain("並びと流れ");
+    // 全シーンが1行ずつ入っている
+    expect(body.contents[0].parts[0].text).toContain("1. 「出」");
+    expect(body.contents[0].parts[0].text).toContain("2. 「サビ」");
+    // 型に sceneNumber がある
+    expect(
+      JSON.stringify(body.generationConfig.responseSchema),
+    ).toContain("sceneNumber");
+  });
+
+  /** シーンを取り違えた直しは、関係の無い場面を壊す */
+  it("そのシーンの事実に無い直しは、落とす", async () => {
+    const wrongScene = JSON.stringify({
+      summary: "",
+      findings: [
+        {
+          // 8番の顔被りは2番のシーンの話
+          sceneNumber: 1,
+          tone: "watch",
+          text: "出で8番が隠れます",
+          fixKind: "clearBlindSpot",
+          fixDancerName: "8",
+        },
+      ],
+    });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(upstream(wrongScene)));
+
+    const data = (await (await POST(pieceRequest())).json()) as {
+      review: { findings: { fix: unknown }[] };
+    };
+
+    expect(data.review.findings[0].fix).toBeNull();
+  });
+
+  it("誰も置いていない作品は、送る前に断る", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await POST(
+      pieceRequest({
+        ...PIECE,
+        scenes: PIECE.scenes.map((scene) => ({ ...scene, dancerCount: 0 })),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("シーンが空の作品も、送る前に断る", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await POST(pieceRequest({ ...PIECE, scenes: [] }));
+
+    expect(response.status).toBe(400);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

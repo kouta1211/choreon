@@ -268,3 +268,171 @@ describe("ReviewSheet の指摘", () => {
     });
   });
 });
+
+/**
+ * 作品ぜんぶを見てもらったとき。
+ *
+ * ここで守りたいのは1本だけ ——
+ * **直しは、指摘が指しているシーンへ当たる。いま開いているシーンではない。**
+ * 取り違えると、読んだ指摘とは別の場面が動く。「AIに任せたら作品が壊れた」
+ * になるのはここ。
+ */
+function setUpPiece() {
+  useProjectStore.setState({
+    isGuest: false,
+    project: PROJECT,
+    scenes: [
+      makeScene({ id: "s1", name: "出", timeSeconds: 0 }),
+      makeScene({ id: "s2", name: "サビ", timeSeconds: 4 }),
+      makeScene({ id: "s3", name: "終", timeSeconds: 8 }),
+    ],
+    dancers: {
+      blocked: makeDancer({ id: "blocked", name: "8" }),
+      front: makeDancer({ id: "front", name: "2" }),
+    },
+    positionsBySceneId: {
+      // 顔被りは **2番目のシーン(サビ)** だけ
+      s1: { blocked: position("blocked", 1, 1), front: position("front", 8, 5) },
+      s2: { blocked: position("blocked", 5, 1), front: position("front", 5, 5) },
+      s3: { blocked: position("blocked", 1, 1), front: position("front", 8, 5) },
+    },
+  });
+  // 開いているのは1番目
+  useUIStore.setState({ selectedSceneId: "s1" });
+  useHistoryStore.setState({ past: [], future: [] });
+}
+
+const PIECE_REVIEW: ReviewResult = {
+  summary: "散りの変化は付いていますが、サビで奥の人が隠れます",
+  findings: [
+    {
+      tone: "watch",
+      text: "サビで8番が2番の真後ろに入っています",
+      fix: { kind: "clearBlindSpot", dancerName: "8" },
+      sceneNumber: 2,
+    },
+    { tone: "good", text: "出とサビで散りが大きく変わっています", fix: null },
+  ],
+};
+
+async function askWholePiece() {
+  await act(async () => {
+    screen.getByText("作品ぜんぶ").click();
+  });
+  await ask();
+}
+
+const xIn = (sceneId: string) =>
+  useProjectStore.getState().positionsBySceneId[sceneId].blocked.xCoordinate;
+
+describe("ReviewSheet の作品ぜんぶ", () => {
+  beforeEach(() => {
+    setUpPiece();
+  });
+
+  it("範囲を選べる", () => {
+    replyWith(PIECE_REVIEW);
+    render(<ReviewSheet project={PROJECT} isOpen onClose={() => {}} />);
+
+    expect(screen.getByText("このシーン")).toBeInTheDocument();
+    expect(screen.getByText("作品ぜんぶ")).toBeInTheDocument();
+  });
+
+  /** 1シーンしか無ければ「流れ」の話にならない */
+  it("シーンが1つだけなら、範囲は出さない", () => {
+    useProjectStore.setState({ scenes: [makeScene({ id: "s1" })] });
+    replyWith(PIECE_REVIEW);
+    render(<ReviewSheet project={PROJECT} isOpen onClose={() => {}} />);
+
+    expect(screen.queryByText("作品ぜんぶ")).not.toBeInTheDocument();
+  });
+
+  it("作品ぜんぶを選ぶと、全シーンぶんを送る（1シーンぶんは送らない）", async () => {
+    replyWith(PIECE_REVIEW);
+    render(<ReviewSheet project={PROJECT} isOpen onClose={() => {}} />);
+
+    await askWholePiece();
+
+    const call = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const body = JSON.parse(call[1].body as string) as {
+      piece?: { scenes: unknown[] };
+      summary?: unknown;
+    };
+    expect(body.summary).toBeUndefined();
+    expect(body.piece?.scenes).toHaveLength(3);
+  });
+
+  it("指摘がどのシーンの話かを出す", async () => {
+    replyWith(PIECE_REVIEW);
+    render(<ReviewSheet project={PROJECT} isOpen onClose={() => {}} />);
+
+    await askWholePiece();
+
+    await waitFor(() => {
+      expect(screen.getByText("2. サビ")).toBeInTheDocument();
+    });
+  });
+
+  it("その札を押すと、そのシーンが開く", async () => {
+    replyWith(PIECE_REVIEW);
+    render(<ReviewSheet project={PROJECT} isOpen onClose={() => {}} />);
+
+    await askWholePiece();
+    await waitFor(() => {
+      expect(screen.getByText("2. サビ")).toBeInTheDocument();
+    });
+    await act(async () => {
+      screen.getByText("2. サビ").click();
+    });
+
+    expect(useUIStore.getState().selectedSceneId).toBe("s2");
+  });
+
+  /** ★ここが本題 */
+  it("直しは、開いているシーンではなく指摘のシーンへ当たる", async () => {
+    vi.spyOn(positionsApi, "upsertPositions").mockResolvedValue(undefined);
+    replyWith(PIECE_REVIEW);
+    render(<ReviewSheet project={PROJECT} isOpen onClose={() => {}} />);
+
+    await askWholePiece();
+    await waitFor(() => {
+      expect(screen.getByText("横へずらして顔を出す")).toBeInTheDocument();
+    });
+
+    const before1 = xIn("s1");
+    await act(async () => {
+      screen.getByText("横へずらして顔を出す").click();
+    });
+
+    await waitFor(() => {
+      expect(xIn("s2")).not.toBe(5);
+    });
+    // 開いていた1番目のシーンは動いていない
+    expect(xIn("s1")).toBe(before1);
+    expect(useProjectStore.getState().positionsBySceneId.s2.blocked.yCoordinate).toBe(1);
+    // 当たった先が本当に顔を出しているか
+    const stillBlocked = findBlockedDancerIds({
+      blocked: { xCoordinate: xIn("s2"), yCoordinate: 1 },
+      front: position("front", 5, 5),
+    });
+    expect(stillBlocked.has("blocked")).toBe(false);
+  });
+
+  it("範囲を切り替えると、前の返事は消える", async () => {
+    replyWith(PIECE_REVIEW);
+    render(<ReviewSheet project={PROJECT} isOpen onClose={() => {}} />);
+
+    await askWholePiece();
+    await waitFor(() => {
+      expect(screen.getByText("2. サビ")).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      screen.getByText("このシーン").click();
+    });
+
+    // 作品ぜんぶの話が、1シーンの話として残ってはいけない
+    expect(screen.queryByText("2. サビ")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("review-finding")).not.toBeInTheDocument();
+  });
+});

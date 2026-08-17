@@ -506,6 +506,14 @@ export const en = {
     decide:
       "A fix button only changes anything when you press it. Whether to take it is yours to decide (undo removes it).",
     applied: "Applied",
+    scope: "What to look at",
+    scopeScene: "This scene",
+    scopePiece: "Whole piece",
+    scopePieceNote:
+      "Only each scene's spread, centre and warnings are sent — not the positions themselves. What comes back is about the flow.",
+    inScene: (number: number, name: string) => `${number}. ${name}`,
+    goToScene: "Open that scene",
+    wholePiece: "Whole piece",
     run: "Ask",
     running: "Asking…",
     again: "Ask again",

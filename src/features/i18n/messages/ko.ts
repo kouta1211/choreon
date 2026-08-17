@@ -502,6 +502,14 @@ export const ko = {
     decide:
       "고치기 버튼은 누를 때만 반영됩니다. 받아들일지는 직접 정해 주세요(되돌리기로 사라집니다).",
     applied: "반영했습니다",
+    scope: "봐 달라고 할 범위",
+    scopeScene: "이 장면",
+    scopePiece: "작품 전체",
+    scopePieceNote:
+      "모든 장면의 퍼짐 정도·무게중심·경고만 보냅니다(위치 자체는 보내지 않습니다). 흐름에 대한 이야기가 돌아옵니다.",
+    inScene: (number: number, name: string) => `${number}. ${name}`,
+    goToScene: "그 장면 열기",
+    wholePiece: "작품 전체",
     run: "봐 달라고 하기",
     running: "보고 있습니다...",
     again: "다시 한번",

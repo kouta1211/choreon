@@ -13,6 +13,8 @@ type Props = {
   /** 当てたあと。押せたことが分かるように残す */
   appliedLabel?: string;
   isApplied?: boolean;
+  /** 作品ぜんぶを見てもらったときだけ。どのシーンの話か */
+  scene?: { label: string; onOpen?: () => void };
 };
 
 /**
@@ -34,6 +36,7 @@ export function ReviewFindingCard({
   action,
   appliedLabel,
   isApplied = false,
+  scene,
 }: Props) {
   const Icon = tone === "good" ? ThumbsUp : CircleAlert;
   return (
@@ -42,11 +45,29 @@ export function ReviewFindingCard({
       data-tone={tone}
       className="rounded-[calc(var(--radius)*0.8)] border border-line-strong bg-surface-sunken p-3"
     >
-      <p className="flex items-center gap-1.5 text-caption font-semibold text-fg-muted">
-        <Icon size={12} strokeWidth={2.5} />
-        {toneLabel}
-      </p>
-      <p className="mt-1 text-label leading-[1.75] text-fg">{text}</p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="flex items-center gap-1.5 text-caption font-semibold text-fg-muted">
+          <Icon size={12} strokeWidth={2.5} />
+          {toneLabel}
+        </p>
+        {/* どのシーンの話かは**押せる札**にする。作品ぜんぶを見てもらうと、
+            読んでも「どこの話だ」となる。押して開けば目で確かめられる */}
+        {scene &&
+          (scene.onOpen ? (
+            <PressableButton
+              kind="secondary"
+              onClick={scene.onOpen}
+              className="shrink-0 rounded-full border border-line-strong px-2 py-0.5 text-caption font-semibold text-fg-sub"
+            >
+              {scene.label}
+            </PressableButton>
+          ) : (
+            <span className="shrink-0 text-caption font-semibold text-fg-muted">
+              {scene.label}
+            </span>
+          ))}
+      </div>
+      <p className="mt-1.5 text-label leading-[1.75] text-fg">{text}</p>
 
       {isApplied ? (
         <p className="mt-2 flex items-center gap-1 text-caption font-semibold text-fg-sub">

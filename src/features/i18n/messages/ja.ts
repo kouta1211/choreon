@@ -520,6 +520,16 @@ export const ja = {
     decide:
       "直しのボタンは、押したときだけ当たります。取り入れるかどうかは自分で決めてください（元に戻すで消えます）。",
     applied: "当てました",
+    /** このシーンだけ / 作品ぜんぶ */
+    scope: "見てもらう範囲",
+    scopeScene: "このシーン",
+    scopePiece: "作品ぜんぶ",
+    scopePieceNote:
+      "全シーンの散り具合・重心・警告だけを送ります（立ち位置そのものは送りません）。流れの話が返ってきます。",
+    /** 作品ぜんぶのとき、その指摘がどのシーンの話か */
+    inScene: (number: number, name: string) => `${number}. ${name}`,
+    goToScene: "そのシーンを開く",
+    wholePiece: "作品ぜんぶ",
     run: "見てもらう",
     running: "見てもらっています...",
     again: "もう一度",
