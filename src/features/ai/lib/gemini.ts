@@ -57,7 +57,10 @@ export function failureMessage(
 ): string {
   if (status === 404) return errors.modelMissing;
   if (status === 401 || status === 403) return errors.rejected;
-  if (status === 429) return errors.busy;
+  // 429(混みすぎ)と 503(需要が高い)は、どちらも**待てば直る**。
+  // 本番で 503 が「うまくいきませんでした」と出て、待てば直るのかどちらとも
+  // 読めなかった（実際の文面: This model is currently experiencing high demand）
+  if (status === 429 || status === 503) return errors.busy;
   return errors.unavailable;
 }
 
@@ -113,6 +116,7 @@ export async function callGemini({
   schema,
   errors,
   maxOutputTokens = 2000,
+  thinkingLevel,
 }: {
   apiKey: string;
   label: string;
@@ -127,8 +131,18 @@ export async function callGemini({
    * （2026-08-17: 操作を1つ選ぶだけの口が、2000 では JSON を返せなかった）。
    */
   maxOutputTokens?: number;
+  /**
+   * 考える量の目安。**分類のような「選ぶだけ」の頼み事では下げる。**
+   *
+   * 言葉を操作1つに翻訳するだけの口が、本番で 12〜24秒かかっていた。
+   * 中身の仕事ではなく考える時間で、待たせるだけの得が無い。
+   *
+   * 相手がこの項目を受けてくれるかは分からないので、**断られたら外して
+   * 呼び直す**（下の梯子）。受けてくれなくても機能は落ちない。
+   */
+  thinkingLevel?: "low" | "medium" | "high";
 }): Promise<AiCallResult> {
-  const call = (structured: boolean) =>
+  const call = (structured: boolean, thinking: boolean) =>
     fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
       {
@@ -166,6 +180,9 @@ export async function callGemini({
                   responseSchema: schema,
                 }
               : {}),
+            ...(thinking && thinkingLevel
+              ? { thinkingConfig: { thinkingLevel } }
+              : {}),
           },
         }),
         /**
@@ -183,23 +200,44 @@ export async function callGemini({
       },
     );
 
-  try {
-    let response = await call(true);
-    let wasStructured = schema !== undefined;
+  /**
+   * 断られたら1段ずつ諦める梯子。
+   *
+   * **一度に全部を諦めない。** 考える量の指定を受けてくれない相手に、
+   * 型まで捨てる理由は無い。逆に型を断られたら、素の文章で受けて
+   * こちらで読み解く（読み解けなくても講評は出る）。
+   *
+   * 断られた理由は毎段ログへ残す。**手元では本物を呼べない**ので、
+   * ここが唯一の手がかりになる。
+   */
+  const ladder: { structured: boolean; thinking: boolean; label: string }[] = [
+    { structured: true, thinking: true, label: "型あり・考える量の指定あり" },
+    { structured: true, thinking: false, label: "型あり" },
+    { structured: false, thinking: false, label: "素の文章" },
+  ].filter(
+    (step) =>
+      // 渡されていないものは、そもそも段にしない
+      (step.structured ? schema !== undefined : true) &&
+      (step.thinking ? thinkingLevel !== undefined : true),
+  );
 
-    if (schema && response.status === 400) {
-      /* **型を外して1回だけ試す**。機能が1段落ちるだけで止まらない。
-         断られた理由は控えておく — 型が悪いのか、他の項目が悪いのかは
-         ここでしか分からない */
+  try {
+    let response = await call(ladder[0].structured, ladder[0].thinking);
+    let wasStructured = ladder[0].structured && schema !== undefined;
+
+    for (let step = 1; step < ladder.length && response.status === 400; step++) {
       const complaint = upstreamComplaint(
-        await response.clone().text().catch(() => ""),
+        await response
+          .clone()
+          .text()
+          .catch(() => ""),
         apiKey,
       );
       console.error(
-        `[${label}] ${MODEL} が型付きの依頼を断りました(400): ${complaint}`,
+        `[${label}] ${MODEL} が「${ladder[step - 1].label}」を断りました(400): ${complaint}。「${ladder[step].label}」で再試行します`,
       );
-      response = await call(false);
-      wasStructured = false;
+      response = await call(ladder[step].structured, ladder[step].thinking);
+      wasStructured = ladder[step].structured && schema !== undefined;
     }
 
     if (!response.ok) {
