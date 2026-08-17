@@ -74,6 +74,10 @@ export function SettingsGroup({
  * いた。動いたのは行だが、実際に切り替わるのは右のトグルなので、
  * 目と手の対応がずれる。的の広さ(44px以上)は変えずに、押し込みの見た目
  * だけをトグルへ移した。押下の判定は行で拾い、`isPressed` を渡している。
+ *
+ * 同じ束にある「開く行」「実行する行」は沈める先が無いので、**縮めずに
+ * 明暗だけ**で示す(`kind="row"`)。行が縮むと、面を分け合っている隣の行との
+ * 間に隙間が空いて、やはりカードが歪んで見える。
  */
 export function SettingsSwitchRow({
   label,
@@ -250,6 +254,7 @@ export function SettingsNavRow({
 }) {
   return (
     <PressableButton
+      kind="row"
       onClick={onClick}
       className="flex min-h-target w-full items-center gap-gutter px-gutter py-unit text-left"
     >
@@ -285,6 +290,7 @@ export function SettingsActionRow({
 }) {
   return (
     <PressableButton
+      kind="row"
       onClick={onClick}
       disabled={disabled}
       className="flex min-h-target w-full items-center gap-gutter px-gutter py-unit text-left disabled:opacity-50"

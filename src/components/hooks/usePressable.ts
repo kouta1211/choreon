@@ -65,8 +65,21 @@ export function usePressable(options?: {
  * ■ 掴んで動かすものは沈めない
  * ダンサーのマーカーと時間軸のコマは `lift`。押し込む比喩は
  * 「その場で決まる」もののためのもので、動かすものには合わない。
+ *
+ * ■ 面を分け合っているものは縮めない(`row`)
+ * 設定は行がずらっと並んで**1枚の面**を共有している(SettingsRow の
+ * `divide-y ... rounded-2xl bg-surface`)。その中の1行だけを縮めると、
+ * 縮んだ行の縁から下の背景が覗いて、**カードごと押し込まれたように見える**。
+ * 実機報告 03-2「スイッチのカードが押し込まれる」はこれ。
+ * 明暗と内側の影だけで押下を示す。
  */
-export type PressableKind = "primary" | "secondary" | "icon" | "round" | "lift";
+export type PressableKind =
+  | "primary"
+  | "secondary"
+  | "icon"
+  | "round"
+  | "lift"
+  | "row";
 
 const SCALE: Record<PressableKind, string> = {
   primary: "scale-[.965]",
@@ -74,6 +87,8 @@ const SCALE: Record<PressableKind, string> = {
   icon: "scale-[.92]",
   round: "scale-[.94]",
   lift: "scale-[1.08]",
+  // 縮めない。面を分け合っているので、1行だけ縮むと card が歪んで見える
+  row: "",
 };
 
 /**
