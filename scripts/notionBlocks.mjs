@@ -10,16 +10,35 @@
  *   ## 見出し / - 箇条書き / 段落 / **太字**
  */
 
-/** `**太字**` を含む1行を、Notion の rich_text 配列へ */
+/** バッククォート1文字。この文字自体をリテラルで書くと読みにくいので名前を付ける */
+const BT = String.fromCharCode(96);
+
+/**
+ * `**太字**` と `` `コード` `` を含む1行を、Notion の rich_text 配列へ。
+ *
+ * バッククォートを素通しにすると、**Notion 側では記号がそのまま出る**
+ * （Markdown として解釈してくれない）。最初それで、日報がバッククォート
+ * だらけになった。囲みは自分で外して、annotations に移し替える。
+ */
 export function richText(line) {
   const parts = [];
-  // 「**…**」で切って、奇数番目を太字にする
-  for (const [i, chunk] of line.split("**").entries()) {
+  // 太字とコードをまとめて切り出す。捕捉した区切り自体も配列に残る
+  for (const chunk of line.split(/(\*\*[^*]+\*\*|`[^`]+`)/)) {
     if (chunk === "") continue;
+
+    /* 太字を先に外してから、残りがコードかを見る。
+       この順にしないと `**` + バッククォート`**` の入れ子で、
+       バッククォートが文字のまま残る（実際にそれで日報が汚れた） */
+    let content = chunk;
+    const bold = /^\*\*[^*]+\*\*$/.test(content);
+    if (bold) content = content.slice(2, -2);
+    const code = new RegExp(`^${BT}[^${BT}]+${BT}$`).test(content);
+    if (code) content = content.slice(1, -1);
+
     parts.push({
       type: "text",
-      text: { content: chunk },
-      annotations: { bold: i % 2 === 1 },
+      text: { content },
+      annotations: { bold, code },
     });
   }
   return parts;

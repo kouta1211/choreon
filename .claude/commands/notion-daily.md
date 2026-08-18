@@ -94,12 +94,17 @@ node scripts/notion-daily.mjs --date 2026-08-18 --status 順調 --summary "一�
 
 事前に必要なもの:
 
-1. https://www.notion.so/my-integrations で内部インテグレーションを作る
-2. **「開発日報」データベースをそのインテグレーションに共有する**
-   （右上「…」→「接続」→ 作ったものを選ぶ）。**ここを忘れると
-   `object_not_found` になる**。鍵が正しくても見えない
-   （スクリプトはこのとき、直し方を名指しで出す）
-3. `.env.local` に2つ入れる（`.env.example` に雛形あり）
+1. **https://app.notion.com/developers/connections** を開く →
+   左の **Build → Internal connections** → **Create a new connection**。
+   名前を付けてワークスペースを選ぶ
+   （2026-08-18 に確認。以前の `my-integrations` と「新しいインテグレーション」は
+   **もう無い**。Notion 側の名前が変わっている）
+2. **鍵は Configuration タブの「Installation access token」**
+3. **アクセスを与える。** 同じ画面の **Content access タブ → Edit access** で
+   「開発日報」を選ぶのが早い（Notion 本体の ••• → Connections →
+   + Add connection でも同じ）。**ここを忘れると `object_not_found` になる**。
+   鍵が正しくても見えない（スクリプトはこのとき直し方を名指しで出す）
+4. `.env.local` に2つ入れる（`.env.example` に雛形あり）
 
 ```bash
 NOTION_API_KEY=ntn_xxxxx
