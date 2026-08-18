@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Pause, Play, Spline } from "lucide-react";
+import { ChevronDown, Pause, Play, Spline } from "lucide-react";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { ViewerEntry } from "@/components/organisms/ViewerEntry";
 import { ViewerStage } from "@/components/organisms/ViewerStage";
@@ -105,7 +105,12 @@ export function ViewerLayout({
         </span>
         {/* 自分のポジション。押すと入口へ戻って選び直せる。
             ここで focusDancer(null) を呼ぶと「全員」に変わるだけで、
-            入口には二度と戻れなくなる(端末の記憶を消すしかなくなる) */}
+            入口には二度と戻れなくなる(端末の記憶を消すしかなくなる)。
+
+            **押せると分かる形にしてある**(2026-08-18、実機の報告 02-3)。
+            以前は名前が並んでいるだけで、読み上げ用のラベルしか
+            「選び直せる」と言っていなかった。**戻る道が無いように見えた**ので、
+            下向きの山（開く印）を足した */}
         <PressableButton
           onClick={chooseAgain}
           aria-label={t.viewer.route.reselect}
@@ -123,6 +128,7 @@ export function ViewerLayout({
           ) : (
             t.viewer.route.everyone
           )}
+          <ChevronDown size={13} className="shrink-0 text-fg-muted" aria-hidden />
         </PressableButton>
       </header>
 

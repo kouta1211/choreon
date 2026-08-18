@@ -58,9 +58,33 @@ describe("ViewerLayout", () => {
     expect(screen.getByText("あなたはどれですか")).toBeInTheDocument();
   });
 
-  it("名前チップから選ぶと本体に入る", () => {
+  /**
+   * **選ぶのと、決めるのは別**(2026-08-18、実機の報告 02-1)。
+   * 以前は名前を押した瞬間に本体へ入っていたので、押し間違えても
+   * 選び直せなかった（入口に戻る道が無い）。いまは押しただけでは入口に留まり、
+   * 下のボタンで決める。
+   */
+  it("名前チップを押しただけでは、まだ入口に留まる", () => {
     renderViewer();
     fireEvent.click(screen.getByRole("button", { name: "うみ" }));
+
+    expect(screen.getByText("あなたはどれですか")).toBeInTheDocument();
+    // 決めるボタンの文字が、選んだ人の名前入りに変わる
+    expect(screen.getByRole("button", { name: "「うみ」で見る" })).toBeInTheDocument();
+  });
+
+  it("押し間違えても、別の人を押し直せる", () => {
+    renderViewer();
+    fireEvent.click(screen.getByRole("button", { name: "うみ" }));
+    fireEvent.click(screen.getByRole("button", { name: "そら" }));
+
+    expect(screen.getByRole("button", { name: "「そら」で見る" })).toBeInTheDocument();
+  });
+
+  it("決めるボタンを押して初めて本体に入る", () => {
+    renderViewer();
+    fireEvent.click(screen.getByRole("button", { name: "うみ" }));
+    fireEvent.click(screen.getByRole("button", { name: "「うみ」で見る" }));
 
     expect(screen.queryByText("あなたはどれですか")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "通しで再生" })).toBeInTheDocument();

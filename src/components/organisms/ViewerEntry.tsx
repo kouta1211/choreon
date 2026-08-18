@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { PressableButton } from "@/components/atoms/PressableButton";
@@ -32,6 +33,13 @@ export function ViewerEntry() {
   const focusedDancerId = useViewerStore((state) => state.focusedDancerId);
   const focusDancer = useViewerStore((state) => state.focusDancer);
 
+  /* **選ぶのと、決めるのを分ける**(2026-08-18、実機の報告 02-1)。
+     以前は丸や名前を押した時点で focusDancer を呼んでいたので、
+     **押した瞬間に道順の画面へ進んでしまい、間違えても選び直せなかった**。
+     下の「「〜」で見る」ボタンは押されることが無く、死んだ飾りになっていた。
+     ここでは端末に覚えている分を初期値にして、決めるまでは手元で持つ */
+  const [pendingId, setPendingId] = useState<string | null>(focusedDancerId);
+
   if (!project) return null;
 
   const firstScene = scenes[0];
@@ -40,7 +48,7 @@ export function ViewerEntry() {
     : {};
   const totalSeconds =
     scenes.length > 0 ? scenes[scenes.length - 1].timeSeconds : 0;
-  const selected = dancers.find((dancer) => dancer.id === focusedDancerId);
+  const selected = dancers.find((dancer) => dancer.id === pendingId);
 
   return (
     <div className="mx-auto flex h-dvh w-full max-w-md flex-col gap-4 overflow-y-auto px-5 pt-6 pb-[max(24px,env(safe-area-inset-bottom))]">
@@ -83,7 +91,7 @@ export function ViewerEntry() {
           const position = positions[dancer.id];
           if (!position) return null;
           const color = themedDancerColor(dancer.color);
-          const isSelected = dancer.id === focusedDancerId;
+          const isSelected = dancer.id === pendingId;
 
           return (
             <PressableButton
@@ -96,7 +104,7 @@ export function ViewerEntry() {
               // どちらから選んでもよいが、何を押しているかは違う
               aria-label={t.viewer.entry.position(dancer.name)}
               aria-pressed={isSelected}
-              onClick={() => focusDancer(dancer.id)}
+              onClick={() => setPendingId(dancer.id)}
               style={{
                 left: `${(position.xCoordinate / project.stageWidth) * 100}%`,
                 top: `${(position.yCoordinate / project.stageHeight) * 100}%`,
@@ -118,12 +126,12 @@ export function ViewerEntry() {
       <div className="flex flex-wrap gap-2">
         {dancers.map((dancer) => {
           const color = themedDancerColor(dancer.color);
-          const isSelected = dancer.id === focusedDancerId;
+          const isSelected = dancer.id === pendingId;
           return (
             <PressableButton
               key={dancer.id}
               haptic
-              onClick={() => focusDancer(dancer.id)}
+              onClick={() => setPendingId(dancer.id)}
               aria-pressed={isSelected}
               style={
                 isSelected
