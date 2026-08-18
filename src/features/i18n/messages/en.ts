@@ -168,7 +168,7 @@ export const en = {
       },
       swipe: {
         label: "Swipe to change scene",
-        description: "Drag the stage for the next or previous scene (sideways on phones, up and down on desktop)",
+        description: "Swipe the stage with a finger for the next or previous scene (a mouse drag draws a selection box instead)",
       },
       thisProject: "This piece",
       music: "Music",
@@ -867,7 +867,7 @@ export const en = {
       },
       swipe: {
         label: "Swipe to change scene",
-        description: "Drag the stage to move to the next or previous scene (sideways on phones, up and down on desktop).",
+        description: "Swipe the stage with a finger to move to the next or previous scene (a mouse drag draws a selection box instead).",
       },
     },
 

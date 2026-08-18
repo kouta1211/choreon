@@ -167,7 +167,7 @@ export const ko = {
       },
       swipe: {
         label: "밀어서 장면 넘기기",
-        description: "무대를 끌면 앞뒤 장면으로(휴대폰은 옆으로, PC는 위아래로)",
+        description: "무대를 손가락으로 밀면 앞뒤 장면으로(마우스 드래그는 둘러싸서 선택하는 조작입니다)",
       },
       thisProject: "이 작품",
       music: "음악",
@@ -859,7 +859,7 @@ export const ko = {
       },
       swipe: {
         label: "밀어서 장면 넘기기",
-        description: "무대를 쓸면 앞뒤 장면으로 넘어갑니다(휴대폰은 옆으로, PC는 위아래로).",
+        description: "무대를 손가락으로 밀면 앞뒤 장면으로 넘어갑니다(마우스 드래그는 둘러싸서 선택하는 조작입니다).",
       },
     },
 

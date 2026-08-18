@@ -187,7 +187,7 @@ export const ja = {
       },
       swipe: {
         label: "払ってシーンを送る",
-        description: "ステージをドラッグして前後のシーンへ（スマホは横、PCは縦）",
+        description: "ステージを指で払うと前後のシーンへ（マウスのドラッグは囲んで選ぶ操作です）",
       },
       thisProject: "この作品",
       music: "曲",
@@ -907,7 +907,7 @@ export const ja = {
       },
       swipe: {
         label: "払ってシーンを送る",
-        description: "ステージをなぞると、前後のシーンへ移ります（スマホは横、PCは縦）",
+        description: "ステージを指で払うと、前後のシーンへ移ります（マウスのドラッグは囲んで選ぶ操作です）",
       },
     },
 

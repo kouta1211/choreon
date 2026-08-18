@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import {
   DndContext,
   PointerSensor,
@@ -39,6 +46,7 @@ import { usePositionCommit } from "@/features/scene/hooks/usePositionCommit";
 import { useHydrateProject } from "@/features/project/hooks/useHydrateProject";
 import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
 import { useStageScrubGesture } from "@/features/canvas/hooks/useStageScrubGesture";
+import { useMarqueeSelection } from "@/features/canvas/hooks/useMarqueeSelection";
 import type { Project } from "@/features/project/types";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position, Scene } from "@/features/scene/types";
@@ -163,6 +171,31 @@ export function CanvasBoard({
     (state) => state.isSwipeSceneChangeEnabled,
   );
   const sceneIds = useMemo(() => scenes.map((scene) => scene.id), [scenes]);
+  /* 囲んで選ぶ枠。**style を直に書き換える**ので、動かしても React は
+     描き直さない（ダンサーの丸が全部描き直されると重い） */
+  const marqueeRef = useRef<HTMLDivElement>(null);
+  const marqueeHandlers = useMarqueeSelection({
+    stageRef,
+    boxRef: marqueeRef,
+    stageWidthUnits: project.stageWidth,
+    stageHeightUnits: project.stageHeight,
+    isAudienceOnTop,
+    selectedSceneId,
+  });
+
+  /**
+   * ステージの何も無いところのドラッグを、**入力機器で振り分ける**。
+   *
+   * マウス＝囲んで選ぶ、指＝これまで通りシーンを送る。同じ場所の同じ
+   * ドラッグに2つの意味を持たせられないので、どちらか一方を捨てるのでは
+   * なく機器で分けた（2026-08-18、PC 特化）。PC でシーンを送る道は
+   * ← → キー・下の帯のコマ・ドックに残っている。
+   *
+   * 始めた側が最後まで持つ（途中で入れ替わると、離した時の後片付けが
+   * どちらでも走らない）。
+   */
+  const activeGesture = useRef<"marquee" | "scrub" | null>(null);
+
   const scrubHandlers = useStageScrubGesture({
     stageRef,
     sceneIds,
@@ -173,6 +206,38 @@ export function CanvasBoard({
     axis: screenKind === "phone" ? "x" : "y",
     scrub,
   });
+
+  /* マウスなら囲む、指ならこれまで通り送る。**始めた側が最後まで持つ** */
+  const stagePointerHandlers = useMemo(
+    () => ({
+      onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => {
+        activeGesture.current =
+          event.pointerType === "mouse" ? "marquee" : "scrub";
+        if (activeGesture.current === "marquee") {
+          marqueeHandlers.onPointerDown(event);
+        } else {
+          scrubHandlers.onPointerDown(event);
+        }
+      },
+      onPointerMove: (event: ReactPointerEvent<HTMLDivElement>) => {
+        if (activeGesture.current === "marquee") {
+          marqueeHandlers.onPointerMove(event);
+        } else if (activeGesture.current === "scrub") {
+          scrubHandlers.onPointerMove(event);
+        }
+      },
+      onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => {
+        const owner = activeGesture.current;
+        activeGesture.current = null;
+        if (owner === "marquee") {
+          marqueeHandlers.onPointerUp(event);
+        } else if (owner === "scrub") {
+          scrubHandlers.onPointerUp(event);
+        }
+      },
+    }),
+    [marqueeHandlers, scrubHandlers],
+  );
 
   useHydrateProject({
     project,
@@ -458,7 +523,7 @@ export function CanvasBoard({
     >
       <Stage
         ref={stageRef}
-        scrubHandlers={scrubHandlers}
+        scrubHandlers={stagePointerHandlers}
         isSwipeEnabled={isSwipeSceneChangeEnabled}
         scrubIndicator={<ScrubProgressBar />}
         widthUnits={project.stageWidth}
@@ -466,6 +531,14 @@ export function CanvasBoard({
         belowStageLeft={<TemplateButton />}
         belowStageRight={<HistoryControls />}
       >
+        {/* 囲んで選ぶ枠。出し入れと大きさは useMarqueeSelection が
+            直に書き換える（既定は display:none） */}
+        <div
+          ref={marqueeRef}
+          aria-hidden
+          style={{ display: "none" }}
+          className="pointer-events-none absolute z-10 rounded-[3px] border border-accent bg-accent/12"
+        />
         <DancerLayer
           stageWidthUnits={project.stageWidth}
           stageHeightUnits={project.stageHeight}

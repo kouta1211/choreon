@@ -146,6 +146,8 @@ type UIState = {
   selectDancer: (dancerId: string | null) => void;
   /** 選びに足す/外す（修飾キーを押しながらのクリック） */
   toggleDancer: (dancerId: string) => void;
+  /** まとめて選ぶ（マウスで囲んだとき）。additive なら今の選択へ足す */
+  selectDancers: (dancerIds: string[], additive?: boolean) => void;
   setGridMode: (mode: GridMode) => void;
   showToast: (toast: Toast) => void;
   clearToast: () => void;
@@ -300,6 +302,17 @@ export const useUIStore = create<UIState>((set, get) => ({
         ? state.selectedDancerIds.filter((id) => id !== dancerId)
         : [...state.selectedDancerIds, dancerId],
     })),
+
+  /* 足すときも**重ねない**。囲み直したときに同じ人が2回入ると、
+     まとめて動かすときにその人だけ2回ぶん書き込むことになる */
+  selectDancers: (dancerIds, additive = false) =>
+    set((state) => {
+      if (!additive) return { selectedDancerIds: dancerIds };
+      const added = dancerIds.filter(
+        (id) => !state.selectedDancerIds.includes(id),
+      );
+      return { selectedDancerIds: [...state.selectedDancerIds, ...added] };
+    }),
   setGridMode: (mode) =>
     set((state) => {
       persistFromState(state, { gridMode: mode });
