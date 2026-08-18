@@ -22,6 +22,7 @@ import {
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useScreenKind } from "@/components/hooks/useIsWideScreen";
 import {
+  boundedGroupDelta,
   clamp,
   isCloseToInteger,
   pixelDeltaToUnitDelta,
@@ -230,6 +231,55 @@ export function CanvasBoard({
     setDragSnapLine({ x: null, y: null });
   }, [setDragSnapLine]);
 
+  /**
+   * まとめて動かす人たちと、実際に動かせる量を決める。
+   *
+   * ■ 掴んだ人が選択の外なら、その人だけにする
+   * 選択外を掴んだのに選んでいた全員が動くのは事故になる（PC の一般的な作法）。
+   *
+   * ■ **はみ出しは移動量の側で丸める**
+   * 1人ずつ clamp すると、壁に当たった人だけ止まって**隊形が潰れる**。
+   * 全員が収まるところまで移動量を縮めれば、形を保ったまま端で止まる。
+   */
+  const groupMove = useCallback(
+    (sceneId: string, grabbedId: string, dx: number, dy: number) => {
+      const { selectedDancerIds } = useUIStore.getState();
+      const ids = selectedDancerIds.includes(grabbedId)
+        ? selectedDancerIds
+        : [grabbedId];
+      if (!selectedDancerIds.includes(grabbedId)) selectDancer(grabbedId);
+
+      const moving = ids
+        .map((dancerId) => ({
+          dancerId,
+          before: positionAt(sceneId, dancerId),
+        }))
+        .filter(
+          (one): one is { dancerId: string; before: Position } =>
+            one.before !== undefined,
+        );
+      if (moving.length === 0) return null;
+
+      const bounded = boundedGroupDelta(
+        moving.map((one) => one.before),
+        { x: dx, y: dy },
+        { width: project.stageWidth, height: project.stageHeight },
+      );
+
+      return moving.map(({ dancerId, before }) => ({
+        sceneId,
+        dancerId,
+        before,
+        after: {
+          ...before,
+          xCoordinate: before.xCoordinate + bounded.x,
+          yCoordinate: before.yCoordinate + bounded.y,
+        },
+      }));
+    },
+    [project.stageWidth, project.stageHeight, selectDancer],
+  );
+
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
       setDragSnapLine({ x: null, y: null });
@@ -251,16 +301,14 @@ export function CanvasBoard({
         stageYSign(isAudienceOnTop) *
         pixelDeltaToUnitDelta(event.delta.y, height, project.stageHeight);
 
-      const after = {
-        sceneId: selectedSceneId,
-        dancerId,
-        xCoordinate: clamp(before.xCoordinate + deltaX, 0, project.stageWidth),
-        yCoordinate: clamp(before.yCoordinate + deltaY, 0, project.stageHeight),
-        rotationAngle: before.rotationAngle,
-      };
+      /* 吸着は掴んだ本人の位置で既に効いている(gridSnapModifier)ので、
+         その差分をそのまま全員へ配る。各自で丸め直すと、揃えて置いた
+         間隔の方が崩れる */
+      const changes = groupMove(selectedSceneId, dancerId, deltaX, deltaY);
+      if (!changes) return;
 
       await commitPositions({
-        changes: [{ sceneId: selectedSceneId, dancerId, before, after }],
+        changes,
         kind: "move",
         errorMessage: t.editor.errors.position,
         // 掴んで置き直させるのは無駄が大きいので、ここだけ再試行を出す
@@ -273,6 +321,7 @@ export function CanvasBoard({
       project.stageHeight,
       setDragSnapLine,
       commitPositions,
+      groupMove,
       isAudienceOnTop,
       t,
     ],
@@ -316,25 +365,28 @@ export function CanvasBoard({
       const snap = (value: number) =>
         isSnapEnabled ? snapToGrid(value, GRID_SNAP_TOLERANCE) : value;
 
+      /* 着地点は**押した本人**で決めて、その差分を全員へ配る。
+         各自で丸めると、揃えて置いた間隔が崩れる */
+      const appliedDx =
+        snap(clamp(before.xCoordinate + dx, 0, project.stageWidth)) -
+        before.xCoordinate;
+      const appliedDy =
+        snap(clamp(before.yCoordinate + dy, 0, project.stageHeight)) -
+        before.yCoordinate;
+
+      const changes = groupMove(
+        selectedSceneId,
+        dancerId,
+        appliedDx,
+        appliedDy,
+      );
+      if (!changes) return;
+
       await commitPositions({
-        changes: [
-          {
-            sceneId: selectedSceneId,
-            dancerId,
-            before,
-            after: {
-              ...before,
-              xCoordinate: snap(
-                clamp(before.xCoordinate + dx, 0, project.stageWidth),
-              ),
-              yCoordinate: snap(
-                clamp(before.yCoordinate + dy, 0, project.stageHeight),
-              ),
-            },
-          },
-        ],
-        // 矢印キーの微調整は連打されるため、useHistoryStore側で同じダンサーへの
-        // 連続操作を1ステップに畳んでいる(kind: "nudge"がその目印)
+        changes,
+        // 矢印キーの微調整は連打されるため、useHistoryStore側で同じ相手への
+        // 連続操作を1ステップに畳んでいる(kind: "nudge"がその目印)。
+        // まとめて動かしたときも、並びが同じなら畳まれる(hasSameTargets)
         kind: "nudge",
         errorMessage: t.editor.errors.position,
       });
@@ -344,6 +396,7 @@ export function CanvasBoard({
       project.stageWidth,
       project.stageHeight,
       commitPositions,
+      groupMove,
       isSnapEnabled,
       t,
     ],

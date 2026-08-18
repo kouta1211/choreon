@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { Trash2, X, Focus } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
-import { useUIStore } from "@/features/canvas/store/useUIStore";
+import {
+  selectPrimaryDancerId,
+  useUIStore,
+} from "@/features/canvas/store/useUIStore";
 import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
 import {
@@ -46,7 +49,8 @@ const MAX_DURATION_SECONDS = 30;
 export function DancerInspector() {
   const t = useT();
   const [isDeleting, setIsDeleting] = useState(false);
-  const selectedDancerId = useUIStore((state) => state.selectedDancerId);
+  // 1人だけ選んでいるときの板。複数のときは null になって出ない
+  const selectedDancerId = useUIStore(selectPrimaryDancerId);
   const selectDancer = useUIStore((state) => state.selectDancer);
   const showToast = useUIStore((state) => state.showToast);
   const requestConfirm = useUIStore((state) => state.requestConfirm);

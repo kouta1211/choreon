@@ -118,11 +118,62 @@ describe("DraggableDancerIcon", () => {
 
     await user.click(screen.getByTestId("dancer-icon"));
 
-    expect(useUIStore.getState().selectedDancerId).toBe("dancer-1");
+    expect(useUIStore.getState().selectedDancerIds).toEqual(["dancer-1"]);
+  });
+
+  /* 隊形は塊で動かすので、選びに足せる必要がある（2026-08-18、PC 特化）。
+     指しか無い画面では修飾キーが押せないので、そちらは1人ずつのまま */
+  it("Shift を押しながらだと、選びに足す", async () => {
+    const user = userEvent.setup();
+    useUIStore.setState({ selectedDancerIds: ["dancer-0"] });
+    render(
+      <DndTestWrapper>
+        <DraggableDancerIcon
+          dancer={makeDancer()}
+          x={2}
+          y={2}
+          rotationAngle={0}
+          stageWidthUnits={8}
+          stageHeightUnits={8}
+        />
+      </DndTestWrapper>,
+    );
+
+    await user.keyboard("{Shift>}");
+    await user.click(screen.getByTestId("dancer-icon"));
+    await user.keyboard("{/Shift}");
+
+    expect(useUIStore.getState().selectedDancerIds).toEqual([
+      "dancer-0",
+      "dancer-1",
+    ]);
+  });
+
+  it("Shift を押しながらもう一度押すと、選びから外れる", async () => {
+    const user = userEvent.setup();
+    useUIStore.setState({ selectedDancerIds: ["dancer-0", "dancer-1"] });
+    render(
+      <DndTestWrapper>
+        <DraggableDancerIcon
+          dancer={makeDancer()}
+          x={2}
+          y={2}
+          rotationAngle={0}
+          stageWidthUnits={8}
+          stageHeightUnits={8}
+        />
+      </DndTestWrapper>,
+    );
+
+    await user.keyboard("{Shift>}");
+    await user.click(screen.getByTestId("dancer-icon"));
+    await user.keyboard("{/Shift}");
+
+    expect(useUIStore.getState().selectedDancerIds).toEqual(["dancer-0"]);
   });
 
   it("選択中はマーカーにリングが付く", () => {
-    useUIStore.setState({ selectedDancerId: "dancer-1" });
+    useUIStore.setState({ selectedDancerIds: ["dancer-1"] });
     render(
       <DndContext>
         <DraggableDancerIcon
@@ -206,7 +257,7 @@ describe("DraggableDancerIcon", () => {
 
   // 選択リングと同じ場所に2本重なると、どちらが何なのか分からなくなる
   it("選択中はホバーのリングを重ねない", () => {
-    useUIStore.setState({ selectedDancerId: "dancer-1" });
+    useUIStore.setState({ selectedDancerIds: ["dancer-1"] });
     render(
       <DndContext>
         <DraggableDancerIcon
@@ -249,7 +300,7 @@ describe("DraggableDancerIcon", () => {
   });
 
   it("選択中は回転ハンドルが表示され、確定時にonRotateEndが呼ばれる", async () => {
-    useUIStore.setState({ selectedDancerId: "dancer-1" });
+    useUIStore.setState({ selectedDancerIds: ["dancer-1"] });
     const handleRotateEnd = vi.fn();
     render(
       <DndContext>

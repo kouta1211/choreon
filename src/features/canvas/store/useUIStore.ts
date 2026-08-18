@@ -50,7 +50,18 @@ type UIState = {
    * 保存されているため、戻るときはそちらを見に行く必要がある
    * (DancerLayerが読み取る) */
   previousSceneId: string | null;
-  selectedDancerId: string | null;
+  /**
+   * 選んでいるダンサー。**選んだ順**に並ぶ（空なら未選択）。
+   *
+   * 1人だけだったものを並びにしたのは、「前列4人をまとめて1マス下げる」を
+   * 1人ずつ4回やることになっていたため（2026-08-18、PC 特化の方針）。
+   * 修飾キーを押しながら選ぶので、**マウスのある画面でだけ増える** —
+   * スマホでは今まで通り1人のまま。
+   *
+   * インスペクター・回転・曲線のように「1人ぶん」を見る側は
+   * `selectPrimaryDancerId`（＝末尾＝最後に選んだ人）を読む。
+   */
+  selectedDancerIds: string[];
   /** ステージに敷く目盛り。格子(1マス=約90cm)と同心円(中心からの距離と角度)は
    * 同じ「どこに立っているか」を別の読み方で示すもので、重ねると
    * どちらも読めなくなるため、並立ではなく1つを選ぶ */
@@ -131,7 +142,10 @@ type UIState = {
   authDialogMode: "login" | "signup" | null;
 
   selectScene: (sceneId: string | null) => void;
+  /** その人だけを選ぶ。null で解除 */
   selectDancer: (dancerId: string | null) => void;
+  /** 選びに足す/外す（修飾キーを押しながらのクリック） */
+  toggleDancer: (dancerId: string) => void;
   setGridMode: (mode: GridMode) => void;
   showToast: (toast: Toast) => void;
   clearToast: () => void;
@@ -221,10 +235,23 @@ function persistFromState(
   );
 }
 
+/**
+ * 主に選んでいる1人（＝最後に選んだ人）。選んでいなければ null。
+ *
+ * インスペクター・回転ハンドル・曲線の編集は「1人ぶん」の操作なので、
+ * 複数選んでいる間は出さない。読む側が毎回 `.at(-1)` を書かずに済むよう、
+ * ここに1つだけ置く。
+ */
+export function selectPrimaryDancerId(state: UIState): string | null {
+  return state.selectedDancerIds.length === 1
+    ? state.selectedDancerIds[0]
+    : null;
+}
+
 export const useUIStore = create<UIState>((set, get) => ({
   selectedSceneId: null,
   previousSceneId: null,
-  selectedDancerId: null,
+  selectedDancerIds: [],
   // 3つの既定値は viewPreference が持つ。サーバーで描くHTMLと最初の
   // ブラウザ描画を一致させるため、ここでは必ず既定から始め、
   // 読み込みは loadViewPreference に任せる
@@ -261,7 +288,18 @@ export const useUIStore = create<UIState>((set, get) => ({
         ? {}
         : { selectedSceneId: sceneId, previousSceneId: state.selectedSceneId },
     ),
-  selectDancer: (dancerId) => set({ selectedDancerId: dancerId }),
+  selectDancer: (dancerId) =>
+    set({ selectedDancerIds: dancerId === null ? [] : [dancerId] }),
+
+  /* 足すときは**末尾へ**。末尾＝主に選んでいる1人なので、最後に触った人が
+     インスペクターに出る。外したときも並びは崩さない（まとめて動かすときの
+     順番が変わると、履歴の畳み込み(hasSameTargets)が効かなくなる） */
+  toggleDancer: (dancerId) =>
+    set((state) => ({
+      selectedDancerIds: state.selectedDancerIds.includes(dancerId)
+        ? state.selectedDancerIds.filter((id) => id !== dancerId)
+        : [...state.selectedDancerIds, dancerId],
+    })),
   setGridMode: (mode) =>
     set((state) => {
       persistFromState(state, { gridMode: mode });

@@ -7,7 +7,10 @@ import { StageMarks } from "@/components/molecules/StageMarks";
 import { PathTrail } from "@/components/molecules/PathTrail";
 import { DraggableDancerIcon } from "@/components/organisms/DraggableDancerIcon";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
-import { useUIStore } from "@/features/canvas/store/useUIStore";
+import {
+  selectPrimaryDancerId,
+  useUIStore,
+} from "@/features/canvas/store/useUIStore";
 import { getSceneStep } from "@/features/canvas/lib/sceneStep";
 import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
 import { useSceneWarnings } from "@/features/canvas/hooks/useSceneWarnings";
@@ -74,7 +77,8 @@ export function DancerLayer({
   const scenes = useProjectStore((state) => state.scenes);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const previousSceneId = useUIStore((state) => state.previousSceneId);
-  const selectedDancerId = useUIStore((state) => state.selectedDancerId);
+  // 曲線の制御点は1人ぶんの操作なので、複数選んでいる間は編集させない
+  const selectedDancerId = useUIStore(selectPrimaryDancerId);
   const isPathVisible = useUIStore((state) => state.isPathVisible);
   const isStageMarksVisible = useUIStore((state) => state.isStageMarksVisible);
   const isBlindSpotCheckVisible = useUIStore(

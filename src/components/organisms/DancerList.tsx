@@ -20,8 +20,9 @@ import { useT } from "@/features/i18n/LocaleProvider";
 export function DancerList() {
   const t = useT();
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
-  const selectedDancerId = useUIStore((state) => state.selectedDancerId);
+  const selectedDancerIds = useUIStore((state) => state.selectedDancerIds);
   const selectDancer = useUIStore((state) => state.selectDancer);
+  const toggleDancer = useUIStore((state) => state.toggleDancer);
   const setAddDancerSheetOpen = useUIStore(
     (state) => state.setAddDancerSheetOpen,
   );
@@ -54,11 +55,19 @@ export function DancerList() {
         ) : (
           <ul className="flex flex-col gap-1">
             {rows.map(({ dancer, position }) => {
-              const isSelected = dancer.id === selectedDancerId;
+              const isSelected = selectedDancerIds.includes(dancer.id);
               return (
                 <li key={dancer.id}>
                   <PressableButton
-                    onClick={() => selectDancer(isSelected ? null : dancer.id)}
+                    /* ステージの丸と同じ規則。同じ意味の操作を、
+                       場所によって変えない */
+                    onClick={(event) => {
+                      if (event.shiftKey || event.metaKey || event.ctrlKey) {
+                        toggleDancer(dancer.id);
+                      } else {
+                        selectDancer(isSelected ? null : dancer.id);
+                      }
+                    }}
                     aria-pressed={isSelected}
                     className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left ${
                       isSelected

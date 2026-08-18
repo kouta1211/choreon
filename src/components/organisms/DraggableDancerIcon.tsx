@@ -154,10 +154,19 @@ function DraggableDancerIconImpl({
     attributes: { tabIndex: -1 },
     disabled: isTransitioning,
   });
-  const isSelected = useUIStore(
-    (state) => state.selectedDancerId === dancer.id,
+  const isSelected = useUIStore((state) =>
+    state.selectedDancerIds.includes(dancer.id),
+  );
+  /* 回転は1人ぶんの操作。複数選んでいる間はハンドルを出さない —
+     出すと「まとめて回せる」ように見えるが、そうはなっていない
+     （帯にも「向きと曲線は1人のときだけ」と書いてある） */
+  const isOnlySelected = useUIStore(
+    (state) =>
+      state.selectedDancerIds.length === 1 &&
+      state.selectedDancerIds[0] === dancer.id,
   );
   const selectDancer = useUIStore((state) => state.selectDancer);
+  const toggleDancer = useUIStore((state) => state.toggleDancer);
   const focusedDancerId = useUIStore((state) => state.focusedDancerId);
   const isFocused = focusedDancerId === dancer.id;
   // 誰かがフォーカスされている間、自分以外は薄くして目立たなくする
@@ -271,7 +280,15 @@ function DraggableDancerIconImpl({
       }}
       onPointerLeave={() => setIsHovered(false)}
       onClick={(event) => {
-        selectDancer(dancer.id);
+        /* **修飾キーを押しながらなら、選びに足す/外す。** 隊形は「前列4人を
+           まとめて下げる」のような塊で動かすことが多く、1人ずつ4回やるのは
+           同じ作業を4回することになる（2026-08-18、PC 特化の方針）。
+           指しか無い画面では修飾キーが押せないので、これまで通り1人ずつ */
+        if (event.shiftKey || event.metaKey || event.ctrlKey) {
+          toggleDancer(dancer.id);
+        } else {
+          selectDancer(dancer.id);
+        }
         // クリックした場所によっては(見た目上の本体は子のSVGなど)ブラウザの
         // デフォルトのフォーカス移動が必ずしもこの要素(tabIndex=-1)まで
         // 届かないことがある。キーボード操作(矢印キーで移動)はこの要素に
@@ -300,7 +317,7 @@ function DraggableDancerIconImpl({
         hasKeyboardFocus={hasKeyboardFocus}
         transitionDurationSeconds={transitionDurationSeconds}
       />
-      {isSelected && (
+      {isOnlySelected && (
         <RotationHandle
           angle={displayRotation}
           onRotateChange={setLiveRotation}

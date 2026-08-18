@@ -8,6 +8,7 @@ import { AddDancerSheet } from "@/components/organisms/AddDancerSheet";
 import { TemplateSheet } from "@/components/organisms/TemplateSheet";
 import { ExportVideoSheet } from "@/components/organisms/ExportVideoSheet";
 import { DancerInspector } from "@/components/organisms/DancerInspector";
+import { DancerSelectionBar } from "@/components/organisms/DancerSelectionBar";
 import { SceneDock } from "@/components/organisms/SceneDock";
 import { SceneSidebar } from "@/components/organisms/SceneSidebar";
 import { EditorSidePanel } from "@/components/organisms/EditorSidePanel";
@@ -174,7 +175,9 @@ export function EditorLayout({
             位置の基準としてこのラッパーが要る。ダンサーを選んでいる間は
             インスペクターが同じ場所を使うので、ヒントは出さない */}
           <div className="relative shrink-0">
+            {/* 1人なら板、2人以上なら帯。同じ場所を分け合う */}
             <DancerInspector />
+            <DancerSelectionBar />
             <SceneDock project={live} />
           </div>
 

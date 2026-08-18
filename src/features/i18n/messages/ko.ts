@@ -686,6 +686,11 @@ export const ko = {
   },
 
   dancer: {
+    selection: {
+      count: (n: number) => `${n}명을 선택했습니다`,
+      hint: "함께 옮길 수 있습니다(방향과 곡선은 한 명일 때만)",
+      clear: "해제",
+    },
     add: {
       title: "댄서 추가",
       howMany: "몇 명 추가할까요?",

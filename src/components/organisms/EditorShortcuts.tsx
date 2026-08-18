@@ -56,8 +56,9 @@ export function EditorShortcuts() {
           ui.setSceneSheetOpen(false);
           return;
         }
-        if (ui.selectedDancerId) {
+        if (ui.selectedDancerIds.length > 0) {
           event.preventDefault();
+          // 何人選んでいても、Esc 1回でまとめて解除する
           ui.selectDancer(null);
         }
         return;
@@ -85,7 +86,7 @@ export function EditorShortcuts() {
 
       if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
         // ダンサーを選んでいる間は、矢印キーはその人の微調整に使う
-        if (ui.selectedDancerId) return;
+        if (ui.selectedDancerIds.length > 0) return;
 
         const scenes = useProjectStore.getState().scenes;
         const index = scenes.findIndex(

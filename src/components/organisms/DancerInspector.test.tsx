@@ -36,7 +36,7 @@ describe("DancerInspector", () => {
 
   it("選択中のダンサー名を表示する", () => {
     useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
-    useUIStore.setState({ selectedDancerId: "dancer-1" });
+    useUIStore.setState({ selectedDancerIds: ["dancer-1"] });
 
     render(<DancerInspector />);
 
@@ -45,7 +45,7 @@ describe("DancerInspector", () => {
 
   it("名前を押すと入力欄になり、Enterで確定するとSupabaseにも保存される", async () => {
     useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
-    useUIStore.setState({ selectedDancerId: "dancer-1" });
+    useUIStore.setState({ selectedDancerIds: ["dancer-1"] });
     const updateNameSpy = vi
       .spyOn(dancersApi, "updateDancerName")
       .mockResolvedValue(undefined);
@@ -69,7 +69,7 @@ describe("DancerInspector", () => {
 
   it("名前の変更をEscapeで取り消すと元の名前のまま保存もしない", async () => {
     useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
-    useUIStore.setState({ selectedDancerId: "dancer-1" });
+    useUIStore.setState({ selectedDancerIds: ["dancer-1"] });
     const updateNameSpy = vi.spyOn(dancersApi, "updateDancerName");
 
     const user = userEvent.setup();
@@ -84,7 +84,7 @@ describe("DancerInspector", () => {
 
   it("名前を空欄にして確定した場合は変更しない", async () => {
     useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
-    useUIStore.setState({ selectedDancerId: "dancer-1" });
+    useUIStore.setState({ selectedDancerIds: ["dancer-1"] });
     const updateNameSpy = vi.spyOn(dancersApi, "updateDancerName");
 
     const user = userEvent.setup();
@@ -100,7 +100,7 @@ describe("DancerInspector", () => {
 
   it("名前の保存に失敗したら元の名前へ戻す", async () => {
     useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
-    useUIStore.setState({ selectedDancerId: "dancer-1" });
+    useUIStore.setState({ selectedDancerIds: ["dancer-1"] });
     vi.spyOn(dancersApi, "updateDancerName").mockRejectedValue(
       new Error("network"),
     );
@@ -122,7 +122,7 @@ describe("DancerInspector", () => {
 
   it("色スウォッチを押すと色が変わりSupabaseにも保存される", async () => {
     useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
-    useUIStore.setState({ selectedDancerId: "dancer-1" });
+    useUIStore.setState({ selectedDancerIds: ["dancer-1"] });
     const updateColorSpy = vi
       .spyOn(dancersApi, "updateDancerColor")
       .mockResolvedValue(undefined);
@@ -159,7 +159,7 @@ describe("DancerInspector", () => {
         },
       },
     });
-    useUIStore.setState({ selectedDancerId: "dancer-1" });
+    useUIStore.setState({ selectedDancerIds: ["dancer-1"] });
     vi.spyOn(dancersApi, "deleteDancer").mockResolvedValue(undefined);
 
     const user = userEvent.setup();
@@ -173,12 +173,12 @@ describe("DancerInspector", () => {
     await waitFor(() => {
       expect(useProjectStore.getState().dancers["dancer-1"]).toBeUndefined();
     });
-    expect(useUIStore.getState().selectedDancerId).toBeNull();
+    expect(useUIStore.getState().selectedDancerIds).toEqual([]);
   });
 
   it("フォーカスボタンでfocusedDancerIdをトグルする", async () => {
     useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
-    useUIStore.setState({ selectedDancerId: "dancer-1" });
+    useUIStore.setState({ selectedDancerIds: ["dancer-1"] });
     const user = userEvent.setup();
     render(<DancerInspector />);
 
@@ -192,7 +192,7 @@ describe("DancerInspector", () => {
   it("フォーカス中のダンサーを削除するとフォーカスも解除される", async () => {
     useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
     useUIStore.setState({
-      selectedDancerId: "dancer-1",
+      selectedDancerIds: ["dancer-1"],
       focusedDancerId: "dancer-1",
     });
     vi.spyOn(dancersApi, "deleteDancer").mockResolvedValue(undefined);
@@ -209,7 +209,7 @@ describe("DancerInspector", () => {
 
   it("確認をキャンセルすると削除されない", async () => {
     useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
-    useUIStore.setState({ selectedDancerId: "dancer-1" });
+    useUIStore.setState({ selectedDancerIds: ["dancer-1"] });
     const deleteSpy = vi.spyOn(dancersApi, "deleteDancer");
 
     const user = userEvent.setup();

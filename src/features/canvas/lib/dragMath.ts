@@ -74,3 +74,28 @@ export function snapRotation(
   const distance = Math.abs(((degrees - normalized + 540) % 360) - 180);
   return distance <= tolerance ? normalized : degrees;
 }
+
+/**
+ * まとめて動かすときに、**全員が収まる**ところまで縮めた移動量。
+ *
+ * 1人ずつ `clamp` すると、壁に当たった人だけそこで止まって
+ * **隊形が潰れる**（4人の横一列を左へ寄せると、左端の人だけ先に止まって
+ * 間隔が詰まる）。移動量の側を縮めれば、形を保ったまま端で止まる。
+ *
+ * 渡すのは動かす人たちの**いまの座標**。1人でも同じ式で通る。
+ */
+export function boundedGroupDelta(
+  positions: { xCoordinate: number; yCoordinate: number }[],
+  delta: { x: number; y: number },
+  stage: { width: number; height: number },
+): { x: number; y: number } {
+  if (positions.length === 0) return { x: 0, y: 0 };
+
+  const xs = positions.map((position) => position.xCoordinate);
+  const ys = positions.map((position) => position.yCoordinate);
+
+  return {
+    x: clamp(delta.x, -Math.min(...xs), stage.width - Math.max(...xs)),
+    y: clamp(delta.y, -Math.min(...ys), stage.height - Math.max(...ys)),
+  };
+}

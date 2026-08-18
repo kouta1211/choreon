@@ -725,6 +725,12 @@ export const ja = {
   },
 
   dancer: {
+    /** 2人以上を選んでいるときの帯（2026-08-18、複数選択） */
+    selection: {
+      count: (n: number) => `${n}人を選んでいます`,
+      hint: "まとめて動かせます（向きと曲線は1人のときだけ）",
+      clear: "解除",
+    },
     add: {
       title: "ダンサーを追加",
       howMany: "何人追加しますか?",
