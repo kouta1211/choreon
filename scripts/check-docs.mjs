@@ -51,10 +51,20 @@ const docs = [
   ...walk(".claude").filter((f) => f.endsWith(".md")),
 ].filter((f) => fs.existsSync(f));
 
-/** ソース側の全文。識別子の実在確認に使う */
+/* ソース側の全文。識別子の実在確認に使う。
+   **.md 以外の追跡ファイルを全部読む。** src/ だけに絞ると、
+   .env.example に書いた環境変数名や設定ファイルの中の名前が
+   「実在しない」と誤判定される（実際に NOTION_API_KEY で落ちた）。
+   .md を外すのは、ドキュメント同士で参照し合って素通りするのを防ぐため。 */
 const source = [...tracked]
-  .filter((f) => /^(src|supabase|scripts)\//.test(f) || f === "docs/qa-checklist.html")
-  .map((f) => fs.readFileSync(f, "utf8"))
+  .filter((f) => !f.endsWith(".md") && !/[.](png|jpe?g|ico|webp|pem|woff2?)$/.test(f))
+  .map((f) => {
+    try {
+      return fs.readFileSync(f, "utf8");
+    } catch {
+      return "";
+    }
+  })
   .join("\n");
 
 /**
@@ -115,7 +125,10 @@ for (const f of docs) {
     const id = m[1];
     if (id.length < 6) continue;             // 短い語は普通名詞と紛れる
     if (!/[A-Z_]/.test(id)) continue;        // camelCase / PascalCase / CONSTANT だけ
-    if (/^(node_modules|service_role|authenticated|localStorage|IndexedDB)$/.test(id)) continue;
+    /* 外部の名前（このリポジトリのソースには出てこないが実在する）。
+       増やすときは、どこの名前かを書くこと。 */
+    if (/^(node_modules|service_role|authenticated|localStorage|IndexedDB|object_not_found|MediaRecorder)$/.test(id))
+      continue;
     counts.symbols = (counts.symbols ?? 0) + 1;
     if (!source.includes(id)) {
       fail("symbolMissing", f, id, "この名前が src/ にも supabase/ にも無い");
