@@ -8,7 +8,6 @@ import {
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useT } from "@/features/i18n/LocaleProvider";
-import { useScreenKind } from "@/components/hooks/useIsWideScreen";
 
 /**
  * 設定の「表示」。
@@ -36,7 +35,6 @@ export function SettingsDisplaySection() {
   const toggleBlindSpotCheck = useUIStore(
     (state) => state.toggleBlindSpotCheck,
   );
-  const screenKind = useScreenKind();
   const isSwipeSceneChangeEnabled = useUIStore(
     (state) => state.isSwipeSceneChangeEnabled,
   );
@@ -77,15 +75,21 @@ export function SettingsDisplaySection() {
       />
       {/* 払ってシーンを送るのはスマホ幅だけの操作になったので、
           それ以外の画面では出さない。押しても何も起きないつまみを
-          残すと、壊れているように見える(2026-08-18、報告 18-11) */}
-      {screenKind === "phone" ? (
+          残すと、壊れているように見える(2026-08-18、報告 18-11)。
+
+          **出し分けは CSS でやる。** useScreenKind はサーバーでは "phone" を
+          返すので、JSX を出し分けると【サーバーでは出て、PC のブラウザでは
+          消える】ことになり、一瞬ちらつく。規約どおり幅で消す
+          (.claude/rules/frontend.md「画面幅で分けるときは CSS でやる」)。
+          外側の箱ごと display:none になるので、行を割っている線も一緒に消える */}
+      <div className="min-[768px]:hidden">
         <SettingsSwitchRow
           label={t.settings.display.swipe.label}
           description={t.settings.display.swipe.description}
           checked={isSwipeSceneChangeEnabled}
           onChange={toggleSwipeSceneChange}
         />
-      ) : null}
+      </div>
     </SettingsGroup>
   );
 }
