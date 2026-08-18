@@ -3,12 +3,18 @@
 ## 1. 出す前に必ず通すもの
 
 ```bash
-npm run verify     # lint → test:run → build
+npm run verify     # check:docs → lint → test:run → build
 ```
 
 途中で落ちたら、**そこで止めて直す**。落ちたまま次へ進まない。
 テストだけ回すなら `npx vitest run <パス>` で範囲を絞る（全部で700件以上あり、
 毎回まわすと遅い）。
+
+**`check:docs` は、ドキュメントが実在するものだけを指しているかを見る**
+（`scripts/check-docs.mjs`）。リンク・パス・識別子・手順書の bash に混ざった罠
+（`npm run test` は watch で終わらない、`grep -c` は0件で exit 1）。
+**文章は lint もテストも見てくれないので、ここで止める。**
+例示で実在しないものを書くときは、スクリプトの `PLACEHOLDER` へ理由つきで足す。
 
 `lint` が見ているものの中で、**このリポジトリで足したもの**が1つある。
 

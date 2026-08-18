@@ -10,7 +10,8 @@
     "lint": "eslint",
     "test": "vitest",
     "test:run": "vitest run",
-    "verify": "npm run lint && npm run test:run && npm run build",
+    "check:docs": "node scripts/check-docs.mjs",
+    "verify": "npm run check:docs && npm run lint && npm run test:run && npm run build",
     "prepare": "husky"
   },
   "dependencies": {

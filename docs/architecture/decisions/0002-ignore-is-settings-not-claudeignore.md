@@ -14,8 +14,8 @@ AI のコンテキストから、秘密情報・ビルド成果物・巨大な�
 調べたところ:
 
 ```bash
-CLI=$(command -v claude); grep -c "claudeignore" "$CLI"   # → 0
-grep -c "ignorePatterns" "$CLI"                            # → 3
+CLI=$(command -v claude); grep -c "claudeignore" "$CLI" || true   # → 0
+grep -c "ignorePatterns" "$CLI" || true                     # → 3
 ```
 
 索引が読むのは `.gitignore` / `.ignore` / `.rgignore` と、設定の

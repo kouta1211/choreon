@@ -289,7 +289,9 @@ docs/               # 動作確認の台本(qa-checklist.html)
 - `npm run lint` — ESLint実行
 - `npm run test` / `npm run test:run` — Vitest(watch / 単発実行)
 - `npm run build` — 本番ビルド
-- `npm run verify` — lint → test → build をまとめて実行
+- `npm run check:docs` — ドキュメントが実在するものだけを指しているか検査
+  (リンク・パス・識別子・手順書の bash に混ざった罠。**文章は静かに嘘になる**ため)
+- `npm run verify` — check:docs → lint → test → build をまとめて実行
 
 ## 動作確認
 
