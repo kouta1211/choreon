@@ -21,8 +21,11 @@ node -v && npm ci
 `npm ci` が通らなければそこで止めて、その事実だけを報告する（依存が壊れている日は、
 それ以外の指摘を出しても読む余裕が無い）。
 
-このプロジェクトの決まりごとは `AGENTS.md` にある。**Next.js は訓練データと違う版が入っている**ので、
-Next の API に触る前に `node_modules/next/dist/docs/` の該当ガイドを読むこと。
+このプロジェクトの決まりごとは `CLAUDE.md` が入口で、規約の本体は `.claude/rules/`、
+構造と仕様は `docs/` にある（それぞれ索引がある）。**触る所の分だけ開く。**
+
+**Next.js は訓練データと違う版が入っている**ので、Next の API に触る前に
+`AGENTS.md` の指示どおり `node_modules/next/dist/docs/` の該当ガイドを読むこと。
 
 ## 1. 見る範囲を決める
 
@@ -97,6 +100,22 @@ insufficient_privilege`）は、出てから気づくと原因が分かりにく
 - **コンポーネントの肥大**。1ファイルが 300 行を超えたら、切り出せる単位が無いか見る
 - **コメントと実装の食い違い**。このリポジトリはコメントで「なぜそうしたか」を
   残す方針なので、実装だけ変えてコメントが古いままだと後の判断を誤らせる
+- **AI 用のコンテキストが実態とずれていないか。** ここは黙って腐るので、
+  機械で見る。リンクが切れていたら直す（指摘ではなく直す側）
+
+```bash
+node -e 'const fs=require("fs"),path=require("path");let bad=0;
+const walk=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(path.join(d,e.name)):[path.join(d,e.name)]);
+for(const f of ["CLAUDE.md",...walk("docs").filter(x=>x.endsWith(".md")),...walk(".claude").filter(x=>x.endsWith(".md"))])
+  for(const m of fs.readFileSync(f,"utf8").matchAll(/\]\(([^)#\s]+)\)/g))
+    if(!/^https?:/.test(m[1])&&!fs.existsSync(path.resolve(path.dirname(f),m[1]))){console.log("BROKEN",f,"->",m[1]);bad++}
+console.log(bad?`broken: ${bad}`:"links ok")'
+```
+
+  あわせて目視で1点だけ: **`docs/**` に、しきい値や既定値の数字が
+  写されていないか**（`docs/README.md`「数字を写さない」）。
+  写された数字はコードが動いた瞬間に嘘になる。見つけたら定数名に置き換える。
+  例外は `qa-checklist.html` だけ
 
 ## 4. このリポジトリ固有の約束（壊れやすい順）
 

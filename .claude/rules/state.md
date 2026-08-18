@@ -1,0 +1,56 @@
+# 状態の持ち方（Zustand）
+
+## 1. ストアは役割で分かれている。混ぜない
+
+| ストア | 何を持つか |
+| --- | --- |
+| `features/project/store/useProjectStore` | **作品そのもの**。タイトル・ステージ・ダンサー・立ち位置 |
+| `features/canvas/store/useUIStore` | **画面の状態**。選択中・トースト・開いているシート |
+| `features/canvas/store/useHistoryStore` | 元に戻す / やり直す |
+| `features/settings/store/useSettingsStore` | 端末に残す設定（作品ではなく人の好み） |
+| `features/music/store/useMusicStore` | 曲と再生位置 |
+| `features/viewer/store/useViewerStore` | 閲覧画面だけの状態 |
+| `features/theme/store/useThemeStore` | テーマ |
+
+**分けている理由**: 作品は Supabase へ保存するもの、画面の状態は保存しないもの。
+選択中のダンサーを `useProjectStore` に入れると、保存の差分に混ざる。
+
+## 2. サーバーから来た props と、ストアの中身がずれる
+
+`/projects/[id]` はサーバーで作品を読んで props で渡す。**編集するとストアだけが
+新しくなり、props は古いまま**。props を素直に描くと「数字は変わるのに画面が
+変わらない」という壊れ方をする（実際に起きた: 報告 03-17）。
+
+編集で変わりうるものを描く側は、**ストアを優先して読む**:
+
+```ts
+const live = useProjectStore((state) =>
+  state.project?.id === project.id ? state.project : project,
+);
+```
+
+`src/components/templates/EditorLayout.tsx` がこれを1箇所でやって、
+下の組へは `live` を配っている。**新しく props を足すときは、そこへ足す。**
+
+## 3. 保存の型は決まっている
+
+**楽観的に画面を変える → 保存する → 失敗したら戻す → 成功してから履歴に積む。**
+立ち位置の編集は `features/scene/hooks/usePositionCommit` に1本化してあるので、
+新しい編集操作もここを通す（`changes[]` と `kind` を渡すだけ）。
+
+- **失敗した操作を履歴に積まない。** 見た目は戻っているので、積むと
+  「元に戻す」の辻褄が合わなくなる
+- 矢印キーの連打は `hasSameTargets` が同じ対象の連続を見て**1ステップに畳む**。
+  だから `changes[]` の並びは操作ごとに安定させる
+
+## 4. 同じ tick で2回コミットするときは `getState()` を読む
+
+レンダー時のクロージャに閉じ込めた値は古い。まとめて適用するボタンのように、
+1回の処理で複数の変更を流すときは `useProjectStore.getState()` で**その場の最新**を
+読む。読まないと、後の1つが前の1つを巻き戻す（設定の一括適用で実際に起きた）。
+
+## 5. 選択は「並び」で持つ
+
+`useUIStore.selectedDancerIds: string[]`（複数選択があるため）。
+1人のときだけ出したいもの（インスペクター・回転ハンドル・曲線）は、
+自前で長さを数えず `selectPrimaryDancerId(state)` を読む。

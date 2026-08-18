@@ -1,0 +1,11 @@
+# ■ このファイルに一覧を書かない
+#
+# Claude Code は `.claudeignore` を読まない（2026-08-18 に CLI 本体を調べて確認。
+# `claudeignore` の文字列は0件、索引が見るのは .gitignore / .ignore / .rgignore と
+# 設定の permissions.deny だった）。
+#
+# **除外の一覧は `.claude/settings.json` の permissions.deny が正。**
+# ここに同じものを書き写すと、必ず片方が古くなる。
+#
+# 経緯と、何を弾かないと決めたか:
+#   docs/architecture/decisions/0002-ignore-is-settings-not-claudeignore.md
