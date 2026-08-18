@@ -8,7 +8,6 @@ import { ViewerEntry } from "@/components/organisms/ViewerEntry";
 import { ViewerStage } from "@/components/organisms/ViewerStage";
 import { ViewerScrub } from "@/components/organisms/ViewerScrub";
 import { ViewerRoute } from "@/components/organisms/ViewerRoute";
-import { ViewerMusic } from "@/components/organisms/ViewerMusic";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
@@ -110,8 +109,13 @@ export function ViewerLayout({
 
   const dancer = dancers.find((item) => item.id === focusedDancerId);
 
+  /* **1画面に収めようとしない**(2026-08-18、実機の要望)。
+     以前は h-dvh で切り捨てていたので、横向きのスマホではステージが
+     小さくなるしかなかった。この画面の用途は【自分の位置と道順を
+     確かめる】ことなので、ステージを大きく取り、入りきらない分は
+     下へ流す（スクロールしてよい）。 */
   return (
-    <div className="flex h-dvh flex-col overflow-clip pb-[max(24px,env(safe-area-inset-bottom))]">
+    <div className="flex min-h-dvh flex-col pb-[max(24px,env(safe-area-inset-bottom))]">
       <header className="flex h-target-lg shrink-0 items-center gap-unit px-gutter">
         <span className="min-w-0 flex-1 truncate text-headline text-fg-strong">
           {project.title}
@@ -141,22 +145,41 @@ export function ViewerLayout({
           ) : (
             t.viewer.route.everyone
           )}
+          {/* **「変える」と書く**(2026-08-18、実機の報告 02-5)。
+              山（⌄）だけでは「押すと選び直せる」と読めなかった。
+              言葉で書くのがいちばん確実 */}
+          <span className="shrink-0 text-caption text-fg-muted">
+            {t.viewer.route.change}
+          </span>
           <ChevronDown size={13} className="shrink-0 text-fg-muted" aria-hidden />
         </PressableButton>
       </header>
 
-      {/* 横持ちと広い画面では、ステージの右に道順を置く。
+      {/* **横並びは 1024px から**(2026-08-18、実機の要望)。
+          md(768px)にすると横向きのスマホ(844px)まで横並びになり、
+          ステージが幅を道順に取られて小さくなる。この画面の用途は
+          【確かめる】ことなので、**スマホの横向きは縦積みにして
+          ステージを最大に取り、入りきらない分は下へ流す**。
+          タブレット以上は高さもあるので、これまで通り横並び。
+
+          広い画面では、ステージの右に道順を置く。
           **justify-center を入れてある** — 入れないと、ステージが 640px で
           頭打ちになったあとの余りが右端に溜まり、ステージ＋道順の塊が
           画面の左に寄る。広い画面ほど左に寄って見えるので、
           「ステージを真ん中に」という指摘になった */}
-      <div className="flex min-h-0 flex-1 flex-col justify-center gap-2 px-3.5 landscape:flex-row md:flex-row">
+      <div className="flex flex-col items-center gap-2 px-3.5 min-[1024px]:flex-row min-[1024px]:items-start min-[1024px]:justify-center">
         {/* Stage は「親の高さいっぱいに伸びて、そこから幅を決める」作り。
             ここを items-center の横フレックスにすると、Stage が交差軸で
             伸びずに中身(ラベル)の高さまで縮み、盤面が高さ0になって
             【ステージが消える】。縦フレックスのまま渡す */}
+        {/* **高さを明示する。** Stage は「親の高さいっぱい(h-full)から
+            aspect-ratio で幅を決める」作りなので、親の高さが不定だと
+            0 に潰れる(min-h-dvh へ変えた直後、実際に潰れた)。
+            140vw を上限520pxで頭打ちにしてある。ふつうのスマホでは上限に
+            当たって520px、うんと狭い端末では画面幅なりに縮む。
+            上限を置くのは、広い画面でステージだけが間延びしないため */}
         <div
-          className="flex min-h-0 min-w-0 flex-1 flex-col"
+          className="flex h-[min(140vw,520px)] w-full min-w-0 flex-col min-[1024px]:flex-1"
           style={{ maxWidth: "min(100%, 640px)" }}
         >
           <ViewerStage />
@@ -170,18 +193,18 @@ export function ViewerLayout({
             盤面が潰れて「バックステージ」と「客席側」の札が重なっていた**。
             横向きは高さが足りず幅が余るので、縦に積むのをやめて右へ寄せる。
             縦向きでは flex-col のままなので、並びはこれまでと変わらない。 */}
-        <div className="flex min-h-0 shrink-0 flex-col gap-2 landscape:w-[330px] landscape:justify-center landscape:overflow-y-auto md:w-[340px] md:justify-center md:overflow-y-auto">
+        <div className="flex w-full shrink-0 flex-col gap-2 min-[1024px]:w-[340px] min-[1024px]:justify-center">
           <ViewerRoute />
-        {/* 曲は共有されないので、見る人が自分の端末で選べるようにする。
-            選ぶまでは帯の地が8カウントの縞になっている */}
-        <ViewerMusic
-          isPlaying={isPlaying}
-          onEnded={() => setIsPlaying(false)}
-        />
 
-        <ViewerScrub />
+          {/* **見る人は曲を選べない**(2026-08-18、実機の要望)。
+              以前は「同じ曲をこの端末で選ぶ」を出していたが、見る人の仕事は
+              自分の道順を確かめることで、曲を用意することではない。
+              時間の目盛りは作品の BPM と拍子（どちらも共有される）から引ける。
+              音そのものが要る場合は、振付師側の設定を引き継ぐ形にする
+              — いまはその設定が作品に入っていないので、次の課題 */}
+          <ViewerScrub />
 
-        <div className="mt-unit flex items-center gap-unit">
+          <div className="mt-unit flex items-center gap-unit">
           <PressableButton
             kind="icon"
             onClick={() => {

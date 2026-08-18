@@ -447,6 +447,7 @@ export const en = {
       315: "facing front-right",
     },
     route: {
+      change: "Change",
       title: (name: string) => `${name}'s route`,
       me: "you",
       everyone: "Everyone",

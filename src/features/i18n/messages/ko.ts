@@ -443,6 +443,7 @@ export const ko = {
       315: "상수 앞쪽",
     },
     route: {
+      change: "변경",
       title: (name: string) => `${name}의 동선`,
       me: "나",
       everyone: "전체",

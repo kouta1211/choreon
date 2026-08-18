@@ -468,6 +468,7 @@ export const ja = {
       315: "上手前向き",
     },
     route: {
+      change: "変える",
       title: (name: string) => `${name} の道順`,
       me: "自分",
       everyone: "全員",
