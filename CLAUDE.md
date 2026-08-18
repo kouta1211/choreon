@@ -46,10 +46,13 @@
 作る      → /scaffold    規約どおりの雛形を生やす
 直す      → /auto-fix    原因を特定して直し、verify が通るまで自己修正
 調べる    → /analyze     書き換える前に依存と影響範囲を洗う（/refactor の前段）
+先に縛る  → /test-gen    実装の前に、振る舞いを決めるテストを書く
+通す      → /test-pass   落ちているテストが通るまで実装する（TDD の後半）
 整える    → /refactor    テストで縛ってから、単一責任へ割る
 確かめる  → /qa-checklist  画面に見える変更を、実機の台本へ反映（コミット前）
 分ける    → /branch      分ける理由があるときだけ。既定は main へ直接
 残す      → /commit      差分を読んでコミット（push はしない）
+出す      → /pr          push して PR を作る（main に居たら止まる）
 締める    → /wrap-up     学びを docs/lessons_learned.md へ（その日の終わり）
 畳む      → /reset       話が長くなったので途中で切る前の安全確認
 ```
