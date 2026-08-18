@@ -127,7 +127,7 @@ for (const f of docs) {
     if (!/[A-Z_]/.test(id)) continue;        // camelCase / PascalCase / CONSTANT だけ
     /* 外部の名前（このリポジトリのソースには出てこないが実在する）。
        増やすときは、どこの名前かを書くこと。 */
-    if (/^(node_modules|service_role|authenticated|localStorage|IndexedDB|object_not_found|MediaRecorder)$/.test(id))
+    if (/^(node_modules|service_role|authenticated|localStorage|IndexedDB|object_not_found|MediaRecorder|ToolSearch|PushNotification)$/.test(id))
       continue;
     counts.symbols = (counts.symbols ?? 0) + 1;
     if (!source.includes(id)) {
