@@ -199,7 +199,7 @@ export function useStageScrubGesture({
         // 戻すと、シーンの差し替えが画面に出るまでの1フレームだけ
         // ダンサーが元の隊形へ跳ね返って見える。1のまま放っておけば
         // 「進捗1の位置」と「新しいシーンの位置」が一致しているので継ぎ目が出ない
-        animate(scrub.progress, 1, { duration, ease: [...SNAP_EASE] }).then(
+        void animate(scrub.progress, 1, { duration, ease: [...SNAP_EASE] }).then(
           () => {
             selectScene(targetSceneId);
             scrub.setTargetSceneId(null);
@@ -209,7 +209,7 @@ export function useStageScrubGesture({
       }
 
       // 届かなかった。元の位置へ戻す
-      animate(scrub.progress, 0, { duration, ease: [...SNAP_EASE] }).then(
+      void animate(scrub.progress, 0, { duration, ease: [...SNAP_EASE] }).then(
         () => {
           scrub.setTargetSceneId(null);
         },

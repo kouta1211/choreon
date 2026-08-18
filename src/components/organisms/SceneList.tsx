@@ -77,7 +77,8 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) return;
-    reorderTo(
+    // 並べ替えの保存。commitTimes が中で失敗を受けて元へ戻すので投げっぱなしでよい
+    void reorderTo(
       reorderSceneIds(
         scenes.map((scene) => scene.id),
         String(active.id),
