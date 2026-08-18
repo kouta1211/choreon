@@ -413,6 +413,24 @@
     font-weight: 700;
   }
   .report p.why { margin: 0; font-size: 0.88rem; color: var(--fg-sub); }
+  /* 報告に何を入れるかの選択。押す的を文ぜんぶに広げる（44px以上） */
+  .report label.opt {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    min-height: 44px;
+    font-size: 0.88rem;
+    color: var(--fg-sub);
+    cursor: pointer;
+  }
+  .report label.opt input {
+    margin: 0;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
   .report .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
   .report button {
     appearance: none;
@@ -695,6 +713,14 @@
       rows="4"
       placeholder="例：スマホだと下のバーが厚くてステージが狭い。シーンを複製したあと名前を自動で「〜のコピー」にしたい。"
     ></textarea>
+    <label class="opt" for="include-sent">
+      <input type="checkbox" id="include-sent" />
+      <span>
+        <b>提出済みのメモも入れる</b> —
+        履歴へ落ちたぶんも報告に載せます。
+        <b>渡し忘れた（コピーし損ねた）ときの拾い直し用</b>です。
+      </span>
+    </label>
     <div class="actions">
       <button type="button" id="make-report">報告の文章を作る</button>
       <button type="button" class="ghost" id="copy-report" hidden>コピーする</button>
@@ -2837,6 +2863,11 @@
 
   function buildReport() {
     const label = device === "phone" ? "スマホ" : "PC";
+    /* 履歴へ落ちたメモも入れるか。
+       「コピーする」を押した時点で提出済みになるので、**実際に貼れなかった
+       ときにここから拾い直せる**（そういう取りこぼしが実際に起きた） */
+    const includeSent =
+      document.getElementById("include-sent")?.checked === true;
     const acts = DATA[device].acts;
     const withMemo = [];
     const unchecked = [];
@@ -2851,8 +2882,16 @@
         total += 1;
         if (isDone) done += 1;
         const memo = memos.items[id];
-        if (memo) {
-          withMemo.push({ no, act: act.title, do_: plain(item.do), memo, isDone });
+        const sent = includeSent ? (memos.sent[id] ?? []) : [];
+        if (memo || sent.length > 0) {
+          withMemo.push({
+            no,
+            act: act.title,
+            do_: plain(item.do),
+            memo,
+            sent,
+            isDone,
+          });
         } else if (!isDone) {
           unchecked.push({ no, act: act.title, do_: plain(item.do) });
         }
@@ -2864,7 +2903,11 @@
     lines.push("");
     lines.push(`- 進み具合: ${done} / ${total} 項目`);
     lines.push(`- 気づきを書いた項目: ${withMemo.length} 件`);
-    lines.push("- ここに入っているのは**まだ提出していないメモだけ**です（提出済みのものは台本の履歴に残しています）");
+    lines.push(
+      includeSent
+        ? "- **提出済みのメモも入れています**（履歴に落ちたぶんの拾い直しです。2度目の話ならそう言ってください）"
+        : "- ここに入っているのは**まだ提出していないメモだけ**です（提出済みのものは台本の履歴に残しています）",
+    );
     lines.push("");
 
     lines.push("## 気づいたこと");
@@ -2877,19 +2920,35 @@
           `- **${row.no} ${row.act}** ${row.isDone ? "（チェック済み）" : "（未チェック）"}`,
         );
         lines.push(`  - 操作: ${row.do_}`);
-        row.memo.split("\n").forEach((part) => {
-          lines.push(`  - メモ: ${part}`);
+        if (row.memo) {
+          row.memo.split("\n").forEach((part) => {
+            lines.push(`  - メモ: ${part}`);
+          });
+        }
+        // 提出済みは、そうと分かる形で並べる（新しい話と混ぜない）
+        row.sent.forEach((past) => {
+          past.split("\n").forEach((part) => {
+            lines.push(`  - メモ（提出済み）: ${part}`);
+          });
         });
       });
     }
     lines.push("");
 
-    if (memos.global.trim()) {
+    const globalSent = includeSent ? memos.globalSent : [];
+    if (memos.global.trim() || globalSent.length > 0) {
       lines.push("## 項目に紐づかない気づき");
       memos.global
         .trim()
         .split("\n")
-        .forEach((part) => lines.push(part));
+        .forEach((part) => {
+          if (part) lines.push(part);
+        });
+      globalSent.forEach((past) => {
+        past.split("\n").forEach((part) => {
+          if (part) lines.push(`（提出済み）${part}`);
+        });
+      });
       lines.push("");
     }
 
