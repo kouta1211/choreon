@@ -75,6 +75,10 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
     onChange: (next) => void commitOffset(next),
   });
 
+  /* 打っている最中の理由と、押した後に直した理由は同じ場所に出す
+     （設定の行と同じ扱い） */
+  const offsetReason = offsetField.invalid ?? offsetField.correction;
+
   const commitOffset = async (value: number) => {
     const previous = storedOffset;
     setMusicOffset(value);
@@ -216,7 +220,7 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
               「打った数が消えた」ようにしか見えない */}
           <p
             className={`mt-1.5 text-caption leading-snug ${
-              offsetField.correction ? "text-[var(--dancer-2)]" : "text-fg-muted"
+              offsetReason ? "text-[var(--dancer-2)]" : "text-fg-muted"
             }`}
           >
             {t.music.offsetNote}{" "}
@@ -224,26 +228,28 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
               {MIN_MUSIC_OFFSET}–{MAX_MUSIC_OFFSET}
               {t.music.seconds}
             </span>
-            {offsetField.correction &&
-              ` · ${numberCorrectionMessage(t, offsetField.correction, MIN_MUSIC_OFFSET, MAX_MUSIC_OFFSET)}`}
-            {!offsetField.correction &&
+            {offsetReason &&
+              ` · ${numberCorrectionMessage(t, offsetReason, MIN_MUSIC_OFFSET, MAX_MUSIC_OFFSET)}`}
+            {!offsetReason &&
               offsetField.isDirty &&
               ` · ${t.common.numberField.notApplied}`}
-            {!offsetField.correction &&
-            !offsetField.isDirty &&
-            offsetField.justApplied
+            {!offsetReason && !offsetField.isDirty && offsetField.justApplied
               ? ` · ${t.common.numberField.applied}`
               : ""}
           </p>
 
-          {/* 打ち替えている間だけ出す */}
+          {/* 打ち替えている間だけ出す。**範囲の外や数でないものを打っている
+              間は押せない**（設定の「適用」と同じ決まり／実機報告 12-9） */}
           {offsetField.isDirty && (
             <PressableButton
               kind="primary"
               onClick={offsetField.commit}
-              className="mt-2 flex h-9 w-full items-center justify-center rounded-[calc(var(--radius)*0.6)] border border-accent bg-accent/12 text-label font-semibold text-accent-soft"
+              disabled={Boolean(offsetField.invalid)}
+              className="mt-2 flex h-9 w-full items-center justify-center rounded-[calc(var(--radius)*0.6)] border border-accent bg-accent/12 text-label font-semibold text-accent-soft disabled:border-line-strong disabled:bg-transparent disabled:text-fg-muted"
             >
-              {t.common.numberField.apply}
+              {offsetField.invalid
+                ? t.common.numberField.fixRange
+                : t.common.numberField.apply}
             </PressableButton>
           )}
 

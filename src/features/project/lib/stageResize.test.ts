@@ -1,15 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { dancersOutside, smallestStage } from "./stageResize";
+import {
+  clampPositionsToStage,
+  dancersOutside,
+  smallestStage,
+} from "./stageResize";
 import type { Position } from "@/features/scene/types";
 
 /**
  * ステージの広さを、あとから変えられるようにしたぶんの判断。
  *
- * ■ 守っていること
- * **狭めるときに、外へ出る人が居るなら止める。**
- * 立ち位置はマス目で持っているので、狭めれば外の人は画面から消えるか
- * 端へ寄せ直すしかない。どちらも user が組んだ隊形を勝手に崩す。
- * 「◯人がその外に居ます」と言って止め、動かすかどうかは user に任せる。
+ * ■ 守っていること（2026-08-18 に変わった）
+ * **狭める方を優先し、収まらない人はいちばん近い端へ寄せる**（実機報告 03-6）。
+ * 以前は外へ出る人が居たら変更そのものを断っていた。
+ * `dancersOutside` は断る役ではなくなり、いまは「◯人を端へ寄せました」と
+ * **件数を言う**ために使う。崩れたままにしない逃げ道は「元に戻す」。
  */
 function at(x: number, y: number): Position {
   return { xCoordinate: x, yCoordinate: y } as Position;
@@ -102,5 +106,78 @@ describe("dancersOutside（人で数える）", () => {
     expect(
       dancersOutside({ s1: { a: at(9, 2), b: at(9, 3) } }, 8, 8).count,
     ).toBe(2);
+  });
+});
+
+/**
+ * 端へ寄せる。
+ *
+ * 返すのは**動く人だけ**で、形は履歴に積める `PositionChange`。
+ * 「元に戻す」で戻す先(before)を、寄せるときに一緒に控えておく。
+ */
+describe("clampPositionsToStage", () => {
+  it("収まっていれば誰も動かない", () => {
+    expect(clampPositionsToStage(TWO_SCENES, 10, 8)).toEqual([]);
+  });
+
+  it("外に出た人を、いちばん近い端へ寄せる", () => {
+    // 幅8にすると s2 の a(x=9) が外
+    const changes = clampPositionsToStage(TWO_SCENES, 8, 8);
+
+    expect(changes).toHaveLength(1);
+    expect(changes[0].sceneId).toBe("s2");
+    expect(changes[0].dancerId).toBe("a");
+    expect(changes[0].after.xCoordinate).toBe(8);
+    // 触っていない軸はそのまま
+    expect(changes[0].after.yCoordinate).toBe(6);
+    // 戻す先も持っている
+    expect(changes[0].before.xCoordinate).toBe(9);
+  });
+
+  /** 斜めの外に居た人は角へ。x と y をそれぞれ丸めれば、それが最短 */
+  it("縦横どちらからも外れていれば角へ寄せる", () => {
+    const changes = clampPositionsToStage({ s1: { a: at(9, 6) } }, 8, 5);
+
+    expect(changes[0].after.xCoordinate).toBe(8);
+    expect(changes[0].after.yCoordinate).toBe(5);
+  });
+
+  it("同じ人が複数シーンで外に居れば、そのシーンぶん動く", () => {
+    const changes = clampPositionsToStage(
+      { s1: { a: at(9, 2) }, s2: { a: at(9, 3) } },
+      8,
+      8,
+    );
+
+    expect(changes).toHaveLength(2);
+    expect(changes.map((change) => change.sceneId)).toEqual(["s1", "s2"]);
+  });
+
+  it("端ぴったりは動かさない", () => {
+    expect(clampPositionsToStage({ s1: { a: at(10, 8) } }, 10, 8)).toEqual([]);
+  });
+
+  /** 道の途中の話（曲線の制御点）は触らない。立ち位置が寄れば道も付いてくる */
+  it("立ち位置以外はそのまま持っていく", () => {
+    const changes = clampPositionsToStage(
+      {
+        s1: {
+          a: {
+            sceneId: "s1",
+            dancerId: "a",
+            xCoordinate: 12,
+            yCoordinate: 2,
+            rotationAngle: 90,
+            curveControlX: 5,
+            curveControlY: 5,
+          },
+        },
+      },
+      8,
+      8,
+    );
+
+    expect(changes[0].after.rotationAngle).toBe(90);
+    expect(changes[0].after.curveControlX).toBe(5);
   });
 });

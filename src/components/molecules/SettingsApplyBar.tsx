@@ -14,13 +14,17 @@ import {
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { useT } from "@/features/i18n/LocaleProvider";
 
-/** 数を入れる行が預けるもの。「打ち替えがあるか」と「確定させる手」 */
-type Entry = { isDirty: boolean; commit: () => void };
+/**
+ * 数を入れる行が預けるもの。
+ * 「打ち替えがあるか」「そのままでは受け取れないか」「確定させる手」。
+ */
+type Entry = { isDirty: boolean; isInvalid: boolean; commit: () => void };
 
 type Registry = {
   register: (id: string, entry: { current: Entry }) => void;
   unregister: (id: string) => void;
   setDirty: (id: string, isDirty: boolean) => void;
+  setInvalid: (id: string, isInvalid: boolean) => void;
 };
 
 /** 預かり口。**中身が変わらない**ので、行がこれで描き直されることは無い */
@@ -36,6 +40,10 @@ const ApplyRegistry = createContext<Registry | null>(null);
  *
  * 束の下に1つ置いて、**居場所を動かさない**。押せるものが無いときは
  * 押せない見た目のまま残す — 消すと、結局「出たり消えたり」に戻る。
+ *
+ * ■ 受け取れない数が1つでもあれば押せない(実機報告 12-9)
+ * 範囲の外・数でないものを打っている間は、押しても直しようがない。
+ * 件数の代わりに「入れられる範囲に直してください」と出す。
  *
  * ■ 数を入れる行が1つも無い束には出さない
  * 目盛り・表示のようにスイッチだけの束では、押しても何も起きない。
@@ -54,6 +62,7 @@ export function SettingsApplySurface({ children }: { children: ReactNode }) {
   const entries = useRef(new Map<string, { current: Entry }>());
   const [ids, setIds] = useState<string[]>([]);
   const [dirtyIds, setDirtyIds] = useState<string[]>([]);
+  const [invalidIds, setInvalidIds] = useState<string[]>([]);
 
   const registry = useMemo<Registry>(
     () => ({
@@ -65,11 +74,17 @@ export function SettingsApplySurface({ children }: { children: ReactNode }) {
         entries.current.delete(id);
         setIds((prev) => prev.filter((one) => one !== id));
         setDirtyIds((prev) => prev.filter((one) => one !== id));
+        setInvalidIds((prev) => prev.filter((one) => one !== id));
       },
       setDirty: (id, isDirty) =>
         setDirtyIds((prev) => {
           if (prev.includes(id) === isDirty) return prev;
           return isDirty ? [...prev, id] : prev.filter((one) => one !== id);
+        }),
+      setInvalid: (id, isInvalid) =>
+        setInvalidIds((prev) => {
+          if (prev.includes(id) === isInvalid) return prev;
+          return isInvalid ? [...prev, id] : prev.filter((one) => one !== id);
         }),
     }),
     [],
@@ -79,11 +94,14 @@ export function SettingsApplySurface({ children }: { children: ReactNode }) {
     /* 並んでいる順（上の行から）に確定させる。行どうしが同じものを
        書き換える場合があるので、順番が読める形にしておく */
     for (const entry of entries.current.values()) {
-      if (entry.current.isDirty) entry.current.commit();
+      if (entry.current.isDirty && !entry.current.isInvalid) {
+        entry.current.commit();
+      }
     }
   }, []);
 
   const count = dirtyIds.length;
+  const hasInvalid = invalidIds.length > 0;
 
   return (
     <ApplyRegistry.Provider value={registry}>
@@ -95,12 +113,14 @@ export function SettingsApplySurface({ children }: { children: ReactNode }) {
           <PressableButton
             kind="primary"
             onClick={applyAll}
-            disabled={count === 0}
+            disabled={count === 0 || hasInvalid}
             className="flex h-11 w-full items-center justify-center rounded-[calc(var(--radius)*0.6)] border border-accent bg-accent/12 text-label font-semibold text-accent-soft disabled:border-line-strong disabled:bg-transparent disabled:text-fg-muted"
           >
-            {count === 0
-              ? t.common.numberField.apply
-              : t.common.numberField.applyCount(count)}
+            {hasInvalid
+              ? t.common.numberField.fixRange
+              : count === 0
+                ? t.common.numberField.apply
+                : t.common.numberField.applyCount(count)}
           </PressableButton>
         </div>
       )}
@@ -114,14 +134,18 @@ export function SettingsApplySurface({ children }: { children: ReactNode }) {
  * 戻り値は**預け先があったか**。無ければ（設定の外で使われたら）
  * 行が自分でボタンを出す。
  */
-export function useSettingsApply(isDirty: boolean, commit: () => void) {
+export function useSettingsApply(
+  isDirty: boolean,
+  isInvalid: boolean,
+  commit: () => void,
+) {
   const registry = useContext(ApplyRegistry);
   const id = useId();
-  const latest = useRef<Entry>({ isDirty, commit });
+  const latest = useRef<Entry>({ isDirty, isInvalid, commit });
 
   // 描画のたびに最新の手へ差し替える。ref なので、これで描き直しは起きない
   useEffect(() => {
-    latest.current = { isDirty, commit };
+    latest.current = { isDirty, isInvalid, commit };
   });
 
   useEffect(() => {
@@ -134,6 +158,11 @@ export function useSettingsApply(isDirty: boolean, commit: () => void) {
   useEffect(() => {
     registry?.setDirty(id, isDirty);
   }, [registry, id, isDirty]);
+
+  // 受け取れる/受け取れないが入れ替わったときだけ動く
+  useEffect(() => {
+    registry?.setInvalid(id, isInvalid);
+  }, [registry, id, isInvalid]);
 
   return registry !== null;
 }

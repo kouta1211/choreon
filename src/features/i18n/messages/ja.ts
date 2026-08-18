@@ -268,6 +268,8 @@ export const ja = {
        *  ボタンは束の下に1つ常設する形へ（03-17）。言葉も「適用」で揃える */
       apply: "適用",
       applyCount: (count: number) => `適用（${count}件）`,
+      /** 範囲の外・数でないものが残っている間は押せない（実機報告 12-9） */
+      fixRange: "入れられる範囲に直してください",
       notApplied: "適用を押すまで変わりません",
       applied: "適用しました",
     },
@@ -802,10 +804,11 @@ export const ja = {
     /** 作品を開いているときの「舞台」で使う文。束そのものは stage と1つ */
     projectStage: {
       description: "この作品だけの広さです。1マス = 90cm",
+      /** 狭めても止めない。何が起きるかを先に書く（実機報告 03-6） */
       floor: (width: number, height: number) =>
-        `いま置いている人が収まるのは ${width}×${height} マスまでです。1マス = 90cm`,
-      hasOutside: (count: number) =>
-        `${count}人がその外に居るので、変えていません。先にその人を内側へ動かしてください`,
+        `${width}×${height} マスより狭くすると、収まらない人は端へ寄ります。1マス = 90cm`,
+      moved: (count: number) =>
+        `${count}人を端へ寄せました。元に戻すで戻せます`,
       failed: "ステージの広さを保存できませんでした",
     },
     stage: {

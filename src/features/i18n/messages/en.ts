@@ -246,6 +246,7 @@ export const en = {
       tooLarge: (max: number) => `Cannot go above ${max}`,
       apply: "Apply",
       applyCount: (count: number) => `Apply (${count})`,
+      fixRange: "Fix the value first",
       notApplied: "Nothing changes until you press Apply",
       applied: "Applied",
     },
@@ -764,9 +765,9 @@ export const en = {
     projectStage: {
       description: "This size belongs to this piece only. 1 cell = 90cm",
       floor: (width: number, height: number) =>
-        `Everyone currently placed fits within ${width}x${height} cells. 1 cell = 90cm`,
-      hasOutside: (count: number) =>
-        `${count} dancer(s) would fall outside, so nothing changed. Move them inside first`,
+        `Below ${width}x${height} cells, anyone who no longer fits is moved to the nearest edge. 1 cell = 90cm`,
+      moved: (count: number) =>
+        `Moved ${count} dancer(s) to the nearest edge. Undo puts them back`,
       failed: "Could not save the stage size",
     },
     stage: {

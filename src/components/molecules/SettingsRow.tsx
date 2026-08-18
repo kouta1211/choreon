@@ -162,6 +162,10 @@ export function SettingsSegmentRow<T extends string | number>({
  * 数値にして丸める。曲の頭出し(MusicSheet)が先に同じ作法になっているので、
  * 数を入れる場所の振る舞いが画面によって違う、ということも無くなる。
  *
+ * ■ 受け取れない数は、押す前に止める(2026-08-18、実機報告 12-9)
+ * 範囲の外・数でないものを打っている間は、その場で理由を出し、束の下の
+ * 「適用」を押せなくする。**押してから直すのをやめた**。
+ *
  * ■ 確定させるボタンは、この行には出さない(2026-08-18)
  * 打ち替えている間だけ行の中に出していたが、**出たり消えたりで行の高さが
  * 動く**（実機報告 03-17）。束の下に1つ常設したものへ手を預ける
@@ -190,15 +194,18 @@ export function SettingsNumberRow({
 }) {
   const t = useT();
   // 打っている間の預かりと、確定したときの丸め方は曲の頭出しと共通
-  const { draft, setDraft, commit, correction, isDirty, justApplied } =
+  const { draft, setDraft, commit, correction, invalid, isDirty, justApplied } =
     useNumberDraft({
       value,
       min,
       max,
       onChange,
     });
+  /* 打っている最中の理由(invalid)と、押した後に直した理由(correction)は
+     同じ場所に同じ色で出す。読む側にとっては同じ「なぜ入らないか」 */
+  const reason = invalid ?? correction;
   // 束の下の「適用」へ預ける。預け先があれば、この行はボタンを出さない
-  const hasApplyBar = useSettingsApply(isDirty, commit);
+  const hasApplyBar = useSettingsApply(isDirty, Boolean(invalid), commit);
 
   return (
     <div className="flex min-h-target flex-col gap-unit px-gutter py-unit">
@@ -236,7 +243,8 @@ export function SettingsNumberRow({
         <PressableButton
           kind="primary"
           onClick={commit}
-          className="flex h-9 w-full items-center justify-center rounded-[calc(var(--radius)*0.6)] border border-accent bg-accent/12 text-label font-semibold text-accent-soft"
+          disabled={Boolean(invalid)}
+          className="flex h-9 w-full items-center justify-center rounded-[calc(var(--radius)*0.6)] border border-accent bg-accent/12 text-label font-semibold text-accent-soft disabled:border-line-strong disabled:bg-transparent disabled:text-fg-muted"
         >
           {t.common.numberField.apply}
         </PressableButton>
@@ -247,7 +255,7 @@ export function SettingsNumberRow({
           直したときは、その理由をここへ足す(黙って戻さない) */}
       <p
         className={`text-caption leading-snug ${
-          correction ? "text-[var(--dancer-2)]" : "text-fg-muted"
+          reason ? "text-[var(--dancer-2)]" : "text-fg-muted"
         }`}
       >
         {description ? `${description} · ` : ""}
@@ -255,10 +263,10 @@ export function SettingsNumberRow({
           {min}–{max}
           {unit}
         </span>
-        {correction && ` · ${numberCorrectionMessage(t, correction, min, max)}`}
+        {reason && ` · ${numberCorrectionMessage(t, reason, min, max)}`}
         {/* 押すまで変わらないことと、押して変わったことを、同じ行で伝える */}
-        {!correction && isDirty && ` · ${t.common.numberField.notApplied}`}
-        {!correction && !isDirty && justApplied
+        {!reason && isDirty && ` · ${t.common.numberField.notApplied}`}
+        {!reason && !isDirty && justApplied
           ? ` · ${t.common.numberField.applied}`
           : ""}
       </p>

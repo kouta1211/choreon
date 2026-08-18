@@ -245,6 +245,7 @@ export const ko = {
       tooLarge: (max: number) => `${max}보다 크게 할 수 없습니다`,
       apply: "적용",
       applyCount: (count: number) => `적용 (${count}건)`,
+      fixRange: "입력 가능한 범위로 고쳐 주세요",
       notApplied: "적용을 누를 때까지 바뀌지 않습니다",
       applied: "적용했습니다",
     },
@@ -757,9 +758,9 @@ export const ko = {
     projectStage: {
       description: "이 작품만의 크기입니다. 1칸 = 90cm",
       floor: (width: number, height: number) =>
-        `지금 배치된 사람이 들어가는 것은 ${width}x${height} 칸까지입니다. 1칸 = 90cm`,
-      hasOutside: (count: number) =>
-        `${count}명이 그 밖에 있으므로 변경하지 않았습니다. 먼저 그 사람을 안쪽으로 옮겨 주세요`,
+        `${width}x${height} 칸보다 좁히면 들어가지 않는 사람은 가장 가까운 끝으로 옮겨집니다. 1칸 = 90cm`,
+      moved: (count: number) =>
+        `${count}명을 끝으로 옮겼습니다. 되돌리기로 되돌릴 수 있습니다`,
       failed: "스테이지 크기를 저장할 수 없었습니다",
     },
     stage: {

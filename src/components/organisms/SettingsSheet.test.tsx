@@ -127,8 +127,8 @@ describe("SettingsSheet の「舞台」", () => {
 
     expect(screen.getByLabelText(/ステージの幅/)).toHaveValue(15);
     expect(screen.getByLabelText(/ステージの奥行き/)).toHaveValue(10);
-    // どこまで狭められるかも添える
-    expect(screen.getByText(/8×6 マスまで/)).toBeInTheDocument();
+    // 狭めたら何が起きるかを先に書いてある
+    expect(screen.getByText(/8×6 マスより狭くすると/)).toBeInTheDocument();
   });
 
   it("打っただけでは変わらない。「適用」を押して初めて効く", async () => {
@@ -164,7 +164,9 @@ describe("SettingsSheet の「舞台」", () => {
     expect(project?.stageHeight).toBe(12);
   });
 
-  it("外に人が出る狭さは断って、欄の数も元へ戻す", async () => {
+  /* **止めるのをやめた**（実機報告 03-6）。狭める方を優先して、収まらない
+     人はいちばん近い端へ寄せる。戻せるように履歴へ積んである */
+  it("外に人が出る狭さでも通し、その人を端へ寄せる", async () => {
     openProject();
     const user = await openStage();
 
@@ -173,9 +175,30 @@ describe("SettingsSheet の「舞台」", () => {
     await user.type(depth, "5");
     await user.click(screen.getByRole("button", { name: /適用/ }));
 
-    expect(useProjectStore.getState().project?.stageHeight).toBe(10);
-    expect(depth).toHaveValue(10);
-    expect(screen.getByText(/1人がその外に居る/)).toBeInTheDocument();
+    const store = useProjectStore.getState();
+    expect(store.project?.stageHeight).toBe(5);
+    // 6 に居た人が、新しい奥行き(5)の端へ
+    expect(store.positionsBySceneId["scene-1"]["dancer-1"].yCoordinate).toBe(5);
+    // 横は動かない
+    expect(store.positionsBySceneId["scene-1"]["dancer-1"].xCoordinate).toBe(8);
+  });
+
+  /* 押せないようにしておかないと、押してから直すことになる（12-9） */
+  it("入れられる範囲の外を打っている間は「適用」を押せない", async () => {
+    openProject();
+    const user = await openStage();
+
+    const width = screen.getByLabelText(/ステージの幅/);
+    await user.clear(width);
+    await user.type(width, "999");
+
+    expect(screen.getByRole("button", { name: /適用|範囲/ })).toBeDisabled();
+    expect(screen.getByText(/30 より大きくはできません/)).toBeInTheDocument();
+
+    // 範囲の中へ直すと押せるようになる
+    await user.clear(width);
+    await user.type(width, "20");
+    expect(screen.getByRole("button", { name: /適用/ })).toBeEnabled();
   });
 
   // スイッチだけの束に、押しても何も起きないボタンを常設しない

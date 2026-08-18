@@ -1,15 +1,18 @@
 import type { Position } from "@/features/scene/types";
+import type { PositionChange } from "@/features/canvas/store/useHistoryStore";
 
 /**
- * ステージを狭めても、外に出てしまう人が居ないか。
+ * ステージを狭めたときに、外に出てしまう人。
  *
- * ■ なぜ黙って動かさないのか
- * 立ち位置はステージのマス目（0〜幅）で持っている。幅を狭めると、その外に
- * 居る人は**画面から消える**か、端へ寄せ直すしかない。どちらも
- * **user が組んだ隊形を勝手に崩す**ことになる。
+ * ■ 止めるのではなく、何人動くかを言うために使う（2026-08-18 に変えた）
+ * 以前はここに1人でも居たら**広さの変更そのものを断って**いた
+ * （組んだ隊形を勝手に崩さないため）。**user の判断で逆にした** —
+ * 「ステージの大きさを変更することを優先し、収まらない人はいちばん近い端に
+ * 置く」（実機報告 03-6）。断る役ではなくなり、いまは
+ * 「◯人を端へ寄せました」と件数を言うために使う。
  *
- * 稽古で使う値なので、勝手に寄せるより「◯人がその外に居ます」と言って
- * 止める方がよい。動かすかどうかは、その人を先に動かすことで user が決める。
+ * 崩れたままにしないための逃げ道は**元に戻す**で、1回押せば寄せた人も
+ * ステージの広さも一緒に戻る（履歴に resize として積んである）。
  *
  * ■ 広げるのはいつでも通る
  * 誰も外に出ない。
@@ -64,4 +67,48 @@ export function smallestStage(
   if (!seen) return null;
   // マスの目でしか置けないので、切り上げれば必ず収まる
   return { width: Math.ceil(width), height: Math.ceil(height) };
+}
+
+/**
+ * 新しい広さに収まらない人を、**いちばん近い端**へ寄せた結果。
+ *
+ * 返すのは**動く人だけ**。x と y はそれぞれ別に丸めるので、角の外に居た人は
+ * 角へ寄る（斜めに一番近い点＝角、で直感とも合う）。
+ *
+ * 形を `PositionChange` に揃えてあるのは、そのまま
+ * **履歴へ積めて、`upsertPositions` にも渡せる**ため。
+ * 「元に戻す」で戻す先(before)を、ここで一緒に持っておく。
+ */
+export function clampPositionsToStage(
+  positionsBySceneId: Record<string, Record<string, Position>>,
+  stageWidth: number,
+  stageHeight: number,
+): PositionChange[] {
+  const changes: PositionChange[] = [];
+
+  for (const [sceneId, positions] of Object.entries(positionsBySceneId)) {
+    for (const [dancerId, position] of Object.entries(positions)) {
+      const xCoordinate = Math.min(stageWidth, Math.max(0, position.xCoordinate));
+      const yCoordinate = Math.min(
+        stageHeight,
+        Math.max(0, position.yCoordinate),
+      );
+      if (
+        xCoordinate === position.xCoordinate &&
+        yCoordinate === position.yCoordinate
+      ) {
+        continue;
+      }
+      changes.push({
+        sceneId,
+        dancerId,
+        before: position,
+        /* 曲線の制御点は**触らない**。触ると「戻す」で戻る先が増えるうえ、
+           制御点は道の途中の話で、立ち位置が端へ寄れば道も付いてくる */
+        after: { ...position, xCoordinate, yCoordinate },
+      });
+    }
+  }
+
+  return changes;
 }

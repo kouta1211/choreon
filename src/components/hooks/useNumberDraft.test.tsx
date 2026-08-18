@@ -72,6 +72,7 @@ function Field({
       />
       <button type="button">よそ</button>
       <span data-testid="correction">{field.correction ?? "-"}</span>
+      <span data-testid="invalid">{field.invalid ?? "-"}</span>
     </div>
   );
 }
@@ -107,45 +108,50 @@ describe("useNumberDraft", () => {
     expect(input).toHaveValue("10");
   });
 
-  it("下限より小さければ下限へ直し、理由を返す", async () => {
+  /* ここから4件は、**丸めるのをやめた**ぶんの決まり（実機報告 12-9）。
+     範囲の外・数でないものは受け取らず、理由を**打っている間に**出す。
+     打ったものは消さない（消すと「打った数が消えた」に戻る） */
+  it("下限より小さい間は受け取らない。理由はその場で出る", async () => {
     const onChange = vi.fn();
     render(<Field min={4} max={30} initial={14} onChange={onChange} />);
 
     await type("2");
 
-    expect(onChange).toHaveBeenCalledWith(4);
-    expect(screen.getByTestId("correction")).toHaveTextContent("tooSmall");
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("数")).toHaveValue("2");
+    expect(screen.getByTestId("invalid")).toHaveTextContent("tooSmall");
   });
 
-  it("上限より大きければ上限へ直し、理由を返す", async () => {
+  it("上限より大きい間も受け取らない", async () => {
     const onChange = vi.fn();
     render(<Field min={4} max={30} initial={14} onChange={onChange} />);
 
     await type("999");
 
-    expect(onChange).toHaveBeenCalledWith(30);
-    expect(screen.getByTestId("correction")).toHaveTextContent("tooLarge");
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("数")).toHaveValue("999");
+    expect(screen.getByTestId("invalid")).toHaveTextContent("tooLarge");
   });
 
-  it("数でないものは前の値へ戻し、理由を返す", async () => {
+  it("数でないものは受け取らない。打ったものは消さない", async () => {
     const onChange = vi.fn();
     render(<Field min={4} max={30} initial={14} onChange={onChange} />);
 
     await type("abc");
 
     expect(onChange).not.toHaveBeenCalled();
-    expect(screen.getByLabelText("数")).toHaveValue("14");
-    expect(screen.getByTestId("correction")).toHaveTextContent("notANumber");
+    expect(screen.getByLabelText("数")).toHaveValue("abc");
+    expect(screen.getByTestId("invalid")).toHaveTextContent("notANumber");
   });
 
-  it("空欄も前の値へ戻す。空のまま保存したり 0 にしたりしない", async () => {
+  it("空欄も受け取らない。空のまま保存したり 0 にしたりしない", async () => {
     const onChange = vi.fn();
     render(<Field min={4} max={30} initial={14} onChange={onChange} />);
 
     await type("");
 
     expect(onChange).not.toHaveBeenCalled();
-    expect(screen.getByLabelText("数")).toHaveValue("14");
+    expect(screen.getByTestId("invalid")).toHaveTextContent("notANumber");
   });
 
   it("範囲の中ならそのまま通り、理由は出ない", async () => {
@@ -211,15 +217,20 @@ describe("useNumberDraft（更新を押すまで）", () => {
     expect(latest().isDirty).toBe(false);
   });
 
-  /** 丸めたときは「更新しました」ではなく理由を出す（黙って直さない） */
-  it("範囲外を押したら、理由を出して更新扱いにしない", () => {
-    const { latest } = mountDraft({ value: 10, min: 4, max: 30 });
+  /** 押せないようにしてあるが、Enter からも来るのでここでも止める */
+  it("範囲外は押しても効かない。打ったものはそのまま残る", () => {
+    const onChange = vi.fn();
+    const { latest } = mountDraft({ value: 10, min: 4, max: 30, onChange });
 
     act(() => latest().setDraft("99"));
+    expect(latest().invalid).toBe("tooLarge");
+
     act(() => latest().commit());
 
+    expect(onChange).not.toHaveBeenCalled();
     expect(latest().correction).toBe("tooLarge");
-    expect(latest().draft).toBe("30");
+    expect(latest().draft).toBe("99");
+    expect(latest().justApplied).toBe(false);
   });
 
   it("打ち直すと「更新しました」は消える", () => {

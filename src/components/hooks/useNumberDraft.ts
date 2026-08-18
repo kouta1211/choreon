@@ -42,6 +42,13 @@ type Params = {
  * 打ったまま離れても下書きは残り、ボタンも出たままなので、
  * 見えないところで消えることはない。Enter は押したのと同じ扱い。
  *
+ * ■ 受け取れない下書きは、押す前に止める(2026-08-18)
+ * 以前は**押してから**丸めたり前の値へ戻したりしていた。
+ * 「バリデーションが効いているときは、適用ボタンは押せないようにする」
+ * （実機報告 12-9）。打っている最中の下書きを見て `invalid` を返し、
+ * 呼び出し側がボタンを押せなくする。**丸めるのは相変わらずしない** —
+ * 丸めると、下限より小さい桁から始まる数がどうやっても打てない。
+ *
  * 設定の行と曲の頭出しが別々に同じことを書いていたので、ここへ寄せた。
  */
 export function useNumberDraft({ value, min, max, onChange }: Params) {
@@ -67,31 +74,48 @@ export function useNumberDraft({ value, min, max, onChange }: Params) {
     setJustApplied(false);
   }
 
-  /** 「更新」を押した/Enterを押した時に1回だけ走る。ここで初めて丸める */
+  /**
+   * いま打っている下書きが、そのままでは受け取れないか。
+   *
+   * 打っている最中に毎回見る（値には触らない）。「10」を入れようとして
+   * 「1」を打った瞬間は下限割れなので、そこでは押せない状態になる。
+   */
+  const trimmed = draft.trim();
+  const parsedDraft = Number(trimmed);
+  const invalid: NumberCorrection =
+    trimmed === "" || !Number.isFinite(parsedDraft)
+      ? "notANumber"
+      : parsedDraft < min
+        ? "tooSmall"
+        : parsedDraft > max
+          ? "tooLarge"
+          : null;
+
+  /** 「適用」を押した/Enterを押した時に1回だけ走る */
   const commit = () => {
-    const parsed = Number(draft.trim());
-    if (draft.trim() === "" || !Number.isFinite(parsed)) {
-      setDraft(String(value));
-      setCorrection("notANumber");
+    /* 受け取れないものは**入れない**。ボタンは押せなくしてあるが、
+       Enter からも来るのでここでも止める。欄はそのまま残す
+       （打ったものを黙って消さない） */
+    if (invalid) {
+      setCorrection(invalid);
       setJustApplied(false);
       return;
     }
-    const clamped = Math.min(max, Math.max(min, parsed));
-    setCorrection(
-      clamped === parsed ? null : parsed < min ? "tooSmall" : "tooLarge",
-    );
+    // ここまで来たものは範囲の中にある（丸める必要はもう無い）
+    const next = parsedDraft;
+    setCorrection(null);
 
     // **自分で起こした変更を「外から変わった」と数えない。**
-    // 先に控えておかないと、丸めた値が親から返ってきた時点で上の
-    // 追い付き処理が走り、いま出したばかりの理由が消える
-    if (clamped === value) {
-      setDraft(String(clamped));
-      setLastValue(clamped);
+    // 先に控えておかないと、確定した値が親から返ってきた時点で上の
+    // 追い付き処理が走り、いま出したばかりの知らせが消える
+    if (next === value) {
+      setDraft(String(next));
+      setLastValue(next);
       setJustApplied(false);
       return;
     }
 
-    if (onChange(clamped) === false) {
+    if (onChange(next) === false) {
       // 受け取ってもらえなかった。値は変わっていないので、欄も元へ戻す
       setDraft(String(value));
       setLastValue(value);
@@ -99,8 +123,8 @@ export function useNumberDraft({ value, min, max, onChange }: Params) {
       return;
     }
 
-    setDraft(String(clamped));
-    setLastValue(clamped);
+    setDraft(String(next));
+    setLastValue(next);
     setJustApplied(true);
   };
 
@@ -114,6 +138,8 @@ export function useNumberDraft({ value, min, max, onChange }: Params) {
     },
     commit,
     correction,
+    /** いまの下書きが受け取れないか。押せなくするのに使う */
+    invalid,
     /**
      * まだ押していない下書きがあるか。
      * **これが立っている間だけ「更新」を出す** — いつも出していると、

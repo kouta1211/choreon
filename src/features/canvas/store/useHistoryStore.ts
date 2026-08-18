@@ -24,13 +24,32 @@ export type SceneTimeChange = {
   after: number;
 };
 
+/**
+ * ステージの広さに対する「操作前」と「操作後」。
+ *
+ * 位置とも時刻とも別の軸。狭めると**収まらない人が端へ寄る**ので、
+ * 戻すときは**広さと人をひと組で**戻さないと、戻したのに人だけ端に
+ * 残る（実機報告 03-6）。
+ */
+export type StageSizeChange = {
+  before: { width: number; height: number };
+  after: { width: number; height: number };
+};
+
 /** 履歴1ステップ。シンメトリーモードのペア移動のように、1回の操作で複数の
  * positionが同時に変わることがあるためchangesは配列 */
 export type HistoryEntry = {
   /** 連続する同種の操作をまとめる(coalesce)ための種別。
    * 特に矢印キーの微調整は1キーごとに履歴へ積むと、元に戻すのに
    * 何十回も押す羽目になるため、まとめる判断に使う */
-  kind: "move" | "nudge" | "rotate" | "curve" | "template" | "retime";
+  kind:
+    | "move"
+    | "nudge"
+    | "rotate"
+    | "curve"
+    | "template"
+    | "retime"
+    | "resize";
   changes: PositionChange[];
   /**
    * シーンの時刻を動かした操作なら入る。
@@ -41,6 +60,8 @@ export type HistoryEntry = {
    * という約束が守れない。時刻の変更はそれまで履歴を通っていなかった。
    */
   sceneTimes?: SceneTimeChange[];
+  /** ステージの広さを変えた操作なら入る。寄せた人は changes に入っている */
+  stageSize?: StageSizeChange;
 };
 
 /** 保持する履歴の上限。編集し続けると際限なく増えるため頭を抑える。

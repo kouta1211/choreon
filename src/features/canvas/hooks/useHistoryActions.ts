@@ -4,6 +4,7 @@ import { useCallback } from "react";
 import {
   useHistoryStore,
   type HistoryEntry,
+  type StageSizeChange,
 } from "@/features/canvas/store/useHistoryStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
@@ -11,6 +12,7 @@ import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { upsertPositions } from "@/features/scene/api/positions";
 import { updateSceneTimes } from "@/features/scene/api/scenes";
+import { updateStageSize } from "@/features/project/api/projects";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
@@ -29,6 +31,7 @@ export function useHistoryActions() {
     (state) => state.updateDancerPosition,
   );
   const applySceneTimes = useProjectStore((state) => state.applySceneTimes);
+  const setStageSize = useProjectStore((state) => state.setStageSize);
   const selectScene = useUIStore((state) => state.selectScene);
   const setIsPlaying = useUIStore((state) => state.setIsPlaying);
   const showToast = useUIStore((state) => state.showToast);
@@ -82,6 +85,40 @@ export function useHistoryActions() {
     [applySceneTimes, showToast, t],
   );
 
+  /**
+   * ステージの広さを戻す/やり直す。
+   *
+   * **位置より先に当てる。** 広げる方向のときに人を先に戻すと、まだ狭い枠の
+   * 外へ人が置かれて一瞬はみ出して見える。
+   */
+  const applyStageSize = useCallback(
+    async (change: StageSizeChange, direction: "undo" | "redo") => {
+      const pick = direction === "undo" ? change.before : change.after;
+      const revert = direction === "undo" ? change.after : change.before;
+      const project = useProjectStore.getState().project;
+      if (!project) return false;
+
+      setStageSize(pick.width, pick.height);
+      try {
+        await persist((supabase) =>
+          updateStageSize(supabase, project.id, pick.width, pick.height),
+        );
+        return true;
+      } catch (error) {
+        setStageSize(revert.width, revert.height);
+        showToast({
+          message: toUserMessage(
+            error,
+            direction === "undo" ? t.common.undoFailed : t.common.redoFailed,
+          ),
+          type: "error",
+        });
+        return false;
+      }
+    },
+    [setStageSize, showToast, t],
+  );
+
   const apply = useCallback(
     async (entry: HistoryEntry, direction: "undo" | "redo") => {
       const { scenes, dancers } = useProjectStore.getState();
@@ -97,6 +134,14 @@ export function useHistoryActions() {
       if (sceneTimes.length > 0) {
         const applied = await applyTimes(sceneTimes, direction);
         // 時刻だけの操作なら、ここで終わり
+        if (entry.changes.length === 0) return applied;
+        if (!applied) return false;
+      }
+
+      /* ステージの広さ(resize)。これも位置とは別の軸で、**誰も端へ寄らな
+         かった resize**（広げただけ）もあるので、位置の有無より先に見る */
+      if (entry.stageSize) {
+        const applied = await applyStageSize(entry.stageSize, direction);
         if (entry.changes.length === 0) return applied;
         if (!applied) return false;
       }
@@ -151,7 +196,14 @@ export function useHistoryActions() {
         return false;
       }
     },
-    [applyTimes, selectScene, showToast, updateDancerPosition, t],
+    [
+      applyTimes,
+      applyStageSize,
+      selectScene,
+      showToast,
+      updateDancerPosition,
+      t,
+    ],
   );
 
   const undo = useCallback(async () => {
