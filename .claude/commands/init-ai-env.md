@@ -111,8 +111,11 @@ AI が「どこを見ればいいか」で迷わなくなる。
 **先に、いまの CLI が本当に読むのかを確かめる。**
 
 ```bash
-CLI=$(command -v claude); grep -c "claudeignore" "$CLI"
+CLI=$(command -v claude); grep -c "claudeignore" "$CLI" || true
 ```
+
+（`grep -c` は**一致0件のとき exit 1 を返す**。`|| true` を付けないと、
+`set -e` の下や連結したコマンドの途中で処理が止まる。）
 
 0 だったら **`.claudeignore` は効かない**。実効性は
 `.claude/settings.json` の `permissions.deny` に持たせる。

@@ -131,10 +131,18 @@ console.log(bad?`broken: ${bad}`:"links ok")'
 機械で見られる分は、毎回これを流す:
 
 ```bash
-git grep -n "zinc-\|pink-\|slate-" -- src | wc -l     # 色の直書き。増えていたら直す
-git grep -n "rounded-\[" -- src                        # 角丸の固定値
-git grep -nE ":\s*any|as any" -- src           # any（lint でも落ちるが早く見つかる）
+# 色の直書き。境界を付けないと translate-x-1/2 の「slate-」に当たる（実際に当たっていた）
+git grep -nE '(^|[^a-z-])(zinc|slate|gray|neutral|stone|pink|indigo)-[0-9]{2,3}' -- src
+
+# 角丸の固定値。rounded-[var(--radius)...] は正規の形なので必ず除く
+git grep -n 'rounded-\[' -- src | grep -v 'var(--radius)'
+
+# any（lint でも落ちるが、こちらの方が早く見つかる）
+git grep -nE ':\s*any|as any' -- src
 ```
+
+**いずれも 0 件が正常。** 1件でも出たら中身を見る。
+意図的な例外は**その場にコメントが要る**（コメントが無いものだけを直す）。
 
 **規約に無いのに毎回引っかかるものを見つけたら、規約へ足す**（このファイル
 ではなく `.claude/rules/` の方へ）。ここは点検の手順書であって、規約の置き場

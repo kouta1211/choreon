@@ -532,7 +532,12 @@ export function CanvasBoard({
         belowStageRight={<HistoryControls />}
       >
         {/* 囲んで選ぶ枠。出し入れと大きさは useMarqueeSelection が
-            直に書き換える（既定は display:none） */}
+            直に書き換える（既定は display:none）
+
+            角丸だけ固定値(3px)にしてある。ここを --radius から取ると、
+            角を大きく取るテーマで枠が「カード」に見えて、掴んで引いている
+            範囲だという手触りが消える。囲む枠は、どのテーマでも角が立って
+            いる方が読める（Finder も Figma もそう）。 */}
         <div
           ref={marqueeRef}
           aria-hidden
