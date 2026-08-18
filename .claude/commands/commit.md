@@ -39,12 +39,17 @@ description: 変更差分を分析し、規約に従ったコミットメッセ�
 ```bash
 git commit -F - <<'MSG'
 一行目
-（空行）
-本文
+
+本文（なぜ変えたか）
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+Claude-Session: <このセッションの URL>
 MSG
 ```
 
-- 末尾に `Co-Authored-By:` と `Claude-Session:` を付ける
+**trailer は例の中に入れてある。** 前は「末尾に付ける」と注意書きだけ
+置いていたが、**例を写して trailer が落ちた**（2026-08-18 に実際にやった）。
+手順に例があるなら、読まれるのは例の方。注意書きではなく例を正しくしておく。
 
 ## 3 の前に、必ずやること
 

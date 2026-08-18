@@ -37,6 +37,10 @@ git fetch origin && git log --oneline -1 origin/main   # main は進んでいな
 `maintenance/YYYY-MM-DD` で使っている（`.claude/skills/daily-maintenance/`）。
 手作業のブランチと混ざると、どちらの成果物か分からなくなる。
 
+接頭辞は指示の4つ（`feat/` `fix/` `refactor/` `docs/`）に加えて、
+**`test/`**（テストだけを足す）と **`chore/`**（設定・依存・雑務）も使う。
+最初の試運転で `test/` が要ることが分かった。
+
 短くする。`feat/add-login-function` で十分で、
 `feat/add-login-function-with-supabase-auth-and-error-handling` にしない。
 
