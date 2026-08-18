@@ -5,7 +5,10 @@ description: その日のGitコミット履歴や教訓ログを集計し、Noti
 本日の開発実績を集計し、Notionに日報を投稿するため、以下のステップを自律的に実行してください。
 
 1. **本日の実績・差分の取得:**
-   - `git log --since="00:00:00" --oneline` を実行し、本日作成されたコミット一覧を取得する。
+   - **「本日」は 0:00 ではなく朝5時で切る**（`node scripts/workday.mjs`）。
+     深夜の作業は前日の日報に入れる。下の「日付の切り方」を必ず読む。
+   - `git log --since="$(node scripts/workday.mjs --since)" --until="$(node scripts/workday.mjs --until)" --oneline`
+     を実行し、その作業日のコミット一覧を取得する。
    - 本日作成・更新された仕様書（`docs/features/` 配下）や `docs/lessons_learned.md` の追記分を取得する。
 2. **日報コンテンツ（Markdown）の生成:** 下の「既存の形に合わせる」に従って本文を構築する。
 3. **Notion への投稿:** 下の「投稿の2通り」に従う。手元で回すなら Notion の MCP、
@@ -13,6 +16,27 @@ description: その日のGitコミット履歴や教訓ログを集計し、Noti
 4. **結果の報告:** 「本日の開発日報をNotionに自動投稿しました！お疲れ様でした。」と作成したページの URL を出力して完了する。
 
 ---
+
+## 日付の切り方（0:00 では切らない）
+
+**深夜0時を回ってからの作業は、前日の日報に入れる**（2026-08-18 の user の指示）。
+日付は 0:00 で変わるが**作業は 0:00 では終わらない**ので、
+翌日のページに1行だけ迷子で載っても意味が読めない。
+
+日の変わり目は**朝5時**。出すのは `scripts/workday.mjs` の1箇所だけで、
+**自分で `date` を打たない・壁の時計を写さない。**
+
+```bash
+node scripts/workday.mjs            # いまの作業日  → 2026-08-18
+node scripts/workday.mjs --since    # その始まり    → 2026-08-18 05:00:00
+node scripts/workday.mjs --until    # その終わり    → 2026-08-19 05:00:00
+```
+
+- `--date` へ渡すのも、`git log` の範囲も、**同じここから取る**。
+  片方だけ手で書くと、境目の日に**コミットとページの日付が食い違う**
+- 5時にしたのは、**保守点検が朝5時に回っている**から。変わり目を2つ
+  持たない。変えるなら `WORKDAY_START_HOUR` の1箇所
+- 確かめたいときは `--at "2026-08-19T02:00"` を足すと、その時刻での答えが出る
 
 ## 指示から変えたこと
 
@@ -83,7 +107,7 @@ MCP は user の対話ログインに紐づいているので、**無人実行�
 そのときは `scripts/notion-daily.mjs` を使う（本文は標準入力から）。
 
 ```bash
-node scripts/notion-daily.mjs --date 2026-08-18 --status 順調 --summary "一行の概要" < body.md
+node scripts/notion-daily.mjs --date "$(node scripts/workday.mjs)"   --status 順調 --summary "一行の概要" < body.md
 ```
 
 - `--dry-run` を付けると**通信せず**、送るはずの JSON とブロック数を出す。

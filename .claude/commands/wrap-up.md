@@ -14,13 +14,23 @@ description: 今日の開発セッションを振り返り、得られた知見�
 
 会話が残っていない状態から呼ばれることもある。そのときは:
 
+**「今日」を 0:00 で切らない。** 深夜の作業は前日の続きなので、
+**朝5時で日を切る**（`scripts/workday.mjs`。理由はそのファイルの頭）。
+
 ```bash
-git log --since="16 hours ago" --format='%h %s' --date=short
-git diff --stat "HEAD@{16 hours ago}" HEAD 2>/dev/null || git diff --stat HEAD~5 HEAD
+DAY=$(node scripts/workday.mjs)                    # 例: 2026-08-18
+SINCE=$(node scripts/workday.mjs --since)          # 2026-08-18 05:00:00
+UNTIL=$(node scripts/workday.mjs --until)          # 2026-08-19 05:00:00
+
+git log --since="$SINCE" --until="$UNTIL" --format='%h %s'
+git diff --stat "HEAD@{$SINCE}" HEAD 2>/dev/null || git diff --stat HEAD~5 HEAD
 git status --short
 ```
 
 コミットメッセージと差分から辿る。**分からないものを埋めない。**
+
+`docs/lessons_learned.md` の見出しも `## $DAY` を使う。**壁の時計の日付を
+写さない** — 深夜に締めると、前日の学びが翌日の見出しの下に入る。
 
 ## 補足（2 の書き方）
 
