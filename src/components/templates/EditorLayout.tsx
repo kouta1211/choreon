@@ -13,6 +13,7 @@ import { SceneSidebar } from "@/components/organisms/SceneSidebar";
 import { EditorSidePanel } from "@/components/organisms/EditorSidePanel";
 import { EditorShortcuts } from "@/components/organisms/EditorShortcuts";
 import { EditorTour } from "@/components/organisms/EditorTour";
+import { NarrowScreenNotice } from "@/components/organisms/NarrowScreenNotice";
 import { UnsavedChangesGuard } from "@/components/organisms/UnsavedChangesGuard";
 import { useGuestDraftAutosave } from "@/features/project/hooks/useGuestDraftAutosave";
 import { useSceneThumbnails } from "@/features/scene/hooks/useSceneThumbnails";
@@ -187,6 +188,10 @@ export function EditorLayout({
           <EditorShortcuts />
           <UnsavedChangesGuard />
           <EditorTour />
+          {/* スマホ幅では、作成画面の上に案内を被せる（2026-08-18 の方針転換）。
+              作るのは PC / タブレット、見るのはスマホ、と行き先を分けた。
+              見る側(ViewerLayout)はこれまで通りスマホが第一級なので触らない */}
+          <NarrowScreenNotice project={live} />
         </div>
       </div>
     </SceneScrubProvider>

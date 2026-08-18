@@ -134,6 +134,15 @@ export const ko = {
     createFirstScene: "첫 장면 만들기",
     copyCurrent: "지금 배치를 복사해서 추가",
 
+    narrowScreen: {
+      title: "안무를 짜는 화면은 PC나 태블릿에서",
+      body: "댄서를 한 칸씩 옮기려면 마우스와 넓은 화면이 필요합니다. 휴대폰 브라우저에서는 밀어 넘기는 조작이 브라우저의 뒤로 가기와 충돌합니다.",
+      openViewer: "보기만 한다면 이쪽",
+      viewerNote:
+        "공유된 URL을 열면 휴대폰에서도 자기 동선을 읽을 수 있습니다(보는 쪽은 휴대폰에 맞춰 만들었습니다).",
+      openAnyway: "이대로 열기(권장하지 않음)",
+    },
+
     view: {
       title: "메뉴",
       stageGroup: "스테이지 보이기",
