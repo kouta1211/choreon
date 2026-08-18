@@ -33,6 +33,7 @@ import type { Project } from "@/features/project/types";
 import { sceneDurations } from "@/features/scene/lib/sceneTiming";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { useT } from "@/features/i18n/LocaleProvider";
+import { useMetronomeSetting } from "@/features/music/hooks/useMetronomeSetting";
 
 type Props = {
   project: Project;
@@ -86,13 +87,13 @@ export function SceneDock({ project }: Props) {
   const offsetSeconds = useProjectStore(
     (state) => state.project?.musicOffsetSeconds ?? project.musicOffsetSeconds,
   );
-  const isMetronomeEnabled = useMusicStore((state) => state.isMetronomeEnabled);
+  /* メトロノームは作品の設定になった(2026-08-18)。端末ごとではない */
+  const { isMetronomeEnabled, toggleMetronome } = useMetronomeSetting();
   const playbackStartSceneId = useUIStore(
     (state) => state.playbackStartSceneId,
   );
   const isTimelineVisible = useUIStore((state) => state.isTimelineVisible);
   const setMusicSheetOpen = useUIStore((state) => state.setMusicSheetOpen);
-  const toggleMetronome = useMusicStore((state) => state.toggleMetronome);
   const toggleTimelineVisible = useUIStore(
     (state) => state.toggleTimelineVisible,
   );

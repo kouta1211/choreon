@@ -35,6 +35,7 @@ export type Backup = {
     | "musicOffsetSeconds"
     | "bpm"
     | "beatsPerBar"
+    | "isMetronomeEnabled"
   >;
   dancers: Pick<Dancer, "id" | "name" | "color" | "initialDirection">[];
   scenes: Pick<Scene, "id" | "name" | "orderIndex" | "timeSeconds">[];
@@ -53,6 +54,7 @@ export function buildBackup(input: {
     exportedAt: input.exportedAt,
     project: {
       title: input.project.title,
+      isMetronomeEnabled: input.project.isMetronomeEnabled,
       stageWidth: input.project.stageWidth,
       stageHeight: input.project.stageHeight,
       musicOffsetSeconds: input.project.musicOffsetSeconds,
@@ -129,6 +131,9 @@ export function parseBackup(raw: string, words: BackupWords): Backup {
       typeof record.exportedAt === "string" ? record.exportedAt : "",
     project: {
       title: project.title,
+      /* 取り込みは書き換えられたファイルも来る外部入力。真偽値でなければ
+         鳴らさない側へ倒す（古い書き出しにはこの項目が無い） */
+      isMetronomeEnabled: project.isMetronomeEnabled === true,
       stageWidth: Number(project.stageWidth) || 14,
       stageHeight: Number(project.stageHeight) || 10,
       musicOffsetSeconds: Number(project.musicOffsetSeconds) || 0,

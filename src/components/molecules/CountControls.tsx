@@ -1,12 +1,12 @@
 "use client";
 
 import { Music4 } from "lucide-react";
-import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { useBpm } from "@/features/music/hooks/useBpm";
 import { MAX_BPM, MIN_BPM } from "@/features/music/lib/metronomePreference";
 import { Slider } from "@/components/ui/slider";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { useT } from "@/features/i18n/LocaleProvider";
+import { useMetronomeSetting } from "@/features/music/hooks/useMetronomeSetting";
 
 /** ミニマップと同じ段。倍率が変わっても段の高さが動かないようにする */
 export const COUNT_CONTROLS_HEIGHT = 34;
@@ -32,8 +32,9 @@ export const COUNT_CONTROLS_HEIGHT = 34;
 export function CountControls() {
   const t = useT();
   const { bpm, setBpm } = useBpm();
-  const isEnabled = useMusicStore((state) => state.isMetronomeEnabled);
-  const toggleMetronome = useMusicStore((state) => state.toggleMetronome);
+  /* メトロノームは作品の設定になった(2026-08-18)。端末ごとではない */
+  const { isMetronomeEnabled: isEnabled, toggleMetronome } =
+    useMetronomeSetting();
 
   return (
     <div

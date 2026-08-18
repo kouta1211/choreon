@@ -239,6 +239,7 @@ export const ko = {
     },
 
     errors: {
+      metronome: "클릭 설정을 저장하지 못했습니다",
       position: "위치를 저장하지 못했습니다",
       rotation: "방향을 저장하지 못했습니다",
       curve: "곡선을 바꾸지 못했습니다",

@@ -16,6 +16,7 @@ export type Database = {
           music_offset_seconds: number;
           bpm: number;
           beats_per_bar: number;
+          is_metronome_enabled: boolean;
           /** 共有リンクの合鍵。持ち主だけが読める(RLSで自分の行しか見えない) */
           share_token: string;
           is_shared: boolean;
@@ -31,6 +32,7 @@ export type Database = {
           music_offset_seconds?: number;
           bpm?: number;
           beats_per_bar?: number;
+          is_metronome_enabled?: boolean;
           share_token?: string;
           is_shared?: boolean;
           created_at?: string;
@@ -45,6 +47,7 @@ export type Database = {
           music_offset_seconds?: number;
           bpm?: number;
           beats_per_bar?: number;
+          is_metronome_enabled?: boolean;
           share_token?: string;
           is_shared?: boolean;
           created_at?: string;

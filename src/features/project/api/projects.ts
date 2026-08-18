@@ -23,6 +23,8 @@ function toProject(row: ProjectRow): Project {
     // 既定値はDB側のdefaultと同じ
     bpm: row.bpm ?? DEFAULT_BPM,
     beatsPerBar: row.beats_per_bar ?? 4,
+    // メトロノームの列を足す前のDBには無い。鳴らさない側へ落とす
+    isMetronomeEnabled: row.is_metronome_enabled ?? false,
     // 共有リンクを足す前のスキーマのままのDBには、この2つの列がまだ無い。
     // トークンが無ければ共有の口は出せないので null / false に落とす
     shareToken: row.share_token ?? null,
@@ -113,6 +115,29 @@ export async function updateProjectBeatsPerBar(
   const { error } = await supabase
     .from("projects")
     .update({ beats_per_bar: beatsPerBar })
+    .eq("id", projectId);
+
+  if (error && error.code !== "PGRST204") throw error;
+}
+
+/**
+ * メトロノーム(クリック)を鳴らすかを保存する。
+ *
+ * **端末ではなく作品が持つ**(2026-08-18)。共有リンクで見る人にも
+ * 振付師の設定を引き継ぐため。音源は共有しないが、クリックは BPM と
+ * 拍子から合成できるので共有できる。
+ *
+ * 列がまだ無いDBでは PGRST204 になるが、他と同じく握り潰す
+ * (鳴らす鳴らさないは、その端末では効いたまま次の読み込みで戻る)。
+ */
+export async function updateProjectMetronome(
+  supabase: SupabaseClient<Database>,
+  projectId: string,
+  isMetronomeEnabled: boolean,
+): Promise<void> {
+  const { error } = await supabase
+    .from("projects")
+    .update({ is_metronome_enabled: isMetronomeEnabled })
     .eq("id", projectId);
 
   if (error && error.code !== "PGRST204") throw error;

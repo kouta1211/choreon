@@ -33,6 +33,12 @@ create table public.projects (
   -- ただし4拍子以外の曲もあるため、メトロノームの強拍だけはこの値で決める
   beats_per_bar integer not null default 4
     check (beats_per_bar >= 2 and beats_per_bar <= 12),
+  -- 振付師がメトロノーム(クリック)を鳴らしているか。
+  -- **見る人にも引き継ぐためにここへ置いている。** 音源そのものは共有
+  -- しないが、クリックは BPM と拍子から合成できるので共有できる。
+  -- 以前は端末ごとの設定(localStorage)だったが、それだと
+  -- 「振付師が決めたとおりに見える」が成り立たなかった
+  is_metronome_enabled boolean not null default false,
   -- 「リンクを知っている人だけ」に見せるための合鍵と、そのオン/オフ。
   -- トークンは常に持っているが、is_shared が false の間はどのリンクでも
   -- 開けない。閲覧は public.shared_project(token) 経由で、テーブルそのものは
@@ -295,29 +301,32 @@ from pg_policies
 where tablename in ('projects', 'dancers', 'scenes', 'positions');
 
 -- =========================================
--- 既存プロジェクトへの追いつき(マイグレーション)について
+-- 既存プロジェクトへの追いつきについて
 -- =========================================
--- 上の `create table` 群は「最新のスキーマ」であり、DBを新規構築するとき
--- だけそのまま流せばよい。
+-- 上の `create table` 群は「最新のスキーマ」であり、**DBを新規構築するとき
+-- だけ**そのまま流せばよい。
 --
--- 既にテーブルが存在するSupabaseプロジェクトに後から列や制約を足す場合は、
--- このファイルではなく supabase/migrations/ 配下のSQLを番号順に
--- SQL Editorで実行すること。
+-- 既にテーブルがあるSupabaseプロジェクトに後から列を足すときは、下の
+-- 「追いつき」を SQL Editor で流す。**どれも何度実行しても安全**に
+-- 書いてあるので、適用済みか分からなければ流してよい。
 --
---   supabase/migrations/0000_bounds_and_stage_defaults.sql
---   supabase/migrations/0001_transition_and_curve.sql
---   supabase/migrations/0002_stage_width_14.sql
---   supabase/migrations/0003_music_offset.sql
---   supabase/migrations/0004_scene_time_seconds.sql
---   supabase/migrations/0005_project_bpm.sql
---   supabase/migrations/0006_drop_scene_transition_duration.sql
---   supabase/migrations/0007_share_link.sql
+-- (以前は supabase/migrations/ に番号順のファイルを置いていたが、すべて
+--  適用済みになったため削除した。以後はここへ追記する。
+--  このファイルの末尾に追記式で並べると、新規構築時は「列が既にある」で
+--  失敗し、既存プロジェクトでは先頭の create table で失敗する、という
+--  どちらでも通らないファイルになるため、コメントの中に置いている)
+
+-- -----------------------------------------
+-- 2026-08-18 メトロノームを作品の設定にする
+-- -----------------------------------------
+-- 見る人(共有リンク)にも振付師の設定を引き継ぐため、端末ごとの設定から
+-- 作品の列へ移した。共有用の関数 shared_project は to_jsonb(p) で作品の列を
+-- まるごと返すので、関数側の変更は要らない。
 --
--- どのファイルも「何度実行しても安全」に書いてあるため、適用済みかどうか
--- 分からない場合はとりあえず流してよい。各ファイル末尾には、意図した列が
--- 揃ったかを確認するクエリが付いている。
+-- alter table public.projects
+--   add column if not exists is_metronome_enabled boolean not null default false;
 --
--- (以前はこのファイルの末尾に追記式でマイグレーションを並べていたが、
---  そうすると新規構築時は末尾で「列が既にある」と失敗し、既存プロジェクト
---  では先頭の create table で失敗する、というどちらでも通らないファイルに
---  なってしまうため分離した)
+-- 確認:
+-- select column_name, data_type, column_default, is_nullable
+-- from information_schema.columns
+-- where table_name = 'projects' and column_name = 'is_metronome_enabled';

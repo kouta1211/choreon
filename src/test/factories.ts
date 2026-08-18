@@ -36,6 +36,7 @@ export function makeProject(overrides: Partial<Project> = {}): Project {
     musicOffsetSeconds: 0,
     bpm: 120,
     beatsPerBar: 4,
+    isMetronomeEnabled: false,
     shareToken: null,
     isShared: false,
     createdAt: "2026-01-01T00:00:00.000Z",

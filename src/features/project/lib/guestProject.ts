@@ -96,6 +96,7 @@ export function createGuestProject(
     // 曲を入れずにカウントで組み始めることもできる。DBのdefaultと同じ
     bpm: DEFAULT_BPM,
     beatsPerBar: 4,
+    isMetronomeEnabled: false,
     // 下書きは端末の中にしか無いので、配る先が無い。
     // クラウドへ保存した時点でDB側が合鍵を作る
     shareToken: null,

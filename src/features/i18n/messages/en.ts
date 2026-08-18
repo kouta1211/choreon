@@ -240,6 +240,7 @@ export const en = {
     },
 
     errors: {
+      metronome: "Couldn't save the click setting",
       position: "Could not save the position",
       rotation: "Could not save the facing",
       curve: "Could not change the curve",

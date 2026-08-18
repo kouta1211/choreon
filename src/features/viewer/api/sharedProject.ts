@@ -32,6 +32,7 @@ type SharedPayload = {
     music_offset_seconds: number;
     bpm?: number;
     beats_per_bar?: number;
+    is_metronome_enabled?: boolean;
     created_at: string;
     updated_at: string;
   };
@@ -108,6 +109,7 @@ export async function getSharedProject(
       musicOffsetSeconds: payload.project.music_offset_seconds ?? 0,
       bpm: payload.project.bpm ?? DEFAULT_BPM,
       beatsPerBar: payload.project.beats_per_bar ?? 4,
+      isMetronomeEnabled: payload.project.is_metronome_enabled ?? false,
       // 合鍵そのものは返さない(共有リンクで開いた人へ渡すと、
       // その人がリンクを作り直せてしまうわけではないが、配る必要が無い)
       shareToken: null,

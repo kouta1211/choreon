@@ -15,6 +15,8 @@ import type { Dancer } from "@/features/dancer/types";
 import type { Project } from "@/features/project/types";
 import type { Position, Scene } from "@/features/scene/types";
 import { useT } from "@/features/i18n/LocaleProvider";
+import { useMetronome } from "@/features/music/hooks/useMetronome";
+import { DEFAULT_BPM } from "@/features/music/lib/metronomePreference";
 
 type Props = {
   project: Project;
@@ -104,6 +106,17 @@ export function ViewerLayout({
       title: project.title,
     });
   }, [project]);
+
+  /* **振付師がクリックをオンにしていたら、見る人にも鳴らす**
+     (2026-08-18、実機の要望)。音源そのものは共有しないが、クリックは
+     作品の速さ(BPM)と拍子から合成できるので共有できる。
+     鳴らすのは通しで再生している間だけ — 止まっている画面で鳴り続けると、
+     稽古場では邪魔にしかならない */
+  useMetronome({
+    isActive: isPlaying && (project?.isMetronomeEnabled ?? false),
+    bpm: project?.bpm ?? DEFAULT_BPM,
+    beatsPerBar: project?.beatsPerBar ?? 4,
+  });
 
   if (!hasChosen) return <ViewerEntry />;
 

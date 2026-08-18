@@ -24,6 +24,7 @@ function makeProject(overrides: Partial<ProjectSummary> = {}): ProjectSummary {
     title: "サンプルプロジェクト",
     stageWidth: 8,
     stageHeight: 8,
+    isMetronomeEnabled: false,
     musicOffsetSeconds: 0,
     bpm: 120,
     beatsPerBar: 4,

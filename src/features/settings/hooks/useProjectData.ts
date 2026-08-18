@@ -84,6 +84,7 @@ export function useProjectData(project: Project) {
           // 揃えるためだけに入れている
           id: "",
           userId: user.id,
+          isMetronomeEnabled: backup.project.isMetronomeEnabled ?? false,
           shareToken: null,
           isShared: false,
           createdAt: now,

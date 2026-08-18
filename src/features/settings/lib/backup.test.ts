@@ -86,3 +86,58 @@ describe("backupFileName", () => {
     );
   });
 });
+
+/**
+ * メトロノームは作品の設定になった（2026-08-18）。書き出し・取り込みでも
+ * 持ち運べないと、書き出して入れ直すたびに振付師の設定が落ちる。
+ */
+describe("メトロノームの設定", () => {
+  it("書き出しに入る", () => {
+    const backup = buildBackup({
+      project: makeProject({ isMetronomeEnabled: true }),
+      dancers: [],
+      scenes: [],
+      positions: [],
+      exportedAt: "2026-08-18T00:00:00.000Z",
+    });
+
+    expect(backup.project.isMetronomeEnabled).toBe(true);
+  });
+
+  it("取り込みで戻る", () => {
+    const backup = buildBackup({
+      project: makeProject({ isMetronomeEnabled: true }),
+      dancers: [],
+      scenes: [],
+      positions: [],
+      exportedAt: "2026-08-18T00:00:00.000Z",
+    });
+
+    expect(parseBackup(JSON.stringify(backup), ja.data).project.isMetronomeEnabled).toBe(
+      true,
+    );
+  });
+
+  /** 取り込むファイルは書き換えられる外部入力。真偽値でなければ鳴らさない */
+  it.each([
+    ["項目が無い（古い書き出し）", undefined],
+    ["文字列", "true"],
+    ["数値", 1],
+    ["null", null],
+  ])("真偽値でなければ鳴らさない側へ倒す: %s", (_name, value) => {
+    const backup = buildBackup({
+      project: makeProject({ isMetronomeEnabled: true }),
+      dancers: [],
+      scenes: [],
+      positions: [],
+      exportedAt: "2026-08-18T00:00:00.000Z",
+    });
+    const broken = JSON.parse(JSON.stringify(backup));
+    broken.project.isMetronomeEnabled = value;
+
+    expect(parseBackup(JSON.stringify(broken), ja.data).project.isMetronomeEnabled).toBe(
+      false,
+    );
+  });
+});
+

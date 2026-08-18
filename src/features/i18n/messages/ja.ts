@@ -260,6 +260,7 @@ export const ja = {
     },
 
     errors: {
+      metronome: "クリックの設定を保存できませんでした",
       position: "位置の保存に失敗しました",
       rotation: "向きの保存に失敗しました",
       curve: "曲線の変更に失敗しました",

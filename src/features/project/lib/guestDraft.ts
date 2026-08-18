@@ -97,6 +97,7 @@ export function loadGuestDraft(): GuestDraft | null {
       ...backup.project,
       id: GUEST_PROJECT_ID,
       userId: "guest",
+      isMetronomeEnabled: backup.project.isMetronomeEnabled ?? false,
       shareToken: null,
       isShared: false,
       createdAt: now,
