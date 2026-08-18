@@ -50,7 +50,8 @@
 確かめる  → /qa-checklist  画面に見える変更を、実機の台本へ反映（コミット前）
 分ける    → /branch      分ける理由があるときだけ。既定は main へ直接
 残す      → /commit      差分を読んでコミット（push はしない）
-締める    → /wrap-up     学びを docs/lessons_learned.md へ
+締める    → /wrap-up     学びを docs/lessons_learned.md へ（その日の終わり）
+畳む      → /reset       話が長くなったので途中で切る前の安全確認
 ```
 
 保守点検は3日に1回、`/daily-maintenance` が自動で回る。
