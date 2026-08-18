@@ -37,6 +37,25 @@
 - 列の意味と制約の理由 → `supabase/schema.sql` のコメント
 - Next.js 16 の作法（訓練データと違う） → `AGENTS.md` と `node_modules/next/dist/docs/`
 
+## 作業の流れ（コマンド）
+
+一続きで使う。**手段が目的にならないように、要らない段は飛ばす。**
+
+```
+アイデア  → /spec        仕様書を docs/features/ に起こす
+作る      → /scaffold    規約どおりの雛形を生やす
+直す      → /auto-fix    原因を特定して直し、verify が通るまで自己修正
+調べる    → /analyze     書き換える前に依存と影響範囲を洗う（/refactor の前段）
+整える    → /refactor    テストで縛ってから、単一責任へ割る
+確かめる  → /qa-checklist  画面に見える変更を、実機の台本へ反映（コミット前）
+分ける    → /branch      分ける理由があるときだけ。既定は main へ直接
+残す      → /commit      差分を読んでコミット（push はしない）
+締める    → /wrap-up     学びを docs/lessons_learned.md へ
+```
+
+保守点検は3日に1回、`/daily-maintenance` が自動で回る。
+別のプロジェクトへ同じ環境を作るときは `/init-ai-env`。
+
 ## 振る舞いのルール
 
 **説明の量・自律の範囲・品質の原則・学びの記録は、グローバルの
