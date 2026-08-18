@@ -55,6 +55,8 @@
 出す      → /pr          push して PR を作る（main に居たら止まる）
 締める    → /wrap-up     学びを docs/lessons_learned.md へ（その日の終わり）
 畳む      → /reset       話が長くなったので途中で切る前の安全確認
+
+一気に  → /auto-dev    上を1〜8まで通しで回す。**輪郭がはっきりした小さい追加だけ**
 ```
 
 保守点検は3日に1回、`/daily-maintenance` が自動で回る。
