@@ -33,3 +33,5 @@ README に足すほど大きくないが、**後から「なぜこうなって�
   マウスなら「囲む」・指なら「シーンを送る」
 - [0002](0002-ignore-is-settings-not-claudeignore.md) — AI に読ませない指定は
   `.claude/settings.json` に置く（`.claudeignore` は効かない）
+- [0003](0003-command-set-adoption.md) — コマンド一式は「規約が本体」。
+  `/auto-dev` は試行中（採用の条件つき）
