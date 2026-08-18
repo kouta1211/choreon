@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { rulerTicks, RULER_MIN_GAP_PX } from "./rulerTicks";
+import {
+  dropTicksNearPlayhead,
+  rulerTicks,
+  RULER_MIN_GAP_PX,
+} from "./rulerTicks";
 
 /** ビューアの倍率は固定(1秒 = 24px)。寄り引きの操作は持たせていない */
 const PX_PER_SECOND = 24;
@@ -48,3 +52,28 @@ describe("rulerTicks", () => {
     expect(rulerTicks(0, 0, PX_PER_SECOND, LEAD_IN)).toEqual([]);
   });
 });
+
+describe("dropTicksNearPlayhead", () => {
+  /** 1秒 = 10px の窓で、再生位置は 100px（＝10秒の所）にあるとする */
+  const xOf = (seconds: number) => seconds * 10;
+
+  it("再生位置の札と重なる目盛りだけ落とす", () => {
+    const ticks = [0, 5, 10, 15, 20];
+
+    // 既定の隙間は 56px。10秒(100px)から 56px 以内は 5秒(50px)〜15秒(150px)
+    expect(dropTicksNearPlayhead(ticks, xOf, 100)).toEqual([0, 20]);
+  });
+
+  it("離れていれば何も落とさない", () => {
+    expect(dropTicksNearPlayhead([0, 100], xOf, 5000)).toEqual([0, 100]);
+  });
+
+  it("隙間を狭めれば残る", () => {
+    expect(dropTicksNearPlayhead([0, 5, 10], xOf, 100, 10)).toEqual([0, 5]);
+  });
+
+  it("空の目盛りは空のまま", () => {
+    expect(dropTicksNearPlayhead([], xOf, 100)).toEqual([]);
+  });
+});
+

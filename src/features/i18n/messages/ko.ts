@@ -306,6 +306,9 @@ export const ko = {
   },
 
   welcome: {
+    lastViewed: {
+      label: "이전에 본 안무",
+    },
     tagline: "연습실에서 나눠 주는 대형도를, 곡에 맞춰 움직이는 형태로.",
     guestStart: "게스트로 시작하기",
     withTour: "사용법 안내부터 시작하기",

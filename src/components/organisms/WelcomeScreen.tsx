@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
+import { ChevronRight } from "lucide-react";
 import { AuthScreen } from "@/components/molecules/AuthScreen";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useT } from "@/features/i18n/LocaleProvider";
+import {
+  parseLastViewed,
+  readLastViewedRaw,
+  readLastViewedServer,
+  subscribeLastViewed,
+} from "@/features/viewer/lib/lastViewed";
 
 type Props = {
   /** ゲストのまま始める。呼び出し側がエディタへ差し替える */
@@ -53,6 +60,19 @@ export function WelcomeScreen({ onGuestStart }: Props) {
     onGuestStart();
   };
 
+  /* 端末の記憶はReactの外にある値なので、購読そのものとして読む
+     （useScreenKind と同じ形）。サーバー側には無いので null から始まり、
+     ブラウザで描き直されたときに出る */
+  const lastViewedRaw = useSyncExternalStore(
+    subscribeLastViewed,
+    readLastViewedRaw,
+    readLastViewedServer,
+  );
+  const lastViewed = useMemo(
+    () => parseLastViewed(lastViewedRaw),
+    [lastViewedRaw],
+  );
+
   return (
     <AuthScreen>
       <div className="flex flex-col gap-gutter">
@@ -67,6 +87,29 @@ export function WelcomeScreen({ onGuestStart }: Props) {
         <p className="text-center text-body leading-relaxed text-fg-strong">
           {t.welcome.tagline}
         </p>
+
+        {/* **一度見た振付へ戻る道**(2026-08-18、実機の報告 05-5)。
+            ホーム画面に置いたアイコンはトップページを開くので、圏外だと
+            さっきまで見ていた振付へ戻れなかった。見る人はアカウントを
+            持っていないので、端末に覚えたものをここへ出す。
+            リンクが無効になっていれば、開いた先で「見られません」が出る
+            — ここで先回りして消すと、電波が悪いだけの人の入口まで消える */}
+        {lastViewed && (
+          <a
+            href={lastViewed.path}
+            className="flex min-h-target items-center gap-unit rounded-lg border border-line bg-surface-raised px-gutter py-unit text-left"
+          >
+            <span className="min-w-0 flex-1">
+              <span className="block text-caption text-fg-muted">
+                {t.welcome.lastViewed.label}
+              </span>
+              <span className="block truncate text-body text-fg-strong">
+                {lastViewed.title}
+              </span>
+            </span>
+            <ChevronRight size={16} className="shrink-0 text-fg-muted" aria-hidden />
+          </a>
+        )}
 
         <div className="flex flex-col gap-unit">
           <PressableButton

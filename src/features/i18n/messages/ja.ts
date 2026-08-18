@@ -332,6 +332,9 @@ export const ja = {
 
   /** 未ログインで開いたときに最初に出る、始め方を選ぶ画面 */
   welcome: {
+    lastViewed: {
+      label: "前に見た振付",
+    },
     tagline: "稽古場で配る隊形図を、曲に合わせて動く形に。",
     guestStart: "ゲストで始める",
     withTour: "使い方の案内から始める",

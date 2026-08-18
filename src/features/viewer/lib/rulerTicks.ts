@@ -43,3 +43,23 @@ export function rulerTicks(
   }
   return ticks;
 }
+
+/**
+ * 再生位置の札と重なる目盛りを落とす。
+ *
+ * 目盛りの札と、いま何秒目かを示す札は**別々に置いている**ので、
+ * 近づくと重なって両方読めなくなる（実機の報告 05-2 のときに見つけた。
+ * 「0:00.0」と「0:01.0」が重なって "0:000101.0" に見えていた）。
+ * 消すのは目盛りの方 — いま何秒目かの方が、見ている人には要る。
+ */
+export function dropTicksNearPlayhead(
+  ticks: number[],
+  xOf: (seconds: number) => number,
+  playheadX: number,
+  minGapPx: number = RULER_MIN_GAP_PX,
+): number[] {
+  return ticks.filter(
+    (seconds) => Math.abs(xOf(seconds) - playheadX) >= minGapPx,
+  );
+}
+

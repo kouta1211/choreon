@@ -10,7 +10,10 @@ import { formatClock } from "@/components/molecules/PlayheadClock";
 import { TimelineWaveform } from "@/components/molecules/TimelineWaveform";
 import { useWaveformPeaks } from "@/features/music/hooks/useWaveformPeaks";
 import { axisX, LEAD_IN_PX } from "@/features/music/lib/timelineScale";
-import { rulerTicks } from "@/features/viewer/lib/rulerTicks";
+import {
+  dropTicksNearPlayhead,
+  rulerTicks,
+} from "@/features/viewer/lib/rulerTicks";
 
 /** エディタの帯(80px)より低い。コマを小さくできるぶん */
 const BAND_HEIGHT = 56;
@@ -254,7 +257,13 @@ export function ViewerScrub() {
         style={{ height: RULER_HEIGHT }}
         className="relative overflow-hidden"
       >
-        {rulerTicks(scrollX, viewport, PX_PER_SECOND, LEAD_IN_PX).map((seconds) => (
+        {/* 再生位置の札と重なる目盛りは出さない。別々に置いているので、
+            近づくと両方読めなくなる(2026-08-18 に実機で見つけた) */}
+        {dropTicksNearPlayhead(
+          rulerTicks(scrollX, viewport, PX_PER_SECOND, LEAD_IN_PX),
+          (seconds) => axisX(seconds, PX_PER_SECOND) - scrollX,
+          viewport * PLAYHEAD_RATIO,
+        ).map((seconds) => (
           <span
             key={seconds}
             style={{ left: axisX(seconds, PX_PER_SECOND) - scrollX }}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, Pause, Play, Spline } from "lucide-react";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
+import { saveLastViewed } from "@/features/viewer/lib/lastViewed";
 import { ViewerEntry } from "@/components/organisms/ViewerEntry";
 import { ViewerStage } from "@/components/organisms/ViewerStage";
 import { ViewerScrub } from "@/components/organisms/ViewerScrub";
@@ -93,6 +94,18 @@ export function ViewerLayout({
     return () => cancelAnimationFrame(frame);
   }, [isPlaying, hasMusic, lastSeconds, setCurrentSeconds]);
 
+  /* 開けたリンクを端末に覚えておく。ホーム画面のアイコンは
+     トップページを開くので、圏外だとここへ戻る道が無かった
+     (2026-08-18、実機の報告 05-5)。覚えるのは開き方と題名だけで、
+     振付そのものはサービスワーカーの控えから出る */
+  useEffect(() => {
+    if (!project) return;
+    saveLastViewed({
+      path: `${window.location.pathname}${window.location.search}`,
+      title: project.title,
+    });
+  }, [project]);
+
   if (!hasChosen) return <ViewerEntry />;
 
   const dancer = dancers.find((item) => item.id === focusedDancerId);
@@ -149,14 +162,16 @@ export function ViewerLayout({
           <ViewerStage />
         </div>
 
-        <div className="flex shrink-0 flex-col gap-2 landscape:w-[300px] landscape:justify-center md:w-[320px] md:justify-center">
-          <ViewerRoute />
-        </div>
-      </div>
+        {/* 道順と、下の道具。**横向きではここが右の列になる**
+            (2026-08-18、実機の報告 05-2)。
 
-      {/* 下の道具は1枚の板にまとめる。曲・スクラブ・再生が別々の面に
-          散っていると、画面の下半分が細切れに見える */}
-      <div className="shrink-0 px-gutter pt-unit">
+            以前は下の道具を外側に置いていたので、横向きのスマホ(高さ390px)で
+            ヘッダー56px＋道具200pxに挟まれ、**ステージに130pxしか残らず
+            盤面が潰れて「バックステージ」と「客席側」の札が重なっていた**。
+            横向きは高さが足りず幅が余るので、縦に積むのをやめて右へ寄せる。
+            縦向きでは flex-col のままなので、並びはこれまでと変わらない。 */}
+        <div className="flex min-h-0 shrink-0 flex-col gap-2 landscape:w-[330px] landscape:justify-center landscape:overflow-y-auto md:w-[340px] md:justify-center md:overflow-y-auto">
+          <ViewerRoute />
         {/* 曲は共有されないので、見る人が自分の端末で選べるようにする。
             選ぶまでは帯の地が8カウントの縞になっている */}
         <ViewerMusic
@@ -201,6 +216,7 @@ export function ViewerLayout({
               {t.viewer.route.paths}
             </PressableButton>
           )}
+          </div>
         </div>
       </div>
     </div>

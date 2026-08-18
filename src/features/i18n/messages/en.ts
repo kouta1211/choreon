@@ -307,6 +307,9 @@ export const en = {
   },
 
   welcome: {
+    lastViewed: {
+      label: "Last viewed",
+    },
     tagline: "The formation sheets you hand out at rehearsal, moving in time with the track.",
     guestStart: "Start as a guest",
     withTour: "Start with the walkthrough",
