@@ -7,6 +7,7 @@ import { useHistoryActions } from "@/features/canvas/hooks/useHistoryActions";
 import { Tooltip } from "@/components/atoms/Tooltip";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { useT } from "@/features/i18n/LocaleProvider";
+import { useBrowserBackUndo } from "@/features/canvas/hooks/useBrowserBackUndo";
 
 /** キーボードショートカットを無視する要素。テキスト入力中のCtrl+Zは
  * ブラウザ標準の「入力の取り消し」であってほしいため */
@@ -41,6 +42,13 @@ export function HistoryControls() {
   const canUndo = useHistoryStore((state) => state.past.length > 0);
   const canRedo = useHistoryStore((state) => state.future.length > 0);
   const { undo: handleUndo, redo: handleRedo } = useHistoryActions();
+
+  /* ブラウザの「戻る」も元に戻すに割り当てる(2026-08-18、実機の要望)。
+     戻せるものが無くなったら普通に前のページへ出る作りなので、
+     ページから出られなくなることはない(useBrowserBackUndo 参照) */
+  useBrowserBackUndo(() => {
+    void handleUndo();
+  });
 
   // Ctrl/Cmd+Z で元に戻す、Ctrl/Cmd+Shift+Z(またはCtrl+Y)でやり直す。
   // windowに付けているのは、ステージ上のどこにフォーカスがあっても効いて

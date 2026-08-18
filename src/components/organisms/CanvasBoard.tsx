@@ -10,6 +10,7 @@ import {
 } from "react";
 import {
   DndContext,
+  type DragStartEvent,
   PointerSensor,
   useSensor,
   useSensors,
@@ -46,12 +47,14 @@ import { usePositionCommit } from "@/features/scene/hooks/usePositionCommit";
 import { useHydrateProject } from "@/features/project/hooks/useHydrateProject";
 import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
 import { useStageScrubGesture } from "@/features/canvas/hooks/useStageScrubGesture";
+import { GroupDragProvider } from "@/features/canvas/hooks/useGroupDrag";
 import { useMarqueeSelection } from "@/features/canvas/hooks/useMarqueeSelection";
 import type { Project } from "@/features/project/types";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position, Scene } from "@/features/scene/types";
 import { useT } from "@/features/i18n/LocaleProvider";
 import type { Messages } from "@/features/i18n/messages";
+import { useMotionValue } from "motion/react";
 
 type Props = {
   project: Project;
@@ -196,14 +199,29 @@ export function CanvasBoard({
    */
   const activeGesture = useRef<"marquee" | "scrub" | null>(null);
 
+  /* いま掴まれている人。選択中の他の人を一緒に動かすために要る
+     (2026-08-18、報告 18-2)。移動量そのものは MotionValue で配るので、
+     ここが変わるのは掴み始めと離した時の2回だけ */
+  const [activeDancerId, setActiveDancerId] = useState<string | null>(null);
+  /** 掴んだ人が動いた量(px)。描き直しを起こさないよう MotionValue で配る */
+  const groupOffsetX = useMotionValue(0);
+  const groupOffsetY = useMotionValue(0);
+
+  /* 払ってシーンを送るのは**スマホ幅だけ**にした(2026-08-18、実機の報告 18-11)。
+     以前は幅の広い画面で「縦に払う」を受け付けていたが、作る側は PC が主で、
+     シーンの移動はドック・時間軸・← → キーで足りている。縦の払いは
+     囲んで選ぶ操作と場所を取り合うだけで、使われていなかった。
+     閲覧画面(スマホ)の横払いはそのまま残る */
+  const isSwipeEnabled = isSwipeSceneChangeEnabled && screenKind === "phone";
+
   const scrubHandlers = useStageScrubGesture({
     stageRef,
     sceneIds,
     selectedSceneId,
     selectScene,
     selectDancer,
-    isSwipeEnabled: isSwipeSceneChangeEnabled,
-    axis: screenKind === "phone" ? "x" : "y",
+    isSwipeEnabled,
+    axis: "x",
     scrub,
   });
 
@@ -254,6 +272,12 @@ export function CanvasBoard({
   // スナップ判定ロジック自体(tolerance)を重複して持たずに済む
   const handleDragMove = useCallback(
     (event: DragMoveEvent) => {
+      /* 選択中の他の人へ移動量を配る。掴んでいる本人は dnd-kit が動かすので、
+         ここで配るのは「掴んでいない側」のぶん(2026-08-18、報告 18-2)。
+         格子スナップが効いたあとの値が来るので、本人と同じ動きになる */
+      groupOffsetX.set(event.delta.x);
+      groupOffsetY.set(event.delta.y);
+
       if (!selectedSceneId) return;
       const dancerId = String(event.active.id);
       const before = positionAt(selectedSceneId, dancerId);
@@ -289,12 +313,32 @@ export function CanvasBoard({
       setDragSnapLine,
       isSnapEnabled,
       isAudienceOnTop,
+      groupOffsetX,
+      groupOffsetY,
     ],
+  );
+
+  /** 掴み始め・離した後に呼ぶ。配った移動量を0へ戻さないと、
+   *  次に掴んだとき前回のぶんだけずれた場所から始まる */
+  const resetGroupDrag = useCallback(() => {
+    setActiveDancerId(null);
+    groupOffsetX.set(0);
+    groupOffsetY.set(0);
+  }, [groupOffsetX, groupOffsetY]);
+
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      groupOffsetX.set(0);
+      groupOffsetY.set(0);
+      setActiveDancerId(String(event.active.id));
+    },
+    [groupOffsetX, groupOffsetY],
   );
 
   const handleDragCancel = useCallback(() => {
     setDragSnapLine({ x: null, y: null });
-  }, [setDragSnapLine]);
+    resetGroupDrag();
+  }, [setDragSnapLine, resetGroupDrag]);
 
   /**
    * まとめて動かす人たちと、実際に動かせる量を決める。
@@ -348,6 +392,7 @@ export function CanvasBoard({
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
       setDragSnapLine({ x: null, y: null });
+      resetGroupDrag();
       if (!selectedSceneId) return;
 
       const dancerId = String(event.active.id);
@@ -387,6 +432,7 @@ export function CanvasBoard({
       setDragSnapLine,
       commitPositions,
       groupMove,
+      resetGroupDrag,
       isAudienceOnTop,
       t,
     ],
@@ -511,12 +557,18 @@ export function CanvasBoard({
   }
 
   return (
+    <GroupDragProvider
+      activeDancerId={activeDancerId}
+      offsetX={groupOffsetX}
+      offsetY={groupOffsetY}
+    >
     <DndContext
       sensors={sensors}
       modifiers={
         isSnapEnabled && gridSnapModifier ? [gridSnapModifier] : undefined
       }
       accessibility={accessibility}
+      onDragStart={handleDragStart}
       onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
@@ -524,7 +576,7 @@ export function CanvasBoard({
       <Stage
         ref={stageRef}
         scrubHandlers={stagePointerHandlers}
-        isSwipeEnabled={isSwipeSceneChangeEnabled}
+        isSwipeEnabled={isSwipeEnabled}
         scrubIndicator={<ScrubProgressBar />}
         widthUnits={project.stageWidth}
         heightUnits={project.stageHeight}
@@ -553,5 +605,6 @@ export function CanvasBoard({
         />
       </Stage>
     </DndContext>
+    </GroupDragProvider>
   );
 }

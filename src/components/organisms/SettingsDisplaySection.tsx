@@ -8,6 +8,7 @@ import {
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useT } from "@/features/i18n/LocaleProvider";
+import { useScreenKind } from "@/components/hooks/useIsWideScreen";
 
 /**
  * 設定の「表示」。
@@ -35,6 +36,7 @@ export function SettingsDisplaySection() {
   const toggleBlindSpotCheck = useUIStore(
     (state) => state.toggleBlindSpotCheck,
   );
+  const screenKind = useScreenKind();
   const isSwipeSceneChangeEnabled = useUIStore(
     (state) => state.isSwipeSceneChangeEnabled,
   );
@@ -73,12 +75,17 @@ export function SettingsDisplaySection() {
         checked={isBlindSpotCheckVisible}
         onChange={toggleBlindSpotCheck}
       />
-      <SettingsSwitchRow
-        label={t.settings.display.swipe.label}
-        description={t.settings.display.swipe.description}
-        checked={isSwipeSceneChangeEnabled}
-        onChange={toggleSwipeSceneChange}
-      />
+      {/* 払ってシーンを送るのはスマホ幅だけの操作になったので、
+          それ以外の画面では出さない。押しても何も起きないつまみを
+          残すと、壊れているように見える(2026-08-18、報告 18-11) */}
+      {screenKind === "phone" ? (
+        <SettingsSwitchRow
+          label={t.settings.display.swipe.label}
+          description={t.settings.display.swipe.description}
+          checked={isSwipeSceneChangeEnabled}
+          onChange={toggleSwipeSceneChange}
+        />
+      ) : null}
     </SettingsGroup>
   );
 }

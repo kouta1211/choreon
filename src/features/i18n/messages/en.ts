@@ -692,11 +692,6 @@ export const en = {
   },
 
   dancer: {
-    selection: {
-      count: (n: number) => `${n} dancers selected`,
-      hint: "Move them together — rotation and curves need one dancer",
-      clear: "Clear",
-    },
     add: {
       title: "Add dancers",
       howMany: "How many?",

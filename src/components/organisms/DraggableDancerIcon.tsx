@@ -8,6 +8,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { useDraggable } from "@dnd-kit/core";
+import { useGroupDrag } from "@/features/canvas/hooks/useGroupDrag";
 import { CSS } from "@dnd-kit/utilities";
 import { motion } from "motion/react";
 import { DancerMarker } from "@/components/molecules/DancerIcon";
@@ -182,6 +183,18 @@ function DraggableDancerIconImpl({
   const [isHovered, setIsHovered] = useState(false);
   const isDragging = transform !== null;
 
+  /* **掴んでいる人と一緒に動く。**(2026-08-18、実機の報告 18-2)
+     まとめて選んでも、離すまで動くのは掴んだ本人だけだった。
+     選ばれていて、かつ自分が掴まれていないときだけ、本人と同じ量だけずらす。
+     移動量は MotionValue で来るので、動かしてもここは描き直らない */
+  const groupDrag = useGroupDrag();
+  const isFollowingGroup =
+    isSelected &&
+    !isDragging &&
+    groupDrag !== null &&
+    groupDrag.activeDancerId !== null &&
+    groupDrag.activeDancerId !== dancer.id;
+
   // dnd-kitのsetNodeRefと、回転中心の座標を読み取るための自前refを
   // 同じDOMノードに両方つなぐ
   const setRefs = useCallback(
@@ -268,12 +281,21 @@ function DraggableDancerIconImpl({
       className={`absolute touch-none select-none ${
         isDragging ? "z-10 cursor-grabbing" : ""
       } ${isTransitioning ? "cursor-default" : "cursor-grab"}`}
-      style={{
-        left,
-        top,
-        opacity,
-        transform: transform ? CSS.Translate.toString(transform) : undefined,
-      }}
+      /* 追随中は transform のキーごと外す。motion は style に transform が
+         あるとそちらを優先し、x/y の MotionValue が効かなくなる
+         （undefined でもキーが立っていれば同じ。実際にこれで動かなかった） */
+      style={
+        isFollowingGroup
+          ? { left, top, opacity, x: groupDrag.offsetX, y: groupDrag.offsetY }
+          : {
+              left,
+              top,
+              opacity,
+              transform: transform
+                ? CSS.Translate.toString(transform)
+                : undefined,
+            }
+      }
       // マウス以外(指・ペン)では立てない。上の isHovered のコメント参照
       onPointerEnter={(event) => {
         if (event.pointerType === "mouse") setIsHovered(true);
