@@ -18,6 +18,7 @@ import { useGuestDraftAutosave } from "@/features/project/hooks/useGuestDraftAut
 import { useSceneThumbnails } from "@/features/scene/hooks/useSceneThumbnails";
 import { SceneScrubProvider } from "@/features/canvas/hooks/useSceneScrub";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
+import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import {
   GUEST_SCOPE,
@@ -74,7 +75,28 @@ export function EditorLayout({
   // シーン一覧のミニチュアはここで1回だけ作る。ドックのストリップ・
   // ボトムシート・サイドバーの3箇所が同じ絵を使うので、置き場所は
   // それら全部を含むこの層になる
-  useSceneThumbnails(project);
+  /**
+   * **画面に出すのは、ストアが持っている作品の方。**
+   *
+   * props の `project` はサーバーで取ってきた「開いた瞬間の写し」で、
+   * あとから中身が変わっても動かない。設定でステージの広さを変えると
+   * ストアだけが新しくなり、**数字は変わって保存もされているのに
+   * ステージの形だけが前のまま**、という状態になっていた
+   * （実機報告 03-17「数字は変えられるけど、実際の大きさが変化しない」）。
+   *
+   * 同じ作品がストアに入っていればそちらを見る。入れ直し
+   * (useHydrateProject) は CanvasBoard の中で起きるので、
+   * それが済むまでと、別の作品へ移った直後だけ props を使う。
+   *
+   * ProjectTitle と ShareSheet が各自で同じ判定をしていた
+   * （名前と共有だけは追いつくが、他は追いつかない）。ここへ上げれば、
+   * ステージ・コマ絵・動画の書き出しまでまとめて同じ値を見る。
+   */
+  const live = useProjectStore((state) =>
+    state.project?.id === project.id ? state.project : project,
+  );
+
+  useSceneThumbnails(live);
 
   // この端末に控えてある曲を戻す。作品ごとに1曲なので、別の作品を開いたら
   // 入れ替わる(useMusicStore.restore)。音源はサーバーへ上げていないので、
@@ -115,17 +137,17 @@ export function EditorLayout({
     <SceneScrubProvider>
       <div className="flex h-dvh flex-col overflow-clip pb-[max(24px,env(safe-area-inset-bottom))]">
         <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col overflow-clip md:max-[1199px]:max-w-3xl min-[1200px]:max-w-[1400px]">
-          <EditorHeader project={project} />
+          <EditorHeader project={live} />
 
           <div className="flex min-h-0 flex-1 gap-3 px-3.5 pb-1 md:gap-4 md:px-4">
             {/* 3ペインのときだけ、シーンを左のレールに出す */}
             <div className="hidden min-[1200px]:flex min-[1200px]:min-h-0">
-              <SceneSidebar project={project} />
+              <SceneSidebar project={live} />
             </div>
 
             <div className="flex min-h-0 min-w-0 flex-1 flex-col">
               <CanvasBoard
-                project={project}
+                project={live}
                 initialDancers={initialDancers}
                 initialScenes={initialScenes}
                 initialPositions={initialPositions}
@@ -140,10 +162,10 @@ export function EditorLayout({
               どちらが後にCSSへ出るかに結果が左右されてしまう
               (テーマに足したブレークポイントは md より前に出た) */}
             <div className="hidden md:max-[1199px]:flex md:max-[1199px]:min-h-0">
-              <EditorSidePanel project={project} showScenes />
+              <EditorSidePanel project={live} showScenes />
             </div>
             <div className="hidden min-[1200px]:flex min-[1200px]:min-h-0">
-              <EditorSidePanel project={project} showScenes={false} />
+              <EditorSidePanel project={live} showScenes={false} />
             </div>
           </div>
 
@@ -152,13 +174,13 @@ export function EditorLayout({
             インスペクターが同じ場所を使うので、ヒントは出さない */}
           <div className="relative shrink-0">
             <DancerInspector />
-            <SceneDock project={project} />
+            <SceneDock project={live} />
           </div>
 
-          <AddDancerSheet project={project} />
-          <TemplateSheet project={project} />
+          <AddDancerSheet project={live} />
+          <TemplateSheet project={live} />
           <ExportVideoSheet
-            project={project}
+            project={live}
             isOpen={isExportSheetOpen}
             onClose={() => setExportSheetOpen(false)}
           />

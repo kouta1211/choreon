@@ -10,6 +10,7 @@ import {
   useNumberDraft,
   type NumberCorrection,
 } from "@/components/hooks/useNumberDraft";
+import { useSettingsApply } from "@/components/molecules/SettingsApplyBar";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 /** 直した理由を、その場の言葉にする。範囲は既に隣に出ているので短くてよい */
@@ -160,6 +161,12 @@ export function SettingsSegmentRow<T extends string | number>({
  * 打っている最中の文字列はここで預かり、**欄から離れた時点で1回だけ**
  * 数値にして丸める。曲の頭出し(MusicSheet)が先に同じ作法になっているので、
  * 数を入れる場所の振る舞いが画面によって違う、ということも無くなる。
+ *
+ * ■ 確定させるボタンは、この行には出さない(2026-08-18)
+ * 打ち替えている間だけ行の中に出していたが、**出たり消えたりで行の高さが
+ * 動く**（実機報告 03-17）。束の下に1つ常設したものへ手を預ける
+ * (SettingsApplySurface)。設定の外で使われて預け先が無いときだけ、
+ * これまでどおり自分でボタンを出す。
  */
 export function SettingsNumberRow({
   label,
@@ -178,7 +185,8 @@ export function SettingsNumberRow({
   max: number;
   step?: number;
   unit: string;
-  onChange: (value: number) => void;
+  /** 受け取らなかったときは false を返す(useNumberDraft が欄を元へ戻す) */
+  onChange: (value: number) => void | boolean;
 }) {
   const t = useT();
   // 打っている間の預かりと、確定したときの丸め方は曲の頭出しと共通
@@ -189,6 +197,8 @@ export function SettingsNumberRow({
       max,
       onChange,
     });
+  // 束の下の「適用」へ預ける。預け先があれば、この行はボタンを出さない
+  const hasApplyBar = useSettingsApply(isDirty, commit);
 
   return (
     <div className="flex min-h-target flex-col gap-unit px-gutter py-unit">
@@ -221,9 +231,8 @@ export function SettingsNumberRow({
         </span>
       </label>
 
-      {/* 打ち替えている間だけ出す。いつも出していると、押す必要があるのか
-          どうかが読めない */}
-      {isDirty && (
+      {/* 預け先が無いときだけ、この行が自分で出す */}
+      {!hasApplyBar && isDirty && (
         <PressableButton
           kind="primary"
           onClick={commit}

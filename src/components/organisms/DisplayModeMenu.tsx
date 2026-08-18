@@ -20,6 +20,12 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useThemeStore } from "@/features/theme/store/useThemeStore";
 import { projectIdFromPath } from "@/features/theme/lib/themePreference";
 import { SwitchTrack } from "@/components/atoms/Switch";
+import {
+  SegmentedFace,
+  segmentedColumns,
+  segmentedGroupClass,
+  segmentedOptionClass,
+} from "@/components/atoms/SegmentedControl";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import {
   DropdownMenu,
@@ -188,24 +194,38 @@ export function DisplayModeMenu({
             表示の切り替えなのか**を中で示す必要がある（2026-08-17） */}
         <DropdownMenuLabel>{t.editor.view.stageGroup}</DropdownMenuLabel>
 
-        {/* 目盛りは3択なので、オン/オフではなくラジオで持つ。
-            矢印キーで選び替えられ、いまどれかも読み上げられる */}
+        {/* 3択の見た目は、どの画面でも同じ（設定の「ダンサー名」と同じ形）。
+            **ここだけ自前の丸い枠で描いていた**ので寄せた（実機報告 03-22
+            「目盛りのところも」）。前回揃えた3つ — 拍子・動画の大きさ・
+            テンプレートの間隔 — の最後の1つ。
+
+            ただし中身は**メニューの選択肢のまま**にしてある。素のボタン
+            (SegmentedControl そのもの)に替えると、Radix のメニューの
+            仕組みに入らないので**矢印キーでもタブでも辿り着けない**
+            （実機で確かめた）。借りているのは見た目と、面の滑り方だけ。
+            選んでも閉じないのは、続けて見比べたい場所だから */}
         <div className="flex items-center gap-unit px-2 py-1.5">
           <Grid3x3 size={16} className="shrink-0 text-fg-muted" />
-          <span className="flex-1 text-label text-fg">
+          <span className="min-w-0 flex-1 text-label text-fg">
             {t.editor.view.gridLabel}
           </span>
           <DropdownMenuRadioGroup
             value={gridMode}
             onValueChange={(value) => setGridMode(value as GridMode)}
-            className="flex shrink-0 overflow-hidden rounded-full border border-line-strong"
+            className={`${segmentedGroupClass} w-48 shrink-0`}
+            style={{ gridTemplateColumns: segmentedColumns(GRID_MODES.length) }}
           >
+            <SegmentedFace
+              index={GRID_MODES.indexOf(gridMode)}
+              count={GRID_MODES.length}
+            />
             {GRID_MODES.map((option) => (
               <DropdownMenuRadioItem
                 key={option}
                 value={option}
-                // 選んでも閉じない。続けて見比べたい場所なので
                 onSelect={(event) => event.preventDefault()}
+                /* 選ばれている印は上の面が持つので、選択肢自身は塗らない */
+                className={`${segmentedOptionClass(gridMode === option)} flex cursor-pointer items-center justify-center data-[state=checked]:bg-transparent data-[state=checked]:text-fg-strong`}
               >
                 {t.editor.view[GRID_LABEL_KEYS[option]]}
               </DropdownMenuRadioItem>

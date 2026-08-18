@@ -2,6 +2,59 @@
 
 import { PressableButton } from "@/components/atoms/PressableButton";
 
+/**
+ * 面と選択肢の見た目は、**この3つだけに書いてある**。
+ *
+ * メニューの中の「目盛り」だけは、この部品をそのまま置けない —
+ * 素のボタンは Radix のメニューの仕組みに入らないので、
+ * **矢印キーで辿り着けなくなる**（実機で確かめた）。
+ * あちらは「メニューの選択肢」のまま、見た目だけをここから借りる。
+ * 描き方を2箇所に書かなければ、片方だけ古くなることは無い。
+ */
+export const segmentedGroupClass =
+  "relative grid rounded-lg bg-surface-raised p-base";
+
+/**
+ * 等幅に割る指定。**`1fr` だけでは等幅にならない** — `1fr` は
+ * `minmax(auto, 1fr)` なので、いちばん長い語（「同心円」など）が
+ * 自分のぶんを広く取り、他が縮む。滑る面は「幅の1/n ずつ動く」前提で
+ * 描いているので、列がずれると面と文字が合わなくなる（実測で4pxずれた）。
+ */
+export const segmentedColumns = (count: number) =>
+  `repeat(${count}, minmax(0, 1fr))`;
+
+export const segmentedOptionClass = (isOn: boolean) =>
+  // 選ばれていない側も読める濃さにする。押せるものを、読めない色で書かない
+  `relative h-8 rounded-md px-2 text-label transition-colors ${
+    isOn ? "text-fg-strong" : "text-fg-sub hover:text-fg"
+  }`;
+
+/**
+ * 選ばれているところを示す明るい面。選ばれた選択肢自身に色を持たせると、
+ * 押すたびに面が瞬間移動して、どこから来たのかが目で追えない。
+ * 1枚だけ置いて動かす。
+ */
+export function SegmentedFace({
+  index,
+  count,
+}: {
+  /** いくつめが選ばれているか。見つからないとき(-1)は出さない */
+  index: number;
+  count: number;
+}) {
+  if (index < 0) return null;
+  return (
+    <span
+      aria-hidden
+      className="pointer-events-none absolute top-base bottom-base left-base rounded-md bg-surface-strong transition-transform duration-200 ease-out"
+      style={{
+        width: `calc((100% - var(--spacing-base) * 2) / ${count})`,
+        transform: `translateX(${index * 100}%)`,
+      }}
+    />
+  );
+}
+
 type Option<T> = { value: T; label: string };
 
 type Props<T extends string | number> = {
@@ -43,22 +96,10 @@ export function SegmentedControl<T extends string | number>({
     <div
       role="group"
       aria-label={label}
-      className={`relative grid rounded-lg bg-surface-raised p-base ${className}`}
-      style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}
+      className={`${segmentedGroupClass} ${className}`}
+      style={{ gridTemplateColumns: segmentedColumns(options.length) }}
     >
-      {/* 選ばれているところを示す明るい面。選ばれたボタン自身に色を
-          持たせると、押すたびに面が瞬間移動して、どこから来たのかが
-          目で追えない。1枚だけ置いて動かす */}
-      {selectedIndex >= 0 && (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute top-base bottom-base left-base rounded-md bg-surface-strong transition-transform duration-200 ease-out"
-          style={{
-            width: `calc((100% - var(--spacing-base) * 2) / ${options.length})`,
-            transform: `translateX(${selectedIndex * 100}%)`,
-          }}
-        />
-      )}
+      <SegmentedFace index={selectedIndex} count={options.length} />
 
       {options.map((option) => {
         const isOn = option.value === value;
@@ -67,11 +108,7 @@ export function SegmentedControl<T extends string | number>({
             key={String(option.value)}
             aria-pressed={isOn}
             onClick={() => onChange(option.value)}
-            // 選ばれていない側も読める濃さにする。押せるものを、
-            // 読めない色で書かない
-            className={`relative h-8 rounded-md px-2 text-label transition-colors ${
-              isOn ? "text-fg-strong" : "text-fg-sub hover:text-fg"
-            }`}
+            className={segmentedOptionClass(isOn)}
           >
             {option.label}
           </PressableButton>

@@ -245,6 +245,7 @@ export const en = {
       tooSmall: (min: number) => `Cannot go below ${min}`,
       tooLarge: (max: number) => `Cannot go above ${max}`,
       apply: "Apply",
+      applyCount: (count: number) => `Apply (${count})`,
       notApplied: "Nothing changes until you press Apply",
       applied: "Applied",
     },
@@ -754,18 +755,14 @@ export const en = {
       project: "Changes here apply to this piece only.",
       home: "Changes here apply to every piece.",
       newProjectOnly:
-        "The size and tempo under \"Stage\" are starting values for pieces you make from now on (this piece's size is under \"This piece's stage\").",
+        "Only the default tempo under \"Playback\" is a starting value for pieces you make from now on (it does not change the piece you have open).",
       hasOverride: (n: number) => `${n} setting(s) are set for this piece only`,
       clear: "Stop using piece-only settings",
       cleared: "Piece-only settings removed",
     },
 
     projectStage: {
-      title: "This piece's stage",
-      summary: "The size of the piece you have open",
       description: "This size belongs to this piece only. 1 cell = 90cm",
-      width: "Width of this piece",
-      depth: "Depth of this piece",
       floor: (width: number, height: number) =>
         `Everyone currently placed fits within ${width}x${height} cells. 1 cell = 90cm`,
       hasOutside: (count: number) =>
@@ -775,6 +772,7 @@ export const en = {
     stage: {
       title: "Stage",
       summary: "Audience side, size of new pieces",
+      summaryInProject: "Audience side, size of this piece",
       description:
         "Flipping the view never moves a saved position. Only the direction things are drawn, and the words used for it, swap over.",
       audienceOnTop: {

@@ -8,15 +8,14 @@ import {
   Frame,
   Grid2x2,
   Play,
-  Ruler,
   Settings2,
   UserRoundCog,
 } from "lucide-react";
 import { BottomSheet } from "@/components/molecules/BottomSheet";
 import { SettingsNavRow } from "@/components/molecules/SettingsRow";
+import { SettingsApplySurface } from "@/components/molecules/SettingsApplyBar";
 import { SettingsDataSection } from "@/components/molecules/SettingsDataSection";
 import { SettingsStageSection } from "@/components/organisms/SettingsStageSection";
-import { SettingsProjectStageSection } from "@/components/organisms/SettingsProjectStageSection";
 import { SettingsGridSection } from "@/components/organisms/SettingsGridSection";
 import { SettingsPlaybackSection } from "@/components/organisms/SettingsPlaybackSection";
 import { SettingsDisplaySection } from "@/components/organisms/SettingsDisplaySection";
@@ -86,8 +85,6 @@ function ScopeNotice() {
 /** 束の名前。開いている束をこれで覚える */
 type SectionId =
   | "stage"
-  /** いま開いている作品の広さ。"stage"（新しく作る作品の初期値）とは別 */
-  | "projectStage"
   | "grid"
   | "playback"
   | "display"
@@ -152,7 +149,8 @@ export function SettingsSheet({
   const hasProjectData = Boolean(onExport || onImport || onResetProject);
   /* ステージの広さは**作品が開いていれば**触れる。書き出し・取り込みが
      できるか（= ログイン済みか）とは別の話で、ゲストの下書きにも広さはある
-     （書き込みは persist() がゲストを見て止める） */
+     （書き込みは persist() がゲストを見て止める）。
+     ここで見るのは「舞台」の要約の書き分けだけ（中身は束が自分で決める） */
   const hasProject = useProjectStore((state) => state.project !== null);
   const isGuest = useProjectStore((state) => state.isGuest);
 
@@ -162,24 +160,14 @@ export function SettingsSheet({
     {
       id: "stage",
       title: t.settings.stage.title,
-      summary: t.settings.stage.summary,
+      /* 中の「ステージの幅」が指す先は、作品を開いているかで変わる。
+         一覧の行にもそれを書く — 開く前に、どちらの広さの話なのかが読める */
+      summary: hasProject
+        ? t.settings.stage.summaryInProject
+        : t.settings.stage.summary,
       icon: <Frame size={20} />,
       body: <SettingsStageSection />,
     },
-    /* いま開いている作品の広さ。**新しく作る作品の初期値とは別の束**にする —
-       同じ束に並べると、どちらがどちらか読めない（名前がほとんど同じ）。
-       一覧では開いている作品が無いので、行そのものを出さない */
-    ...(hasProject
-      ? [
-          {
-            id: "projectStage" as const,
-            title: t.settings.projectStage.title,
-            summary: t.settings.projectStage.summary,
-            icon: <Ruler size={20} />,
-            body: <SettingsProjectStageSection />,
-          },
-        ]
-      : []),
     {
       id: "grid",
       title: t.settings.grid.title,
@@ -265,7 +253,9 @@ export function SettingsSheet({
       >
         <ScopeNotice />
         {current ? (
-          current.body
+          /* 数を入れる行がある束では、下端に「適用」が貼り付く。
+             行ごとにボタンを出したり消したりしない（実機報告 03-17） */
+          <SettingsApplySurface>{current.body}</SettingsApplySurface>
         ) : (
           <div className="divide-y divide-line overflow-hidden rounded-2xl bg-surface">
             {sections.map((section) => (

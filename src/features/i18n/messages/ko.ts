@@ -243,9 +243,10 @@ export const ko = {
       notANumber: "숫자를 입력해 주세요",
       tooSmall: (min: number) => `${min}보다 작게 할 수 없습니다`,
       tooLarge: (max: number) => `${max}보다 크게 할 수 없습니다`,
-      apply: "업데이트",
-      notApplied: "업데이트를 누를 때까지 바뀌지 않습니다",
-      applied: "업데이트했습니다",
+      apply: "적용",
+      applyCount: (count: number) => `적용 (${count}건)`,
+      notApplied: "적용을 누를 때까지 바뀌지 않습니다",
+      applied: "적용했습니다",
     },
     back: "뒤로",
     loading: "불러오는 중",
@@ -747,18 +748,14 @@ export const ko = {
       project: "여기서 바꾼 것은 이 작품에만 적용됩니다.",
       home: "여기서 바꾼 것은 모든 작품에 적용됩니다.",
       newProjectOnly:
-        "「무대」의 크기와 기본 속도는 앞으로 만들 작품의 초기값입니다(이 작품의 크기는 「이 작품의 스테이지」에서 바꿉니다).",
+        "「재생」의 기본 속도만 앞으로 만들 작품의 초기값입니다(지금 열려 있는 작품의 속도는 바뀌지 않습니다).",
       hasOverride: (n: number) => `이 작품에만 적용된 설정이 ${n}개 있습니다`,
       clear: "이 작품만의 설정 그만두기",
       cleared: "이 작품만의 설정을 지웠습니다",
     },
 
     projectStage: {
-      title: "이 작품의 스테이지",
-      summary: "지금 열려 있는 작품의 크기",
       description: "이 작품만의 크기입니다. 1칸 = 90cm",
-      width: "이 작품의 너비",
-      depth: "이 작품의 깊이",
       floor: (width: number, height: number) =>
         `지금 배치된 사람이 들어가는 것은 ${width}x${height} 칸까지입니다. 1칸 = 90cm`,
       hasOutside: (count: number) =>
@@ -768,6 +765,7 @@ export const ko = {
     stage: {
       title: "무대",
       summary: "객석 방향 · 새 작품의 크기",
+      summaryInProject: "객석 방향 · 이 작품의 크기",
       description:
         "방향을 바꿔도 저장된 위치는 움직이지 않습니다. 그리는 방향과 안내 문구만 바뀝니다.",
       audienceOnTop: {

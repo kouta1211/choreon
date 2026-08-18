@@ -10,7 +10,13 @@ type Params = {
   value: number;
   min: number;
   max: number;
-  onChange: (value: number) => void;
+  /**
+   * 確定した値を渡す。**受け取らなかったときは false を返す。**
+   * ステージを狭める操作のように「押しても変えない」ことがある欄では、
+   * 変わっていないのに打った数だけが残ると、どちらが効いているのか
+   * 読めなくなる（実機の台本 03-19「欄の数も元に戻る」）。
+   */
+  onChange: (value: number) => void | boolean;
 };
 
 /**
@@ -71,16 +77,31 @@ export function useNumberDraft({ value, min, max, onChange }: Params) {
       return;
     }
     const clamped = Math.min(max, Math.max(min, parsed));
-    setDraft(String(clamped));
     setCorrection(
       clamped === parsed ? null : parsed < min ? "tooSmall" : "tooLarge",
     );
+
     // **自分で起こした変更を「外から変わった」と数えない。**
     // 先に控えておかないと、丸めた値が親から返ってきた時点で上の
     // 追い付き処理が走り、いま出したばかりの理由が消える
+    if (clamped === value) {
+      setDraft(String(clamped));
+      setLastValue(clamped);
+      setJustApplied(false);
+      return;
+    }
+
+    if (onChange(clamped) === false) {
+      // 受け取ってもらえなかった。値は変わっていないので、欄も元へ戻す
+      setDraft(String(value));
+      setLastValue(value);
+      setJustApplied(false);
+      return;
+    }
+
+    setDraft(String(clamped));
     setLastValue(clamped);
-    setJustApplied(clamped !== value);
-    if (clamped !== value) onChange(clamped);
+    setJustApplied(true);
   };
 
   return {
