@@ -99,89 +99,85 @@ export function ViewerStage() {
        20人の作品をスマホで見ると丸が指より小さいので、自分の周りだけ
        大きくして「誰と誰の間か」を確かめたい、という用途。
 
-       包むのはステージ【ごと】。中のダンサーだけ拡げると、床の格子と
-       ずれて「どこに立っているのか」が読めなくなる。
-       はみ出しは切る — 下の道順や帯へ被せない */
+       **拡げるのは床の中身だけ**（実機の報告 06-19）。ステージそのものが
+       大きくなると、画面の中で何がどこまでかが分からなくなる。
+       格子も中身の側なので、拡げてもダンサーは線の上に乗ったまま。
+       指を受けるのは外側 — 枠の少し外から始めても効く */
     <div
-      ref={zoomBoxRef}
       data-testid="viewer-zoom"
       {...zoomHandlers}
-      className="relative flex min-h-0 flex-1 touch-none overflow-hidden"
+      className="relative flex min-h-0 flex-1 touch-none"
     >
-      <div
-        className={`flex min-h-0 flex-1 flex-col ${
-          isZoomGesturing ? "" : "transition-transform duration-150"
-        }`}
-        style={{
-          transform: `translate(${zoomOffset.x}px, ${zoomOffset.y}px) scale(${zoomScale})`,
-        }}
+      <Stage
+        ref={zoomBoxRef}
+        widthUnits={project.stageWidth}
+        heightUnits={project.stageHeight}
+        contentTransform={`translate(${zoomOffset.x}px, ${zoomOffset.y}px) scale(${zoomScale})`}
+        /* 指を離して戻るときだけ滑らかに。動かしている最中に補間を掛けると、
+           指に遅れて付いてくる */
+        isContentAnimated={!isZoomGesturing}
       >
-        <Stage
-          widthUnits={project.stageWidth}
-          heightUnits={project.stageHeight}
-        >
-          <StageMarks
+        <StageMarks
+          stageWidthUnits={project.stageWidth}
+          stageHeightUnits={project.stageHeight}
+        />
+
+        {/* これからどこへ動くか。作る画面と同じ部品で描く */}
+        {isPathVisible && ownPath && (
+          <PathOverlay
+            currentPositions={{ [ownPath.dancerId]: ownPath.from }}
+            nextPositions={{ [ownPath.dancerId]: ownPath.to }}
+            dancers={Object.fromEntries(
+              dancers.map((dancer) => [dancer.id, dancer]),
+            )}
             stageWidthUnits={project.stageWidth}
             stageHeightUnits={project.stageHeight}
           />
+        )}
 
-          {/* これからどこへ動くか。作る画面と同じ部品で描く */}
-          {isPathVisible && ownPath && (
-            <PathOverlay
-              currentPositions={{ [ownPath.dancerId]: ownPath.from }}
-              nextPositions={{ [ownPath.dancerId]: ownPath.to }}
-              dancers={Object.fromEntries(
-                dancers.map((dancer) => [dancer.id, dancer]),
-              )}
-              stageWidthUnits={project.stageWidth}
-              stageHeightUnits={project.stageHeight}
-            />
-          )}
+        {positions.map((position) => {
+          const dancer = dancerById.get(position.dancerId);
+          if (!dancer) return null;
 
-          {positions.map((position) => {
-            const dancer = dancerById.get(position.dancerId);
-            if (!dancer) return null;
-
-            const isOwn = dancer.id === focusedDancerId;
-            // 誰も選んでいないときは全員そのまま(エディタと同じ見た目で、
-            // 編集の操作だけが無い状態)
-            const isFilled = isOwn || focusedDancerId === null;
-            /* 上下を鏡にしているときは、鼻先も鏡にする。写さないと
+          const isOwn = dancer.id === focusedDancerId;
+          // 誰も選んでいないときは全員そのまま(エディタと同じ見た目で、
+          // 編集の操作だけが無い状態)
+          const isFilled = isOwn || focusedDancerId === null;
+          /* 上下を鏡にしているときは、鼻先も鏡にする。写さないと
            「見えている向きと逆を向く」— 作る側(DraggableDancerIcon)と同じ */
-            const screenRotation = isAudienceOnTop
-              ? mirrorAngle(position.rotationAngle)
-              : position.rotationAngle;
+          const screenRotation = isAudienceOnTop
+            ? mirrorAngle(position.rotationAngle)
+            : position.rotationAngle;
 
-            return (
-              /* 大きさを持たない点として置く。マーカー自身が -50% で
+          return (
+            /* 大きさを持たない点として置く。マーカー自身が -50% で
              真ん中に来るので、ここで transform を掛けない
              (掛けると二重にずれる。作る側の置き方と同じ) */
-              <div
-                key={dancer.id}
-                className="pointer-events-none absolute"
-                style={{
-                  left: `${(position.x / project.stageWidth) * 100}%`,
-                  top: `${(screenY(position.y) / project.stageHeight) * 100}%`,
-                  opacity: isFilled ? 1 : OTHER_OPACITY,
-                }}
-              >
-                {/* 実物のマーカー(頭＋鼻先)。丸だけだと向きが分からない
+            <div
+              key={dancer.id}
+              className="pointer-events-none absolute"
+              style={{
+                left: `${(position.x / project.stageWidth) * 100}%`,
+                top: `${(screenY(position.y) / project.stageHeight) * 100}%`,
+                opacity: isFilled ? 1 : OTHER_OPACITY,
+              }}
+            >
+              {/* 実物のマーカー(頭＋鼻先)。丸だけだと向きが分からない
                 — 見る人にとっては「どっちを向くか」も振付の一部
                 (実機の報告 2026-08-19) */}
-                <DancerMarker
-                  dancer={dancer}
-                  rotationAngle={screenRotation}
-                  isFocused={isOwn}
-                />
-                {/* 名前はここでは出さない（実機の報告 06-11）。
+              <DancerMarker
+                dancer={dancer}
+                rotationAngle={screenRotation}
+                isFocused={isOwn}
+              />
+              {/* 名前はここでは出さない（実機の報告 06-11）。
                 マーカー自身が頭の中に頭文字を描いていて、その下へ名前を
                 重ねると**同じ数字が2つ**並んで重なった。
                 誰が自分かは「濃い1人」と、上のヘッダーの名札で分かる */}
-              </div>
-            );
-          })}
-        </Stage>
-      </div>
+            </div>
+          );
+        })}
+      </Stage>
     </div>
   );
 }

@@ -499,6 +499,7 @@ export const ko = {
       summary: (scenes: number, total: string) =>
         `${scenes}장면 · 전체 ${total}`,
       lastFormation: "여기가 마지막 대형입니다",
+      startHere: "여기에서 시작합니다",
       stepsNote: "걸음 수는 한 걸음 60cm·한 칸 90cm로 계산한 어림값입니다.",
       sidesNote: "상수／하수는 객석에서 본 방향입니다.",
       fast: " — 빠름",

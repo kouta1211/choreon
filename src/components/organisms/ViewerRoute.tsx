@@ -52,6 +52,24 @@ export function ViewerRoute() {
     if (!focusedDancerId) return [];
 
     const result: Step[] = [];
+
+    /* 1行目は【最初のシーン】。移動が無いので言葉だけを置く
+       （実機の報告 06-16）。無いと「現時点」が付く行が無い場面ができるし、
+       一覧の番号が2から始まって、帯の番号と食い違って見える */
+    const first = scenes[0];
+    if (first && positionsBySceneId[first.id]?.[focusedDancerId]) {
+      result.push({
+        sceneId: first.id,
+        number: 1,
+        name: first.name,
+        timeSeconds: first.timeSeconds,
+        text: t.viewer.route.startHere,
+        turn: null,
+        isFast: false,
+        seconds: 0,
+      });
+    }
+
     for (let index = 1; index < scenes.length; index += 1) {
       const previous = scenes[index - 1];
       const scene = scenes[index];

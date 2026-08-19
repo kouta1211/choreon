@@ -532,6 +532,8 @@ export const ja = {
       summary: (scenes: number, total: string) =>
         `${scenes} シーン · 通し ${total}`,
       lastFormation: "ここが最後の隊形です",
+      /** 道順の一覧の1行目。最初のシーンには「移動」が無い */
+      startHere: "ここから始まります",
       stepsNote: "歩数は 1歩 60cm・1マス 90cm で計算した目安です。",
       sidesNote: "上手／下手は客席から見た向きです。",
       fast: " — 速め",

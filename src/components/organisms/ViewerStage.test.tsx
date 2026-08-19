@@ -27,20 +27,19 @@ function hydrate() {
 /** ズームを受ける入れ物。ステージの枠より外側にある */
 function zoomBox(): HTMLElement {
   const box = screen.getByTestId("viewer-zoom");
-  /* jsdom はポインタ捕捉も要素の大きさも持たない。
-     捕捉は黙らせ、大きさは動かせる余地の計算に要るので与える */
+  /* jsdom はポインタ捕捉も要素の大きさも持たない。捕捉は指を受ける側で
+     黙らせ、**大きさは枠の方**に与える — 動かせる余地は床の大きさで
+     決まるので、測っているのは枠 */
   box.setPointerCapture = () => {};
   box.releasePointerCapture = () => {};
-  box.getBoundingClientRect = () =>
+  screen.getByTestId("stage").getBoundingClientRect = () =>
     ({ left: 0, top: 0, width: 400, height: 400 }) as DOMRect;
   return box;
 }
 
-/** 拡げている中身。transform はここに掛かる */
-function zoomed(box: HTMLElement): HTMLElement {
-  const inner = box.firstElementChild;
-  if (!(inner instanceof HTMLElement)) throw new Error("中身が無い");
-  return inner;
+/** 拡げるのは【床の中身】だけ。枠と札は動かない（実機の報告 06-19） */
+function zoomed(): HTMLElement {
+  return screen.getByTestId("stage-content");
 }
 
 function pinch(box: HTMLElement, from: number, to: number) {
@@ -61,7 +60,7 @@ describe("ViewerStage の2本指ズーム", () => {
 
     pinch(box, 100, 200); // 距離2倍
 
-    expect(zoomed(box).style.transform).toContain("scale(2)");
+    expect(zoomed().style.transform).toContain("scale(2)");
   });
 
   it("拡げすぎない（上限で止まる）", () => {
@@ -71,7 +70,7 @@ describe("ViewerStage の2本指ズーム", () => {
 
     pinch(box, 100, 1000);
 
-    expect(zoomed(box).style.transform).toContain(`scale(${MAX_STAGE_SCALE})`);
+    expect(zoomed().style.transform).toContain(`scale(${MAX_STAGE_SCALE})`);
   });
 
   /* 戻し方は「縮めれば自動で戻る」（user の判断）。
@@ -85,8 +84,8 @@ describe("ViewerStage の2本指ズーム", () => {
     fireEvent.pointerUp(box, { pointerId: 2 });
     fireEvent.pointerUp(box, { pointerId: 1 });
 
-    expect(zoomed(box).style.transform).toContain("scale(1)");
-    expect(zoomed(box).style.transform).toContain("translate(0px, 0px)");
+    expect(zoomed().style.transform).toContain("scale(1)");
+    expect(zoomed().style.transform).toContain("translate(0px, 0px)");
   });
 
   it("等倍のままなら、1本指で動かしても位置は変わらない", () => {
@@ -97,7 +96,7 @@ describe("ViewerStage の2本指ズーム", () => {
     fireEvent.pointerDown(box, { pointerId: 1, clientX: 200, clientY: 200 });
     fireEvent.pointerMove(box, { pointerId: 1, clientX: 300, clientY: 260 });
 
-    expect(zoomed(box).style.transform).toContain("translate(0px, 0px)");
+    expect(zoomed().style.transform).toContain("translate(0px, 0px)");
   });
 
   it("拡げているときは、1本指で位置を動かせる", () => {
@@ -110,6 +109,6 @@ describe("ViewerStage の2本指ズーム", () => {
     // 残った指で動かす
     fireEvent.pointerMove(box, { pointerId: 1, clientX: 240, clientY: 200 });
 
-    expect(zoomed(box).style.transform).toContain("translate(40px, 0px)");
+    expect(zoomed().style.transform).toContain("translate(40px, 0px)");
   });
 });

@@ -31,9 +31,13 @@ export function DancerNameLabel({ name, above = false }: Props) {
            上は頭のふちだけなので詰める（実機の報告 06-13）。
            MARKER_SIZE の半分は当たり判定の半径で、頭そのものは
            その半分しかない — 同じ数字を使うと上だけ離れて見える */
+        /* 丸の当たり判定は MARKER_SIZE だが、**描いてある頭はその半分**。
+           半径をそのまま使うと、どちらへ出しても離れて見える。
+           下は鼻先（中心から 15px ほど）を避ける必要があるので少し広め、
+           上は頭のふちだけなので狭い（実機の報告 06-13）。 */
         transform: above
-          ? `translate(-50%, -100%) translateY(${-(MARKER_SIZE / 4 + 4)}px)`
-          : `translate(-50%, 0%) translateY(${MARKER_SIZE / 2 + 4}px)`,
+          ? `translate(-50%, -100%) translateY(${-(MARKER_SIZE / 4 + 2)}px)`
+          : `translate(-50%, 0%) translateY(${MARKER_SIZE / 2 - 2}px)`,
       }}
     >
       {name}

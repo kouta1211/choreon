@@ -61,6 +61,35 @@ describe("ViewerRoute の一覧", () => {
     expect(marked[0].textContent?.startsWith("2")).toBe(true);
   });
 
+  /* 1行目が無いと「現時点」の付く行が無い場面ができ、番号も2から始まって
+     帯と食い違う（実機の報告 06-16） */
+  it("最初のシーンも1行目に出る", async () => {
+    const user = userEvent.setup();
+    hydrate(0);
+    render(<ViewerRoute />);
+
+    await user.click(screen.getByRole("button", { name: "全て" }));
+
+    const rows = screen.getAllByRole("listitem");
+    expect(rows).toHaveLength(3);
+    expect(rows[0].textContent).toContain("ここから始まります");
+    expect(rows[0].textContent?.startsWith("1")).toBe(true);
+  });
+
+  it("最初のシーンに居るときは、その行に「現時点」が付く", async () => {
+    const user = userEvent.setup();
+    hydrate(0);
+    render(<ViewerRoute />);
+
+    await user.click(screen.getByRole("button", { name: "全て" }));
+
+    const marked = screen
+      .getAllByRole("listitem")
+      .filter((row) => row.textContent?.includes("現時点"));
+    expect(marked).toHaveLength(1);
+    expect(marked[0].textContent).toContain("ここから始まります");
+  });
+
   it("最後のシーンでも、その行に付く", async () => {
     const user = userEvent.setup();
     hydrate(8);

@@ -17,6 +17,22 @@ type Props = {
   heightUnits: number;
   /** ダンサーアイコンを配置するためのスロット */
   children?: ReactNode;
+  /**
+   * 床の【中身だけ】に掛ける transform（見る画面の2本指ズーム）。
+   *
+   * 枠と4辺の札には掛けない — ステージそのものが大きくなると、画面の中で
+   * 何がどこまでかが分からなくなる（実機の報告 06-19）。
+   * 格子も中身の側に入れてある。格子だけ据え置くと、拡げたときに
+   * ダンサーが線からずれて「どこに立っているか」が読めなくなる。
+   */
+  contentTransform?: string;
+  /**
+   * 中身の動きを滑らかにするか。
+   *
+   * **指で動かしている最中は false**。補間を掛けると指に遅れて付いてくる。
+   * 指を離して元へ戻るときだけ true にする。
+   */
+  isContentAnimated?: boolean;
   /** ステージ枠のすぐ下、左端に置くもの(テンプレートの入口)。
    * ステージの中には重ねない — 常設のボタンをステージ面に置くと、
    * その下にダンサーが来たときに隠れてしまうため */
@@ -58,6 +74,8 @@ export function Stage({
   widthUnits,
   heightUnits,
   children,
+  contentTransform,
+  isContentAnimated = false,
   belowStageLeft,
   belowStageRight,
   ref,
@@ -149,78 +167,93 @@ export function Stage({
           >
             {t.editor.houseRight}
           </span>
-          {gridMode === "square" && (
+          {/* 床の中身。ズームは**ここだけ**に掛ける（枠と札は動かさない）。
+              切り取りは外側が持ち、動くのは内側 — 同じ要素でやると、
+              切り取る窓ごと動いて意味が無くなる */}
+          <div className="absolute inset-0 overflow-hidden rounded-[max(0px,calc(var(--radius)-2px))]">
             <div
-              data-testid="stage-grid"
-              className={`pointer-events-none absolute inset-0 rounded-[max(0px,calc(var(--radius)-2px))] bg-[linear-gradient(to_right,var(--stage-grid)_1px,transparent_1px),linear-gradient(to_bottom,var(--stage-grid)_1px,transparent_1px)] transition-opacity ${
-                focusedDancerId ? "opacity-40" : ""
+              data-testid="stage-content"
+              className={`absolute inset-0 ${
+                isContentAnimated ? "transition-transform duration-150" : ""
               }`}
-              style={{
-                /* 1マスごとに引く。吸着(dragMath の snapToGrid)が寄せる先は
-                   常に整数=1マスなので、線を間引くと「線の無いところに
-                   吸い付く」ことになり、格子が置ける場所を指さなくなる。
-                   細かすぎるときは 表示とモード で目盛りごと消せる */
-                backgroundSize: `${100 / widthUnits}% ${100 / heightUnits}%`,
-              }}
-            />
-          )}
-          {/* センターライン。中央(0の列)は隊形の基準になるので、
-              格子とは【種類の違う線】にする。
-
-              以前は --line-strong(白18%)で、格子の --stage-grid(白6%)と
-              「同じ白い線の濃さ違い」でしかなかった。そのため消しても差が
-              読み取れず、設定を切り替えた手応えが無かった。アクセントを
-              混ぜると、格子の中で1本だけ意味を持つ線として拾える
-              (color-mix なので10テーマそれぞれの色に追従する)。
-
-              **それでも「ほとんど変化が感じられない」という指摘が来た**ので、
-              1px・55% から 2px・80% へ上げた。格子は1マスごとに引かれていて
-              線の本数が多く、その中の1本を色だけで見分けさせるには
-              太さも要る。切ったときに何が消えたのかが分かる強さが要る */}
-          {isCenterLineVisible && gridMode !== "none" && (
-            <div
-              aria-hidden
-              data-testid="stage-center-line"
-              className="pointer-events-none absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-[color-mix(in_oklab,var(--accent)_80%,transparent)]"
-            />
-          )}
-          {gridMode === "circle" && (
-            <div
-              className={`pointer-events-none absolute inset-0 transition-opacity ${
-                focusedDancerId ? "opacity-40" : ""
-              }`}
+              style={
+                contentTransform ? { transform: contentTransform } : undefined
+              }
             >
-              <ConcentricGuides
-                widthUnits={widthUnits}
-                heightUnits={heightUnits}
-              />
+              {gridMode === "square" && (
+                <div
+                  data-testid="stage-grid"
+                  className={`pointer-events-none absolute inset-0 rounded-[max(0px,calc(var(--radius)-2px))] bg-[linear-gradient(to_right,var(--stage-grid)_1px,transparent_1px),linear-gradient(to_bottom,var(--stage-grid)_1px,transparent_1px)] transition-opacity ${
+                    focusedDancerId ? "opacity-40" : ""
+                  }`}
+                  style={{
+                    /* 1マスごとに引く。吸着(dragMath の snapToGrid)が寄せる先は
+                     常に整数=1マスなので、線を間引くと「線の無いところに
+                     吸い付く」ことになり、格子が置ける場所を指さなくなる。
+                     細かすぎるときは 表示とモード で目盛りごと消せる */
+                    backgroundSize: `${100 / widthUnits}% ${100 / heightUnits}%`,
+                  }}
+                />
+              )}
+              {/* センターライン。中央(0の列)は隊形の基準になるので、
+                格子とは【種類の違う線】にする。
+
+                以前は --line-strong(白18%)で、格子の --stage-grid(白6%)と
+                「同じ白い線の濃さ違い」でしかなかった。そのため消しても差が
+                読み取れず、設定を切り替えた手応えが無かった。アクセントを
+                混ぜると、格子の中で1本だけ意味を持つ線として拾える
+                (color-mix なので10テーマそれぞれの色に追従する)。
+
+                **それでも「ほとんど変化が感じられない」という指摘が来た**ので、
+                1px・55% から 2px・80% へ上げた。格子は1マスごとに引かれていて
+                線の本数が多く、その中の1本を色だけで見分けさせるには
+                太さも要る。切ったときに何が消えたのかが分かる強さが要る */}
+              {isCenterLineVisible && gridMode !== "none" && (
+                <div
+                  aria-hidden
+                  data-testid="stage-center-line"
+                  className="pointer-events-none absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-[color-mix(in_oklab,var(--accent)_80%,transparent)]"
+                />
+              )}
+              {gridMode === "circle" && (
+                <div
+                  className={`pointer-events-none absolute inset-0 transition-opacity ${
+                    focusedDancerId ? "opacity-40" : ""
+                  }`}
+                >
+                  <ConcentricGuides
+                    widthUnits={widthUnits}
+                    heightUnits={heightUnits}
+                  />
+                </div>
+              )}
+              {/* 格子スナップが効いている間、吸着先の格子線をハイライトする。
+                縦横どちらも出ていれば交差点への吸着だと分かる */}
+              {dragSnapLine.x !== null && (
+                <div
+                  data-testid="stage-snap-line-x"
+                  aria-hidden
+                  className="pointer-events-none absolute inset-y-0 w-0.5 -translate-x-1/2 bg-accent-soft shadow-[0_0_6px_1px_color-mix(in_oklab,var(--accent-soft)_90%,transparent)]"
+                  style={{ left: `${(dragSnapLine.x / widthUnits) * 100}%` }}
+                />
+              )}
+              {dragSnapLine.y !== null && (
+                <div
+                  data-testid="stage-snap-line-y"
+                  aria-hidden
+                  className="pointer-events-none absolute inset-x-0 h-0.5 -translate-y-1/2 bg-accent-soft shadow-[0_0_6px_1px_color-mix(in_oklab,var(--accent-soft)_90%,transparent)]"
+                  style={{ top: `${(dragSnapLine.y / heightUnits) * 100}%` }}
+                />
+              )}
+              {focusedDancerId && (
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 rounded-[max(0px,calc(var(--radius)-2px))] bg-[var(--veil)]"
+                />
+              )}
+              {children}
             </div>
-          )}
-          {/* 格子スナップが効いている間、吸着先の格子線をハイライトする。
-              縦横どちらも出ていれば交差点への吸着だと分かる */}
-          {dragSnapLine.x !== null && (
-            <div
-              data-testid="stage-snap-line-x"
-              aria-hidden
-              className="pointer-events-none absolute inset-y-0 w-0.5 -translate-x-1/2 bg-accent-soft shadow-[0_0_6px_1px_color-mix(in_oklab,var(--accent-soft)_90%,transparent)]"
-              style={{ left: `${(dragSnapLine.x / widthUnits) * 100}%` }}
-            />
-          )}
-          {dragSnapLine.y !== null && (
-            <div
-              data-testid="stage-snap-line-y"
-              aria-hidden
-              className="pointer-events-none absolute inset-x-0 h-0.5 -translate-y-1/2 bg-accent-soft shadow-[0_0_6px_1px_color-mix(in_oklab,var(--accent-soft)_90%,transparent)]"
-              style={{ top: `${(dragSnapLine.y / heightUnits) * 100}%` }}
-            />
-          )}
-          {focusedDancerId && (
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0 rounded-[max(0px,calc(var(--radius)-2px))] bg-[var(--veil)]"
-            />
-          )}
-          {children}
+          </div>
           {/* ステージの左下の角に、外側から寄せて置く(top-full = 枠のすぐ下)。
               ステージ【面】には重ねない — 常設のボタンを面に置くと、その下に
               ダンサーが来たときに隠れてしまうため。

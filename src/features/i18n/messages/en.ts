@@ -505,6 +505,7 @@ export const en = {
       summary: (scenes: number, total: string) =>
         `${scenes} scenes · ${total} end to end`,
       lastFormation: "This is the last formation",
+      startHere: "You start here",
       stepsNote: "Steps are an estimate: 60 cm a step, 90 cm a square.",
       sidesNote: "Left and right are as the audience sees them.",
       fast: " — quick",
