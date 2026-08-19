@@ -14,6 +14,8 @@ import {
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { MusicTimeline } from "@/components/organisms/MusicTimeline";
+import { SceneStrip } from "@/components/organisms/SceneStrip";
+import { useOrderOnlyTimeline } from "@/features/scene/hooks/useOrderOnlyTimeline";
 import { PlayheadClock } from "@/components/molecules/PlayheadClock";
 import { CountInOverlay } from "@/components/organisms/CountInOverlay";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
@@ -89,6 +91,8 @@ export function SceneDock({ project }: Props) {
   );
   /* メトロノームは作品の設定になった(2026-08-18)。端末ごとではない */
   const { isMetronomeEnabled, toggleMetronome } = useMetronomeSetting();
+  /* 時刻という概念を出すかどうか。曲も拍も無いときは出さない */
+  const isOrderOnly = useOrderOnlyTimeline();
   const playbackStartSceneId = useUIStore(
     (state) => state.playbackStartSceneId,
   );
@@ -198,9 +202,7 @@ export function SceneDock({ project }: Props) {
                  最後のシーンに居座ったまま押すと前回始めた場所へ戻る、
                  という決まり(playbackStart.ts)が画面のどこにも
                  書かれておらず、押してみるまで分からなかった */
-              title={
-                isPlaying || isCountingIn ? undefined : playFromLabel
-              }
+              title={isPlaying || isCountingIn ? undefined : playFromLabel}
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-accent-fg"
             >
               {/* 数えている間の残り拍は、画面の真ん中に大きく出す
@@ -349,12 +351,20 @@ export function SceneDock({ project }: Props) {
         </div>
       </div>
 
-      {/* 曲の時間軸。シーンは「曲の何秒目か」の位置に載る。
+      {/* 下の帯。**合わせる相手があるかどうか**で姿が変わる。
+          - 曲か拍がある … 時間軸（横位置がそのまま時刻）
+          - どちらも無い … 等間隔の帯（時刻という概念を出さない）
+          決めるのは useOrderOnlyTimeline。理由は lib/timelineMode にある。
+
           畳んでいるときは【描かない】 — 高さ0で隠すだけだと、中の
           時間軸が毎フレーム測り直しに走る */}
       {isTimelineVisible && (
         <div className="mt-2.5">
-          <MusicTimeline project={project} audioRef={audioRef} />
+          {isOrderOnly ? (
+            <SceneStrip project={project} />
+          ) : (
+            <MusicTimeline project={project} audioRef={audioRef} />
+          )}
         </div>
       )}
 

@@ -265,6 +265,10 @@ export const ja = {
       summary: (count: number, seconds: number) =>
         `${count}件 · 合計 ${seconds}s`,
       moveIn: (seconds: number) => ` · ${seconds}s で移動`,
+      /** 等間隔の帯で、コマとコマの間に出す区間の秒数 */
+      segment: (seconds: number) => `→ ${seconds}s`,
+      moveSeconds: "前のシーンから何秒で動くか",
+      moveSecondsNote: "変えると、これより後ろのシーンも同じだけずれます。",
       showing: " · 表示中",
       duplicate: "複製",
       delete: "削除",

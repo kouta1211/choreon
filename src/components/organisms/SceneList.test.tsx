@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SceneList } from "./SceneList";
@@ -30,6 +30,15 @@ afterEach(() => {
  * 中の操作ボタンまで「選択」に飲み込まれていないかを一緒に確かめる。
  */
 describe("SceneList", () => {
+  /* 時刻の欄が出るのは【合わせる相手があるとき】。曲もメトロノームも
+     無いと「何秒で動くか」の欄に変わる（lib/timelineMode）。
+     ここは時刻の側を確かめる組なので、メトロノームを入れておく */
+  beforeEach(() => {
+    useProjectStore.setState({
+      project: makeProject({ isMetronomeEnabled: true }),
+    });
+  });
+
   it("カードのシーン名を押すと、そのシーンに切り替わる", async () => {
     useProjectStore.setState({ scenes: SCENES });
     useUIStore.setState({ selectedSceneId: "scene-1" });
@@ -191,5 +200,60 @@ describe("SceneList", () => {
       expect(useProjectStore.getState().scenes).toHaveLength(1);
     });
     expect(useUIStore.getState().selectedSceneId).toBe("scene-2");
+  });
+});
+
+/**
+ * 合わせる相手（曲・拍）が1つも無いときは、時刻という概念を出さない
+ * （実機の要望 2026-08-19）。理由は features/scene/lib/timelineMode。
+ */
+describe("SceneList（曲もメトロノームも無いとき）", () => {
+  beforeEach(() => {
+    useProjectStore.setState({
+      project: makeProject({ isMetronomeEnabled: false }),
+      scenes: SCENES,
+    });
+    useUIStore.setState({ selectedSceneId: "scene-2" });
+  });
+
+  it("時刻の欄を出さない", () => {
+    render(<SceneList project={makeProject()} />);
+    expect(screen.queryByLabelText(/曲の中の位置|時刻/)).toBeNull();
+    expect(screen.queryByText(/0:02\.0/)).toBeNull();
+  });
+
+  it("代わりに「何秒で動くか」を入れさせる", () => {
+    render(<SceneList project={makeProject()} />);
+    expect(
+      screen.getByLabelText(/前のシーンから何秒で動くか/),
+    ).toBeInTheDocument();
+  });
+
+  /* 先頭には入ってくる元が無い。空の欄を出すと「入れられるのに効かない」
+     ように見える */
+  it("先頭のシーンには、その欄も出さない", () => {
+    useUIStore.setState({ selectedSceneId: "scene-1" });
+    render(<SceneList project={makeProject()} />);
+    expect(screen.queryByLabelText(/前のシーンから何秒で動くか/)).toBeNull();
+  });
+
+  /* 入れた数がそのまま結果になる。時刻の欄は「後ろを押しのけない」のが
+     既定で、詰まっていると入れた秒数どおりにならない */
+  it("秒数を変えると、以降のシーンもまとめてずれる", async () => {
+    const upsert = vi
+      .spyOn(scenesApi, "updateSceneTimes")
+      .mockResolvedValue(undefined);
+    const user = userEvent.setup();
+
+    render(<SceneList project={makeProject()} />);
+    const field = screen.getByLabelText(/前のシーンから何秒で動くか/);
+    await user.clear(field);
+    await user.type(field, "5");
+    await user.tab();
+
+    await waitFor(() => expect(upsert).toHaveBeenCalled());
+    // scene-2 は 2秒 → 5秒。scene-1(先頭)は動かない
+    expect(useProjectStore.getState().scenes[1].timeSeconds).toBe(5);
+    expect(useProjectStore.getState().scenes[0].timeSeconds).toBe(0);
   });
 });

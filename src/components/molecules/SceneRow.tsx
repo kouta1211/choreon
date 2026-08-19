@@ -10,6 +10,8 @@ import {
   formatClock,
   SceneTimeField,
 } from "@/components/molecules/SceneTimeField";
+import { SceneDurationField } from "@/components/molecules/SceneDurationField";
+import { useOrderOnlyTimeline } from "@/features/scene/hooks/useOrderOnlyTimeline";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { isRowSelectClick } from "@/features/scene/lib/sceneRowSensors";
 import type { Project } from "@/features/project/types";
@@ -60,6 +62,7 @@ export function SceneRow({
   onDelete,
 }: Props) {
   const t = useT();
+  const isOrderOnly = useOrderOnlyTimeline();
   // attributes(role="button" など)は渡さない。キーボードでの並び替え
   // (KeyboardSensor)を入れていないうえ、ボタンを内包する行を button として
   // 読み上げさせることになるため
@@ -152,8 +155,12 @@ export function SceneRow({
               isSelected ? "text-accent-bright" : "text-fg-muted"
             }`}
           >
-            {formatClock(scene.timeSeconds)}
-            {index > 0 && t.editor.scenes.moveIn(segmentSeconds)}
+            {isOrderOnly
+              ? index > 0 && t.editor.scenes.segment(segmentSeconds)
+              : [
+                  formatClock(scene.timeSeconds),
+                  index > 0 ? t.editor.scenes.moveIn(segmentSeconds) : "",
+                ].join("")}
             {isSelected && t.editor.scenes.showing}
           </span>
         </div>
@@ -163,13 +170,31 @@ export function SceneRow({
           全行に並べると一覧として読めなくなる */}
       {isSelected && (
         <div className="flex flex-col gap-2 px-2.5 pb-2.5">
-          <SceneTimeField
-            fieldKey={scene.id}
-            timeSeconds={scene.timeSeconds}
-            segmentSeconds={segmentSeconds}
-            isFirst={index === 0}
-            onCommit={onChangeTime}
-          />
+          {/* 合わせる相手（曲・拍）が無いときは、時刻ではなく
+              「何秒で動くか」を入れさせる。先頭のシーンには入ってくる元が
+              無いので、そのときは何も出さない（理由は lib/timelineMode） */}
+          {isOrderOnly ? (
+            index > 0 && (
+              <SceneDurationField
+                fieldKey={scene.id}
+                segmentSeconds={segmentSeconds}
+                onCommit={(seconds) =>
+                  onChangeTime(
+                    scene.timeSeconds - segmentSeconds + seconds,
+                    true,
+                  )
+                }
+              />
+            )
+          ) : (
+            <SceneTimeField
+              fieldKey={scene.id}
+              timeSeconds={scene.timeSeconds}
+              segmentSeconds={segmentSeconds}
+              isFirst={index === 0}
+              onCommit={onChangeTime}
+            />
+          )}
           <div className="flex gap-1.5">
             <RowAction
               icon={Copy}

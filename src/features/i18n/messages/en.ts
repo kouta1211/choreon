@@ -243,6 +243,10 @@ export const en = {
       summary: (count: number, seconds: number) =>
         `${count} scenes · ${seconds}s in total`,
       moveIn: (seconds: number) => ` · ${seconds}s to get there`,
+      segment: (seconds: number) => `→ ${seconds}s`,
+      moveSeconds: "Seconds to get here",
+      moveSecondsNote:
+        "Changing this shifts every later scene by the same amount.",
       showing: " · showing",
       duplicate: "Duplicate",
       delete: "Delete",
