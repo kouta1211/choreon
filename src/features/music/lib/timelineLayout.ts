@@ -107,10 +107,16 @@ export function maxCardHeight(layout: TimelineLayout): number {
 /**
  * コマのまま置いておける最小の間隔(px)。
  *
- * コマの幅そのものだと隣とちょうど接してしまうので、4px だけ足す。
- * この値が画面の段によって変わるため、縮退の閾値も段ごとに変わる
- * (スマホ 2.1秒 / タブレット 1.7秒 / PC 2.1秒)。
+ * ■ 半分ずつ足す
+ * コマは時刻の**真上に中心を置く**ので、隣り合う2つがぶつからない距離は
+ * 「それぞれの幅の半分の和」。両方が通常の幅なら `cardWidth` と同じだが、
+ * **選択中のコマだけ一回り大きい**ので、そちらを見込んでおかないと
+ * 選んだコマがその場で隣へ食い込む（実機の報告 2026-08-19。
+ * PC なら (76+88)/2 = 82 要るところを 76 で判定していた）。
+ *
+ * 接するのを避けるため、さらに 4px 足す。
+ * この値が画面の段によって変わるため、縮退の閾値も段ごとに変わる。
  */
 export function cardMinGapPx(layout: TimelineLayout): number {
-  return layout.cardWidth + 4;
+  return (layout.cardWidth + layout.selectedCardWidth) / 2 + 4;
 }

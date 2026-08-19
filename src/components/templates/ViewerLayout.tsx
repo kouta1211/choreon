@@ -129,8 +129,8 @@ export function ViewerLayout({
      縦に流していた頃は、道順や帯を見るのに毎回スクロールが要った。
 
      割り当ては【ステージ優先】。ステージが余りを全部取り、その下に
-     道順の1行・ボタン・帯を高さの決まった行として積む。
-     並びは ステージ → 道順 → ボタン → 帯（user の指定）。 */
+     ボタン・道順の1行・帯を高さの決まった行として積む。
+     並びは ステージ → ボタン → 道順 → 帯（実機の報告 06-10）。 */
   return (
     <div className="flex h-dvh flex-col overflow-hidden pb-[max(8px,env(safe-area-inset-bottom))]">
       {/* スマホを横にしたら、縦へ戻してもらう（2026-08-19、実機の報告）。
@@ -193,12 +193,8 @@ export function ViewerLayout({
         </div>
       </div>
 
-      {/* 道順の1行。この画面の主役なので、ステージのすぐ下に置く */}
-      <div className="shrink-0 px-3.5 pt-2">
-        <ViewerRoute />
-      </div>
-
-      {/* 再生と導線は、帯の【ひとつ上の行】に置く（user の指定） */}
+      {/* 再生と導線は、道順の帯より【もう一段上】に置く
+          （実機の報告 06-10。ステージのすぐ下） */}
       <div className="flex shrink-0 items-center gap-unit px-3.5 pt-2">
         <PressableButton
           kind="icon"
@@ -234,6 +230,11 @@ export function ViewerLayout({
             {t.viewer.route.paths}
           </PressableButton>
         )}
+      </div>
+
+      {/* 道順の1行。ボタンの下、帯のすぐ上（実機の報告 06-10） */}
+      <div className="shrink-0 px-3.5 pt-2">
+        <ViewerRoute />
       </div>
 
       {/* 帯はいちばん下。親指の届く所に置く */}

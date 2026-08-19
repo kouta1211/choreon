@@ -111,8 +111,9 @@ export function Stage({
               端に残るので、縦に余る画面ほど遠くへ離れていく
               (ステージ下のボタン列で同じことを踏んで、同じ直し方をした)。
 
-              上下は枠のすぐ外。左右は**枠の中**に入れてある — 外に出すと、
-              ステージが幅いっぱいの端末で切れてしまう。
+              4つとも枠の**外**。左右を中に入れると、ステージの床に文字が
+              乗って隊形の邪魔になる（実機の報告 06-8）。外に出せるのは、
+              stageWidthRule が左右に MARKER_SIZE ぶんの余白を残しているから。
 
               左右は入れ替えない。「客席を上にする」が写すのは Y だけで、
               X は動かさないため(stageFlip.ts)。上下の札だけが入れ替わる */}
@@ -130,13 +131,13 @@ export function Stage({
           </span>
           <span
             aria-hidden
-            className="pointer-events-none absolute top-1/2 left-1 -translate-y-1/2 text-caption tracking-[0.16em] text-fg-muted uppercase [writing-mode:vertical-rl]"
+            className="pointer-events-none absolute top-1/2 right-full mr-1 -translate-y-1/2 text-caption tracking-[0.16em] text-fg-muted uppercase [writing-mode:vertical-rl]"
           >
             {t.editor.houseLeft}
           </span>
           <span
             aria-hidden
-            className="pointer-events-none absolute top-1/2 right-1 -translate-y-1/2 text-caption tracking-[0.16em] text-fg-muted uppercase [writing-mode:vertical-rl]"
+            className="pointer-events-none absolute top-1/2 left-full ml-1 -translate-y-1/2 text-caption tracking-[0.16em] text-fg-muted uppercase [writing-mode:vertical-rl]"
           >
             {t.editor.houseRight}
           </span>
