@@ -295,3 +295,70 @@ describe("掴み分けられないほど重なる所へ置いたとき", () => {
     expect(xOf("dancer-1")).toBeCloseTo(3);
   });
 });
+
+/* 掴んでいる間も丸めが効いているか。**見た目の話**なので保存された座標では
+   確かめられない（離した瞬間の丸めは前から効いていて、結果は同じになる）。
+   代わりに、ドラッグ中に光る格子線（dragSnapLine）で見る — これは
+   modifier を通ったあとの移動量から決まっている */
+describe("まとめて動かしているときの、壁での止まり方", () => {
+  it("掴んでいる間も、全員が収まる所までしか進まない", () => {
+    render(
+      <CanvasBoard
+        isGuest
+        project={makeProject({ stageWidth: 8, stageHeight: 8 })}
+        initialDancers={[
+          makeDancer({ id: "dancer-1", name: "あいり" }),
+          makeDancer({ id: "dancer-2", name: "ゆい" }),
+        ]}
+        initialScenes={[makeScene()]}
+        initialPositions={[
+          {
+            sceneId: "scene-1",
+            dancerId: "dancer-1",
+            xCoordinate: 2,
+            yCoordinate: 4,
+            rotationAngle: 0,
+          },
+          {
+            sceneId: "scene-1",
+            dancerId: "dancer-2",
+            xCoordinate: 7,
+            yCoordinate: 4,
+            rotationAngle: 0,
+          },
+        ]}
+      />,
+    );
+    const stage = screen.getByTestId("stage");
+    stage.getBoundingClientRect = () =>
+      ({
+        left: 0,
+        top: 0,
+        right: STAGE_PX,
+        bottom: STAGE_PX,
+        width: STAGE_PX,
+        height: STAGE_PX,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect;
+
+    useUIStore.getState().selectDancers(["dancer-1", "dancer-2"]);
+
+    // 右へ4ユニット引きたいが、右端の ゆい は1ユニットしか動けない
+    const pointer = { pointerId: 1, isPrimary: true, button: 0 };
+    const to = { ...pointer, clientX: 500, clientY: 100 };
+    fireEvent.pointerDown(dancerNode("dancer-1"), {
+      ...pointer,
+      clientX: 100,
+      clientY: 100,
+    });
+    fireEvent.pointerMove(document, to);
+    fireEvent.pointerMove(document, to);
+
+    // 縮まっていれば あいり は 3 の線の上。縮んでいなければ 6 まで行く
+    expect(useUIStore.getState().dragSnapLine.x).toBe(3);
+
+    fireEvent.pointerUp(document, to);
+  });
+});

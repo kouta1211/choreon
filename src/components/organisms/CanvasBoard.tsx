@@ -40,6 +40,7 @@ import {
   createGridSnapModifier,
   GRID_SNAP_TOLERANCE,
 } from "@/features/canvas/lib/gridSnapModifier";
+import { createGroupBoundsModifier } from "@/features/canvas/lib/groupBoundsModifier";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { stageYSign, toScreenY } from "@/features/canvas/lib/stageFlip";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
@@ -150,13 +151,57 @@ export function CanvasBoard({
   const [gridSnapModifier, setGridSnapModifier] = useState<Modifier | null>(
     null,
   );
+  /* 掴んでいる間も、全員が収まる所まで移動量を縮める。無いと、選択中の
+     誰かが壁に着いたあとも本人だけ進んで、離した瞬間に全員が戻る
+     （実機の報告 2026-08-19）*/
+  const [groupBoundsModifier, setGroupBoundsModifier] =
+    useState<Modifier | null>(null);
   useEffect(() => {
     setGridSnapModifier(() => createGridSnapModifier(stageRef));
+    setGroupBoundsModifier(() =>
+      createGroupBoundsModifier(stageRef, (grabbedId) => {
+        const ui = useUIStore.getState();
+        const ids = ui.selectedDancerIds.includes(grabbedId)
+          ? ui.selectedDancerIds
+          : [grabbedId];
+        if (!ui.selectedSceneId) return [];
+
+        const project = useProjectStore.getState();
+        const positions = project.positionsBySceneId[ui.selectedSceneId] ?? {};
+        const heightUnits = project.project?.stageHeight ?? 0;
+        // 渡すのは【画面の向き】。modifier が受け取る移動量も画面の向き
+        const isMirrored = useSettingsStore.getState().isAudienceOnTop;
+        return ids.flatMap((dancerId) => {
+          const position = positions[dancerId];
+          return position
+            ? [
+                {
+                  xCoordinate: position.xCoordinate,
+                  yCoordinate: toScreenY(
+                    position.yCoordinate,
+                    heightUnits,
+                    isMirrored,
+                  ),
+                },
+              ]
+            : [];
+        });
+      }),
+    );
   }, []);
   // 格子への吸着を使うか(設定)。切ると、どこにでも置ける
   const isSnapEnabled = useSettingsStore((state) => state.isSnapEnabled);
   // ステージ面を上下の鏡にして描いているか。指の動きの向きだけを揃える
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
+  /* 並べる順は【格子スナップ → 全員の丸め】。確定側（handleDragEnd →
+     groupMove）も同じ順で計算しているので、見えている位置と置かれる位置が
+     ずれない。吸着を切っていても、丸めの方は必ず通す */
+  const dragModifiers = useMemo(() => {
+    const modifiers: Modifier[] = [];
+    if (isSnapEnabled && gridSnapModifier) modifiers.push(gridSnapModifier);
+    if (groupBoundsModifier) modifiers.push(groupBoundsModifier);
+    return modifiers.length > 0 ? modifiers : undefined;
+  }, [isSnapEnabled, gridSnapModifier, groupBoundsModifier]);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const selectScene = useUIStore((state) => state.selectScene);
   const selectDancer = useUIStore((state) => state.selectDancer);
@@ -629,9 +674,7 @@ export function CanvasBoard({
     >
       <DndContext
         sensors={sensors}
-        modifiers={
-          isSnapEnabled && gridSnapModifier ? [gridSnapModifier] : undefined
-        }
+        modifiers={dragModifiers}
         accessibility={accessibility}
         onDragStart={handleDragStart}
         onDragMove={handleDragMove}
