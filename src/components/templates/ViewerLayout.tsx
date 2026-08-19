@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { ChevronDown, Pause, Play, Spline } from "lucide-react";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
+import { usePlaybackClock } from "@/features/viewer/hooks/usePlaybackClock";
 import { saveLastViewed } from "@/features/viewer/lib/lastViewed";
 import { ViewerEntry } from "@/components/organisms/ViewerEntry";
 import { ViewerStage } from "@/components/organisms/ViewerStage";
@@ -74,32 +75,7 @@ export function ViewerLayout({
   const lastSeconds =
     scenes.length > 0 ? scenes[scenes.length - 1].timeSeconds : 0;
 
-  /* 通し再生。主役ではないので、時計は素朴な rAF で足りる。
-
-     以前は「曲が入っていれば曲を時計にする」分岐があったが、**見る人は
-     曲を選べない**（2026-08-18 の決定）ので、この画面で曲が入ることは無い。
-     分岐と、既に消えた部品を指すコメントだけが残っていたので落とした。 */
-  useEffect(() => {
-    if (!isPlaying) return;
-
-    let frame = 0;
-    let previous = performance.now();
-    const step = (now: number) => {
-      frame = requestAnimationFrame(step);
-      const elapsed = (now - previous) / 1000;
-      previous = now;
-
-      const next = useViewerStore.getState().currentSeconds + elapsed;
-      if (next >= lastSeconds) {
-        setCurrentSeconds(lastSeconds);
-        setIsPlaying(false);
-        return;
-      }
-      setCurrentSeconds(next);
-    };
-    frame = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(frame);
-  }, [isPlaying, lastSeconds, setCurrentSeconds, setIsPlaying]);
+  usePlaybackClock(lastSeconds);
 
   /* 開けたリンクを端末に覚えておく。ホーム画面のアイコンは
      トップページを開くので、圏外だとここへ戻る道が無かった
