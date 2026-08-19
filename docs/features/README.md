@@ -9,7 +9,7 @@
 | `scene` | シーン（隊形）の追加・複製・並び替え・時刻・保存 | `usePositionCommit` `sceneTiming` `sceneReorder` |
 | `project` | 作品そのもの。読み込み・保存・下書き・共有リンク・ステージの広さ | `useProjectStore` `persistence` `guestDraft` `stageResize` |
 | `i18n` | ja / en / ko の文言。**3つそろっていないとビルドが落ちる** | `messages/` `LocaleProvider` `server.ts` |
-| `viewer` | 共有リンクで見る画面（読むだけ）。補間・目盛り | `useViewerStore` `interpolate` `rulerTicks` |
+| `viewer` | 共有リンクで見る画面（読むだけ）。補間・ピンチでの拡大 | `useViewerStore` `interpolate` `stageZoom` |
 | `export` | 動画の書き出し。フレームを描いて録る | `drawFrame` `recordVideo` |
 | `review` | 隊形の講評のもとになる要約作り | `formationSummary` `reviewFindings` |
 | `settings` | 端末に残す設定と、作品の設定。バックアップ | `useSettingsStore` `backup` |
