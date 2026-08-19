@@ -35,7 +35,17 @@ export type ConfirmRequest = {
   meta?: string[];
   /** 実行ボタンの文言。省略時は「削除する」 */
   confirmLabel?: string;
+  /**
+   * 板の調子。既定は削除（取り返しがつかない）。
+   *
+   * `caution` は**戻せる操作の念押し**（重なる場所へ置こうとした等）。
+   * 削除と同じ赤い文言・ゴミ箱の絵を出すと、戻せるものまで
+   * 「取り返しがつかない」と読ませてしまう。
+   */
+  tone?: "destructive" | "caution";
   onConfirm: () => void | Promise<void>;
+  /** 幕・Escape・キャンセルで閉じたとき。やりかけを戻す用 */
+  onCancel?: () => void;
 };
 
 /** ステージの目盛りの出し方。円形の隊形は格子より同心円の方が読みやすい。

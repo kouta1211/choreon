@@ -297,6 +297,15 @@ export const ja = {
       addDancer: "人を足す",
     },
 
+    /** 掴み分けられないほど重なる所へ置こうとしたときの念押し */
+    overlap: {
+      title: (name: string) => `${name} と重なります`,
+      titleMany: (count: number) => `${count}人と重なります`,
+      description:
+        "そのまま置くと、上に居る人しか掴めなくなります。すこしずらして置きますか?",
+      confirm: "ずらして置く",
+    },
+
     errors: {
       metronome: "クリックの設定を保存できませんでした",
       position: "位置の保存に失敗しました",

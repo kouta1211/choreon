@@ -272,6 +272,14 @@ export const en = {
       addDancer: "Add dancers",
     },
 
+    overlap: {
+      title: (name: string) => `This lands on ${name}`,
+      titleMany: (count: number) => `This lands on ${count} dancers`,
+      description:
+        "Placed exactly there, only the dancer on top can be picked up. Nudge it aside?",
+      confirm: "Nudge aside",
+    },
+
     errors: {
       metronome: "Couldn't save the click setting",
       position: "Could not save the position",

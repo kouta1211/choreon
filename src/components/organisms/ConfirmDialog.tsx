@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { CopyX, Trash2 } from "lucide-react";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import {
@@ -56,6 +56,16 @@ export function ConfirmDialog() {
 
   if (!confirmRequest) return null;
 
+  /* 既定は削除。戻せる操作の念押し(caution)では、絵も文言も変える —
+     ゴミ箱と「元に戻せません」を出すと、戻せるものまで怖く見える */
+  const isDestructive =
+    (confirmRequest.tone ?? "destructive") === "destructive";
+
+  const cancel = () => {
+    confirmRequest.onCancel?.();
+    closeConfirm();
+  };
+
   const handleConfirm = async () => {
     setIsRunning(true);
     vibrate(DESTRUCTIVE_PATTERN);
@@ -73,7 +83,7 @@ export function ConfirmDialog() {
       onOpenChange={(open) => {
         // 幕のタップや Escape で閉じる。ただし削除の実行中は閉じない
         // (処理の途中で画面だけ消えると、終わったのかどうか分からない)
-        if (!open && !isRunning) closeConfirm();
+        if (!open && !isRunning) cancel();
       }}
     >
       <DialogContent
@@ -91,7 +101,7 @@ export function ConfirmDialog() {
             aria-hidden
             className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-raised text-fg-sub"
           >
-            <Trash2 size={28} />
+            {isDestructive ? <Trash2 size={28} /> : <CopyX size={28} />}
           </span>
           <div className="flex flex-col gap-unit">
             <DialogTitle className="text-title">
@@ -119,11 +129,14 @@ export function ConfirmDialog() {
             </div>
           )}
 
-          {/* 履歴との違い。ここが無いと「元に戻す」で戻せると思われる */}
-          <p className="text-caption text-fg-muted">
-            <span className="text-fg-sub">{t.confirm.cannotUndo}</span>
-            （移動や向きの変更は「元に戻す」で戻せます）
-          </p>
+          {/* 履歴との違い。ここが無いと「元に戻す」で戻せると思われる。
+              戻せる操作(caution)では出さない — 出すと嘘になる */}
+          {isDestructive && (
+            <p className="text-caption text-fg-muted">
+              <span className="text-fg-sub">{t.confirm.cannotUndo}</span>
+              （移動や向きの変更は「元に戻す」で戻せます）
+            </p>
+          )}
         </div>
 
         {/* 下辺で2つに割る。面ではなく【文字の色】で危険を示す
@@ -131,7 +144,7 @@ export function ConfirmDialog() {
         <div className="-mx-gutter-lg -mb-gutter-lg mt-unit flex border-t border-line">
           <PressableButton
             ref={cancelRef}
-            onClick={closeConfirm}
+            onClick={cancel}
             disabled={isRunning}
             className="h-target-lg flex-1 border-r border-line text-label text-fg-sub disabled:opacity-50"
           >
@@ -140,9 +153,11 @@ export function ConfirmDialog() {
           <PressableButton
             onClick={handleConfirm}
             disabled={isRunning}
-            className="h-target-lg flex-1 text-label text-[var(--dancer-2)] disabled:opacity-50"
+            className={`h-target-lg flex-1 text-label disabled:opacity-50 ${
+              isDestructive ? "text-[var(--dancer-2)]" : "text-accent-soft"
+            }`}
           >
-            {isRunning
+            {isRunning && isDestructive
               ? t.confirm.deleting
               : (confirmRequest.confirmLabel ?? t.confirm.delete)}
           </PressableButton>

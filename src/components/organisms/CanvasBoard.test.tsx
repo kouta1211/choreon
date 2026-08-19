@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { CanvasBoard } from "./CanvasBoard";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
+import { useHistoryStore } from "@/features/canvas/store/useHistoryStore";
 import type { Project } from "@/features/project/types";
 
 import {
@@ -242,5 +243,55 @@ describe("CanvasBoard の掴んで動かす", () => {
     drag("dancer-1", 40);
 
     expect(xOf("dancer-1")).toBeCloseTo(2.4);
+  });
+});
+
+/* 実機の報告 17-27「ダンサーが完全に被った場合、一人一人選べなくなる」。
+   user の判断: 置く瞬間に聞いて、OK ならずらす・NO ならキャンセル */
+describe("掴み分けられないほど重なる所へ置いたとき", () => {
+  /** dancer-1(x=2) を dancer-2(x=6) の上まで運ぶ */
+  const ONTO_DANCER_2_PX = 400;
+
+  it("すぐには保存せず、確認を出す。見た目は置いた場所に留まる", () => {
+    renderDragBoard();
+
+    drag("dancer-1", ONTO_DANCER_2_PX);
+
+    expect(useUIStore.getState().confirm?.title).toContain("ゆい");
+    // 置いた場所に留めておく（跳ね返ってから板が出ると、何を聞かれたのか分からない）
+    expect(xOf("dancer-1")).toBeCloseTo(6);
+    // まだ1手も積まれていない
+    expect(useHistoryStore.getState().past).toHaveLength(0);
+  });
+
+  it("ずらして置くと、重ならない場所へ寄る", async () => {
+    renderDragBoard();
+
+    drag("dancer-1", ONTO_DANCER_2_PX);
+    await useUIStore.getState().confirm?.onConfirm();
+
+    expect(xOf("dancer-1")).toBeCloseTo(6.4);
+    expect(xOf("dancer-2")).toBe(6);
+    // ここで初めて履歴に積まれる（元に戻すで戻せる）
+    expect(useHistoryStore.getState().past).toHaveLength(1);
+  });
+
+  it("やめると、掴む前の場所へ戻る", () => {
+    renderDragBoard();
+
+    drag("dancer-1", ONTO_DANCER_2_PX);
+    useUIStore.getState().confirm?.onCancel?.();
+
+    expect(xOf("dancer-1")).toBe(2);
+    expect(useHistoryStore.getState().past).toHaveLength(0);
+  });
+
+  it("重ならない所へ置いたときは、何も聞かれない", () => {
+    renderDragBoard();
+
+    drag("dancer-1", 100);
+
+    expect(useUIStore.getState().confirm).toBeNull();
+    expect(xOf("dancer-1")).toBeCloseTo(3);
   });
 });

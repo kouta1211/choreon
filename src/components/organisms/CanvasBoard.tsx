@@ -45,6 +45,8 @@ import { stageYSign, toScreenY } from "@/features/canvas/lib/stageFlip";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
 import { usePositionCommit } from "@/features/scene/hooks/usePositionCommit";
 import { groupMoveChanges } from "@/features/canvas/lib/groupMove";
+import { findOverlaps, separateOverlaps } from "@/features/canvas/lib/overlap";
+import { OVERLAP_DISTANCE_UNITS } from "@/features/canvas/constants";
 import { useHydrateProject } from "@/features/project/hooks/useHydrateProject";
 import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
 import { useStageScrubGesture } from "@/features/canvas/hooks/useStageScrubGesture";
@@ -160,6 +162,11 @@ export function CanvasBoard({
   const selectDancer = useUIStore((state) => state.selectDancer);
   const setDragSnapLine = useUIStore((state) => state.setDragSnapLine);
   const commitPositions = usePositionCommit();
+  const requestConfirm = useUIStore((state) => state.requestConfirm);
+  /* 重なりを聞いている間だけ、保存も履歴も通さずに見た目を留めるために使う */
+  const updateDancerPosition = useProjectStore(
+    (state) => state.updateDancerPosition,
+  );
 
   // ステージを払って前後のシーンへ移るジェスチャ。ダンサーのドラッグ
   // (dnd-kit)とは掴む対象で住み分けており、ダンサーとボタンの上から
@@ -413,12 +420,72 @@ export function CanvasBoard({
       const changes = groupMove(selectedSceneId, dancerId, deltaX, deltaY);
       if (!changes) return;
 
-      await commitPositions({
+      const commit = (finalChanges: typeof changes) =>
+        commitPositions({
+          changes: finalChanges,
+          kind: "move",
+          errorMessage: t.editor.errors.position,
+          // 掴んで置き直させるのは無駄が大きいので、ここだけ再試行を出す
+          canRetry: true,
+        });
+
+      /* 掴み分けられないほど重なる所へ置こうとしたら、置く前に一度聞く
+         (実機の報告 17-27)。そのまま重ねると、上の1人しか掴めなくなって
+         下の人へは手が届かなくなる */
+      const positions =
+        useProjectStore.getState().positionsBySceneId[selectedSceneId] ?? {};
+      const overlaps = findOverlaps({
         changes,
-        kind: "move",
-        errorMessage: t.editor.errors.position,
-        // 掴んで置き直させるのは無駄が大きいので、ここだけ再試行を出す
-        canRetry: true,
+        positions,
+        threshold: OVERLAP_DISTANCE_UNITS,
+      });
+      if (overlaps.length === 0) {
+        await commit(changes);
+        return;
+      }
+
+      /* 聞いている間、置いた場所に留めておく。ここで戻すと「置いた瞬間に
+         元へ跳ね返ってから板が出る」ことになり、何を聞かれているのか
+         分からなくなる。保存も履歴も、まだ触らない */
+      const showAsDropped = () => {
+        for (const change of changes) {
+          updateDancerPosition(change.sceneId, change.dancerId, change.after);
+        }
+      };
+      showAsDropped();
+
+      const dancers = useProjectStore.getState().dancers;
+      const otherName = dancers[overlaps[0].otherDancerId]?.name ?? "";
+      requestConfirm({
+        tone: "caution",
+        title:
+          overlaps.length === 1
+            ? t.editor.overlap.title(otherName)
+            : t.editor.overlap.titleMany(overlaps.length),
+        description: t.editor.overlap.description,
+        confirmLabel: t.editor.overlap.confirm,
+        onConfirm: () =>
+          commit(
+            separateOverlaps({
+              changes,
+              positions,
+              threshold: OVERLAP_DISTANCE_UNITS,
+              stage: {
+                width: project.stageWidth,
+                height: project.stageHeight,
+              },
+            }),
+          ),
+        // やめるなら、掴む前の場所へ戻す
+        onCancel: () => {
+          for (const change of changes) {
+            updateDancerPosition(
+              change.sceneId,
+              change.dancerId,
+              change.before,
+            );
+          }
+        },
       });
     },
     [
@@ -430,6 +497,8 @@ export function CanvasBoard({
       groupMove,
       resetGroupDrag,
       isAudienceOnTop,
+      requestConfirm,
+      updateDancerPosition,
       t,
     ],
   );

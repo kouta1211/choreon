@@ -51,3 +51,12 @@ export function resolveTransitionDuration(seconds: number): number {
     ? Math.min(seconds, REDUCED_MOTION_DURATION_SECONDS)
     : seconds;
 }
+
+/**
+ * これより近く置くと、**上の1人しか掴めなくなる**距離（ステージ座標）。
+ *
+ * 当たり判定は前面の要素で決まるので、丸が重なると下の人へはクリックも
+ * ドラッグも届かない。格子への吸着が効いていれば隣のマスでも1ユニット
+ * 離れるので、この値で誤って止まることはない（実機の報告 17-27）。
+ */
+export const OVERLAP_DISTANCE_UNITS = 0.4;

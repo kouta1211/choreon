@@ -271,6 +271,14 @@ export const ko = {
       addDancer: "댄서 추가",
     },
 
+    overlap: {
+      title: (name: string) => `${name} 와(과) 겹칩니다`,
+      titleMany: (count: number) => `${count}명과 겹칩니다`,
+      description:
+        "그대로 두면 위에 있는 사람만 잡을 수 있습니다. 조금 옆으로 옮길까요?",
+      confirm: "옆으로 옮기기",
+    },
+
     errors: {
       metronome: "클릭 설정을 저장하지 못했습니다",
       position: "위치를 저장하지 못했습니다",
