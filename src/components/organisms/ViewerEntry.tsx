@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { DancerMarker } from "@/components/molecules/DancerIcon";
 import { formatMinutes } from "@/components/molecules/PlayheadClock";
 import { useT } from "@/features/i18n/LocaleProvider";
 import { Phrase } from "@/components/atoms/Phrase";
@@ -93,7 +94,6 @@ export function ViewerEntry() {
         {dancers.map((dancer) => {
           const position = positions[dancer.id];
           if (!position) return null;
-          const color = themedDancerColor(dancer.color);
           const isSelected = dancer.id === pendingId;
 
           return (
@@ -113,14 +113,21 @@ export function ViewerEntry() {
                 top: `${(position.yCoordinate / project.stageHeight) * 100}%`,
                 width: MARKER_SIZE,
                 height: MARKER_SIZE,
-                background: color,
                 transform: `translate(-50%, -50%) scale(${isSelected ? 1.08 : 1})`,
-                boxShadow: isSelected
-                  ? `0 0 0 5px color-mix(in oklab, ${color} 30%, transparent)`
-                  : undefined,
               }}
-              className="absolute rounded-full transition-transform duration-200 motion-reduce:transition-none"
-            />
+              className="absolute transition-transform duration-200 motion-reduce:transition-none"
+            >
+              {/* 実物のマーカー(頭＋鼻先)。ここで見る丸と、次の画面の丸が
+                  別物だと「自分はどれか」を探し直すことになる
+                  (実機の報告 2026-08-19)。押す的は MARKER_SIZE のまま */}
+              <span className="absolute top-1/2 left-1/2">
+                <DancerMarker
+                  dancer={dancer}
+                  rotationAngle={position.rotationAngle}
+                  isFocused={isSelected}
+                />
+              </span>
+            </PressableButton>
           );
         })}
       </div>

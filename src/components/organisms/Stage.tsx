@@ -84,10 +84,7 @@ export function Stage({
        ダンサーを選んだときの帯も同じ空きに乗るので、ステージの面に
        被らなくなる(帯に高さを持たせるとステージが縮んで、選んだ瞬間に
        全員の位置がずれて見えるため、高さは持たせない) */
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-unit pb-14">
-      <p className="text-center text-caption tracking-[0.16em] text-fg-muted uppercase">
-        {isAudienceOnTop ? t.editor.downstage : t.editor.upstage}
-      </p>
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center pb-14">
       <div
         data-tour="stage"
         className={`relative flex min-h-0 w-full flex-1 items-center justify-center [container-type:size] ${
@@ -109,6 +106,40 @@ export function Stage({
           }}
           data-testid="stage"
         >
+          {/* ステージの4辺の札。**枠に付ける**のが要点(2026-08-19、実機の報告)。
+              外側の入れ物に置くと、ステージは空き領域の中央に来るのに札は
+              端に残るので、縦に余る画面ほど遠くへ離れていく
+              (ステージ下のボタン列で同じことを踏んで、同じ直し方をした)。
+
+              上下は枠のすぐ外。左右は**枠の中**に入れてある — 外に出すと、
+              ステージが幅いっぱいの端末で切れてしまう。
+
+              左右は入れ替えない。「客席を上にする」が写すのは Y だけで、
+              X は動かさないため(stageFlip.ts)。上下の札だけが入れ替わる */}
+          <span
+            aria-hidden
+            className="absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 text-caption tracking-[0.16em] whitespace-nowrap text-fg-muted uppercase"
+          >
+            {isAudienceOnTop ? t.editor.downstage : t.editor.upstage}
+          </span>
+          <span
+            aria-hidden
+            className="absolute top-full left-1/2 mt-1.5 -translate-x-1/2 text-caption tracking-[0.16em] whitespace-nowrap text-fg-muted uppercase"
+          >
+            {isAudienceOnTop ? t.editor.upstage : t.editor.downstage}
+          </span>
+          <span
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 left-1 -translate-y-1/2 text-caption tracking-[0.16em] text-fg-muted uppercase [writing-mode:vertical-rl]"
+          >
+            {t.editor.houseLeft}
+          </span>
+          <span
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 right-1 -translate-y-1/2 text-caption tracking-[0.16em] text-fg-muted uppercase [writing-mode:vertical-rl]"
+          >
+            {t.editor.houseRight}
+          </span>
           {gridMode === "square" && (
             <div
               data-testid="stage-grid"
@@ -200,11 +231,6 @@ export function Stage({
           )}
         </div>
         {scrubIndicator}
-      </div>
-      <div className="flex w-full items-center justify-center">
-        <p className="text-center text-caption tracking-[0.16em] text-fg-muted uppercase">
-          {isAudienceOnTop ? t.editor.upstage : t.editor.downstage}
-        </p>
       </div>
     </div>
   );

@@ -130,6 +130,8 @@ export const en = {
     projectName: "Piece name",
     projectNameFailed: "Could not rename the piece",
     upstage: "Upstage",
+    houseLeft: "House left",
+    houseRight: "House right",
     downstage: "Downstage",
     noScenes: "No scenes yet",
     noScenesYet: "No scenes yet",

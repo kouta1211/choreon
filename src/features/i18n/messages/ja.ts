@@ -142,6 +142,9 @@ export const ja = {
     projectName: "プロジェクト名",
     projectNameFailed: "プロジェクト名の変更に失敗しました",
     upstage: "バックステージ",
+    /** 客席から見た左右。x は反転しないので、この2つは入れ替わらない */
+    houseLeft: "下手",
+    houseRight: "上手",
     downstage: "客席側",
     noScenes: "シーンがありません",
     noScenesYet: "まだシーンがありません",

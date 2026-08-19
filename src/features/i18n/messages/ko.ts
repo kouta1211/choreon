@@ -130,6 +130,8 @@ export const ko = {
     projectName: "작품 이름",
     projectNameFailed: "작품 이름을 바꾸지 못했습니다",
     upstage: "무대 뒤",
+    houseLeft: "객석 왼쪽",
+    houseRight: "객석 오른쪽",
     downstage: "객석 쪽",
     noScenes: "장면이 없습니다",
     noScenesYet: "아직 장면이 없습니다",

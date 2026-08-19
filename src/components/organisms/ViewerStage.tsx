@@ -9,11 +9,13 @@ import {
   sceneSpanAt,
 } from "@/features/viewer/lib/interpolate";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
-import { toScreenY } from "@/features/canvas/lib/stageFlip";
+import { mirrorAngle, toScreenY } from "@/features/canvas/lib/stageFlip";
+import { DancerMarker } from "@/components/molecules/DancerIcon";
 
-/** 自分のマーカー。他の人より一回り大きい */
-const OWN_SIZE = 36;
-const OTHER_SIZE = 26;
+/** 自分だけ一回り大きく出す倍率。他の人は実物のまま */
+const OWN_SCALE = 1.15;
+/** 選んでいる人が居るとき、他の人をどれだけ薄くするか */
+const OTHER_OPACITY = 0.45;
 
 /**
  * ビューアのステージ。編集の操作は一切出さない。
@@ -107,39 +109,40 @@ export function ViewerStage() {
         const dancer = dancerById.get(position.dancerId);
         if (!dancer) return null;
 
-        const color = themedDancerColor(dancer.color);
         const isOwn = dancer.id === focusedDancerId;
-        // 誰も選んでいないときは全員を塗る(エディタと同じ見た目で、
+        // 誰も選んでいないときは全員そのまま(エディタと同じ見た目で、
         // 編集の操作だけが無い状態)
         const isFilled = isOwn || focusedDancerId === null;
-        const size = isOwn ? OWN_SIZE : OTHER_SIZE;
+        /* 上下を鏡にしているときは、鼻先も鏡にする。写さないと
+           「見えている向きと逆を向く」— 作る側(DraggableDancerIcon)と同じ */
+        const screenRotation = isAudienceOnTop
+          ? mirrorAngle(position.rotationAngle)
+          : position.rotationAngle;
 
         return (
+          /* 大きさを持たない点として置く。マーカー自身が -50% で
+             真ん中に来るので、ここで transform を掛けない
+             (掛けると二重にずれる。作る側の置き方と同じ) */
           <div
             key={dancer.id}
             className="pointer-events-none absolute"
             style={{
               left: `${(position.x / project.stageWidth) * 100}%`,
               top: `${(screenY(position.y) / project.stageHeight) * 100}%`,
-              transform: "translate(-50%, -50%)",
+              opacity: isFilled ? 1 : OTHER_OPACITY,
+              transform: isOwn ? `scale(${OWN_SCALE})` : undefined,
             }}
           >
-            <span
-              aria-hidden
-              style={{
-                width: size,
-                height: size,
-                background: isFilled ? color : "transparent",
-                border: isFilled ? "none" : `1.5px solid ${color}`,
-                opacity: isFilled ? 1 : 0.5,
-                boxShadow: isOwn
-                  ? `0 0 0 6px color-mix(in oklab, ${color} 24%, transparent)`
-                  : undefined,
-              }}
-              className="block rounded-full"
+            {/* 実物のマーカー(頭＋鼻先)。丸だけだと向きが分からない
+                — 見る人にとっては「どっちを向くか」も振付の一部
+                (実機の報告 2026-08-19) */}
+            <DancerMarker
+              dancer={dancer}
+              rotationAngle={screenRotation}
+              isFocused={isOwn}
             />
             {isOwn && (
-              <span className="absolute top-full left-1/2 mt-1 -translate-x-1/2 rounded px-1 text-caption font-semibold whitespace-nowrap text-fg-strong [text-shadow:var(--label-shadow)]">
+              <span className="absolute top-0 left-1/2 mt-6 -translate-x-1/2 rounded px-1 text-caption font-semibold whitespace-nowrap text-fg-strong [text-shadow:var(--label-shadow)]">
                 {dancer.name}
               </span>
             )}
