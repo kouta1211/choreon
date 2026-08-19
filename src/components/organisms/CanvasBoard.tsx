@@ -47,7 +47,7 @@ import { useAddScene } from "@/features/scene/hooks/useAddScene";
 import { usePositionCommit } from "@/features/scene/hooks/usePositionCommit";
 import { groupMoveChanges } from "@/features/canvas/lib/groupMove";
 import { findOverlaps, separateOverlaps } from "@/features/canvas/lib/overlap";
-import { OVERLAP_DISTANCE_UNITS } from "@/features/canvas/constants";
+import { OVERLAP_DISTANCE_PX } from "@/features/canvas/constants";
 import { useHydrateProject } from "@/features/project/hooks/useHydrateProject";
 import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
 import { useStageScrubGesture } from "@/features/canvas/hooks/useStageScrubGesture";
@@ -479,10 +479,15 @@ export function CanvasBoard({
          下の人へは手が届かなくなる */
       const positions =
         useProjectStore.getState().positionsBySceneId[selectedSceneId] ?? {};
+      /* 掴めるかどうかは丸の大きさ(px)で決まるので、ステージの実寸から
+         1ユニットあたりの px を出して換算する。ユニットで持つと、広い
+         ステージほど画面上のずれが大きくなる(実機の報告 17-5) */
+      const overlapThreshold =
+        OVERLAP_DISTANCE_PX / (width / project.stageWidth);
       const overlaps = findOverlaps({
         changes,
         positions,
-        threshold: OVERLAP_DISTANCE_UNITS,
+        threshold: overlapThreshold,
       });
       if (overlaps.length === 0) {
         await commit(changes);
@@ -514,7 +519,7 @@ export function CanvasBoard({
             separateOverlaps({
               changes,
               positions,
-              threshold: OVERLAP_DISTANCE_UNITS,
+              threshold: overlapThreshold,
               stage: {
                 width: project.stageWidth,
                 height: project.stageHeight,

@@ -4,6 +4,7 @@ import { CanvasBoard } from "./CanvasBoard";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useHistoryStore } from "@/features/canvas/store/useHistoryStore";
+import { OVERLAP_DISTANCE_PX } from "@/features/canvas/constants";
 import type { Project } from "@/features/project/types";
 
 import {
@@ -270,7 +271,10 @@ describe("掴み分けられないほど重なる所へ置いたとき", () => {
     drag("dancer-1", ONTO_DANCER_2_PX);
     await useUIStore.getState().confirm?.onConfirm();
 
-    expect(xOf("dancer-1")).toBeCloseTo(6.4);
+    /* ずらす量は【px】で決まっている（丸の大きさで決まる話なので）。
+       ここは 8ユニットを 800px で描いているので 1ユニット = 100px */
+    const escapeUnits = OVERLAP_DISTANCE_PX / (STAGE_PX / 8);
+    expect(xOf("dancer-1")).toBeCloseTo(6 + escapeUnits);
     expect(xOf("dancer-2")).toBe(6);
     // ここで初めて履歴に積まれる（元に戻すで戻せる）
     expect(useHistoryStore.getState().past).toHaveLength(1);
@@ -360,5 +364,123 @@ describe("まとめて動かしているときの、壁での止まり方", () =
     expect(useUIStore.getState().dragSnapLine.x).toBe(3);
 
     fireEvent.pointerUp(document, to);
+  });
+});
+
+/* 実機の報告 17-3「導線を表示させた状態でダンサーを移動させるとき、
+   ドラッグ中に導線が動いていないので、導線もついてくるようにしたい」 */
+describe("掴んでいる間の導線", () => {
+  function renderWithPath() {
+    // 導線は既定で消えている。描く前に出しておく（描いたあとに
+    // setState しても、この試験の中では描き直しが流れない）
+    useUIStore.setState({ isPathVisible: true });
+    render(
+      <CanvasBoard
+        isGuest
+        project={makeProject({ stageWidth: 8, stageHeight: 8 })}
+        initialDancers={[makeDancer({ id: "dancer-1", name: "あいり" })]}
+        initialScenes={[
+          makeScene(),
+          makeScene({
+            id: "scene-2",
+            name: "シーン2",
+            orderIndex: 1,
+            timeSeconds: 4,
+          }),
+        ]}
+        initialPositions={[
+          {
+            sceneId: "scene-1",
+            dancerId: "dancer-1",
+            xCoordinate: 2,
+            yCoordinate: 2,
+            rotationAngle: 0,
+          },
+          {
+            sceneId: "scene-2",
+            dancerId: "dancer-1",
+            xCoordinate: 6,
+            yCoordinate: 2,
+            rotationAngle: 0,
+          },
+        ]}
+      />,
+    );
+    const stage = screen.getByTestId("stage");
+    stage.getBoundingClientRect = () =>
+      ({
+        left: 0,
+        top: 0,
+        right: STAGE_PX,
+        bottom: STAGE_PX,
+        width: STAGE_PX,
+        height: STAGE_PX,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect;
+    return stage;
+  }
+
+  function pathLine(): SVGLineElement {
+    const line = document
+      .querySelector('[data-testid="path-overlay"]')
+      ?.querySelector("line");
+    if (!line) throw new Error("導線が描かれていない");
+    return line;
+  }
+
+  it("掴んで動かしている間、線の始点も一緒に動く", () => {
+    const stage = renderWithPath();
+    // svg はステージいっぱいなので、同じ矩形を返させる
+    const svg = document.querySelector('[data-testid="path-overlay"]');
+    if (svg instanceof SVGElement) {
+      svg.getBoundingClientRect = stage.getBoundingClientRect;
+    }
+
+    const before = pathLine().getAttribute("x1");
+
+    const pointer = { pointerId: 1, isPrimary: true, button: 0 };
+    const to = { ...pointer, clientX: 200, clientY: 100 };
+    fireEvent.pointerDown(dancerNode("dancer-1"), {
+      ...pointer,
+      clientX: 100,
+      clientY: 100,
+    });
+    fireEvent.pointerMove(document, to);
+    fireEvent.pointerMove(document, to);
+
+    // 100px 動かした = ステージ幅の 1/8 = viewBox で 12.5
+    expect(Number(pathLine().getAttribute("x1"))).toBeCloseTo(
+      Number(before) + 12.5,
+    );
+
+    fireEvent.pointerUp(document, to);
+  });
+
+  /* ドラッグを取り消したとき。位置は変わらないので React は線を描き直さず、
+     掴んでいる間に書き換えた属性がそのまま残りうる */
+  it("ドラッグを取り消したら、線は元の位置へ戻る", () => {
+    const stage = renderWithPath();
+    const svg = document.querySelector('[data-testid="path-overlay"]');
+    if (svg instanceof SVGElement) {
+      svg.getBoundingClientRect = stage.getBoundingClientRect;
+    }
+    const before = pathLine().getAttribute("x1");
+
+    const pointer = { pointerId: 1, isPrimary: true, button: 0 };
+    const to = { ...pointer, clientX: 200, clientY: 100 };
+    fireEvent.pointerDown(dancerNode("dancer-1"), {
+      ...pointer,
+      clientX: 100,
+      clientY: 100,
+    });
+    fireEvent.pointerMove(document, to);
+    fireEvent.pointerMove(document, to);
+    // 掴んだまま Escape で取り消す
+    fireEvent.keyDown(document, { key: "Escape", code: "Escape" });
+
+    expect(pathLine().getAttribute("x1")).toBe(before);
+    expect(xOf("dancer-1")).toBe(2);
   });
 });

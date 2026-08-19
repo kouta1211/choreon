@@ -12,6 +12,7 @@ import {
   useUIStore,
 } from "@/features/canvas/store/useUIStore";
 import { getSceneStep } from "@/features/canvas/lib/sceneStep";
+import { useGroupDrag } from "@/features/canvas/hooks/useGroupDrag";
 import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
 import { useSceneWarnings } from "@/features/canvas/hooks/useSceneWarnings";
 import {
@@ -79,6 +80,18 @@ export function DancerLayer({
   const previousSceneId = useUIStore((state) => state.previousSceneId);
   // 曲線の制御点は1人ぶんの操作なので、複数選んでいる間は編集させない
   const selectedDancerId = useUIStore(selectPrimaryDancerId);
+  /* いま掴んで動いている人たち。導線の始点をその人たちだけ追随させる
+     （実機の報告 17-3）。掴み始めと離した時の2回しか変わらないので、
+     ここで購読しても描き直しは増えない */
+  const selectedDancerIds = useUIStore((state) => state.selectedDancerIds);
+  const groupDrag = useGroupDrag();
+  const grabbedDancerId = groupDrag?.activeDancerId ?? null;
+  const movingDancerIds = useMemo(() => {
+    if (!grabbedDancerId) return [];
+    return selectedDancerIds.includes(grabbedDancerId)
+      ? selectedDancerIds
+      : [grabbedDancerId];
+  }, [grabbedDancerId, selectedDancerIds]);
   const isPathVisible = useUIStore((state) => state.isPathVisible);
   const isStageMarksVisible = useUIStore((state) => state.isStageMarksVisible);
   const isBlindSpotCheckVisible = useUIStore(
@@ -225,6 +238,7 @@ export function DancerLayer({
             stageWidthUnits={stageWidthUnits}
             stageHeightUnits={stageHeightUnits}
             editableDancerId={selectedDancerId}
+            movingDancerIds={movingDancerIds}
             onCurveControlPointChange={
               nextSceneId
                 ? (dancerId, point) =>

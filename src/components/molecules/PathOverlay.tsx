@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position } from "@/features/scene/types";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
@@ -10,6 +10,7 @@ import {
   useCurveControlDrag,
   type StagePoint,
 } from "@/features/canvas/hooks/useCurveControlDrag";
+import { useGroupDrag } from "@/features/canvas/hooks/useGroupDrag";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
@@ -30,6 +31,13 @@ type Props = {
     dancerId: string,
     point: StagePoint | null,
   ) => void;
+  /**
+   * いま掴んで動かしている人たち。**この人たちの線の始点だけ**、
+   * 掴んでいる間も指について動く（実機の報告 17-3）。
+   *
+   * 誰が動いているかはストアの話なので、判断は呼び出し側（DancerLayer）に置く。
+   */
+  movingDancerIds?: string[];
 };
 
 /** 指がこの距離(px)動いて初めて「曲線を曲げるドラッグ」とみなす。
@@ -78,9 +86,16 @@ export function PathOverlay({
   stageHeightUnits,
   editableDancerId = null,
   onCurveControlPointChange,
+  movingDancerIds,
 }: Props) {
   const t = useT();
   const svgRef = useRef<SVGSVGElement | null>(null);
+  /* 掴んでいる間、線の始点を動かすために掴む先。React には触らせず
+     属性を直に書き換える（丸の追随・囲む枠と同じ考え方。state に置くと
+     指を動かすたびに全部の線が描き直る） */
+  const lineRefs = useRef(new Map<string, SVGLineElement | SVGPathElement>());
+  /* 掴んだ人と一緒に動く量。丸に配っているものと同じ MotionValue を読む */
+  const groupDrag = useGroupDrag();
   // 客席を上にして描くか。線を引くときはステージ座標を画面の向きへ写し、
   // 指から制御点を拾うときは逆へ戻す(stageFlip.ts)
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
@@ -147,6 +162,78 @@ export function PathOverlay({
     ];
   });
 
+  /* 掴んでいる間、動かしている人の線の【始点】を指について動かす
+     （実機の報告 17-3。終点は次のシーンの位置なので動かさない）。
+     移動量は px で来るので、SVG の viewBox（0..100）へ百分率で写す。
+
+     元の座標は要素の data-* に持たせてある。ここで属性を書き換えるため、
+     **離したときに必ず書き戻す**必要がある — 掴んだだけで動かさずに離すと
+     React 側の値は変わらず、書き換えたままの線が残ってしまう */
+  const movingKey = movingDancerIds?.join(",") ?? "";
+  useEffect(() => {
+    const nodes = lineRefs.current;
+    const moving = movingKey === "" ? [] : movingKey.split(",");
+
+    /* 直線か曲線かは【タグ名】で見る。SVGLineElement のような構築子は
+       環境によって用意されていない（jsdom がそう）。見た目の判定に
+       グローバルの有無を持ち込まない */
+    const isLine = (node: SVGLineElement | SVGPathElement) =>
+      node.tagName.toLowerCase() === "line";
+
+    const reset = (node: SVGLineElement | SVGPathElement) => {
+      const from = node.dataset;
+      if (isLine(node)) {
+        node.setAttribute("x1", from.x1 ?? "0");
+        node.setAttribute("y1", from.y1 ?? "0");
+      } else {
+        node.setAttribute(
+          "d",
+          `M${from.x1},${from.y1} Q${from.cx},${from.cy} ${from.x2},${from.y2}`,
+        );
+      }
+    };
+
+    if (moving.length === 0 || !groupDrag) return;
+
+    const apply = () => {
+      const rect = svgRef.current?.getBoundingClientRect();
+      if (!rect || rect.width === 0 || rect.height === 0) return;
+      const dx = (groupDrag.offsetX.get() / rect.width) * 100;
+      const dy = (groupDrag.offsetY.get() / rect.height) * 100;
+
+      for (const dancerId of moving) {
+        const node = nodes.get(dancerId);
+        if (!node) continue;
+        const from = node.dataset;
+        const x1 = Number(from.x1) + dx;
+        const y1 = Number(from.y1) + dy;
+
+        if (isLine(node)) {
+          node.setAttribute("x1", String(x1));
+          node.setAttribute("y1", String(y1));
+        } else {
+          // 曲線は d を組み直す。制御点と終点はそのまま
+          node.setAttribute(
+            "d",
+            `M${x1},${y1} Q${from.cx},${from.cy} ${from.x2},${from.y2}`,
+          );
+        }
+      }
+    };
+
+    apply();
+    const unsubscribeX = groupDrag.offsetX.on("change", apply);
+    const unsubscribeY = groupDrag.offsetY.on("change", apply);
+    return () => {
+      unsubscribeX();
+      unsubscribeY();
+      for (const dancerId of moving) {
+        const node = nodes.get(dancerId);
+        if (node) reset(node);
+      }
+    };
+  }, [movingKey, groupDrag]);
+
   if (segments.length === 0) return null;
 
   return (
@@ -175,6 +262,18 @@ export function PathOverlay({
           segment.activeControlPoint ? (
             <path
               key={segment.id}
+              ref={(node) => {
+                if (node) lineRefs.current.set(segment.id, node);
+                else lineRefs.current.delete(segment.id);
+              }}
+              /* 掴んでいる間に始点を動かすので、元の座標を持たせておく。
+                 離したときにここへ書き戻す */
+              data-x1={segment.x1}
+              data-y1={segment.y1}
+              data-x2={segment.x2}
+              data-y2={segment.y2}
+              data-cx={segment.handleLeftPercent}
+              data-cy={segment.handleTopPercent}
               d={`M${segment.x1},${segment.y1} Q${segment.handleLeftPercent},${segment.handleTopPercent} ${segment.x2},${segment.y2}`}
               fill="none"
               stroke={segment.color}
@@ -187,6 +286,15 @@ export function PathOverlay({
           ) : (
             <line
               key={segment.id}
+              ref={(node) => {
+                if (node) lineRefs.current.set(segment.id, node);
+                else lineRefs.current.delete(segment.id);
+              }}
+              /* 掴んでいる間に始点を動かすので、元の座標を持たせておく */
+              data-x1={segment.x1}
+              data-y1={segment.y1}
+              data-x2={segment.x2}
+              data-y2={segment.y2}
               x1={segment.x1}
               y1={segment.y1}
               x2={segment.x2}
