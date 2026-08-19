@@ -116,3 +116,18 @@ export async function deleteScene(
   const { error } = await supabase.from("scenes").delete().eq("id", sceneId);
   if (error) throw error;
 }
+
+/**
+ * 複数のシーンをまとめて消す。1つずつ delete すると件数ぶん往復することに
+ * なるため、1回のリクエストにまとめる（`deleteDancers` と同じ考え方）。
+ * 配置はシーンへの外部キーで連鎖して消える（schema.sql 参照）。
+ */
+export async function deleteScenes(
+  supabase: SupabaseClient<Database>,
+  sceneIds: string[],
+): Promise<void> {
+  if (sceneIds.length === 0) return;
+
+  const { error } = await supabase.from("scenes").delete().in("id", sceneIds);
+  if (error) throw error;
+}

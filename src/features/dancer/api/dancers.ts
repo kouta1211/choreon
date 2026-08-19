@@ -87,14 +87,6 @@ export async function updateDancerColor(
   if (error) throw error;
 }
 
-export async function deleteDancer(
-  supabase: SupabaseClient<Database>,
-  dancerId: string,
-): Promise<void> {
-  const { error } = await supabase.from("dancers").delete().eq("id", dancerId);
-  if (error) throw error;
-}
-
 /**
  * 複数のダンサーをまとめて消す。1人ずつdeleteすると人数ぶん往復することに
  * なるため、1回のリクエストにまとめる(createDancersと同じ考え方)。

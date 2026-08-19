@@ -160,7 +160,7 @@ describe("DancerInspector", () => {
       },
     });
     useUIStore.setState({ selectedDancerIds: ["dancer-1"] });
-    vi.spyOn(dancersApi, "deleteDancer").mockResolvedValue(undefined);
+    vi.spyOn(dancersApi, "deleteDancers").mockResolvedValue(undefined);
 
     const user = userEvent.setup();
     renderInspector();
@@ -195,7 +195,7 @@ describe("DancerInspector", () => {
       selectedDancerIds: ["dancer-1"],
       focusedDancerId: "dancer-1",
     });
-    vi.spyOn(dancersApi, "deleteDancer").mockResolvedValue(undefined);
+    vi.spyOn(dancersApi, "deleteDancers").mockResolvedValue(undefined);
     const user = userEvent.setup();
     renderInspector();
 
@@ -210,7 +210,7 @@ describe("DancerInspector", () => {
   it("確認をキャンセルすると削除されない", async () => {
     useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
     useUIStore.setState({ selectedDancerIds: ["dancer-1"] });
-    const deleteSpy = vi.spyOn(dancersApi, "deleteDancer");
+    const deleteSpy = vi.spyOn(dancersApi, "deleteDancers");
 
     const user = userEvent.setup();
     renderInspector();

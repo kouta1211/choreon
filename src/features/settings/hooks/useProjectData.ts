@@ -4,14 +4,11 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import {
-  pendingWriteCount,
-  persist,
-} from "@/features/project/lib/persistence";
+import { pendingWriteCount, persist } from "@/features/project/lib/persistence";
 import { createClient } from "@/lib/supabase/client";
 import { toUserMessage } from "@/lib/supabase/errors";
-import { deleteScene } from "@/features/scene/api/scenes";
-import { deleteDancer } from "@/features/dancer/api/dancers";
+import { deleteScenes } from "@/features/scene/api/scenes";
+import { deleteDancers } from "@/features/dancer/api/dancers";
 import { saveGuestProject } from "@/features/project/api/saveGuestProject";
 import {
   backupFileName,
@@ -121,8 +118,7 @@ export function useProjectData(project: Project) {
     const { scenes, dancers } = useProjectStore.getState();
     requestConfirm({
       title: t.data.resetTitle,
-      description:
-        t.data.resetDescription,
+      description: t.data.resetDescription,
       meta: [
         t.data.resetMetaScenes(scenes.length),
         t.data.resetMetaDancers(Object.keys(dancers).length),
@@ -134,9 +130,11 @@ export function useProjectData(project: Project) {
         const dancerIds = Object.keys(dancers);
         try {
           await persist(async (supabase) => {
-            // 配置は scenes / dancers の外部キーに cascade で付いて消える
-            for (const id of sceneIds) await deleteScene(supabase, id);
-            for (const id of dancerIds) await deleteDancer(supabase, id);
+            /* 配置は scenes / dancers の外部キーに cascade で付いて消える。
+               どちらも**まとめて1回**で消す — 1つずつ投げると、30シーン
+               20人の作品で50往復することになる */
+            await deleteScenes(supabase, sceneIds);
+            await deleteDancers(supabase, dancerIds);
           });
           useProjectStore
             .getState()

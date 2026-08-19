@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Trash2, X, Focus } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import {
@@ -12,8 +11,8 @@ import { toUserMessage } from "@/lib/supabase/errors";
 import {
   updateDancerColor,
   updateDancerName,
-  deleteDancer,
 } from "@/features/dancer/api/dancers";
+import { useDeleteDancers } from "@/features/dancer/hooks/useDeleteDancers";
 import { upsertPosition } from "@/features/scene/api/positions";
 import { DANCER_COLOR_PALETTE } from "@/features/dancer/constants";
 import { DurationSecondsInput } from "@/components/molecules/DurationSecondsInput";
@@ -48,12 +47,10 @@ const MAX_DURATION_SECONDS = 30;
  */
 export function DancerInspector() {
   const t = useT();
-  const [isDeleting, setIsDeleting] = useState(false);
   // 1人だけ選んでいるときの板。複数のときは null になって出ない
   const selectedDancerId = useUIStore(selectPrimaryDancerId);
   const selectDancer = useUIStore((state) => state.selectDancer);
   const showToast = useUIStore((state) => state.showToast);
-  const requestConfirm = useUIStore((state) => state.requestConfirm);
   const focusedDancerId = useUIStore((state) => state.focusedDancerId);
   const setFocusedDancer = useUIStore((state) => state.setFocusedDancer);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
@@ -67,10 +64,13 @@ export function DancerInspector() {
       : undefined,
   );
   const addDancer = useProjectStore((state) => state.addDancer);
-  const removeDancer = useProjectStore((state) => state.removeDancer);
   const updateDancerPosition = useProjectStore(
     (state) => state.updateDancerPosition,
   );
+  /* 確認から後片付けまでは features/dancer 側が持っている。
+     右クリックのメニューの削除と**同じ道**を通る（前は同じ形が2箇所にあった）。
+     フックなので、dancer が居ないときの早期 return より前で呼ぶ */
+  const deleteDancers = useDeleteDancers();
 
   if (!dancer) return null;
 
@@ -141,36 +141,7 @@ export function DancerInspector() {
     }
   };
 
-  const handleDelete = () => {
-    // このダンサーが何シーンぶんの配置を持っているかを数えて見せる。
-    // storeの中身を数えるだけなので、確認のための問い合わせは要らない
-    const sceneCount = Object.values(
-      useProjectStore.getState().positionsBySceneId,
-    ).filter((positions) => positions[dancer.id] !== undefined).length;
-
-    requestConfirm({
-      title: t.dancer.inspector.deleteTitle(dancer.name),
-      description:
-        t.dancer.inspector.deleteDescription,
-      meta: [t.dancer.inspector.deleteMeta(sceneCount)],
-      onConfirm: async () => {
-        setIsDeleting(true);
-        try {
-          await persist((supabase) => deleteDancer(supabase, dancer.id));
-          removeDancer(dancer.id);
-          selectDancer(null);
-          if (focusedDancerId === dancer.id) setFocusedDancer(null);
-        } catch (error) {
-          showToast({
-            message: toUserMessage(error, t.dancer.inspector.deleteFailed),
-            type: "error",
-          });
-        } finally {
-          setIsDeleting(false);
-        }
-      },
-    });
-  };
+  const handleDelete = () => deleteDancers([dancer.id]);
 
   const isFocused = focusedDancerId === dancer.id;
 
@@ -242,15 +213,18 @@ export function DancerInspector() {
             <PressableButton
               kind="icon"
               onClick={handleDelete}
-              disabled={isDeleting}
               aria-label={t.dancer.inspector.remove}
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-fg-muted hover:bg-red-950 hover:text-red-400 disabled:opacity-50"
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-fg-muted hover:bg-red-950 hover:text-red-400"
             >
               <Trash2 size={15} />
             </PressableButton>
           </Tooltip>
 
-          <Tooltip label={t.dancer.inspector.deselect} placement="top" align="right">
+          <Tooltip
+            label={t.dancer.inspector.deselect}
+            placement="top"
+            align="right"
+          >
             <PressableButton
               kind="icon"
               onClick={() => selectDancer(null)}
