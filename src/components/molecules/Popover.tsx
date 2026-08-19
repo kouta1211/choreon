@@ -10,6 +10,7 @@ import {
 } from "react";
 import { TAP_PATTERN, vibrate } from "@/lib/haptics";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { Phrase } from "@/components/atoms/Phrase";
 
 /** 長押しと見なすまでの時間。触覚を返して「出るよ」と知らせる */
 const HOLD_MS = 450;
@@ -94,7 +95,10 @@ export function usePopover({
     const spaceBelow = window.innerHeight - rect.bottom;
     const isAbove = spaceBelow < 160;
 
-    const width = Math.min(PANEL_MAX_WIDTH, window.innerWidth - EDGE_MARGIN_PX * 2);
+    const width = Math.min(
+      PANEL_MAX_WIDTH,
+      window.innerWidth - EDGE_MARGIN_PX * 2,
+    );
     const centre = rect.left + rect.width / 2;
     const left = Math.min(
       window.innerWidth - EDGE_MARGIN_PX - width,
@@ -104,10 +108,7 @@ export function usePopover({
     setPlacement({
       left,
       top: isAbove ? rect.top - 10 : rect.bottom + 10,
-      arrowLeft: Math.min(
-        left + width - 18,
-        Math.max(left + 12, centre) ,
-      ),
+      arrowLeft: Math.min(left + width - 18, Math.max(left + 12, centre)),
       isAbove,
     });
     setIsAuto(auto);
@@ -131,9 +132,7 @@ export function usePopover({
     window.addEventListener("scroll", onScroll, true);
     window.addEventListener("resize", onScroll);
 
-    const auto = isAuto
-      ? setTimeout(() => close(), AUTO_CLOSE_MS)
-      : undefined;
+    const auto = isAuto ? setTimeout(() => close(), AUTO_CLOSE_MS) : undefined;
 
     return () => {
       window.removeEventListener("pointerdown", onDown, { capture: true });
@@ -192,7 +191,13 @@ export function usePopover({
     />
   ) : null;
 
-  return { triggerProps, popover, openAutomatically, close, isOpen: !!placement };
+  return {
+    triggerProps,
+    popover,
+    openAutomatically,
+    close,
+    isOpen: !!placement,
+  };
 }
 
 function PopoverPanel({
@@ -227,7 +232,9 @@ function PopoverPanel({
           left: placement.arrowLeft - placement.left - 6,
           [placement.isAbove ? "bottom" : "top"]: -7,
           background: "var(--overlay-bg)",
-          borderTop: placement.isAbove ? "none" : "1px solid var(--overlay-line)",
+          borderTop: placement.isAbove
+            ? "none"
+            : "1px solid var(--overlay-line)",
           borderLeft: placement.isAbove
             ? "none"
             : "1px solid var(--overlay-line)",
@@ -244,7 +251,9 @@ function PopoverPanel({
       <p className="text-label leading-snug font-semibold text-fg-strong">
         {heading}
       </p>
-      <p className="mt-1 text-caption leading-[1.65] text-fg-sub">{body}</p>
+      <p className="mt-1 text-caption leading-[1.65] text-fg-sub">
+        <Phrase>{body}</Phrase>
+      </p>
 
       {action && (
         <div className="mt-2.5">

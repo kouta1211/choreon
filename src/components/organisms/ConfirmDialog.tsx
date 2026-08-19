@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Phrase } from "@/components/atoms/Phrase";
 import { CopyX, Trash2 } from "lucide-react";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { PressableButton } from "@/components/atoms/PressableButton";
@@ -109,7 +110,7 @@ export function ConfirmDialog() {
             </DialogTitle>
             {confirmRequest.description && (
               <DialogDescription className="text-body">
-                {confirmRequest.description}
+                <Phrase>{confirmRequest.description}</Phrase>
               </DialogDescription>
             )}
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
+import { Phrase } from "@/components/atoms/Phrase";
 import { ChevronRight } from "lucide-react";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { SegmentedControl } from "@/components/atoms/SegmentedControl";
@@ -60,7 +61,7 @@ export function SettingsGroup({
       </div>
       {description && (
         <p className="px-base text-caption leading-snug text-fg-muted">
-          {description}
+          <Phrase>{description}</Phrase>
         </p>
       )}
     </section>

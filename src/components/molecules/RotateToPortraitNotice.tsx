@@ -1,6 +1,7 @@
 "use client";
 
 import { RotateCcwSquare } from "lucide-react";
+import { Phrase } from "@/components/atoms/Phrase";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
@@ -53,7 +54,7 @@ export function RotateToPortraitNotice() {
       <div className="flex flex-col gap-unit">
         <h1 className="text-title text-fg-strong">{t.viewer.rotate.title}</h1>
         <p className="max-w-xs text-label leading-relaxed text-fg-sub">
-          {t.viewer.rotate.body}
+          <Phrase>{t.viewer.rotate.body}</Phrase>
         </p>
       </div>
     </div>

@@ -150,7 +150,11 @@ body {
 
      pretty は最終行に1〜2文字だけ残るのを減らす。
      対応: Chrome 117+ / Safari・iOS Safari 26+（Firefox は未対応）。
-     こちらはスマホでも効く。 */
+     こちらはスマホでも効く。
+
+     ■ 対応していないブラウザ（iOS Safari / Firefox）は BudouX で埋める
+     文節の区切りを `<wbr>` として文の中へ入れる（`components/atoms/Phrase`）。
+     CSS が効くブラウザでは、そちらが先に効く。 */
   word-break: auto-phrase;
   text-wrap: pretty;
 }

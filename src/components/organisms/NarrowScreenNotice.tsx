@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Phrase } from "@/components/atoms/Phrase";
 import { Monitor } from "lucide-react";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { buildShareLink } from "@/features/project/lib/shareLink";
@@ -77,7 +78,7 @@ export function NarrowScreenNotice({ project }: Props) {
           {t.editor.narrowScreen.title}
         </h1>
         <p className="max-w-xs text-label leading-relaxed text-fg-sub">
-          {t.editor.narrowScreen.body}
+          <Phrase>{t.editor.narrowScreen.body}</Phrase>
         </p>
       </div>
 
@@ -91,7 +92,7 @@ export function NarrowScreenNotice({ project }: Props) {
           </a>
         )}
         <p className="text-caption leading-relaxed text-fg-muted">
-          {t.editor.narrowScreen.viewerNote}
+          <Phrase>{t.editor.narrowScreen.viewerNote}</Phrase>
         </p>
       </div>
 
