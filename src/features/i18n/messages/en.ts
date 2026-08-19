@@ -528,9 +528,6 @@ export const en = {
       pickNamed: (name: string) => `Watch as ${name}`,
       skip: "Skip and watch everyone",
     },
-    music: {
-      pickSame: "Choose the same track on this device",
-    },
   },
 
   share: {

@@ -557,9 +557,6 @@ export const ja = {
       pickNamed: (name: string) => `「${name}」で見る`,
       skip: "選ばずに全員を見る",
     },
-    music: {
-      pickSame: "同じ曲をこの端末で選ぶ",
-    },
   },
 
   share: {

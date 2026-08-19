@@ -4,7 +4,10 @@ import { useMemo, useState } from "react";
 import { ArrowRight, TriangleAlert } from "lucide-react";
 import { BottomSheet } from "@/components/molecules/BottomSheet";
 import { PressableButton } from "@/components/atoms/PressableButton";
-import { formatClock, formatMinutes } from "@/components/molecules/PlayheadClock";
+import {
+  formatClock,
+  formatMinutes,
+} from "@/components/molecules/PlayheadClock";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { describeMove } from "@/features/viewer/lib/describeMove";
 import { sceneSpanAt } from "@/features/viewer/lib/interpolate";
@@ -40,7 +43,9 @@ export function ViewerRoute() {
   );
   const focusedDancerId = useViewerStore((state) => state.focusedDancerId);
   const currentSeconds = useViewerStore((state) => state.currentSeconds);
-  const setCurrentSeconds = useViewerStore((state) => state.setCurrentSeconds);
+  /* 一覧から飛ぶときも再生を止める。帯・シーン一覧と同じ作法にする
+     — 3つのうち1つだけ止まらないと、止まらない方を不具合と読む */
+  const jumpToSeconds = useViewerStore((state) => state.jumpToSeconds);
   const [isSheetOpen, setSheetOpen] = useState(false);
 
   const steps = useMemo<Step[]>(() => {
@@ -102,7 +107,9 @@ export function ViewerRoute() {
               </span>
             </>
           ) : (
-            <span className="text-fg-muted">{t.viewer.route.lastFormation}</span>
+            <span className="text-fg-muted">
+              {t.viewer.route.lastFormation}
+            </span>
           )}
         </p>
         <PressableButton
@@ -138,7 +145,7 @@ export function ViewerRoute() {
               <li key={step.sceneId}>
                 <PressableButton
                   onClick={() => {
-                    setCurrentSeconds(step.timeSeconds);
+                    jumpToSeconds(step.timeSeconds);
                     setSheetOpen(false);
                   }}
                   style={
@@ -149,9 +156,7 @@ export function ViewerRoute() {
                       : undefined
                   }
                   className={`flex w-full items-start gap-2.5 rounded-[calc(var(--radius)*0.7)] border-l-2 py-2.5 pr-2 pl-2.5 text-left ${
-                    isHere
-                      ? "bg-accent/12"
-                      : "border-transparent"
+                    isHere ? "bg-accent/12" : "border-transparent"
                   }`}
                 >
                   <span className="w-[26px] shrink-0 pt-0.5 text-right font-mono text-caption text-fg-muted">
@@ -164,7 +169,9 @@ export function ViewerRoute() {
                         <span className="text-fg-sub"> {step.turn}</span>
                       )}
                       {step.isFast && (
-                        <span className="text-fg-sub">{t.viewer.route.fast}</span>
+                        <span className="text-fg-sub">
+                          {t.viewer.route.fast}
+                        </span>
                       )}
                     </span>
                     <span className="mt-0.5 block font-mono text-caption text-fg-muted">

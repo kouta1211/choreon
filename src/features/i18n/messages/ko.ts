@@ -522,9 +522,6 @@ export const ko = {
       pickNamed: (name: string) => `'${name}'(으)로 보기`,
       skip: "고르지 않고 전체 보기",
     },
-    music: {
-      pickSame: "같은 곡을 이 기기에서 고르기",
-    },
   },
 
   share: {

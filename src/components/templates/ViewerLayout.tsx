@@ -12,7 +12,6 @@ import { PressableButton } from "@/components/atoms/PressableButton";
 import { RotateToPortraitNotice } from "@/components/molecules/RotateToPortraitNotice";
 import { ViewerSceneList } from "@/components/organisms/ViewerSceneList";
 import { ViewerViewMenu } from "@/components/organisms/ViewerViewMenu";
-import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import type { Dancer } from "@/features/dancer/types";
 import type { Project } from "@/features/project/types";
@@ -67,7 +66,6 @@ export function ViewerLayout({
      ここに閉じ込めていると止められない（実機の要望 2026-08-19） */
   const isPlaying = useViewerStore((state) => state.isPlaying);
   const setIsPlaying = useViewerStore((state) => state.setIsPlaying);
-  const hasMusic = useMusicStore((state) => state.objectUrl !== null);
 
   useEffect(() => {
     hydrate({ project, dancers, scenes, positions, requestedDancerId });
@@ -76,11 +74,13 @@ export function ViewerLayout({
   const lastSeconds =
     scenes.length > 0 ? scenes[scenes.length - 1].timeSeconds : 0;
 
-  // 通し再生。主役ではないので、時計は素朴な rAF で足りる。
-  // ただし曲が入っているときは【曲が時計】になる(ViewerMusic)ので、
-  // こちらは動かさない。2つの時計が同じ値を奪い合うと、再生位置が震える
+  /* 通し再生。主役ではないので、時計は素朴な rAF で足りる。
+
+     以前は「曲が入っていれば曲を時計にする」分岐があったが、**見る人は
+     曲を選べない**（2026-08-18 の決定）ので、この画面で曲が入ることは無い。
+     分岐と、既に消えた部品を指すコメントだけが残っていたので落とした。 */
   useEffect(() => {
-    if (!isPlaying || hasMusic) return;
+    if (!isPlaying) return;
 
     let frame = 0;
     let previous = performance.now();
@@ -99,7 +99,7 @@ export function ViewerLayout({
     };
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
-  }, [isPlaying, hasMusic, lastSeconds, setCurrentSeconds, setIsPlaying]);
+  }, [isPlaying, lastSeconds, setCurrentSeconds, setIsPlaying]);
 
   /* 開けたリンクを端末に覚えておく。ホーム画面のアイコンは
      トップページを開くので、圏外だとここへ戻る道が無かった

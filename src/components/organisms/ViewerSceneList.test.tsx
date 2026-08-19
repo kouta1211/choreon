@@ -69,3 +69,19 @@ describe("ViewerSceneList", () => {
     expect(screen.queryByLabelText("シーン一覧を開く")).toBeNull();
   });
 });
+
+/* 帯・道順の一覧・シーン一覧の3つとも、飛ぶときは再生を止める。
+   1つだけ止まらないと、止まらない方を不具合として報告される */
+describe("再生中に一覧から飛んだとき", () => {
+  it("再生が止まる", async () => {
+    const user = userEvent.setup();
+    hydrate();
+    useViewerStore.setState({ isPlaying: true });
+    render(<ViewerSceneList />);
+
+    await user.click(screen.getByLabelText("シーン一覧を開く"));
+    await user.click(screen.getByText("シーン3"));
+
+    expect(useViewerStore.getState().isPlaying).toBe(false);
+  });
+});
