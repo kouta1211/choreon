@@ -94,7 +94,7 @@ export const useViewerStore = create<ViewerState>((set, get) => ({
     // 選んだ人が消えている・入れ替わっている場合は選択を解除して入口へ戻す。
     // 黙って別人になるより安全
     const exists = dancers.some((dancer) => dancer.id === wanted);
-    const focusedDancerId = exists ? (wanted as string) : null;
+    const focusedDancerId = wanted && exists ? wanted : null;
 
     if (requestedDancerId && exists) {
       saveFocusedDancerId(project.id, requestedDancerId);

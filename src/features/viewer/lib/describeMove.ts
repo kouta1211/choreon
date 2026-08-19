@@ -28,9 +28,10 @@ const METERS_PER_STEP = 0.6;
 const STILL_UNITS = 0.4;
 
 /** 客席から見た左右。画面の左が下手 */
-export type Sideways = "left" | "right";
+/* この中だけで使う。外から名指しされていない */
+type Sideways = "left" | "right";
 /** 客席側(手前)か、バックステージ側(奥)か */
-export type Depth = "front" | "back";
+type Depth = "front" | "back";
 
 /** 45度刻みの8方向。0が客席向きで、時計回り */
 export type Facing = 0 | 45 | 90 | 135 | 180 | 225 | 270 | 315;
@@ -51,7 +52,8 @@ export type MoveDescription = {
 };
 
 /** 角度を45度刻みの8方向へ寄せる */
-export function toFacing(angle: number): Facing {
+/* 外からは呼ばない。この中で向きを丸めるためだけの道具 */
+function toFacing(angle: number): Facing {
   const normalized = (((Math.round(angle / 45) * 45) % 360) + 360) % 360;
   return normalized as Facing;
 }
