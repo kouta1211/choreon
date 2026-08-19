@@ -2771,6 +2771,9 @@
   const MEMO_KEY = (device) => "choreon.checklist.v4.memo." + device;
   /** どちらの台本を見ていたか。開き直すたびに選び直さなくてよいように覚える */
   const DEVICE_KEY = "choreon.checklist.v4.device";
+  /** どう絞っていたか。**同じ理由で覚える** — 一巡には何日もかかるので、
+      開き直すたびに「未チェック」を押し直すことになっていた */
+  const FILTER_KEY = "choreon.checklist.v4.filter";
   /** v3 の中身。引き継ぎに1回だけ使う */
   const OLD_KEY = (device) => "choreon.checklist.v3." + device;
   const OLD_MEMO_KEY = (device) => "choreon.checklist.v3.memo." + device;
@@ -2786,6 +2789,17 @@
     /* プライベートモード等。既定のままで進む */
   }
   let filter = "all";
+  try {
+    const saved = localStorage.getItem(FILTER_KEY);
+    if (["all", "new", "rest", "device"].includes(saved)) filter = saved;
+  } catch {
+    /* プライベートモード等。「すべて」のままで進む */
+  }
+  /* 「未チェック」で絞っている間、**いま付けた1件だけ**は残す。
+     付けた瞬間に消えると押し間違いに気づけないが、残し続けると
+     済んだ項目が溜まって、畳むために絞り込みを押し直すことになる。
+     次の1件を付けた時点で前の1件が引っ込む、という形にした */
+  let justChecked = null;
   let state = {};
   /** { items: { "3-2": "…" }, global: "…" } */
   let memos = { items: {}, global: "" };
@@ -3084,7 +3098,8 @@
         if (isDone) done += 1;
         let show = true;
         if (filter === "new") show = item.dataset.new === "1";
-        else if (filter === "rest") show = !isDone;
+        else if (filter === "rest")
+          show = !isDone || item.dataset.id === justChecked;
         // もう片方の端末と文が同じ項目を隠す（同じことを2回読まないため）
         else if (filter === "device") show = item.dataset.only === "1";
         item.hidden = !show;
@@ -3151,10 +3166,10 @@
     item.classList.toggle("done", next);
     head.setAttribute("aria-pressed", String(next));
     save();
-    // 「未チェック」で絞っている間は、付けた項目がその場で消えると
-    // 押し間違いに気づけない。数え直しだけして並びは触らない
-    if (filter === "rest") updateProgress();
-    else applyFilter();
+    // 付けた項目はその場に残す（消えると押し間違いに気づけない）。
+    // 前に付けたものは、ここで引っ込む
+    justChecked = next ? id : null;
+    applyFilter();
   });
 
   /** 見る台本を切り替える。取り込みからも呼ぶので関数にしてある */
@@ -3171,6 +3186,7 @@
         String(other.dataset.device === device),
       );
     });
+    justChecked = null;
     load();
     render();
     if (scroll) window.scrollTo({ top: 0, behavior: "smooth" });
@@ -3183,6 +3199,12 @@
   document.querySelectorAll(".chips button[data-filter]").forEach((button) => {
     button.addEventListener("click", () => {
       filter = button.dataset.filter;
+      justChecked = null;
+      try {
+        localStorage.setItem(FILTER_KEY, filter);
+      } catch {
+        /* 覚えられなくても、いまの絞り込みは効く */
+      }
       document
         .querySelectorAll(".chips button[data-filter]")
         .forEach((other) => {
@@ -3670,9 +3692,12 @@
     }
   }
 
-  // 覚えている端末を、起動時のボタンの押下状態にも反映する
+  // 覚えている端末と絞り込みを、起動時のボタンの押下状態にも反映する
   document.querySelectorAll(".seg button").forEach((button) => {
     button.setAttribute("aria-pressed", String(button.dataset.device === device));
+  });
+  document.querySelectorAll(".chips button[data-filter]").forEach((button) => {
+    button.setAttribute("aria-pressed", String(button.dataset.filter === filter));
   });
 
   // 印は文から作る。**描く前に、両方の台本ぶん**（端末を切り替えても同じ印）
