@@ -205,7 +205,9 @@ describe("DraggableDancerIcon", () => {
       </DndContext>,
     );
 
-    expect(screen.getByTestId("dancer-focus-ring")).toBeInTheDocument();
+    /* 輪は出さない（周りが隠れるため）。見分けは「他の人が薄くなる」方
+       — その薄さは DancerLayer が配るので、ここでは輪が無いことだけ見る */
+    expect(screen.queryByTestId("dancer-focus-ring")).toBeNull();
   });
 
   it("マウスを乗せるとリングが付き、離すと消える", () => {

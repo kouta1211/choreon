@@ -113,9 +113,13 @@ export function ViewerEntry() {
                 top: `${(position.yCoordinate / project.stageHeight) * 100}%`,
                 width: MARKER_SIZE,
                 height: MARKER_SIZE,
-                transform: `translate(-50%, -50%) scale(${isSelected ? 1.08 : 1})`,
+                transform: "translate(-50%, -50%)",
+                /* 選んだ人以外を薄くする。輪で囲むより周りが見える
+                   （実機の報告 2026-08-19）。大きさの強調は
+                   DancerMarker が isFocused で行う */
+                opacity: !pendingId || isSelected ? 1 : 0.45,
               }}
-              className="absolute transition-transform duration-200 motion-reduce:transition-none"
+              className="absolute transition-opacity duration-200 motion-reduce:transition-none"
             >
               {/* 実物のマーカー(頭＋鼻先)。ここで見る丸と、次の画面の丸が
                   別物だと「自分はどれか」を探し直すことになる

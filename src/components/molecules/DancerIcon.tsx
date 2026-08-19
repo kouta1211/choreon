@@ -161,17 +161,10 @@ function DancerMarkerImpl({
               opacity={0.5}
             />
           )}
-          {isFocused && (
-            <circle
-              data-testid="dancer-focus-ring"
-              cx={16}
-              cy={16}
-              r={15}
-              fill="none"
-              stroke="#f59e0b"
-              strokeWidth={3}
-            />
-          )}
+          {/* フォーカス中の輪は**出さない**（実機の報告 2026-08-19）。
+              丸の外周いっぱいの太い輪だったので、周りの人や導線が
+              隠れて見えづらかった。見分けは【他の人を薄くする】方に任せる
+              — こちらは周りを塞がない。大きさ(1.15倍)だけは残してある */}
           {isSelected && (
             <circle
               data-testid="dancer-selection-ring"

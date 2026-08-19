@@ -12,8 +12,8 @@ import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { mirrorAngle, toScreenY } from "@/features/canvas/lib/stageFlip";
 import { DancerMarker } from "@/components/molecules/DancerIcon";
 
-/** 自分だけ一回り大きく出す倍率。他の人は実物のまま */
-const OWN_SCALE = 1.15;
+/* 自分を一回り大きくするのは DancerMarker が isFocused で行う。
+   ここで重ねて掛けると二重になる */
 /** 選んでいる人が居るとき、他の人をどれだけ薄くするか */
 const OTHER_OPACITY = 0.45;
 
@@ -130,7 +130,6 @@ export function ViewerStage() {
               left: `${(position.x / project.stageWidth) * 100}%`,
               top: `${(screenY(position.y) / project.stageHeight) * 100}%`,
               opacity: isFilled ? 1 : OTHER_OPACITY,
-              transform: isOwn ? `scale(${OWN_SCALE})` : undefined,
             }}
           >
             {/* 実物のマーカー(頭＋鼻先)。丸だけだと向きが分からない
