@@ -11,6 +11,7 @@ import { ViewerRoute } from "@/components/organisms/ViewerRoute";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { RotateToPortraitNotice } from "@/components/molecules/RotateToPortraitNotice";
 import { ViewerSceneList } from "@/components/organisms/ViewerSceneList";
+import { ViewerViewMenu } from "@/components/organisms/ViewerViewMenu";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import type { Dancer } from "@/features/dancer/types";
@@ -182,6 +183,9 @@ export function ViewerLayout({
             見えない。離れたシーンへ飛ぶ道をここに1本置く
             （実機の要望 2026-08-19） */}
         <ViewerSceneList />
+
+        {/* 見る人にも意味のある表示だけを切り替える（実機の要望） */}
+        <ViewerViewMenu />
       </header>
 
       {/* ステージが余りを全部取る。下の3行は高さが決まっているので、

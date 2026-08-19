@@ -514,6 +514,8 @@ export const en = {
       sceneListOpen: "Open the scene list",
       sceneListTitle: "Scenes",
       sceneListNote: "Tap one to jump there",
+      viewMenu: "Change what is shown",
+      showNames: "Show names",
       play: "Play it through",
       stop: "Stop",
       paths: "Paths",

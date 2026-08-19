@@ -25,10 +25,12 @@ const OTHER_OPACITY = 0.45;
  * 結局どれが自分か読めない。塗り→輪郭という【描き方そのものの変換】が
  * 効いていて、塗られているものが1つしかない画面になる。
  *
- * ■ 直前の位置を破線で残す
- * 「どこから来たか」が分かると、いま画面に出ている位置が通過点なのか
- * 到着点なのか判断できる。他人の導線は出さない — 6本引くと、
- * 自分の1本が埋もれる。
+ * ■ 導線は【これからどこへ動くか】
+ * いまの位置から、次のシーンの位置へ矢印を引く（実機の報告 2026-08-19）。
+ * 以前は「どこから来たか」を破線で残していたが、user の言う導線は
+ * 「今のシーンから次のシーンへ移る線」で、作る画面の導線とも意味が揃う。
+ * 見る人が知りたいのは**次にどこへ行くか**で、来た道ではない。
+ * 他人の導線は出さない — 6本引くと自分の1本が埋もれる。
  */
 export function ViewerStage() {
   const project = useViewerStore((state) => state.project);
@@ -51,11 +53,12 @@ export function ViewerStage() {
   );
   const dancerById = new Map(dancers.map((dancer) => [dancer.id, dancer]));
 
-  // 自分が「どこから来たか」。区間の始まりの位置
+  /* 自分が「これからどこへ行くか」。区間の終わりの位置。
+     最後のシーンには行き先が無いので、そのときは線を引かない */
   const span = sceneSpanAt(scenes, currentSeconds);
-  const cameFrom =
-    focusedDancerId && span
-      ? positionsBySceneId[span.from.id]?.[focusedDancerId]
+  const goingTo =
+    focusedDancerId && span?.to
+      ? positionsBySceneId[span.to.id]?.[focusedDancerId]
       : undefined;
   const own = positions.find((p) => p.dancerId === focusedDancerId);
   // 見る側の端末でも「客席を上にする」は効く。踊る人が稽古場で鏡を
@@ -70,37 +73,39 @@ export function ViewerStage() {
         stageHeightUnits={project.stageHeight}
       />
 
-      {/* どこから来たか。破線の丸と、そこからの線 */}
-      {isPathVisible && own && cameFrom && (
+      {/* これからどこへ動くか。いまの位置から、次のシーンの位置へ */}
+      {isPathVisible && own && goingTo && (
         <svg
           aria-hidden
           viewBox={`0 0 ${project.stageWidth} ${project.stageHeight}`}
           preserveAspectRatio="none"
           className="pointer-events-none absolute inset-0 h-full w-full"
         >
+          <defs>
+            <marker
+              id="viewer-path-arrow"
+              viewBox="0 0 10 10"
+              refX="8"
+              refY="5"
+              markerWidth="4"
+              markerHeight="4"
+              orient="auto-start-reverse"
+            >
+              <path d="M0,0 L10,5 L0,10 z" fill="context-stroke" />
+            </marker>
+          </defs>
           <line
-            x1={cameFrom.xCoordinate}
-            y1={screenY(cameFrom.yCoordinate)}
-            x2={own.x}
-            y2={screenY(own.y)}
+            x1={own.x}
+            y1={screenY(own.y)}
+            x2={goingTo.xCoordinate}
+            y2={screenY(goingTo.yCoordinate)}
             stroke={themedDancerColor(
               dancerById.get(own.dancerId)?.color ?? "#888",
             )}
-            strokeWidth={0.06}
+            strokeDasharray="0.3 0.22"
             vectorEffect="non-scaling-stroke"
             style={{ strokeWidth: 2 }}
-          />
-          <circle
-            cx={cameFrom.xCoordinate}
-            cy={screenY(cameFrom.yCoordinate)}
-            r={0.36}
-            fill="none"
-            stroke={themedDancerColor(
-              dancerById.get(own.dancerId)?.color ?? "#888",
-            )}
-            strokeDasharray="0.24 0.2"
-            style={{ strokeWidth: 1.5 }}
-            vectorEffect="non-scaling-stroke"
+            markerEnd="url(#viewer-path-arrow)"
           />
         </svg>
       )}
@@ -140,11 +145,10 @@ export function ViewerStage() {
               rotationAngle={screenRotation}
               isFocused={isOwn}
             />
-            {isOwn && (
-              <span className="absolute top-0 left-1/2 mt-6 -translate-x-1/2 rounded px-1 text-caption font-semibold whitespace-nowrap text-fg-strong [text-shadow:var(--label-shadow)]">
-                {dancer.name}
-              </span>
-            )}
+            {/* 名前はここでは出さない（実機の報告 06-11）。
+                マーカー自身が頭の中に頭文字を描いていて、その下へ名前を
+                重ねると**同じ数字が2つ**並んで重なった。
+                誰が自分かは「濃い1人」と、上のヘッダーの名札で分かる */}
           </div>
         );
       })}

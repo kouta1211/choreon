@@ -508,6 +508,8 @@ export const ko = {
       sceneListOpen: "장면 목록 열기",
       sceneListTitle: "장면",
       sceneListNote: "누르면 그 장면으로 이동합니다",
+      viewMenu: "표시 바꾸기",
+      showNames: "이름 표시",
       play: "통으로 재생",
       stop: "정지",
       paths: "동선",

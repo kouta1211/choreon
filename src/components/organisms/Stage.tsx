@@ -84,7 +84,15 @@ export function Stage({
        ダンサーを選んだときの帯も同じ空きに乗るので、ステージの面に
        被らなくなる(帯に高さを持たせるとステージが縮んで、選んだ瞬間に
        全員の位置がずれて見えるため、高さは持たせない) */
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-center pb-14">
+    /* 下の余白は、ステージの下に何か置くときだけ広く取る
+       （実機の報告 2026-08-19）。見る画面にはボタン列が無いので、
+       広いままだと**下だけ余白が大きい**画面になっていた。
+       札のぶん(mt-1.5＋文字)は、置かないときでも要る */
+    <div
+      className={`flex min-h-0 flex-1 flex-col items-center justify-center ${
+        belowStageLeft || belowStageRight ? "pb-14" : "pb-6"
+      }`}
+    >
       <div
         data-tour="stage"
         className={`relative flex min-h-0 w-full flex-1 items-center justify-center [container-type:size] ${

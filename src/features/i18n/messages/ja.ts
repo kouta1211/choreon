@@ -542,6 +542,9 @@ export const ja = {
       sceneListOpen: "シーン一覧を開く",
       sceneListTitle: "シーン",
       sceneListNote: "押すとそのシーンへ移ります",
+      /** 見る画面の表示の切り替え（実機の要望 2026-08-19） */
+      viewMenu: "表示を変える",
+      showNames: "名前を出す",
       play: "通しで再生",
       stop: "止める",
       paths: "導線",
