@@ -80,9 +80,6 @@ type UIState = {
   isSwipeSceneChangeEnabled: boolean;
   /** 下端の時間軸を出すか。畳むとステージがそのぶん広くなる */
   isTimelineVisible: boolean;
-  /** シーン移動のアニメーションが進行中か。この間はダンサーを掴ませない
-   * (掴むと、移動アニメーションとドラッグが同じ座標を取り合う) */
-  isTransitioning: boolean;
   /** ドラッグ中の格子スナップ状態(CanvasBoardのonDragMoveが更新し、Stageが
    * 該当する格子線をハイライト表示するために読む) */
   dragSnapLine: DragSnapLine;
@@ -159,7 +156,6 @@ type UIState = {
   toggleBlindSpotCheck: () => void;
   toggleSwipeSceneChange: () => void;
   toggleTimelineVisible: () => void;
-  setIsTransitioning: (isTransitioning: boolean) => void;
   setDragSnapLine: (line: DragSnapLine) => void;
   setIsPlaying: (isPlaying: boolean) => void;
   /** 再生ボタンを押したのと同じことを頼む(カウントインを含む) */
@@ -268,7 +264,6 @@ export const useUIStore = create<UIState>((set, get) => ({
   isSwipeSceneChangeEnabled: DEFAULT_VIEW_PREFERENCE.isSwipeSceneChangeEnabled,
   isTimelineVisible: DEFAULT_VIEW_PREFERENCE.isTimelineVisible,
   viewScopeProjectId: null,
-  isTransitioning: false,
   dragSnapLine: { x: null, y: null },
   isPlaying: false,
   playToggleRequestedAt: null,
@@ -345,10 +340,6 @@ export const useUIStore = create<UIState>((set, get) => ({
       persistFromState(state, { isStageMarksVisible });
       return { isStageMarksVisible };
     }),
-  setIsTransitioning: (isTransitioning) =>
-    set((state) =>
-      state.isTransitioning === isTransitioning ? {} : { isTransitioning },
-    ),
   toggleSwipeSceneChange: () =>
     set((state) => {
       const isSwipeSceneChangeEnabled = !state.isSwipeSceneChangeEnabled;

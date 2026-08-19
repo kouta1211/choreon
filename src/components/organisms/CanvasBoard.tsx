@@ -331,9 +331,22 @@ export function CanvasBoard({
     (event: DragStartEvent) => {
       groupOffsetX.set(0);
       groupOffsetY.set(0);
-      setActiveDancerId(String(event.active.id));
+      const grabbedId = String(event.active.id);
+
+      /* 選択の付け替えは【掴んだ瞬間】にやる(2026-08-19、実機の報告)。
+         以前は離した瞬間にやっていたので、選択の外に居る人を掴むと
+         「選ばれている人たちは追随して動いて見えるのに、確定するのは
+         掴んだ本人だけ」になり、離した瞬間に他の人が元へ戻っていた
+         （追随の判定は「その人が選ばれているか」、確定の判定は
+         「掴んだ人が選択に入っているか」で、見ている物が違った）。
+         掴んだ時点で選択を1人へ寄せれば、追随する人がそもそも居なくなる */
+      if (!useUIStore.getState().selectedDancerIds.includes(grabbedId)) {
+        selectDancer(grabbedId);
+      }
+
+      setActiveDancerId(grabbedId);
     },
-    [groupOffsetX, groupOffsetY],
+    [groupOffsetX, groupOffsetY, selectDancer],
   );
 
   const handleDragCancel = useCallback(() => {
@@ -353,15 +366,15 @@ export function CanvasBoard({
    */
   const groupMove = useCallback(
     (sceneId: string, grabbedId: string, dx: number, dy: number) => {
+      /* 選択の付け替えは handleDragStart で済んでいるので、ここは
+         そのまま読むだけでよい。掴んだ人は必ず選択に入っている
+         （矢印キーから来たときも、押す前にその人を選んでいる） */
       const { selectedDancerIds } = useUIStore.getState();
-      const isGrabbedSelected = selectedDancerIds.includes(grabbedId);
-      /* 選ばれていない人を掴んだら、その人だけに選び直す。掴んだ本人が
-         動くのに選択は別の人のまま、という食い違いを作らない */
-      if (!isGrabbedSelected) selectDancer(grabbedId);
-
       const changes = groupMoveChanges({
         sceneId,
-        dancerIds: isGrabbedSelected ? selectedDancerIds : [grabbedId],
+        dancerIds: selectedDancerIds.includes(grabbedId)
+          ? selectedDancerIds
+          : [grabbedId],
         positions: useProjectStore.getState().positionsBySceneId[sceneId] ?? {},
         delta: { x: dx, y: dy },
         stage: { width: project.stageWidth, height: project.stageHeight },
@@ -369,7 +382,7 @@ export function CanvasBoard({
       // 呼び出し側は「動かせなかった」を null で見ているので、形を変えない
       return changes.length > 0 ? changes : null;
     },
-    [project.stageWidth, project.stageHeight, selectDancer],
+    [project.stageWidth, project.stageHeight],
   );
 
   const handleDragEnd = useCallback(

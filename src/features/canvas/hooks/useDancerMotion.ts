@@ -72,9 +72,25 @@ export function useDancerMotion({
 
   useEffect(() => {
     const justFinishedDragging = wasDraggingRef.current && !isDragging;
+    const justStartedDragging = !wasDraggingRef.current && isDragging;
     wasDraggingRef.current = isDragging;
     // ドラッグ中はleft/topを動かさない(dnd-kitのtransformだけで見た目を動かす)
-    if (isDragging) return;
+    if (isDragging) {
+      /* 掴んだ瞬間に、走っていた移動を【打ち切って】そのシーンの位置へ
+         合わせる(2026-08-19、実機の報告)。
+         この効果の後片付けでアニメーション自体は既に止まるが、止めただけだと
+         見た目は「途中の場所」に居るのに、保存の起点(positionAt)は
+         「シーンの位置」なので、置いた場所と保存される場所が食い違う。
+         起点を揃えるために、見た目の方を確定値へ飛ばす。
+         以前はこの食い違いを避けるため、動いている間は掴ませない作りに
+         していたが、区間が8秒なら8秒間まったく掴めず「ドラッグに
+         ダンサーが追ってこない」と報告された */
+      if (justStartedDragging) {
+        leftPct.set(leftPercent);
+        topPct.set(topPercent);
+      }
+      return;
+    }
     // スクラブ中は下のuseEffectが指の位置から毎フレームleft/topを決めている。
     // ここで時間ベースのアニメーションを走らせると、両者が同じ値を取り合う。
     // 指を離してこのフラグが下りた時に、改めてこの効果が走り、

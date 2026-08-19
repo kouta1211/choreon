@@ -142,18 +142,16 @@ function DraggableDancerIconImpl({
   // いるので、tabIndex: -1でもプログラムからのフォーカス自体は問題なく機能する
   // (Tabキーによる「巡回」だけを止めており、フォーカスそのものを禁止しては
   // いない)
-  // シーン移動のアニメーションが走っている間は掴ませない。
-  // 動いている最中に掴むと、dnd-kitのtransform(ドラッグ量)と
-  // left/top のアニメーションが同時に効いて、指の位置と本体がずれる。
-  // 離した時点の値も「どこから動かしたのか」が定まらず、保存される座標が
-  // 実際に置いた場所と食い違う
-  const isTransitioning = useUIStore((state) => state.isTransitioning);
+  /* シーン移動のアニメーションが走っている最中でも掴める(2026-08-19)。
+     以前は掴ませない作りだったが、印は【区間の秒数まるごと】立つので、
+     8秒の区間へ切り替えると8秒間まったく掴めなかった。
+     食い違い(見た目は途中、保存の起点はシーンの位置)の方は、掴んだ瞬間に
+     移動を打ち切って確定値へ飛ばすことで消してある(useDancerMotion)。 */
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: dancer.id,
     // yは画面の向きに写した値。dnd-kitと格子スナップは画面の中だけで完結する
     data: { x, y, stageWidthUnits, stageHeightUnits },
     attributes: { tabIndex: -1 },
-    disabled: isTransitioning,
   });
   const isSelected = useUIStore((state) =>
     state.selectedDancerIds.includes(dancer.id),
@@ -263,8 +261,12 @@ function DraggableDancerIconImpl({
   const { left, top, opacity } = useDancerMotion({
     leftPercent,
     topPercent,
-    controlLeftPercent: hasCurve ? (curveControlX / stageWidthUnits) * 100 : null,
-    controlTopPercent: hasCurve ? (curveControlY / stageHeightUnits) * 100 : null,
+    controlLeftPercent: hasCurve
+      ? (curveControlX / stageWidthUnits) * 100
+      : null,
+    controlTopPercent: hasCurve
+      ? (curveControlY / stageHeightUnits) * 100
+      : null,
     isDragging,
     transitionDurationSeconds,
     scrubFrom: toPoint(scrubFromX, scrubFromY),
@@ -283,8 +285,8 @@ function DraggableDancerIconImpl({
       // 掴んでいる間だけ手前へ出す。誰にもz順を与えていないので、素のままだと
       // DOMで後ろにいるダンサーの下へ潜り、掴んだ本人が隠れてしまう
       className={`absolute touch-none select-none ${
-        isDragging ? "z-10 cursor-grabbing" : ""
-      } ${isTransitioning ? "cursor-default" : "cursor-grab"}`}
+        isDragging ? "z-10 cursor-grabbing" : "cursor-grab"
+      }`}
       /* 追随中は transform のキーごと外す。motion は style に transform が
          あるとそちらを優先し、x/y の MotionValue が効かなくなる
          （undefined でもキーが立っていれば同じ。実際にこれで動かなかった） */

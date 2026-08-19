@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { PathOverlay } from "@/components/molecules/PathOverlay";
 import { StageMarks } from "@/components/molecules/StageMarks";
@@ -170,26 +170,9 @@ export function DancerLayer({
     isBlindSpotCheckVisible,
   });
 
-  // シーン移動のアニメーションが走っている間に印を立てる。掴ませない
-  // ようにするのはDraggableDancerIcon側で、ここは「いま動いているか」を
-  // 知らせるだけ。区間の秒数はここが既に持っている(segmentScene)ので、
-  // 各アイコンに同じ計算をさせずに済む
-  const setIsTransitioning = useUIStore((state) => state.setIsTransitioning);
-  const movingSceneId = isAdjacentStep ? selectedSceneId : null;
+  // このシーンへ入ってくる区間の長さ(秒)。位置と向きの補間にかける時間
   const movingSeconds =
     durations[scenes.findIndex((scene) => scene.id === segmentScene?.id)] ?? 0;
-  useEffect(() => {
-    if (!movingSceneId || movingSeconds <= 0) return;
-    setIsTransitioning(true);
-    const timer = setTimeout(
-      () => setIsTransitioning(false),
-      resolveTransitionDuration(movingSeconds) * 1000,
-    );
-    return () => {
-      clearTimeout(timer);
-      setIsTransitioning(false);
-    };
-  }, [movingSceneId, movingSeconds, setIsTransitioning]);
 
   // 描くダンサー。通常は選択中シーンに座標を持つ人だけだが、スクラブ中は
   // 移動先にしか居ない人も描き始める(そうしないと、指で half まで引いた時点で
