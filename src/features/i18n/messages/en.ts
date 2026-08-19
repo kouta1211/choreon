@@ -426,6 +426,7 @@ export const en = {
     heading: "There is no connection right now",
     body: "Screens you have already opened still work. Go back to the last one, or open this again once you are back online.",
     toProjects: "To your pieces",
+    lastViewed: (title: string) => `Back to "${title}"`,
   },
 
   data: {

@@ -424,6 +424,7 @@ export const ko = {
     heading: "지금 연결이 되지 않습니다",
     body: "한 번 열었던 화면은 그대로 볼 수 있습니다. 이전 화면으로 돌아가거나, 연결이 돌아온 뒤 다시 열어 주세요.",
     toProjects: "작품 목록으로",
+    lastViewed: (title: string) => `「${title}」로 돌아가기`,
   },
 
   data: {

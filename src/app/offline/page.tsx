@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CloudOff } from "lucide-react";
 import { getMessages } from "@/features/i18n/server";
+import { LastViewedLink } from "@/components/molecules/LastViewedLink";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -38,6 +39,10 @@ export default async function OfflinePage() {
           {t.offline.body}
         </p>
       </div>
+      {/* 控えがあれば、そちらを主にする。圏外で開きたいのは
+          たいてい「さっき見ていた振付」で、作品の一覧ではない */}
+      <LastViewedLink />
+
       <Link
         href="/"
         className="flex h-11 items-center rounded-xl border border-line-strong px-4 text-label text-fg"

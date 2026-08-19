@@ -457,6 +457,8 @@ export const ja = {
     heading: "いま電波が届いていません",
     body: "一度開いた画面は、そのまま見られます。直前の画面へ戻るか、電波が戻ってから開き直してください。",
     toProjects: "作品の一覧へ",
+    /** 端末に控えてある「最後に開いた振付」への戻り道 */
+    lastViewed: (title: string) => `「${title}」へ戻る`,
   },
 
   data: {
