@@ -74,6 +74,40 @@ export function DialogContent({
   );
 }
 
+/**
+ * 右から出てくる板（引き出し）。
+ *
+ * 中央や下に出す `DialogContent` と、ふるまい（Escape・幕・フォーカス）は
+ * 同じもの。違うのは**出る場所と高さの決まり方**だけ:
+ *
+ * - 右端に貼り付いて、上下は画面いっぱい
+ * - 中身が長くなったら**この中だけ**縦に流す。一覧の長さは中身の数で
+ *   決まるので、1画面に収める前提にしない（実機の要望 2026-08-19）
+ */
+export function DialogDrawer({
+  className,
+  children,
+  ...props
+}: ComponentProps<typeof DialogPrimitive.Content>) {
+  return (
+    <DialogPortal>
+      <DialogOverlay />
+      <DialogPrimitive.Content
+        className={cn(
+          "overlay-panel fixed inset-y-0 right-0 z-50 flex w-[min(86vw,340px)] flex-col",
+          "rounded-l-2xl border-y-0 border-r-0",
+          "data-[state=open]:animate-in data-[state=open]:slide-in-from-right",
+          "data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right",
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </DialogPrimitive.Content>
+    </DialogPortal>
+  );
+}
+
 export function DialogTitle({
   className,
   ...props

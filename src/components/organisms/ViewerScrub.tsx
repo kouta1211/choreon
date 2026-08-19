@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { type PointerEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useMotionValue } from "motion/react";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
@@ -14,6 +14,7 @@ import {
   dropTicksNearPlayhead,
   rulerTicks,
 } from "@/features/viewer/lib/rulerTicks";
+import { scrubPixelsPerSecond } from "@/features/viewer/lib/scrubScale";
 
 /** エディタの帯(80px)より低い。コマを小さくできるぶん */
 const BAND_HEIGHT = 56;
@@ -22,8 +23,12 @@ const CARD_WIDTH = 28;
 const SELECTED_CARD_WIDTH = 34;
 /** 再生ヘッドは常に中央。エディタは43%だが、こちらは止めて見る道具 */
 const PLAYHEAD_RATIO = 0.5;
-/** 見るだけなので、エディタより引き気味の縮尺で十分 */
-const PX_PER_SECOND = 24;
+/** 何も詰まっていないときの縮尺。見るだけなので、エディタより引き気味で十分 */
+const BASE_PX_PER_SECOND = 24;
+/** コマとコマの間に、最低これだけ空ける(px)。押し分けられる幅 */
+const MIN_CARD_GAP_PX = SELECTED_CARD_WIDTH + 8;
+/** これ以上は広げない。同じ時刻に2つ置いてあると必要量が無限になる */
+const MAX_PX_PER_SECOND = 160;
 
 /** 時刻のラベル同士を、これ以上は近づけない(px) */
 
@@ -86,7 +91,10 @@ export function ViewerScrub() {
   useEffect(() => {
     if (!currentSceneId || lastHapticRef.current === currentSceneId) return;
     lastHapticRef.current = currentSceneId;
-    if (focusedDancerId && positionsBySceneId[currentSceneId]?.[focusedDancerId]) {
+    if (
+      focusedDancerId &&
+      positionsBySceneId[currentSceneId]?.[focusedDancerId]
+    ) {
       vibrate(TAP_PATTERN);
     }
   }, [currentSceneId, focusedDancerId, positionsBySceneId]);
@@ -96,7 +104,23 @@ export function ViewerScrub() {
   // ── エディタの時間軸と同じ作り
   const scrollXValue = useMotionValue(0);
   const playheadValue = useMotionValue(0);
-  const scrollX = axisX(currentSeconds, PX_PER_SECOND) - viewport * PLAYHEAD_RATIO;
+  /* コマが被らない広さまで帯を伸ばす(実機の報告 2026-08-19)。
+     コマは時刻の場所に置くので、シーンが近いと重なって【下のコマが
+     押せなくなる】。コマを縮めるのではなく目盛りを広げる — 帯は横に
+     払って動かせるので、伸ばす方でよい */
+  const pxPerSecond = useMemo(
+    () =>
+      scrubPixelsPerSecond({
+        sceneTimes: scenes.map((scene) => scene.timeSeconds),
+        minGapPx: MIN_CARD_GAP_PX,
+        basePxPerSecond: BASE_PX_PER_SECOND,
+        maxPxPerSecond: MAX_PX_PER_SECOND,
+      }),
+    [scenes],
+  );
+
+  const scrollX =
+    axisX(currentSeconds, pxPerSecond) - viewport * PLAYHEAD_RATIO;
   useEffect(() => {
     scrollXValue.set(scrollX);
     playheadValue.set(currentSeconds);
@@ -136,7 +160,7 @@ export function ViewerScrub() {
     if (!start.moved && Math.abs(delta) < 3) return;
     start.moved = true;
     // 指を右へ払うと軸が右へ流れる = 時刻は戻る
-    setCurrentSeconds(Math.max(0, start.seconds - delta / PX_PER_SECOND));
+    setCurrentSeconds(Math.max(0, start.seconds - delta / pxPerSecond));
   };
 
   const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
@@ -151,7 +175,7 @@ export function ViewerScrub() {
       if (!rect) return;
       const centre = rect.left + rect.width * PLAYHEAD_RATIO;
       setCurrentSeconds(
-        Math.max(0, start.seconds + (event.clientX - centre) / PX_PER_SECOND),
+        Math.max(0, start.seconds + (event.clientX - centre) / pxPerSecond),
       );
     }
   };
@@ -173,7 +197,7 @@ export function ViewerScrub() {
           waveform={waveform}
           scrollX={scrollXValue}
           originPx={LEAD_IN_PX}
-          pxPerSecond={PX_PER_SECOND}
+          pxPerSecond={pxPerSecond}
           width={viewport}
           height={BAND_HEIGHT}
           playheadSeconds={playheadValue}
@@ -200,7 +224,7 @@ export function ViewerScrub() {
                 key={scene.id}
                 aria-hidden
                 style={{
-                  left: axisX(scene.timeSeconds, PX_PER_SECOND),
+                  left: axisX(scene.timeSeconds, pxPerSecond),
                   marginLeft: -width / 2,
                   width,
                   height: Math.round(
@@ -260,13 +284,13 @@ export function ViewerScrub() {
         {/* 再生位置の札と重なる目盛りは出さない。別々に置いているので、
             近づくと両方読めなくなる(2026-08-18 に実機で見つけた) */}
         {dropTicksNearPlayhead(
-          rulerTicks(scrollX, viewport, PX_PER_SECOND, LEAD_IN_PX),
-          (seconds) => axisX(seconds, PX_PER_SECOND) - scrollX,
+          rulerTicks(scrollX, viewport, pxPerSecond, LEAD_IN_PX),
+          (seconds) => axisX(seconds, pxPerSecond) - scrollX,
           viewport * PLAYHEAD_RATIO,
         ).map((seconds) => (
           <span
             key={seconds}
-            style={{ left: axisX(seconds, PX_PER_SECOND) - scrollX }}
+            style={{ left: axisX(seconds, pxPerSecond) - scrollX }}
             className="absolute top-0 -translate-x-1/2 font-mono text-caption tabular-nums text-fg-muted"
           >
             {formatClock(seconds)}

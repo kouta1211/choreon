@@ -538,6 +538,10 @@ export const ja = {
       hereNow: " · いまここ",
       tooFast: "歩いて間に合わない速さです",
       reselect: "ポジションを選び直す",
+      /** 右から出るシーン一覧（実機の要望 2026-08-19） */
+      sceneListOpen: "シーン一覧を開く",
+      sceneListTitle: "シーン",
+      sceneListNote: "押すとそのシーンへ移ります",
       play: "通しで再生",
       stop: "止める",
       paths: "導線",

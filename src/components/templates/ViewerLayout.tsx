@@ -10,6 +10,7 @@ import { ViewerScrub } from "@/components/organisms/ViewerScrub";
 import { ViewerRoute } from "@/components/organisms/ViewerRoute";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { RotateToPortraitNotice } from "@/components/molecules/RotateToPortraitNotice";
+import { ViewerSceneList } from "@/components/organisms/ViewerSceneList";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import type { Dancer } from "@/features/dancer/types";
@@ -123,13 +124,15 @@ export function ViewerLayout({
 
   const dancer = dancers.find((item) => item.id === focusedDancerId);
 
-  /* **1画面に収めようとしない**(2026-08-18、実機の要望)。
-     以前は h-dvh で切り捨てていたので、横向きのスマホではステージが
-     小さくなるしかなかった。この画面の用途は【自分の位置と道順を
-     確かめる】ことなので、ステージを大きく取り、入りきらない分は
-     下へ流す（スクロールしてよい）。 */
+  /* **1画面に収める**(2026-08-19、実機の要望)。
+     横向きを捨てた（縦でしか見せない）ので、高さが読めるようになった。
+     縦に流していた頃は、道順や帯を見るのに毎回スクロールが要った。
+
+     割り当ては【ステージ優先】。ステージが余りを全部取り、その下に
+     道順の1行・ボタン・帯を高さの決まった行として積む。
+     並びは ステージ → 道順 → ボタン → 帯（user の指定）。 */
   return (
-    <div className="flex min-h-dvh flex-col pb-[max(24px,env(safe-area-inset-bottom))]">
+    <div className="flex h-dvh flex-col overflow-hidden pb-[max(8px,env(safe-area-inset-bottom))]">
       {/* スマホを横にしたら、縦へ戻してもらう（2026-08-19、実機の報告）。
           出し分けは CSS だけ ― 向きを JS で見ると一度描いてから入れ替わる */}
       <RotateToPortraitNotice />
@@ -174,94 +177,68 @@ export function ViewerLayout({
             aria-hidden
           />
         </PressableButton>
+
+        {/* シーン一覧への入口。1画面に収めたので、下の帯は「いまの前後」しか
+            見えない。離れたシーンへ飛ぶ道をここに1本置く
+            （実機の要望 2026-08-19） */}
+        <ViewerSceneList />
       </header>
 
-      {/* **横並びは 1024px から**(2026-08-18、実機の要望)。
-          md(768px)にすると横向きのスマホ(844px)まで横並びになり、
-          ステージが幅を道順に取られて小さくなる。この画面の用途は
-          【確かめる】ことなので、**スマホの横向きは縦積みにして
-          ステージを最大に取り、入りきらない分は下へ流す**。
-          タブレット以上は高さもあるので、これまで通り横並び。
-
-          広い画面では、ステージの右に道順を置く。
-          **justify-center を入れてある** — 入れないと、ステージが 640px で
-          頭打ちになったあとの余りが右端に溜まり、ステージ＋道順の塊が
-          画面の左に寄る。広い画面ほど左に寄って見えるので、
-          「ステージを真ん中に」という指摘になった */}
-      <div className="flex flex-col items-center gap-2 px-3.5 min-[1024px]:flex-row min-[1024px]:items-start min-[1024px]:justify-center">
-        {/* Stage は「親の高さいっぱいに伸びて、そこから幅を決める」作り。
-            ここを items-center の横フレックスにすると、Stage が交差軸で
-            伸びずに中身(ラベル)の高さまで縮み、盤面が高さ0になって
-            【ステージが消える】。縦フレックスのまま渡す */}
-        {/* **高さを明示する。** Stage は「親の高さいっぱい(h-full)から
-            aspect-ratio で幅を決める」作りなので、親の高さが不定だと
-            0 に潰れる(min-h-dvh へ変えた直後、実際に潰れた)。
-            140vw を上限520pxで頭打ちにしてある。ふつうのスマホでは上限に
-            当たって520px、うんと狭い端末では画面幅なりに縮む。
-            上限を置くのは、広い画面でステージだけが間延びしないため */}
-        <div
-          className="flex h-[min(140vw,520px)] w-full min-w-0 flex-col min-[1024px]:flex-1"
-          style={{ maxWidth: "min(100%, 640px)" }}
-        >
+      {/* ステージが余りを全部取る。下の3行は高さが決まっているので、
+          残りがそのままステージになる（`flex-1` ＋ `min-h-0`）。
+          `min-h-0` を落とすと、中身の高さで押し出されてはみ出す */}
+      <div className="flex min-h-0 flex-1 flex-col px-3.5">
+        <div className="flex min-h-0 w-full flex-1 flex-col">
           <ViewerStage />
         </div>
+      </div>
 
-        {/* 道順と、下の道具。**横向きではここが右の列になる**
-            (2026-08-18、実機の報告 05-2)。
+      {/* 道順の1行。この画面の主役なので、ステージのすぐ下に置く */}
+      <div className="shrink-0 px-3.5 pt-2">
+        <ViewerRoute />
+      </div>
 
-            以前は下の道具を外側に置いていたので、横向きのスマホ(高さ390px)で
-            ヘッダー56px＋道具200pxに挟まれ、**ステージに130pxしか残らず
-            盤面が潰れて「バックステージ」と「客席側」の札が重なっていた**。
-            横向きは高さが足りず幅が余るので、縦に積むのをやめて右へ寄せる。
-            縦向きでは flex-col のままなので、並びはこれまでと変わらない。 */}
-        <div className="flex w-full shrink-0 flex-col gap-2 min-[1024px]:w-[340px] min-[1024px]:justify-center">
-          <ViewerRoute />
+      {/* 再生と導線は、帯の【ひとつ上の行】に置く（user の指定） */}
+      <div className="flex shrink-0 items-center gap-unit px-3.5 pt-2">
+        <PressableButton
+          kind="icon"
+          onClick={() => {
+            if (currentSeconds >= lastSeconds) setCurrentSeconds(0);
+            setIsPlaying((playing) => !playing);
+          }}
+          aria-label={isPlaying ? t.viewer.route.stop : t.viewer.route.play}
+          /* 主役はスクラブなので、再生は静かなボタンに格下げしてある */
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-raised text-fg"
+        >
+          {isPlaying ? (
+            <Pause size={16} fill="currentColor" />
+          ) : (
+            <Play size={16} fill="currentColor" />
+          )}
+        </PressableButton>
 
-          {/* **見る人は曲を選べない**(2026-08-18、実機の要望)。
-              以前は「同じ曲をこの端末で選ぶ」を出していたが、見る人の仕事は
-              自分の道順を確かめることで、曲を用意することではない。
-              時間の目盛りは作品の BPM と拍子（どちらも共有される）から引ける。
-              音そのものが要る場合は、振付師側の設定を引き継ぐ形にする
-              — いまはその設定が作品に入っていないので、次の課題 */}
-          <ViewerScrub />
+        {/* 導線だけは切れるようにする。隊形だけ見たいことがある。
+            格子・顔被り・シンメトリーは、見る人には要らない */}
+        {focusedDancerId && (
+          <PressableButton
+            role="switch"
+            aria-checked={isPathVisible}
+            onClick={togglePath}
+            className={`flex h-8 shrink-0 items-center gap-1.5 rounded-2xl border px-[11px] text-label ${
+              isPathVisible
+                ? "border-accent bg-accent/16 text-accent-soft"
+                : "border-line-strong text-fg-muted"
+            }`}
+          >
+            <Spline size={13} />
+            {t.viewer.route.paths}
+          </PressableButton>
+        )}
+      </div>
 
-          <div className="mt-unit flex items-center gap-unit">
-            <PressableButton
-              kind="icon"
-              onClick={() => {
-                if (currentSeconds >= lastSeconds) setCurrentSeconds(0);
-                setIsPlaying((playing) => !playing);
-              }}
-              aria-label={isPlaying ? t.viewer.route.stop : t.viewer.route.play}
-              /* 主役はスクラブなので、再生は静かなボタンに格下げしてある */
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-raised text-fg"
-            >
-              {isPlaying ? (
-                <Pause size={16} fill="currentColor" />
-              ) : (
-                <Play size={16} fill="currentColor" />
-              )}
-            </PressableButton>
-
-            {/* 導線だけは切れるようにする。隊形だけ見たいことがある。
-              格子・顔被り・シンメトリーは、見る人には要らない */}
-            {focusedDancerId && (
-              <PressableButton
-                role="switch"
-                aria-checked={isPathVisible}
-                onClick={togglePath}
-                className={`flex h-8 shrink-0 items-center gap-1.5 rounded-2xl border px-[11px] text-label ${
-                  isPathVisible
-                    ? "border-accent bg-accent/16 text-accent-soft"
-                    : "border-line-strong text-fg-muted"
-                }`}
-              >
-                <Spline size={13} />
-                {t.viewer.route.paths}
-              </PressableButton>
-            )}
-          </div>
-        </div>
+      {/* 帯はいちばん下。親指の届く所に置く */}
+      <div className="shrink-0 px-3.5 pt-2">
+        <ViewerScrub />
       </div>
     </div>
   );
