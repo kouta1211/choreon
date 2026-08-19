@@ -245,6 +245,28 @@ body::before {
   color: var(--fg);
 }
 
+/* スマホを横に持ったときだけ出す板(RotateToPortraitNotice)。
+
+   ■ なぜ Tailwind の任意メディアクエリを使わないか
+   `[@media(orientation:landscape)_and_(max-height:500px)]:flex` と書けば
+   同じことはできるが、空白の入れ方を1つ間違えると **CSS がまるごと落ちる**
+   (docs/lessons_learned.md)。しかもクラス名を変数で組み立てると
+   Tailwind のスキャナに拾われず、黙って出力されない。
+   向きで出し分けるのはこの1箇所だけなので、素の CSS で持つ。
+
+   ■ 高さでも絞る理由
+   orientation だけだと PC のブラウザも横向き扱いになる。背が低いときだけに
+   絞ることで、スマホの横持ちだけを拾う(タブレットは横でも十分な高さがある)。 */
+.landscape-only {
+  display: none;
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .landscape-only {
+    display: flex;
+  }
+}
+
 /* ─────────────────────────────────────────────────────────
    起動アニメーション(SplashScreen.tsx / BrandMark.tsx)
 

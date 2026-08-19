@@ -461,6 +461,10 @@ export const ko = {
   },
 
   viewer: {
+    rotate: {
+      title: "세로로 봐 주세요",
+      body: "가로로 두면 무대가 화면을 가득 채워서 아래의 이동 순서를 읽을 수 없습니다. 세로로 돌리면 이어서 볼 수 있습니다.",
+    },
     move: {
       still: "제자리",
       to: (direction: string, steps: number) =>

@@ -9,6 +9,7 @@ import { ViewerStage } from "@/components/organisms/ViewerStage";
 import { ViewerScrub } from "@/components/organisms/ViewerScrub";
 import { ViewerRoute } from "@/components/organisms/ViewerRoute";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { RotateToPortraitNotice } from "@/components/molecules/RotateToPortraitNotice";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import type { Dancer } from "@/features/dancer/types";
@@ -129,6 +130,9 @@ export function ViewerLayout({
      下へ流す（スクロールしてよい）。 */
   return (
     <div className="flex min-h-dvh flex-col pb-[max(24px,env(safe-area-inset-bottom))]">
+      {/* スマホを横にしたら、縦へ戻してもらう（2026-08-19、実機の報告）。
+          出し分けは CSS だけ ― 向きを JS で見ると一度描いてから入れ替わる */}
+      <RotateToPortraitNotice />
       <header className="flex h-target-lg shrink-0 items-center gap-unit px-gutter">
         <span className="min-w-0 flex-1 truncate text-headline text-fg-strong">
           {project.title}
@@ -164,7 +168,11 @@ export function ViewerLayout({
           <span className="shrink-0 text-caption text-fg-muted">
             {t.viewer.route.change}
           </span>
-          <ChevronDown size={13} className="shrink-0 text-fg-muted" aria-hidden />
+          <ChevronDown
+            size={13}
+            className="shrink-0 text-fg-muted"
+            aria-hidden
+          />
         </PressableButton>
       </header>
 
@@ -218,40 +226,40 @@ export function ViewerLayout({
           <ViewerScrub />
 
           <div className="mt-unit flex items-center gap-unit">
-          <PressableButton
-            kind="icon"
-            onClick={() => {
-              if (currentSeconds >= lastSeconds) setCurrentSeconds(0);
-              setIsPlaying((playing) => !playing);
-            }}
-            aria-label={isPlaying ? t.viewer.route.stop : t.viewer.route.play}
-            /* 主役はスクラブなので、再生は静かなボタンに格下げしてある */
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-raised text-fg"
-          >
-            {isPlaying ? (
-              <Pause size={16} fill="currentColor" />
-            ) : (
-              <Play size={16} fill="currentColor" />
-            )}
-          </PressableButton>
-
-          {/* 導線だけは切れるようにする。隊形だけ見たいことがある。
-              格子・顔被り・シンメトリーは、見る人には要らない */}
-          {focusedDancerId && (
             <PressableButton
-              role="switch"
-              aria-checked={isPathVisible}
-              onClick={togglePath}
-              className={`flex h-8 shrink-0 items-center gap-1.5 rounded-2xl border px-[11px] text-label ${
-                isPathVisible
-                  ? "border-accent bg-accent/16 text-accent-soft"
-                  : "border-line-strong text-fg-muted"
-              }`}
+              kind="icon"
+              onClick={() => {
+                if (currentSeconds >= lastSeconds) setCurrentSeconds(0);
+                setIsPlaying((playing) => !playing);
+              }}
+              aria-label={isPlaying ? t.viewer.route.stop : t.viewer.route.play}
+              /* 主役はスクラブなので、再生は静かなボタンに格下げしてある */
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-raised text-fg"
             >
-              <Spline size={13} />
-              {t.viewer.route.paths}
+              {isPlaying ? (
+                <Pause size={16} fill="currentColor" />
+              ) : (
+                <Play size={16} fill="currentColor" />
+              )}
             </PressableButton>
-          )}
+
+            {/* 導線だけは切れるようにする。隊形だけ見たいことがある。
+              格子・顔被り・シンメトリーは、見る人には要らない */}
+            {focusedDancerId && (
+              <PressableButton
+                role="switch"
+                aria-checked={isPathVisible}
+                onClick={togglePath}
+                className={`flex h-8 shrink-0 items-center gap-1.5 rounded-2xl border px-[11px] text-label ${
+                  isPathVisible
+                    ? "border-accent bg-accent/16 text-accent-soft"
+                    : "border-line-strong text-fg-muted"
+                }`}
+              >
+                <Spline size={13} />
+                {t.viewer.route.paths}
+              </PressableButton>
+            )}
           </div>
         </div>
       </div>

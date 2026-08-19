@@ -464,6 +464,10 @@ export const en = {
   },
 
   viewer: {
+    rotate: {
+      title: "Please hold your phone upright",
+      body: "In landscape the stage fills the screen and the route below it is cut off. Turn the phone back to portrait to keep reading.",
+    },
     move: {
       still: "Stay put",
       to: (direction: string, steps: number) =>

@@ -493,6 +493,11 @@ export const ja = {
   },
 
   viewer: {
+    /** スマホを横にしたときの案内（閲覧画面は縦スクロールで読む作り） */
+    rotate: {
+      title: "縦向きでご覧ください",
+      body: "横向きだとステージで画面が埋まって、下の道順が読めません。端末を縦に戻すと、そのまま続きが見られます。",
+    },
     move: {
       still: "その場",
       to: (direction: string, steps: number) => `${direction}へ 約${steps}歩`,
