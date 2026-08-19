@@ -223,3 +223,38 @@ describe("DancerInspector", () => {
     expect(useUIStore.getState().confirm).toBeNull();
   });
 });
+
+/* 実機の要望 2026-08-19「ステージと被っているのでストレスにつながる」。
+   横に場所がある画面では右のパネルへ据える。**浮かせるかどうか**が
+   唯一の違いなので、そこだけを見る */
+describe("DancerInspector の置き場所", () => {
+  function panelOf(element: HTMLElement) {
+    return element.querySelector("div")!;
+  }
+
+  it("既定は浮かせる（狭い画面。ステージの上に重なる）", () => {
+    useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
+    useUIStore.setState({ selectedDancerIds: ["dancer-1"] });
+
+    const { container } = render(<DancerInspector />);
+    const root = panelOf(container);
+    expect(root.className).toContain("absolute");
+    expect(root.className).toContain("overlay-panel");
+  });
+
+  it("パネルに置くときは浮かせない（ステージに一切かからない）", () => {
+    useProjectStore.setState({ dancers: { "dancer-1": makeDancer() } });
+    useUIStore.setState({ selectedDancerIds: ["dancer-1"] });
+
+    const { container } = render(<DancerInspector variant="panel" />);
+    const root = panelOf(container);
+    expect(root.className).not.toContain("absolute");
+    expect(root.className).not.toContain("overlay-panel");
+  });
+
+  it("どちらの置き方でも、誰も選んでいなければ何も描かない", () => {
+    useUIStore.setState({ selectedDancerIds: [] });
+    const { container } = render(<DancerInspector variant="panel" />);
+    expect(container.firstChild).toBeNull();
+  });
+});

@@ -45,7 +45,18 @@ const MAX_DURATION_SECONDS = 30;
  * 「消したものを複数シーン分復元する」処理になり複雑になる上、
  * 追加時よりも「消えた→やっぱり戻った」というチラつきが体験を損ねやすいため。
  */
-export function DancerInspector() {
+type Props = {
+  /**
+   * どこに置くか。
+   *
+   * - `floating` … ドックの直上に浮かせる。**横に置き場所が無い狭い画面**用
+   * - `panel` … 右のパネルの下に据える。**ステージに被らない**（実機の要望
+   *   2026-08-19「ステージと被っているのでストレスにつながる」）
+   */
+  variant?: "floating" | "panel";
+};
+
+export function DancerInspector({ variant = "floating" }: Props) {
   const t = useT();
   // 1人だけ選んでいるときの板。複数のときは null になって出ない
   const selectedDancerId = useUIStore(selectPrimaryDancerId);
@@ -146,17 +157,27 @@ export function DancerInspector() {
   const isFocused = focusedDancerId === dancer.id;
 
   return (
-    // ドックの直上に浮かせる(absolute)。通常の流れに置くと、ダンサーを
-    // 選ぶたびにステージが縮んで全員の位置がずれて見え、選んだ瞬間に
-    // 画面が揺れる。高さを取らなければステージは動かない。
-    //
-    // 面にそのダンサーの色を薄く流し、左端に色帯を置く。誰の設定を
-    // いじっているのかを、名前を読まなくても地の色で分かるようにするため
-    //
-    // overlay-panel はステージの上に浮くもの共通の材質。以前は
-    // bg-surface-strong(白11%)だったため、下の格子が透けて読めなかった。
-    // surface 系は地の上に重ねる色味で、浮きものの地ではない
-    <div className="overlay-panel absolute inset-x-0 bottom-full z-20 mx-3 mb-2 flex items-stretch overflow-hidden rounded-xl">
+    /* 面にそのダンサーの色を薄く流し、左端に色帯を置く。誰の設定を
+       いじっているのかを、名前を読まなくても地の色で分かるようにするため。
+
+       ■ 浮かせる方(floating)
+       ドックの直上に absolute で置く。通常の流れに置くと、ダンサーを
+       選ぶたびにステージが縮んで全員の位置がずれて見え、選んだ瞬間に
+       画面が揺れる。高さを取らなければステージは動かない。
+       overlay-panel はステージの上に浮くもの共通の材質。以前は
+       bg-surface-strong(白11%)だったため、下の格子が透けて読めなかった。
+       surface 系は地の上に重ねる色味で、浮きものの地ではない。
+
+       ■ 据える方(panel)
+       右のパネルの下。**ステージには一切かからない**ので、浮かせる理由が
+       無い（横に場所がある画面だけの形）。材質もパネルに合わせる */
+    <div
+      className={
+        variant === "panel"
+          ? "flex shrink-0 items-stretch overflow-hidden border-t border-line bg-surface/60"
+          : "overlay-panel absolute inset-x-0 bottom-full z-20 mx-3 mb-2 flex items-stretch overflow-hidden rounded-xl"
+      }
+    >
       <span
         aria-hidden
         className="w-1 shrink-0"

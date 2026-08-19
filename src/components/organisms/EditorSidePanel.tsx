@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { SceneList } from "@/components/organisms/SceneList";
 import { DancerList } from "@/components/organisms/DancerList";
+import { DancerInspector } from "@/components/organisms/DancerInspector";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { totalTransitionSeconds } from "@/features/scene/lib/playback";
 import type { Project } from "@/features/project/types";
@@ -38,7 +39,11 @@ export function EditorSidePanel({ project, showScenes }: Props) {
       {showScenes ? (
         <div className="flex shrink-0 gap-1 border-b border-line p-2">
           {[
-            { value: "scenes" as const, label: t.editor.scenes.title, count: scenes.length },
+            {
+              value: "scenes" as const,
+              label: t.editor.scenes.title,
+              count: scenes.length,
+            },
             { value: "dancers" as const, label: t.editor.scenes.dancers },
           ].map((item) => (
             <PressableButton
@@ -78,6 +83,10 @@ export function EditorSidePanel({ project, showScenes }: Props) {
       ) : (
         <DancerList />
       )}
+
+      {/* 選んでいるダンサーの詳細。**タブの外**に据えるので、シーンの一覧を
+          見ている間に選んでも出る。誰も選んでいなければ何も描かない */}
+      <DancerInspector variant="panel" />
     </aside>
   );
 }

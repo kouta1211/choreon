@@ -171,12 +171,16 @@ export function EditorLayout({
             </div>
           </div>
 
-          {/* インスペクターとヒントはドックの直上に浮かせる(absolute)ため、
-            位置の基準としてこのラッパーが要る。ダンサーを選んでいる間は
-            インスペクターが同じ場所を使うので、ヒントは出さない */}
+          {/* インスペクターはドックの直上に浮かせる(absolute)ため、
+            位置の基準としてこのラッパーが要る */}
           <div className="relative shrink-0">
-            {/* 1人なら板、2人以上なら帯。同じ場所を分け合う */}
-            <DancerInspector />
+            {/* 選んでいるダンサーの詳細。**横に置き場所が無い狭い画面だけ**
+                ここへ浮かせる。右のパネルが出る幅では、そちらの下に据える
+                — ステージに被らない（実機の要望 2026-08-19）。
+                出し分けは CSS で。JS で幅を見ると一瞬もう片方が出る */}
+            <div className="md:hidden">
+              <DancerInspector />
+            </div>
             <SceneDock project={live} />
           </div>
 
