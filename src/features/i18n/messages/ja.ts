@@ -279,6 +279,16 @@ export const ja = {
         /** 升の読み上げ名 */
         turn: (label: string) => `${label}を向く`,
       },
+      /** 選んだ人たちを揃える。2人以上選んでいるときだけ出す */
+      align: {
+        heading: "整列",
+        /** 揃え先が誰かではなく重心であることを、押す前に伝える */
+        note: "重心に合わせます",
+        row: "横一列に揃える",
+        column: "縦一列に揃える",
+        spreadX: "左右に等間隔",
+        spreadY: "前後に等間隔",
+      },
       deleteOne: "削除",
       deleteMany: (count: number) => `${count}人を削除`,
       deleteManyTitle: (count: number) => `${count}人を削除しますか?`,

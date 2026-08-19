@@ -23,6 +23,7 @@ function renderBoard() {
       initialDancers={[
         makeDancer({ id: "dancer-1", name: "あいり" }),
         makeDancer({ id: "dancer-2", name: "ゆい" }),
+        makeDancer({ id: "dancer-3", name: "みなみ" }),
       ]}
       initialScenes={[makeScene()]}
       initialPositions={[
@@ -40,6 +41,13 @@ function renderBoard() {
           yCoordinate: 2,
           rotationAngle: 0,
         },
+        {
+          sceneId: "scene-1",
+          dancerId: "dancer-3",
+          xCoordinate: 3,
+          yCoordinate: 5,
+          rotationAngle: 0,
+        },
       ]}
     />,
   );
@@ -55,6 +63,10 @@ function dancerElement(dancerId: string): Element {
   const element = document.querySelector(`[data-dancer-id="${dancerId}"]`);
   if (!element) throw new Error(`${dancerId} が描かれていない`);
   return element;
+}
+
+function positionOf(dancerId: string) {
+  return useProjectStore.getState().positionsBySceneId["scene-1"]?.[dancerId];
 }
 
 function rotationOf(dancerId: string): number | undefined {
@@ -97,7 +109,9 @@ describe("StageContextMenu", () => {
     useUIStore.getState().selectDancers(["dancer-1", "dancer-2"]);
 
     rightClick(dancerElement("dancer-1"));
-    await user.click(await screen.findByRole("menuitemradio", { name: "奥を向く" }));
+    await user.click(
+      await screen.findByRole("menuitemradio", { name: "奥を向く" }),
+    );
 
     await waitFor(() => expect(rotationOf("dancer-1")).toBe(180));
     expect(rotationOf("dancer-2")).toBe(180);
@@ -143,10 +157,12 @@ describe("StageContextMenu", () => {
     useUIStore.getState().selectDancers(["dancer-1", "dancer-2"]);
 
     rightClick(dancerElement("dancer-1"));
-    await user.click(await screen.findByRole("menuitem", { name: /2人を削除/ }));
+    await user.click(
+      await screen.findByRole("menuitem", { name: /2人を削除/ }),
+    );
 
     expect(useUIStore.getState().confirm?.title).toContain("2人");
-    expect(Object.keys(useProjectStore.getState().dancers)).toHaveLength(2);
+    expect(Object.keys(useProjectStore.getState().dancers)).toHaveLength(3);
   });
 
   it("何も無いところを右クリックすると、地のメニューが出る", async () => {
@@ -155,11 +171,75 @@ describe("StageContextMenu", () => {
 
     rightClick(screen.getByTestId("stage"));
 
-    await user.click(await screen.findByRole("menuitem", { name: "全員を選ぶ" }));
+    await user.click(
+      await screen.findByRole("menuitem", { name: "全員を選ぶ" }),
+    );
     expect(useUIStore.getState().selectedDancerIds).toEqual([
       "dancer-1",
       "dancer-2",
+      "dancer-3",
     ]);
+  });
+
+  it("横一列に揃えると、選んだ全員の前後が重心へ寄る", async () => {
+    const user = userEvent.setup();
+    renderBoard();
+    // y は 2 / 2 / 5 なので、重心は 3
+    useUIStore.getState().selectDancers(["dancer-1", "dancer-2", "dancer-3"]);
+
+    rightClick(dancerElement("dancer-1"));
+    await user.click(
+      await screen.findByRole("menuitem", { name: "横一列に揃える" }),
+    );
+
+    await waitFor(() => expect(positionOf("dancer-3")?.yCoordinate).toBe(3));
+    expect(positionOf("dancer-1")?.yCoordinate).toBe(3);
+    expect(positionOf("dancer-2")?.yCoordinate).toBe(3);
+    // 左右は触らない
+    expect(positionOf("dancer-1")?.xCoordinate).toBe(2);
+    // まとめて1手（元に戻す1回で戻る）
+    expect(useHistoryStore.getState().past).toHaveLength(1);
+  });
+
+  it("左右に等間隔で配ると、両端は動かず間だけが動く", async () => {
+    const user = userEvent.setup();
+    renderBoard();
+    // x は 2 / 6 / 3。両端の 2 と 6 は動かず、間の 1人が 4 へ
+    useUIStore.getState().selectDancers(["dancer-1", "dancer-2", "dancer-3"]);
+
+    rightClick(dancerElement("dancer-1"));
+    await user.click(
+      await screen.findByRole("menuitem", { name: "左右に等間隔" }),
+    );
+
+    await waitFor(() => expect(positionOf("dancer-3")?.xCoordinate).toBe(4));
+    expect(positionOf("dancer-1")?.xCoordinate).toBe(2);
+    expect(positionOf("dancer-2")?.xCoordinate).toBe(6);
+  });
+
+  it("1人しか選んでいなければ、整列そのものを出さない", async () => {
+    renderBoard();
+    useUIStore.getState().selectDancer("dancer-1");
+
+    rightClick(dancerElement("dancer-1"));
+    await screen.findByRole("menu");
+
+    expect(screen.queryByText("整列")).not.toBeInTheDocument();
+  });
+
+  it("2人のときは等間隔を出さない（配る余地が無い）", async () => {
+    renderBoard();
+    useUIStore.getState().selectDancers(["dancer-1", "dancer-2"]);
+
+    rightClick(dancerElement("dancer-1"));
+    await screen.findByRole("menu");
+
+    expect(
+      screen.getByRole("menuitem", { name: "横一列に揃える" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitem", { name: "左右に等間隔" }),
+    ).not.toBeInTheDocument();
   });
 
   it("ステージの外(下のボタン列)では開かない", async () => {

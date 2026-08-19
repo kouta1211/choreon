@@ -48,6 +48,8 @@ export type HistoryEntry = {
     | "rotate"
     | "curve"
     | "template"
+    /** 選んだ人たちを揃える / 等間隔に配る（右クリックのメニュー） */
+    | "align"
     | "retime"
     | "resize";
   changes: PositionChange[];

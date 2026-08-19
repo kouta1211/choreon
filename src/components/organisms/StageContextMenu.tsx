@@ -1,7 +1,16 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowDown, Trash2, UserPlus, Users } from "lucide-react";
+import {
+  AlignHorizontalDistributeCenter,
+  AlignHorizontalJustifyCenter,
+  AlignVerticalDistributeCenter,
+  AlignVerticalJustifyCenter,
+  ArrowDown,
+  Trash2,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -26,11 +35,48 @@ import {
   sharedFacing,
   toStageFacing,
 } from "@/features/canvas/lib/facing";
+import {
+  alignmentTarget,
+  evenlyDistributed,
+  type AlignAxis,
+} from "@/features/canvas/lib/alignment";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   children: ReactNode;
 };
+
+/**
+ * 整列の並び。**揃える2つ → 配る2つ**の順で、どちらも「横（左右）が先」。
+ * 隊形は横一列から作ることが多いので、いちばん使うものを上に置く。
+ */
+const ALIGN_ACTIONS = [
+  {
+    labelKey: "row" as const,
+    // 横一列＝前後(y)を揃える。画面の上下を鏡にしても、横一列は横一列
+    axis: "y" as AlignAxis,
+    mode: "align" as const,
+    icon: AlignVerticalJustifyCenter,
+  },
+  {
+    labelKey: "column" as const,
+    axis: "x" as AlignAxis,
+    mode: "align" as const,
+    icon: AlignHorizontalJustifyCenter,
+  },
+  {
+    labelKey: "spreadX" as const,
+    axis: "x" as AlignAxis,
+    mode: "distribute" as const,
+    icon: AlignHorizontalDistributeCenter,
+  },
+  {
+    labelKey: "spreadY" as const,
+    axis: "y" as AlignAxis,
+    mode: "distribute" as const,
+    icon: AlignVerticalDistributeCenter,
+  },
+];
 
 /** 右クリックが何の上で起きたか */
 type MenuTarget = "dancer" | "stage";
@@ -180,6 +226,70 @@ export function StageContextMenu({ children }: Props) {
   );
 
   /**
+   * 選んだ人たちを揃える / 等間隔に配る。
+   *
+   * **格子へは丸めない。** 揃えると言われて半マス動かされるより、頼まれた
+   * 通りの位置に置く方が読める（等間隔は丸めると間隔そのものが崩れる）。
+   * 格子に乗せたいときは、そのあと矢印キーで動かす道がある。
+   *
+   * 平均も等間隔も**両端の内側**にしか来ないので、ステージからはみ出さない
+   * （はみ出していた人が居ても、揃えた先はその人より内側になる）。
+   */
+  const applyAlignment = useCallback(
+    async (axis: AlignAxis, mode: "align" | "distribute") => {
+      if (!selectedSceneId) return;
+      const { selectedDancerIds: ids } = useUIStore.getState();
+      const current =
+        useProjectStore.getState().positionsBySceneId[selectedSceneId] ?? {};
+
+      const points = ids.flatMap((dancerId) => {
+        const position = current[dancerId];
+        return position
+          ? [
+              {
+                dancerId,
+                x: position.xCoordinate,
+                y: position.yCoordinate,
+              },
+            ]
+          : [];
+      });
+
+      const target = mode === "align" ? alignmentTarget(points, axis) : null;
+      const distributed =
+        mode === "distribute"
+          ? evenlyDistributed(points, axis)
+          : new Map<string, number>();
+      const nextValue = (dancerId: string): number | undefined =>
+        mode === "distribute"
+          ? distributed.get(dancerId)
+          : (target ?? undefined);
+
+      const key = axis === "x" ? "xCoordinate" : "yCoordinate";
+      const changes = ids.flatMap((dancerId) => {
+        const before = current[dancerId];
+        const value = nextValue(dancerId);
+        // 動かない人は履歴にも保存にも混ぜない
+        if (!before || value === undefined || before[key] === value) return [];
+        return [
+          {
+            sceneId: selectedSceneId,
+            dancerId,
+            before,
+            after: { ...before, [key]: value },
+          },
+        ];
+      });
+
+      await commitPositions({
+        changes,
+        kind: "align",
+        errorMessage: t.editor.errors.position,
+      });
+    },
+    [selectedSceneId, commitPositions, t],
+  );
+  /**
    * 選んだ人をまとめて消す。
    *
    * 他の編集と違って「確定後更新」にしている(先に Supabase から消えてから
@@ -302,6 +412,39 @@ export function StageContextMenu({ children }: Props) {
                 className="col-start-2 row-start-2 m-auto h-2 w-2 rounded-full bg-fg-muted"
               />
             </ContextMenuRadioGroup>
+
+            {/* 整列は2人以上いないと意味が無い。1人のときは束ごと出さない
+                （押せない項目を並べるより、無い方が読む量が減る） */}
+            {selectedCount > 1 && (
+              <>
+                <ContextMenuSeparator />
+                <ContextMenuLabel>
+                  <span>{t.editor.contextMenu.align.heading}</span>
+                  {/* 誰かを基準にするのではないことを、押す前に伝える */}
+                  <span className="text-caption font-normal normal-case tracking-normal">
+                    {t.editor.contextMenu.align.note}
+                  </span>
+                </ContextMenuLabel>
+                {/* 等間隔は両端の内側を配る操作なので、3人以上でないと何も
+                    起きない。押して無反応になるより、項目ごと出さない。
+                    Radix のメニューは並んだ項目を矢印キーで辿るので、
+                    hidden で隠すだけでは空振りする行が残ってしまう */}
+                {ALIGN_ACTIONS.filter(
+                  (action) =>
+                    action.mode !== "distribute" || selectedCount >= 3,
+                ).map((action) => (
+                  <ContextMenuItem
+                    key={action.labelKey}
+                    onSelect={() =>
+                      void applyAlignment(action.axis, action.mode)
+                    }
+                  >
+                    <action.icon size={16} aria-hidden className="shrink-0" />
+                    <span>{t.editor.contextMenu.align[action.labelKey]}</span>
+                  </ContextMenuItem>
+                ))}
+              </>
+            )}
 
             <ContextMenuSeparator />
 
