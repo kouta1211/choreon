@@ -181,7 +181,40 @@ export const ko = {
       assist: "말로 부탁하기",
       exportVideo: "영상으로 만들기",
       tour: "튜토리얼 시작하기",
+      shortcuts: "키보드 조작",
       settings: "설정",
+    },
+
+    shortcuts: {
+      title: "키보드 조작",
+      description: "만드는 화면(PC·태블릿)에서 쓸 수 있습니다.",
+      hint: "이 목록은 ? 키로도 열 수 있습니다",
+      groups: {
+        play: "재생",
+        select: "선택",
+        move: "이동",
+        undo: "되돌리기",
+      },
+      items: {
+        playPause: "재생 / 정지",
+        prevNextScene: "이전 / 다음 장면으로",
+        selectAll: "이 장면에 선 사람 전원 선택",
+        addToSelection: "선택에 추가",
+        subtractFromSelection: "감싼 사람을 선택에서 제외",
+        clearSelection: "선택 해제·열린 판 닫기",
+        nudgeSmall: (units: number) => `${units} 칸씩 이동`,
+        nudgeLarge: (units: number) => `${units} 칸씩 이동`,
+        contextMenu: "방향·정렬·삭제 메뉴 열기",
+        undo: "되돌리기",
+        redo: "다시 실행",
+        browserBack: "브라우저의 뒤로도 되돌리기가 됩니다",
+      },
+      keys: {
+        click: "클릭",
+        drag: "감싸기",
+        rightClick: "우클릭",
+        back: "뒤로",
+      },
     },
 
     dock: {

@@ -132,6 +132,9 @@ type UIState = {
   isTemplateSheetOpen: boolean;
   /** 動画の書き出しシートを開いているか */
   isExportSheetOpen: boolean;
+  /** キーボード操作の一覧を開いているか。
+   * **画面の状態**なので作品側には持たない（保存の差分に混ざる） */
+  isShortcutsOpen: boolean;
   /**
    * 曲のシートを開いているか。
    *
@@ -181,6 +184,7 @@ type UIState = {
   setAddDancerSheetOpen: (isOpen: boolean) => void;
   setTemplateSheetOpen: (isOpen: boolean) => void;
   setExportSheetOpen: (isOpen: boolean) => void;
+  setShortcutsOpen: (isOpen: boolean) => void;
   setMusicSheetOpen: (isOpen: boolean) => void;
   /** 確認ダイアログを出す。実行された場合の処理はrequest.onConfirmに持たせる */
   requestConfirm: (request: ConfirmRequest) => void;
@@ -285,6 +289,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   isAddDancerSheetOpen: false,
   isTemplateSheetOpen: false,
   isExportSheetOpen: false,
+  isShortcutsOpen: false,
   isMusicSheetOpen: false,
   confirm: null,
   authDialogMode: null,
@@ -420,6 +425,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   setAddDancerSheetOpen: (isOpen) => set({ isAddDancerSheetOpen: isOpen }),
   setTemplateSheetOpen: (isOpen) => set({ isTemplateSheetOpen: isOpen }),
   setExportSheetOpen: (isOpen) => set({ isExportSheetOpen: isOpen }),
+  setShortcutsOpen: (isOpen) => set({ isShortcutsOpen: isOpen }),
   setMusicSheetOpen: (isOpen) => set({ isMusicSheetOpen: isOpen }),
   requestConfirm: (request) => set({ confirm: request }),
   closeConfirm: () => set({ confirm: null }),

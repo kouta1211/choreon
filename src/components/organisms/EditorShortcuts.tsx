@@ -23,6 +23,7 @@ function isTextEntryElement(target: EventTarget | null): boolean {
  *   Space … 再生 / 停止
  *   ← →  … 前後のシーンへ
  *   Ctrl/⌘ + A … いまのシーンに立っている全員を選ぶ
+ *   ?    … キーボード操作の一覧
  *   Esc  … 選択解除、開いているシート・ダイアログを閉じる
  *
  * ダンサーの矢印キー微調整(DraggableDancerIcon)と履歴のCtrl+Z
@@ -70,8 +71,18 @@ export function EditorShortcuts() {
       // ほかの修飾キー付きは履歴など別の担当に任せる
       if (event.ctrlKey || event.metaKey || event.altKey) return;
 
+      /* ? でキーボード操作の一覧。**PC の操作は画面に痕跡が残らない**ので、
+         入口をここにも置く（メニューの中だけだと見つからない）。
+         Shift + / なので、Shift は上の除外に入れていない */
+      if (event.key === "?") {
+        event.preventDefault();
+        ui.setShortcutsOpen(!ui.isShortcutsOpen);
+        return;
+      }
+
       if (event.key === "Escape") {
         if (ui.confirm) return; // ダイアログ自身が閉じる
+        if (ui.isShortcutsOpen) return; // 同上（一覧が自分で閉じる）
         if (ui.isTemplateSheetOpen) {
           event.preventDefault();
           ui.setTemplateSheetOpen(false);
@@ -100,6 +111,7 @@ export function EditorShortcuts() {
         ui.isTemplateSheetOpen ||
         ui.isAddDancerSheetOpen ||
         ui.isSceneSheetOpen ||
+        ui.isShortcutsOpen ||
         ui.confirm
       ) {
         return;

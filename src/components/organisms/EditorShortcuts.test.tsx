@@ -99,3 +99,55 @@ describe("EditorShortcuts の Ctrl/⌘ + A", () => {
     expect(useUIStore.getState().selectedDancerIds).toEqual([]);
   });
 });
+
+describe("EditorShortcuts の ?", () => {
+  beforeEach(() => {
+    hydrate();
+    useUIStore.setState({ isShortcutsOpen: false, selectedDancerIds: [] });
+  });
+
+  it("? でキーボード操作の一覧が開く", () => {
+    render(<EditorShortcuts />);
+    fireEvent.keyDown(window, { key: "?" });
+    expect(useUIStore.getState().isShortcutsOpen).toBe(true);
+  });
+
+  it("もう一度押すと閉じる", () => {
+    render(<EditorShortcuts />);
+    fireEvent.keyDown(window, { key: "?" });
+    fireEvent.keyDown(window, { key: "?" });
+    expect(useUIStore.getState().isShortcutsOpen).toBe(false);
+  });
+
+  /* 名前や秒数を打っている最中の「?」で板が出ては困る */
+  it("文字を打っている間は開かない", () => {
+    const { container } = render(
+      <>
+        <EditorShortcuts />
+        <input />
+      </>,
+    );
+    const field = container.querySelector("input") as HTMLInputElement;
+    fireEvent.keyDown(field, { key: "?" });
+    expect(useUIStore.getState().isShortcutsOpen).toBe(false);
+  });
+
+  /* 一覧は自分で閉じる。ここで選択まで解くと、閉じたときに
+     選んでいた人が消えている */
+  it("一覧が開いている間、Esc で選択を解かない", () => {
+    useUIStore.setState({
+      isShortcutsOpen: true,
+      selectedDancerIds: ["dancer-1"],
+    });
+    render(<EditorShortcuts />);
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(useUIStore.getState().selectedDancerIds).toEqual(["dancer-1"]);
+  });
+
+  it("一覧が開いている間、Space で再生を始めない", () => {
+    useUIStore.setState({ isShortcutsOpen: true, playToggleRequestedAt: 0 });
+    render(<EditorShortcuts />);
+    fireEvent.keyDown(window, { key: " " });
+    expect(useUIStore.getState().playToggleRequestedAt).toBe(0);
+  });
+});

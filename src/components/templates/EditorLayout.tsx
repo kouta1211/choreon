@@ -12,6 +12,7 @@ import { SceneDock } from "@/components/organisms/SceneDock";
 import { SceneSidebar } from "@/components/organisms/SceneSidebar";
 import { EditorSidePanel } from "@/components/organisms/EditorSidePanel";
 import { EditorShortcuts } from "@/components/organisms/EditorShortcuts";
+import { ShortcutsDialog } from "@/components/organisms/ShortcutsDialog";
 import { EditorTour } from "@/components/organisms/EditorTour";
 import { NarrowScreenNotice } from "@/components/organisms/NarrowScreenNotice";
 import { UnsavedChangesGuard } from "@/components/organisms/UnsavedChangesGuard";
@@ -187,6 +188,7 @@ export function EditorLayout({
             onClose={() => setExportSheetOpen(false)}
           />
           <EditorShortcuts />
+          <ShortcutsDialog />
           <UnsavedChangesGuard />
           <EditorTour />
           {/* スマホ幅では、作成画面の上に案内を被せる（2026-08-18 の方針転換）。

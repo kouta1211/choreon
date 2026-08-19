@@ -202,7 +202,42 @@ export const ja = {
       assist: "言葉で頼む",
       exportVideo: "動画にする",
       tour: "チュートリアルを開始する",
+      shortcuts: "キーボード操作",
       settings: "設定",
+    },
+
+    /** キーボードとマウスでできること。組と並びは
+        features/canvas/lib/shortcutList.ts が持つ */
+    shortcuts: {
+      title: "キーボード操作",
+      description: "作る画面（PC・タブレット）で使えます。",
+      hint: "この一覧は ? キーでも開けます",
+      groups: {
+        play: "再生",
+        select: "選ぶ",
+        move: "動かす",
+        undo: "やり直す",
+      },
+      items: {
+        playPause: "再生 / 停止",
+        prevNextScene: "前の / 次のシーンへ",
+        selectAll: "そのシーンに立っている全員を選ぶ",
+        addToSelection: "選択に足す",
+        subtractFromSelection: "囲んだ人を選択から外す",
+        clearSelection: "選択を解く・開いている板を閉じる",
+        nudgeSmall: (units: number) => `${units} マスずつ動かす`,
+        nudgeLarge: (units: number) => `${units} マスずつ動かす`,
+        contextMenu: "向き・整列・削除のメニューを出す",
+        undo: "元に戻す",
+        redo: "やり直す",
+        browserBack: "ブラウザの戻るでも、元に戻せます",
+      },
+      keys: {
+        click: "クリック",
+        drag: "囲む",
+        rightClick: "右クリック",
+        back: "戻る",
+      },
     },
 
     dock: {

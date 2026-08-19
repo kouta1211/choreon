@@ -181,7 +181,40 @@ export const en = {
       assist: "Ask in words",
       exportVideo: "Make a video",
       tour: "Start the tutorial",
+      shortcuts: "Keyboard shortcuts",
       settings: "Settings",
+    },
+
+    shortcuts: {
+      title: "Keyboard shortcuts",
+      description: "Available in the editor (desktop and tablet).",
+      hint: "Press ? to open this list",
+      groups: {
+        play: "Playback",
+        select: "Selecting",
+        move: "Moving",
+        undo: "Undoing",
+      },
+      items: {
+        playPause: "Play / pause",
+        prevNextScene: "Previous / next scene",
+        selectAll: "Select everyone in this scene",
+        addToSelection: "Add to the selection",
+        subtractFromSelection: "Remove the enclosed dancers",
+        clearSelection: "Clear the selection / close panels",
+        nudgeSmall: (units: number) => `Move by ${units} squares`,
+        nudgeLarge: (units: number) => `Move by ${units} squares`,
+        contextMenu: "Open facing, align and delete",
+        undo: "Undo",
+        redo: "Redo",
+        browserBack: "The browser's Back also undoes",
+      },
+      keys: {
+        click: "click",
+        drag: "drag",
+        rightClick: "right click",
+        back: "Back",
+      },
     },
 
     dock: {
