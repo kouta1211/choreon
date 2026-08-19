@@ -94,3 +94,19 @@ export async function deleteDancer(
   const { error } = await supabase.from("dancers").delete().eq("id", dancerId);
   if (error) throw error;
 }
+
+/**
+ * 複数のダンサーをまとめて消す。1人ずつdeleteすると人数ぶん往復することに
+ * なるため、1回のリクエストにまとめる(createDancersと同じ考え方)。
+ * 配置(positions)はダンサーへの外部キーで連鎖して消える(schema.sql参照)。
+ */
+export async function deleteDancers(
+  supabase: SupabaseClient<Database>,
+  dancerIds: string[],
+): Promise<void> {
+  if (dancerIds.length === 0) return;
+
+  const { error } = await supabase.from("dancers").delete().in("id", dancerIds);
+
+  if (error) throw error;
+}

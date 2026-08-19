@@ -276,6 +276,10 @@ function DraggableDancerIconImpl({
     <motion.div
       ref={setRefs}
       data-testid="dancer-icon"
+      /* 右クリックのメニューが「誰の上で押されたか」を、この印から辿る
+         （StageContextMenu）。ステージ全体で1つのメニューを持つので、
+         当たり判定は DOM を遡って探す形になる */
+      data-dancer-id={dancer.id}
       // 掴んでいる間だけ手前へ出す。誰にもz順を与えていないので、素のままだと
       // DOMで後ろにいるダンサーの下へ潜り、掴んだ本人が隠れてしまう
       className={`absolute touch-none select-none ${

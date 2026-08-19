@@ -32,7 +32,8 @@ export const en = {
     arc: "Arc",
     wedgeIn: "Opening out (narrow upstage)",
     wedgeOut: "Closing in (wide upstage)",
-    triangle: (rows: number[]) => `Triangle (${rows[0]} back, ${rows[1]} front)`,
+    triangle: (rows: number[]) =>
+      `Triangle (${rows[0]} back, ${rows[1]} front)`,
     triangleDown: (rows: number[]) =>
       `Inverted triangle (${rows[0]} back, ${rows[1]} front)`,
     v: (rows: number[]) => `V (${rows.join("-")} from upstage)`,
@@ -168,7 +169,8 @@ export const en = {
       },
       swipe: {
         label: "Swipe to change scene",
-        description: "Swipe the stage with a finger for the next or previous scene (a mouse drag draws a selection box instead)",
+        description:
+          "Swipe the stage with a finger for the next or previous scene (a mouse drag draws a selection box instead)",
       },
       thisProject: "This piece",
       music: "Music",
@@ -191,7 +193,8 @@ export const en = {
       hideTimeline: "Collapse the timeline",
       showTimeline: "Show the timeline",
       playFromHere: "Play from the scene you are on",
-      playFrom: (name: string) => `Play from "${name}" (where you started last time)`,
+      playFrom: (name: string) =>
+        `Play from "${name}" (where you started last time)`,
     },
 
     scenes: {
@@ -237,6 +240,28 @@ export const en = {
       dragStart: "Started moving the dancer.",
       dragEnd: "Placed the dancer.",
       dragCancel: "Cancelled moving the dancer.",
+    },
+
+    contextMenu: {
+      facing: {
+        heading: "Facing",
+        note: "left/right as seen from the audience",
+        front: "the audience",
+        frontLeft: "audience-left",
+        left: "left",
+        backLeft: "back-left",
+        back: "the back",
+        backRight: "back-right",
+        right: "right",
+        frontRight: "audience-right",
+        turn: (label: string) => `Face ${label}`,
+      },
+      deleteOne: "Delete",
+      deleteMany: (count: number) => `Delete ${count} dancers`,
+      deleteManyTitle: (count: number) => `Delete these ${count} dancers?`,
+      deleteManyMeta: (positions: number) => `${positions} placements`,
+      selectAll: "Select everyone",
+      addDancer: "Add dancers",
     },
 
     errors: {
@@ -311,7 +336,8 @@ export const en = {
     lastViewed: {
       label: "Last viewed",
     },
-    tagline: "The formation sheets you hand out at rehearsal, moving in time with the track.",
+    tagline:
+      "The formation sheets you hand out at rehearsal, moving in time with the track.",
     guestStart: "Start as a guest",
     withTour: "Start with the walkthrough",
     tourAsk: {
@@ -397,7 +423,8 @@ export const en = {
     resetFailed: "Could not empty the piece",
     unreadableFile: "Could not read the file",
     wrongShape: "That file is not the right shape",
-    wrongVersion: "This format cannot be read (it was exported by another version)",
+    wrongVersion:
+      "This format cannot be read (it was exported by another version)",
     noProject: "There is no piece in the file",
     incomplete: "Dancers, scenes or positions are missing",
   },
@@ -484,8 +511,10 @@ export const en = {
     enable: "Anyone with the link can view",
     resume: "Share with this link again",
     stop: "Stop sharing",
-    enabledNote: "Sharing is on. People who open the link get a view-only screen",
-    disabledNote: "Not sharing right now. The link will not open, even for people who have it",
+    enabledNote:
+      "Sharing is on. People who open the link get a view-only screen",
+    disabledNote:
+      "Not sharing right now. The link will not open, even for people who have it",
     noKey:
       "This piece does not have a sharing key yet. Run supabase/schema.sql from the Supabase SQL Editor to enable it.",
     everyone: "Link for everyone",
@@ -560,7 +589,8 @@ export const en = {
       alreadyOn: (name: string) => `${name} is already showing`,
       alreadyOff: (name: string) => `${name} is already hidden`,
       opened: (name: string) => `Opened ${name}`,
-      selectScene: (number: number, name: string) => `Opened ${number}. ${name}`,
+      selectScene: (number: number, name: string) =>
+        `Opened ${number}. ${name}`,
     },
     nothingToDo: "There is nothing to do right now",
     errors: {
@@ -590,8 +620,10 @@ export const en = {
       noFormation: "There is no formation to look at",
       emptyScene: "Nobody is in this scene yet",
       unavailable: "No notes came back. Please try again in a moment",
-      modelMissing: "The notes service could not be found. This needs a fix on our side",
-      rejected: "The notes service refused the key. This needs a fix on our side",
+      modelMissing:
+        "The notes service could not be found. This needs a fix on our side",
+      rejected:
+        "The notes service refused the key. This needs a fix on our side",
       rateLimited:
         "The request limit has been reached. Please leave it a while and try again",
       busy: "The notes service is busy. Please wait a moment and try again",
@@ -642,7 +674,7 @@ export const en = {
     contains:
       "In the video: the stage, the grid, the dancers (with their facing triangle), the upstage/downstage labels, and the clock.",
     omits:
-      "The track is included if you turn on \"Sound\" (off by default). Metronome clicks are never included. Share links still never carry the track.",
+      'The track is included if you turn on "Sound" (off by default). Metronome clicks are never included. Share links still never carry the track.',
     includeTitle: "Also draw",
     includeAudioTitle: "Sound",
     includeAudio: "Include the track",
@@ -650,7 +682,8 @@ export const en = {
       "It starts from the offset you set and runs for the length of the video. Nothing plays while exporting.",
     includeAudioWarning:
       "This video will contain the track. Be careful who you hand it to (share links still never carry the track).",
-    includePathsNote: "Paths you bent by hand come out the same shape as on screen",
+    includePathsNote:
+      "Paths you bent by hand come out the same shape as on screen",
     includeNote:
       "All off by default. Only what you pick here goes into the video, regardless of what is on screen.",
     saved: "Video saved",
@@ -704,7 +737,8 @@ export const en = {
       plus: "One more",
       count: "How many to add",
       people: "dancers",
-      autoNote: "Names and colours are picked for you (you can change them later)",
+      autoNote:
+        "Names and colours are picked for you (you can change them later)",
       spotsNote:
         "They go into the free squares in the scene you are looking at, filling outwards from the centre. Nobody overlaps, so you can drag them straight away.",
       submit: (n: number) => (n === 1 ? "Add 1 dancer" : `Add ${n} dancers`),
@@ -770,7 +804,7 @@ export const en = {
       project: "Changes here apply to this piece only.",
       home: "Changes here apply to every piece.",
       newProjectOnly:
-        "Only the default tempo under \"Playback\" is a starting value for pieces you make from now on (it does not change the piece you have open).",
+        'Only the default tempo under "Playback" is a starting value for pieces you make from now on (it does not change the piece you have open).',
       hasOverride: (n: number) => `${n} setting(s) are set for this piece only`,
       clear: "Stop using piece-only settings",
       cleared: "Piece-only settings removed",
@@ -821,7 +855,7 @@ export const en = {
       countIn: {
         label: "Count-in",
         description:
-          "Beats to sound after you press play, before anything starts moving. The count shows in the middle of the screen. In pieces with no track, the clicks carry on afterwards if \"Sound the click\" is on (with a track, only the track plays).",
+          'Beats to sound after you press play, before anything starts moving. The count shows in the middle of the screen. In pieces with no track, the clicks carry on afterwards if "Sound the click" is on (with a track, only the track plays).',
         off: "Off",
         beats: (n: number) => `${n} beats`,
       },
@@ -867,7 +901,8 @@ export const en = {
       },
       swipe: {
         label: "Swipe to change scene",
-        description: "Swipe the stage with a finger to move to the next or previous scene (a mouse drag draws a selection box instead).",
+        description:
+          "Swipe the stage with a finger to move to the next or previous scene (a mouse drag draws a selection box instead).",
       },
     },
 
@@ -896,7 +931,8 @@ export const en = {
       import: "Import from a file",
       reset: {
         label: "Erase everything in this piece",
-        description: "Deletes every scene and every dancer. The piece itself stays.",
+        description:
+          "Deletes every scene and every dancer. The piece itself stays.",
       },
     },
 
@@ -906,7 +942,8 @@ export const en = {
       summaryGuest: "Sign in, reset settings",
       switch: {
         label: "Sign in with another account",
-        description: "Signs out of this account and goes to the sign-in screen.",
+        description:
+          "Signs out of this account and goes to the sign-in screen.",
         confirmTitle: "Sign in with another account?",
         confirmDescription:
           "You will be signed out of this account first. Pieces belong to the account that made them, so another account will not see them.",

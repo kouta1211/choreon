@@ -22,6 +22,7 @@ import { EmptyStage, Stage } from "@/components/organisms/Stage";
 import { HistoryControls } from "@/components/organisms/HistoryControls";
 import { TemplateButton } from "@/components/organisms/TemplateButton";
 import { DancerLayer } from "@/components/organisms/DancerLayer";
+import { StageContextMenu } from "@/components/organisms/StageContextMenu";
 import { ScrubProgressBar } from "@/components/molecules/ScrubProgressBar";
 import {
   positionAt,
@@ -562,49 +563,54 @@ export function CanvasBoard({
       offsetX={groupOffsetX}
       offsetY={groupOffsetY}
     >
-    <DndContext
-      sensors={sensors}
-      modifiers={
-        isSnapEnabled && gridSnapModifier ? [gridSnapModifier] : undefined
-      }
-      accessibility={accessibility}
-      onDragStart={handleDragStart}
-      onDragMove={handleDragMove}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
-    >
-      <Stage
-        ref={stageRef}
-        scrubHandlers={stagePointerHandlers}
-        isSwipeEnabled={isSwipeEnabled}
-        scrubIndicator={<ScrubProgressBar />}
-        widthUnits={project.stageWidth}
-        heightUnits={project.stageHeight}
-        belowStageLeft={<TemplateButton />}
-        belowStageRight={<HistoryControls />}
+      <DndContext
+        sensors={sensors}
+        modifiers={
+          isSnapEnabled && gridSnapModifier ? [gridSnapModifier] : undefined
+        }
+        accessibility={accessibility}
+        onDragStart={handleDragStart}
+        onDragMove={handleDragMove}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
       >
-        {/* 囲んで選ぶ枠。出し入れと大きさは useMarqueeSelection が
+        {/* 右クリック（指なら長押し）のメニュー。ステージ全体で1つ持ち、
+          押された場所から「誰の上か」を決める。ここで包んでいるのは、
+          ステージの下のボタン列まで含めて当たり判定を1箇所にするため */}
+        <StageContextMenu>
+          <Stage
+            ref={stageRef}
+            scrubHandlers={stagePointerHandlers}
+            isSwipeEnabled={isSwipeEnabled}
+            scrubIndicator={<ScrubProgressBar />}
+            widthUnits={project.stageWidth}
+            heightUnits={project.stageHeight}
+            belowStageLeft={<TemplateButton />}
+            belowStageRight={<HistoryControls />}
+          >
+            {/* 囲んで選ぶ枠。出し入れと大きさは useMarqueeSelection が
             直に書き換える（既定は display:none）
 
             角丸だけ固定値(3px)にしてある。ここを --radius から取ると、
             角を大きく取るテーマで枠が「カード」に見えて、掴んで引いている
             範囲だという手触りが消える。囲む枠は、どのテーマでも角が立って
             いる方が読める（Finder も Figma もそう）。 */}
-        <div
-          ref={marqueeRef}
-          aria-hidden
-          style={{ display: "none" }}
-          className="pointer-events-none absolute z-10 rounded-[3px] border border-accent bg-accent/12"
-        />
-        <DancerLayer
-          stageWidthUnits={project.stageWidth}
-          stageHeightUnits={project.stageHeight}
-          onRotateEnd={handleRotateEnd}
-          onNudge={handleNudge}
-          onCurveControlPointChange={handleCurveControlPointChange}
-        />
-      </Stage>
-    </DndContext>
+            <div
+              ref={marqueeRef}
+              aria-hidden
+              style={{ display: "none" }}
+              className="pointer-events-none absolute z-10 rounded-[3px] border border-accent bg-accent/12"
+            />
+            <DancerLayer
+              stageWidthUnits={project.stageWidth}
+              stageHeightUnits={project.stageHeight}
+              onRotateEnd={handleRotateEnd}
+              onNudge={handleNudge}
+              onCurveControlPointChange={handleCurveControlPointChange}
+            />
+          </Stage>
+        </StageContextMenu>
+      </DndContext>
     </GroupDragProvider>
   );
 }

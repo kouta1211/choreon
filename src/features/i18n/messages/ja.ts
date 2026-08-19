@@ -63,9 +63,11 @@ export const ja = {
       "フォーメーションを選ぶには2人以上が必要です。ヘッダーの人物アイコンからダンサーを追加してください。",
     castCount: (n: number) => `${n}人`,
     current: "いま",
-    matchingCast: (n: number) => `いまステージにいる${n}人に合わせて表示しています`,
+    matchingCast: (n: number) =>
+      `いまステージにいる${n}人に合わせて表示しています`,
     forCast: (n: number) => `${n}人ぶんの形です。`,
-    leftOver: (n: number) => `余る${n}人はいまの位置のまま残ります（消えません）。`,
+    leftOver: (n: number) =>
+      `余る${n}人はいまの位置のまま残ります（消えません）。`,
     emptySpots: (n: number) => `${n}点は空きになります（前列から埋めます）。`,
     title: "フォーメーション",
     needsTwo: "2人以上",
@@ -187,7 +189,8 @@ export const ja = {
       },
       swipe: {
         label: "払ってシーンを送る",
-        description: "ステージを指で払うと前後のシーンへ（マウスのドラッグは囲んで選ぶ操作です）",
+        description:
+          "ステージを指で払うと前後のシーンへ（マウスのドラッグは囲んで選ぶ操作です）",
       },
       thisProject: "この作品",
       music: "曲",
@@ -257,6 +260,31 @@ export const ja = {
       dragStart: "ダンサーの移動を開始しました。",
       dragEnd: "ダンサーの位置を確定しました。",
       dragCancel: "ダンサーの移動をキャンセルしました。",
+    },
+
+    /** 右クリックのメニュー(PC 特化)。ダンサーの上と、ステージの地とで中身が変わる */
+    contextMenu: {
+      facing: {
+        heading: "向き",
+        /** 升の並びだけでは、左右がどちらから見た向きか分からない */
+        note: "左右は客席から見て",
+        front: "客席",
+        frontLeft: "客席の左",
+        left: "左",
+        backLeft: "奥の左",
+        back: "奥",
+        backRight: "奥の右",
+        right: "右",
+        frontRight: "客席の右",
+        /** 升の読み上げ名 */
+        turn: (label: string) => `${label}を向く`,
+      },
+      deleteOne: "削除",
+      deleteMany: (count: number) => `${count}人を削除`,
+      deleteManyTitle: (count: number) => `${count}人を削除しますか?`,
+      deleteManyMeta: (positions: number) => `${positions} 件の配置`,
+      selectAll: "全員を選ぶ",
+      addDancer: "人を足す",
     },
 
     errors: {
@@ -616,7 +644,8 @@ export const ja = {
       emptyScene: "このシーンにはまだ誰も居ません",
       unavailable: "見てもらえませんでした。しばらくしてからお試しください",
       // 待っても直らないもの。文言で「こちらの直しが要る」と分かるようにする
-      modelMissing: "見てもらう相手が見つかりませんでした。設定の直しが必要です",
+      modelMissing:
+        "見てもらう相手が見つかりませんでした。設定の直しが必要です",
       rejected: "見てもらうための鍵が断られました。設定の直しが必要です",
       // こちらは待てば直る
       rateLimited:
@@ -773,7 +802,8 @@ export const ja = {
     },
     badges: {
       blindSpot: {
-        text: (name: string) => `${name}: 手前の人に重なって、客席から見えません`,
+        text: (name: string) =>
+          `${name}: 手前の人に重なって、客席から見えません`,
         heading: "顔被りチェック",
         moveOut: "横へずらして顔を出す",
         moveOutNote: "いちばん少なく動く方へ。元に戻すで消えます",
@@ -864,7 +894,8 @@ export const ja = {
       summary: "カウントイン・既定の速さ・シーンの間隔",
       countIn: {
         label: "カウントイン",
-        description: "再生を押してから、実際に動き出すまでに鳴らす拍。画面の真ん中に残りが出ます。曲を入れていない作品では、数え終わったあとも「クリックを鳴らす」を入れていれば拍が続きます（曲があるときは曲だけが鳴ります）",
+        description:
+          "再生を押してから、実際に動き出すまでに鳴らす拍。画面の真ん中に残りが出ます。曲を入れていない作品では、数え終わったあとも「クリックを鳴らす」を入れていれば拍が続きます（曲があるときは曲だけが鳴ります）",
         off: "なし",
         beats: (n: number) => `${n}拍`,
       },
@@ -888,7 +919,8 @@ export const ja = {
         "下の4つは、エディタの メニュー → ステージの見せ方 と同じスイッチです。どちらから変えても同じ状態を指します。",
       dancerName: {
         label: "ダンサー名",
-        description: "人数が多いと名前で埋まる。選択時だけにすると隊形が読みやすい",
+        description:
+          "人数が多いと名前で埋まる。選択時だけにすると隊形が読みやすい",
         always: "常に",
         selected: "選択時",
         never: "出さない",
@@ -903,11 +935,13 @@ export const ja = {
       },
       blindSpot: {
         label: "顔被りチェック",
-        description: "手前の人の真後ろに入って、客席から見えない人に印を付けます",
+        description:
+          "手前の人の真後ろに入って、客席から見えない人に印を付けます",
       },
       swipe: {
         label: "払ってシーンを送る",
-        description: "ステージを指で払うと、前後のシーンへ移ります（マウスのドラッグは囲んで選ぶ操作です）",
+        description:
+          "ステージを指で払うと、前後のシーンへ移ります（マウスのドラッグは囲んで選ぶ操作です）",
       },
     },
 
@@ -934,7 +968,7 @@ export const ja = {
       },
       import: "ファイルから取り込む",
       // 「削除」にはしない。**作品そのものは残る**(消えるのは中身だけ)。
-       // 作品を消すのは一覧のゴミ箱で、そちらと同じ言葉にすると取り違える
+      // 作品を消すのは一覧のゴミ箱で、そちらと同じ言葉にすると取り違える
       reset: {
         label: "この作品の中身を全部消す",
         description: "シーンとダンサーが全部消えます。作品そのものは残ります",

@@ -64,6 +64,10 @@ export function useMarqueeSelection({
   const onPointerDown = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
       if (!selectedSceneId) return;
+      /* 右ボタン・中ボタンでは囲み始めない。右クリックはメニューの入口
+         （StageContextMenu）で、押したまま少し動かすと枠が出たまま
+         メニューが開いてしまう */
+      if (event.button !== 0) return;
       /* ダンサー本体とボタンの上から始まった指は、それぞれの持ち主に譲る
          （払って送る側と同じ除外。ダンサーは dnd-kit が受け取る） */
       const target = event.target as HTMLElement;

@@ -53,7 +53,8 @@ export const ko = {
     current: "현재",
     matchingCast: (n: number) => `무대에 있는 ${n}명에 맞춰 보여 주고 있습니다`,
     forCast: (n: number) => `${n}명을 위한 모양입니다.`,
-    leftOver: (n: number) => `남는 ${n}명은 지금 위치에 그대로 있습니다(사라지지 않습니다).`,
+    leftOver: (n: number) =>
+      `남는 ${n}명은 지금 위치에 그대로 있습니다(사라지지 않습니다).`,
     emptySpots: (n: number) => `${n}자리가 비게 됩니다(앞줄부터 채웁니다).`,
     title: "포메이션",
     needsTwo: "2명 이상",
@@ -74,7 +75,8 @@ export const ko = {
   themeSheet: {
     backToList: "목록으로 돌아가기",
     textureTitle: "배경 재질",
-    textureNote: "바탕 위에 옅게 겹치는 장식입니다. 무대 안에는 적용되지 않습니다.",
+    textureNote:
+      "바탕 위에 옅게 겹치는 장식입니다. 무대 안에는 적용되지 않습니다.",
     themeCount: (n: number) => `${n}종`,
     previewMode: "모드",
     title: "화면 모양",
@@ -167,7 +169,8 @@ export const ko = {
       },
       swipe: {
         label: "밀어서 장면 넘기기",
-        description: "무대를 손가락으로 밀면 앞뒤 장면으로(마우스 드래그는 둘러싸서 선택하는 조작입니다)",
+        description:
+          "무대를 손가락으로 밀면 앞뒤 장면으로(마우스 드래그는 둘러싸서 선택하는 조작입니다)",
       },
       thisProject: "이 작품",
       music: "음악",
@@ -236,6 +239,28 @@ export const ko = {
       dragStart: "댄서 이동을 시작했습니다.",
       dragEnd: "댄서 위치를 확정했습니다.",
       dragCancel: "댄서 이동을 취소했습니다.",
+    },
+
+    contextMenu: {
+      facing: {
+        heading: "방향",
+        note: "좌우는 객석에서 본 기준",
+        front: "객석",
+        frontLeft: "객석 왼쪽",
+        left: "왼쪽",
+        backLeft: "뒤 왼쪽",
+        back: "뒤",
+        backRight: "뒤 오른쪽",
+        right: "오른쪽",
+        frontRight: "객석 오른쪽",
+        turn: (label: string) => `${label} 방향으로`,
+      },
+      deleteOne: "삭제",
+      deleteMany: (count: number) => `${count}명 삭제`,
+      deleteManyTitle: (count: number) => `${count}명을 삭제할까요?`,
+      deleteManyMeta: (positions: number) => `배치 ${positions}건`,
+      selectAll: "전원 선택",
+      addDancer: "댄서 추가",
     },
 
     errors: {
@@ -480,8 +505,10 @@ export const ko = {
     enable: "링크를 아는 사람이 볼 수 있음",
     resume: "이 링크로 다시 공유하기",
     stop: "공유 그만두기",
-    enabledNote: "지금 공유 중입니다. 링크를 연 사람에게는 보기 전용 화면이 열립니다",
-    disabledNote: "지금은 공유하고 있지 않습니다. 링크를 가진 사람도 열 수 없습니다",
+    enabledNote:
+      "지금 공유 중입니다. 링크를 연 사람에게는 보기 전용 화면이 열립니다",
+    disabledNote:
+      "지금은 공유하고 있지 않습니다. 링크를 가진 사람도 열 수 없습니다",
     noKey:
       "이 작품에는 아직 공유용 키가 없습니다. Supabase SQL Editor에서 supabase/schema.sql 을 실행하면 사용할 수 있습니다.",
     everyone: "모두에게 줄 링크",
@@ -633,8 +660,7 @@ export const ko = {
       `내보내는 중… ${seconds}초 남았습니다. 이 화면을 닫지 말고 기다려 주세요.`,
     cancel: "중단",
     note: "내보내기는 작품과 같은 시간이 걸립니다(실제로 재생하면서 녹화하기 때문입니다).",
-    contains:
-      "들어가는 것: 무대·격자·댄서(방향 삼각형 포함)·위아래 표시·시각.",
+    contains: "들어가는 것: 무대·격자·댄서(방향 삼각형 포함)·위아래 표시·시각.",
     omits:
       "곡은 「소리」에서 선택하면 들어갑니다(기본은 들어가지 않습니다). 메트로놈 클릭은 들어가지 않습니다. 공유 링크에는 지금까지처럼 곡이 따라가지 않습니다.",
     includeTitle: "함께 그릴 것",
@@ -665,7 +691,8 @@ export const ko = {
       "곡을 준비하기 전에도 안무의 속도를 귀로 확인할 수 있습니다. 재생 중에만 소리가 납니다.",
     metronome: "메트로놈",
     click: "클릭음 켜기",
-    clickWithMusic: "음악이 있을 때는 클릭이 울리지 않습니다(음악에 맞추기 때문)",
+    clickWithMusic:
+      "음악이 있을 때는 클릭이 울리지 않습니다(음악에 맞추기 때문)",
     bpm: "속도(BPM)",
     beatsPerBar: "박자",
     beatsPerBarNote:
@@ -733,7 +760,8 @@ export const ko = {
     },
     badges: {
       blindSpot: {
-        text: (name: string) => `${name}: 앞사람에 가려 객석에서 보이지 않습니다`,
+        text: (name: string) =>
+          `${name}: 앞사람에 가려 객석에서 보이지 않습니다`,
         heading: "가림 확인",
         moveOut: "옆으로 비켜 얼굴을 보이게",
         moveOutNote: "가장 적게 움직이는 쪽으로. 실행 취소로 되돌아갑니다",
@@ -813,7 +841,8 @@ export const ko = {
       summary: "카운트인 · 기본 속도 · 장면 간격",
       countIn: {
         label: "카운트인",
-        description: "재생을 누른 뒤 실제로 움직이기까지 울리는 박입니다. 남은 수는 화면 한가운데에 표시됩니다. 음악이 없는 작품에서는 '클릭 소리'가 켜져 있으면 센 뒤에도 박이 이어집니다(음악이 있으면 음악만 재생됩니다).",
+        description:
+          "재생을 누른 뒤 실제로 움직이기까지 울리는 박입니다. 남은 수는 화면 한가운데에 표시됩니다. 음악이 없는 작품에서는 '클릭 소리'가 켜져 있으면 센 뒤에도 박이 이어집니다(음악이 있으면 음악만 재생됩니다).",
         off: "없음",
         beats: (n: number) => `${n}박`,
       },
@@ -859,7 +888,8 @@ export const ko = {
       },
       swipe: {
         label: "밀어서 장면 넘기기",
-        description: "무대를 손가락으로 밀면 앞뒤 장면으로 넘어갑니다(마우스 드래그는 둘러싸서 선택하는 조작입니다).",
+        description:
+          "무대를 손가락으로 밀면 앞뒤 장면으로 넘어갑니다(마우스 드래그는 둘러싸서 선택하는 조작입니다).",
       },
     },
 
@@ -912,8 +942,7 @@ export const ko = {
       },
       resetSettings: {
         label: "설정 초기화",
-        description:
-          "이 화면의 선택만 되돌립니다. 작품은 건드리지 않습니다.",
+        description: "이 화면의 선택만 되돌립니다. 작품은 건드리지 않습니다.",
       },
     },
   },
