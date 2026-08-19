@@ -14,6 +14,8 @@ type Props = {
   stageHeightUnits: number;
   isSelected: boolean;
   sizePx: number;
+  /** 手前のコマとの間に矢印を出すか。先頭は入ってくる元が無いので出さない */
+  showArrow: boolean;
   onSelect: () => void;
 };
 
@@ -32,6 +34,7 @@ export function SceneStripCard({
   stageHeightUnits,
   isSelected,
   sizePx,
+  showArrow,
   onSelect,
 }: Props) {
   // attributes は渡さない。SceneRow と同じ理由で、キーボードでの
@@ -49,6 +52,16 @@ export function SceneStripCard({
         isDragging ? "relative z-10 opacity-70" : ""
       }`}
     >
+      {/* 順に流れていくものだと読めるようにする矢印。**秒数は運ばない**
+          （どの移動も同じ秒数なので、数を出しても言うことが無い） */}
+      {showArrow && (
+        <span
+          aria-hidden
+          className="shrink-0 self-center px-0.5 text-caption text-fg-muted"
+        >
+          →
+        </span>
+      )}
       <SceneThumbnail
         scene={scene}
         thumbnail={thumbnail}

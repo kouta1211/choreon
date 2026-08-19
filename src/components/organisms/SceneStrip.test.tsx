@@ -46,12 +46,19 @@ describe("SceneStrip", () => {
     ]);
   });
 
-  /* この形では移動がどれも同じ秒数なので、コマごとに言うことが無い。
-     数字が消えたぶん、コマそのものが読みやすい */
+  /* この形では移動がどれも同じ秒数なので、コマごとに言う数字が無い */
   it("秒数を出さない", () => {
     show();
-    expect(screen.queryByText(/^→ /)).toBeNull();
     expect(screen.queryByText(/s$/)).toBeNull();
+    expect(screen.queryByText(/\d+\s*秒/)).toBeNull();
+  });
+
+  /* 数字が消えて並んだだけになると、順に流れていくものだと読めなくなる
+     （実機の報告 17-3）。運ぶのは「向き」であって「量」ではない */
+  it("コマとコマの間に矢印を出す（先頭の前には出さない）", () => {
+    show();
+    // シーンは3つ。間は2つ
+    expect(screen.getAllByText("→")).toHaveLength(2);
   });
 
   it("押すと、そのシーンに切り替わる", async () => {

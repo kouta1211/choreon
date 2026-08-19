@@ -308,3 +308,47 @@ describe("DancerInspector の秒数（曲もメトロノームも無いとき）
     expect(screen.getByLabelText(/この人だけ|秒/)).toBeInTheDocument();
   });
 });
+
+/* 実機の報告 17-5。狭いパネルに移したので、右端に置くと説明の吹き出しが
+   枠で切れ、名前の長さでボタンの位置も動いていた */
+describe("DancerInspector の操作ボタン", () => {
+  function showInspector() {
+    useProjectStore.setState({
+      project: makeProject({ isMetronomeEnabled: false }),
+      dancers: { "dancer-1": makeDancer({ name: "あいり" }) },
+      scenes: [makeScene()],
+      positionsBySceneId: { "scene-1": { "dancer-1": makePosition() } },
+    });
+    useUIStore.setState({
+      selectedDancerIds: ["dancer-1"],
+      selectedSceneId: "scene-1",
+    });
+    return render(
+      <LocaleProvider locale="ja">
+        <DancerInspector variant="panel" />
+      </LocaleProvider>,
+    );
+  }
+
+  it("ボタンは名前より先（＝左）に並ぶ", () => {
+    showInspector();
+    const focus = screen.getByLabelText("マイ・フォーカス");
+    const name = screen.getByText("あいり");
+
+    expect(
+      focus.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  /* 上に出すと、この行はパネルのいちばん上なので枠の外になって切れる */
+  it("説明の吹き出しは下へ出す", () => {
+    const { container } = showInspector();
+    const tips = [...container.querySelectorAll("span[aria-hidden]")].filter(
+      (span) => span.textContent === "マイ・フォーカス",
+    );
+
+    expect(tips).toHaveLength(1);
+    expect(tips[0].className).toContain("top-full");
+    expect(tips[0].className).not.toContain("bottom-full");
+  });
+});

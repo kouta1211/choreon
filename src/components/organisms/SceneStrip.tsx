@@ -49,9 +49,11 @@ type Props = {
  * 一覧を開かずに順番を直せる。掴み始めの規則も確定の道も、一覧
  * （SceneList）と同じものを使う — 2つ書くと必ず片方がずれる。
  *
- * ■ 秒数は出さない
+ * ■ 秒数は出さないが、矢印は残す
  * この形では移動がどれも同じ秒数なので（sceneTiming の `uniformTimes`）、
- * コマごとに言うことが無い。数字が消えたぶん、コマそのものが読みやすい。
+ * コマごとに言う数字が無い。ただし**コマとコマの間の矢印は残す**
+ * （実機の報告 17-3）— 数字が消えて並んだだけになると、順に流れていく
+ * ものだと読めなくなる。運ぶのは「向き」であって「量」ではない。
  */
 export function SceneStrip({ project }: Props) {
   const scenes = useProjectStore((state) => state.scenes);
@@ -123,6 +125,8 @@ export function SceneStrip({ project }: Props) {
           {scenes.map((scene, index) => (
             <SceneStripCard
               key={scene.id}
+              /* 先頭には入ってくる元が無いので、矢印も出さない */
+              showArrow={index > 0}
               scene={scene}
               number={index + 1}
               thumbnail={thumbnailBySceneId[scene.id]}
