@@ -6,6 +6,7 @@ import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { formatMinutes } from "@/components/molecules/PlayheadClock";
 import { useT } from "@/features/i18n/LocaleProvider";
+import { Phrase } from "@/components/atoms/Phrase";
 
 /** ここでは押す的なので、エディタの26pxより大きい */
 const MARKER_SIZE = 40;
@@ -43,9 +44,7 @@ export function ViewerEntry() {
   if (!project) return null;
 
   const firstScene = scenes[0];
-  const positions = firstScene
-    ? (positionsBySceneId[firstScene.id] ?? {})
-    : {};
+  const positions = firstScene ? (positionsBySceneId[firstScene.id] ?? {}) : {};
   const totalSeconds =
     scenes.length > 0 ? scenes[scenes.length - 1].timeSeconds : 0;
   const selected = dancers.find((dancer) => dancer.id === pendingId);
@@ -53,8 +52,11 @@ export function ViewerEntry() {
   return (
     <div className="mx-auto flex h-dvh w-full max-w-md flex-col gap-4 overflow-y-auto px-5 pt-6 pb-[max(24px,env(safe-area-inset-bottom))]">
       <div>
+        {/* サービス名の表記は Choreon で統一する。「見るだけ」は外した
+            — 見る人にとっては、それが唯一の画面なので断る必要が無い
+            （実機の報告 2026-08-19） */}
         <p className="font-mono text-caption tracking-wide text-fg-muted">
-          CHOREON · 見るだけ
+          Choreon
         </p>
         <h1 className="mt-1 text-title leading-tight font-semibold text-fg-strong">
           {project.title}
@@ -70,15 +72,16 @@ export function ViewerEntry() {
           {t.viewer.entry.question}
         </h2>
         <p className="mt-1 text-label leading-[1.6] text-fg-sub">
-          {t.viewer.entry.note}
-
+          <Phrase>{t.viewer.entry.note}</Phrase>
         </p>
       </div>
 
       {/* 1シーン目の立ち位置。丸をそのまま押して選べる */}
       <div
         className="relative w-full overflow-hidden rounded-[calc(var(--radius)*1.2)] border border-line-strong bg-stage"
-        style={{ aspectRatio: `${project.stageWidth} / ${project.stageHeight}` }}
+        style={{
+          aspectRatio: `${project.stageWidth} / ${project.stageHeight}`,
+        }}
       >
         <span
           aria-hidden

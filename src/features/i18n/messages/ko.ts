@@ -509,7 +509,7 @@ export const ko = {
     },
     entry: {
       question: "본인은 누구인가요?",
-      note: "고르면 그 사람만 진하게 나오고 동선도 표시됩니다. 나중에 바꿀 수 있습니다.",
+      note: "선택하면 그 사람에게 초점을 맞춥니다.",
       position: (name: string) => `${name}의 위치`,
       pick: "본인을 골라 주세요",
       pickNamed: (name: string) => `'${name}'(으)로 보기`,

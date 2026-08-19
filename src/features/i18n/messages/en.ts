@@ -515,7 +515,7 @@ export const en = {
     },
     entry: {
       question: "Which one are you?",
-      note: "Pick yourself and only you are drawn solid, with your route written out. You can change it later.",
+      note: "Once you pick, the view focuses on you.",
       position: (name: string) => `${name}'s position`,
       pick: "Pick yourself",
       pickNamed: (name: string) => `Watch as ${name}`,

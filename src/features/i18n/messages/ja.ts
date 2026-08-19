@@ -541,7 +541,7 @@ export const ja = {
     },
     entry: {
       question: "あなたはどれですか",
-      note: "選ぶと、その人だけが濃く出て、道順も出るようになります。あとで変えられます。",
+      note: "選択後、あなたにフォーカスします。",
       position: (name: string) => `${name} の立ち位置`,
       pick: "自分を選んでください",
       pickNamed: (name: string) => `「${name}」で見る`,
