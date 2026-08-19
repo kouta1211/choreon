@@ -528,14 +528,14 @@ export const ja = {
       title: (name: string) => `${name} の道順`,
       me: "自分",
       everyone: "全員",
-      all: "ぜんぶ",
+      all: "全て",
       summary: (scenes: number, total: string) =>
         `${scenes} シーン · 通し ${total}`,
       lastFormation: "ここが最後の隊形です",
       stepsNote: "歩数は 1歩 60cm・1マス 90cm で計算した目安です。",
       sidesNote: "上手／下手は客席から見た向きです。",
       fast: " — 速め",
-      hereNow: " · いまここ",
+      hereNow: " · 現時点",
       tooFast: "歩いて間に合わない速さです",
       reselect: "ポジションを選び直す",
       /** 右から出るシーン一覧（実機の要望 2026-08-19） */

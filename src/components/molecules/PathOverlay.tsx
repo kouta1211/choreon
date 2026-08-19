@@ -263,18 +263,24 @@ export function PathOverlay({
         viewBox="0 0 100 100"
         preserveAspectRatio="none"
       >
+        {/* 矢印はダンサーごとに作る。`context-stroke` は読めるブラウザが
+            限られていて、読めないと**黒で塗られて地に沈む**
+            （実機の報告 2026-08-19）。色を直に書けばどこでも同じ */}
         <defs>
-          <marker
-            id="path-overlay-arrow"
-            viewBox="0 0 10 10"
-            refX="8"
-            refY="5"
-            markerWidth="4"
-            markerHeight="4"
-            orient="auto-start-reverse"
-          >
-            <path d="M0,0 L10,5 L0,10 z" fill="context-stroke" />
-          </marker>
+          {segments.map((segment) => (
+            <marker
+              key={segment.id}
+              id={`path-overlay-arrow-${segment.id}`}
+              viewBox="0 0 10 10"
+              refX="8"
+              refY="5"
+              markerWidth="4"
+              markerHeight="4"
+              orient="auto-start-reverse"
+            >
+              <path d="M0,0 L10,5 L0,10 z" fill={segment.color} />
+            </marker>
+          ))}
         </defs>
         {segments.map((segment) =>
           segment.activeControlPoint ? (
@@ -299,7 +305,7 @@ export function PathOverlay({
               strokeDasharray="6 4"
               strokeLinecap="round"
               vectorEffect="non-scaling-stroke"
-              markerEnd="url(#path-overlay-arrow)"
+              markerEnd={`url(#path-overlay-arrow-${segment.id})`}
             />
           ) : (
             <line
@@ -322,7 +328,7 @@ export function PathOverlay({
               strokeDasharray="6 4"
               strokeLinecap="round"
               vectorEffect="non-scaling-stroke"
-              markerEnd="url(#path-overlay-arrow)"
+              markerEnd={`url(#path-overlay-arrow-${segment.id})`}
             />
           ),
         )}

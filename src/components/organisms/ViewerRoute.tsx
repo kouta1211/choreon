@@ -131,16 +131,22 @@ export function ViewerRoute() {
         isTall
       >
         {/* 注記は1度だけ。行ごとに書くと、肝心の道順が埋もれる */}
-        <p className="border-b border-line px-[18px] py-3 text-caption leading-[1.6] text-fg-muted">
-          {t.viewer.route.stepsNote}
-          <span className="font-semibold text-fg-sub">
+        {/* 2つは別の話なので行を分ける（実機の報告）。続けて書くと、
+            「目安です。上手／下手は…」と1行に混ざって読みにくい */}
+        <div className="border-b border-line px-[18px] py-3 text-caption leading-[1.6] text-fg-muted">
+          <p>{t.viewer.route.stepsNote}</p>
+          <p className="font-semibold text-fg-sub">
             {t.viewer.route.sidesNote}
-          </span>
-        </p>
+          </p>
+        </div>
 
         <ul className="px-[18px] py-2">
           {steps.map((step) => {
-            const isHere = current?.sceneId === step.sceneId;
+            /* 印は【いま居るシーン】に付ける（実機の報告 06-15）。
+               行は「そのシーンへ移動する」を表しているので、向かっている先
+               （区間の終わり）に付けると、帯やシーン一覧の現在地と1つずれる。
+               上の1行が「次にどこへ」を出しているので、こちらは現在地でよい */
+            const isHere = span?.from.id === step.sceneId;
             return (
               <li key={step.sceneId}>
                 <PressableButton

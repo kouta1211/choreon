@@ -19,10 +19,30 @@ const SCENES = [
   makeScene({ id: "s2", name: "サビ", timeSeconds: 4, orderIndex: 1 }),
 ];
 const POSITIONS = [
-  makePosition({ sceneId: "s1", dancerId: "d1", xCoordinate: 2, yCoordinate: 4 }),
-  makePosition({ sceneId: "s1", dancerId: "d2", xCoordinate: 8, yCoordinate: 4 }),
-  makePosition({ sceneId: "s2", dancerId: "d1", xCoordinate: 8, yCoordinate: 7 }),
-  makePosition({ sceneId: "s2", dancerId: "d2", xCoordinate: 2, yCoordinate: 4 }),
+  makePosition({
+    sceneId: "s1",
+    dancerId: "d1",
+    xCoordinate: 2,
+    yCoordinate: 4,
+  }),
+  makePosition({
+    sceneId: "s1",
+    dancerId: "d2",
+    xCoordinate: 8,
+    yCoordinate: 4,
+  }),
+  makePosition({
+    sceneId: "s2",
+    dancerId: "d1",
+    xCoordinate: 8,
+    yCoordinate: 7,
+  }),
+  makePosition({
+    sceneId: "s2",
+    dancerId: "d2",
+    xCoordinate: 2,
+    yCoordinate: 4,
+  }),
 ];
 
 function renderViewer(requestedDancerId: string | null = null) {
@@ -70,7 +90,9 @@ describe("ViewerLayout", () => {
 
     expect(screen.getByText("あなたはどれですか")).toBeInTheDocument();
     // 決めるボタンの文字が、選んだ人の名前入りに変わる
-    expect(screen.getByRole("button", { name: "「うみ」で見る" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "「うみ」で見る" }),
+    ).toBeInTheDocument();
   });
 
   it("押し間違えても、別の人を押し直せる", () => {
@@ -78,7 +100,9 @@ describe("ViewerLayout", () => {
     fireEvent.click(screen.getByRole("button", { name: "うみ" }));
     fireEvent.click(screen.getByRole("button", { name: "そら" }));
 
-    expect(screen.getByRole("button", { name: "「そら」で見る" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "「そら」で見る" }),
+    ).toBeInTheDocument();
   });
 
   it("決めるボタンを押して初めて本体に入る", () => {
@@ -87,7 +111,9 @@ describe("ViewerLayout", () => {
     fireEvent.click(screen.getByRole("button", { name: "「うみ」で見る" }));
 
     expect(screen.queryByText("あなたはどれですか")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "通しで再生" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "通しで再生" }),
+    ).toBeInTheDocument();
   });
 
   // 振付師が一人ひとりに違うリンクを配れるようにする
@@ -113,7 +139,9 @@ describe("ViewerLayout", () => {
     renderViewer("d1");
     expect(screen.queryByText("あなたはどれですか")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "ポジションを選び直す" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "ポジションを選び直す" }),
+    );
 
     expect(screen.getByText("あなたはどれですか")).toBeInTheDocument();
     // いまの選択は持ったまま戻る。選び直さずにそのまま入れる
@@ -125,7 +153,9 @@ describe("ViewerLayout", () => {
 
   it("入口へ戻ったあと、そのまま同じ人で入り直せる", () => {
     renderViewer("d1");
-    fireEvent.click(screen.getByRole("button", { name: "ポジションを選び直す" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "ポジションを選び直す" }),
+    );
     fireEvent.click(screen.getByRole("button", { name: "「うみ」で見る" }));
 
     expect(screen.queryByText("あなたはどれですか")).not.toBeInTheDocument();
@@ -163,15 +193,21 @@ describe("ViewerLayout", () => {
 
     it("全員を見るときは道順を出さない", () => {
       renderViewer();
-      fireEvent.click(screen.getByRole("button", { name: "選ばずに全員を見る" }));
-      expect(screen.queryByRole("button", { name: "ぜんぶ" })).not.toBeInTheDocument();
+      fireEvent.click(
+        screen.getByRole("button", { name: "選ばずに全員を見る" }),
+      );
+      expect(
+        screen.queryByRole("button", { name: "全て" }),
+      ).not.toBeInTheDocument();
     });
 
-    it("「ぜんぶ」で道順の一覧が開く", () => {
+    it("「全て」で道順の一覧が開く", () => {
       renderViewer("d1");
-      fireEvent.click(screen.getByRole("button", { name: "ぜんぶ" }));
+      fireEvent.click(screen.getByRole("button", { name: "全て" }));
 
-      expect(screen.getByRole("dialog", { name: "うみ の道順" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: "うみ の道順" }),
+      ).toBeInTheDocument();
       expect(
         screen.getByText(/上手／下手は客席から見た向きです。/),
       ).toBeInTheDocument();

@@ -27,8 +27,12 @@ export function DancerNameLabel({ name, above = false }: Props) {
       aria-hidden
       className="pointer-events-none absolute left-0 top-0 whitespace-nowrap text-caption font-bold leading-none text-[var(--label-text)] [text-shadow:var(--label-shadow)]"
       style={{
+        /* 下へ出すときは【鼻先】を避ける必要があるので広め、
+           上は頭のふちだけなので詰める（実機の報告 06-13）。
+           MARKER_SIZE の半分は当たり判定の半径で、頭そのものは
+           その半分しかない — 同じ数字を使うと上だけ離れて見える */
         transform: above
-          ? `translate(-50%, -100%) translateY(${-(MARKER_SIZE / 2 + 4)}px)`
+          ? `translate(-50%, -100%) translateY(${-(MARKER_SIZE / 4 + 4)}px)`
           : `translate(-50%, 0%) translateY(${MARKER_SIZE / 2 + 4}px)`,
       }}
     >
