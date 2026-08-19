@@ -104,14 +104,23 @@ const databaseId = loadEnv("NOTION_DATABASE_ID");
 if (!key) die("NOTION_API_KEY がありません", ".env.local に入れてください");
 if (!databaseId) die("NOTION_DATABASE_ID がありません", ".env.local に入れてください");
 
-/* 同じ日付のページが既にあれば、新しく作らずそこへ足す。
-   1日に何度呼ばれても、日報は1日1ページに保つ */
+/* 同じ日の同じプロジェクトのページが既にあれば、新しく作らずそこへ足す。
+   1日に何度呼ばれても、日報は【1日1プロジェクト1ページ】に保つ。
+
+   **日付だけで探さない。** このデータベースには複数のプロジェクトの日報が
+   入っていて、同じ日付のページが並ぶのが正常（2026-08-19 に user から
+   指摘）。日付だけで一致を見ると、**よそのプロジェクトの日報へ追記する**。 */
 const found = await notion(
   `databases/${databaseId}/query`,
   {
     method: "POST",
     body: JSON.stringify({
-      filter: { property: "日付", date: { equals: date } },
+      filter: {
+        and: [
+          { property: "日付", date: { equals: date } },
+          { property: "プロジェクト", select: { equals: project } },
+        ],
+      },
       page_size: 1,
     }),
   },
