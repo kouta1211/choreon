@@ -40,6 +40,7 @@ import {
   evenlyDistributed,
   type AlignAxis,
 } from "@/features/canvas/lib/alignment";
+import { dancerIdsInScene } from "@/features/canvas/lib/selection";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
@@ -341,10 +342,20 @@ export function StageContextMenu({ children }: Props) {
     });
   }, [t]);
 
+  /* 選ぶのは**いまのシーンに立っている人**だけ。立ち位置を持たない人を
+     混ぜると、整列も向きも効かないのに選ばれている状態になる */
   const handleSelectAll = useCallback(() => {
-    const dancerIds = Object.keys(useProjectStore.getState().dancers);
-    useUIStore.getState().selectDancers(dancerIds);
-  }, []);
+    if (!selectedSceneId) return;
+    const project = useProjectStore.getState();
+    useUIStore
+      .getState()
+      .selectDancers(
+        dancerIdsInScene(
+          Object.keys(project.dancers),
+          project.positionsBySceneId[selectedSceneId] ?? {},
+        ),
+      );
+  }, [selectedSceneId]);
 
   const handleAddDancer = useCallback(() => {
     useUIStore.getState().setAddDancerSheetOpen(true);

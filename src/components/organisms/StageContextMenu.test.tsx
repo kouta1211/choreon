@@ -168,6 +168,11 @@ describe("StageContextMenu", () => {
   it("何も無いところを右クリックすると、地のメニューが出る", async () => {
     const user = userEvent.setup();
     renderBoard();
+    /* このシーンに立ち位置を持たない人を1人混ぜる。選んでも整列も向きも
+       効かないので、「全員を選ぶ」には入らないのが正しい */
+    useProjectStore
+      .getState()
+      .addDancer(makeDancer({ id: "dancer-4", name: "そら" }));
 
     rightClick(screen.getByTestId("stage"));
 

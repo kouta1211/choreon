@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
+import { dancerIdsInScene } from "@/features/canvas/lib/selection";
 
 /** 入力中はショートカットを効かせない要素。Spaceで空白を打てないと困る */
 function isTextEntryElement(target: EventTarget | null): boolean {
@@ -21,6 +22,7 @@ function isTextEntryElement(target: EventTarget | null): boolean {
  *
  *   Space … 再生 / 停止
  *   ← →  … 前後のシーンへ
+ *   Ctrl/⌘ + A … いまのシーンに立っている全員を選ぶ
  *   Esc  … 選択解除、開いているシート・ダイアログを閉じる
  *
  * ダンサーの矢印キー微調整(DraggableDancerIcon)と履歴のCtrl+Z
@@ -34,10 +36,39 @@ export function EditorShortcuts() {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isTextEntryElement(event.target)) return;
-      // 修飾キー付きは履歴など別の担当に任せる
-      if (event.ctrlKey || event.metaKey || event.altKey) return;
 
       const ui = useUIStore.getState();
+
+      /* Ctrl / ⌘ + A で、いまのシーンに立っている全員を選ぶ。
+         右クリックのメニューの「全員を選ぶ」と同じもので、PC の定石の方。
+         シートやダイアログが開いている間は、その中の全選択に譲る */
+      if (
+        (event.ctrlKey || event.metaKey) &&
+        !event.altKey &&
+        event.key.toLowerCase() === "a"
+      ) {
+        if (
+          ui.isTemplateSheetOpen ||
+          ui.isAddDancerSheetOpen ||
+          ui.isSceneSheetOpen ||
+          ui.confirm ||
+          !ui.selectedSceneId
+        ) {
+          return;
+        }
+        event.preventDefault();
+        const project = useProjectStore.getState();
+        ui.selectDancers(
+          dancerIdsInScene(
+            Object.keys(project.dancers),
+            project.positionsBySceneId[ui.selectedSceneId] ?? {},
+          ),
+        );
+        return;
+      }
+
+      // ほかの修飾キー付きは履歴など別の担当に任せる
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
 
       if (event.key === "Escape") {
         if (ui.confirm) return; // ダイアログ自身が閉じる
