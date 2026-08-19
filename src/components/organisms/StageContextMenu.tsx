@@ -167,7 +167,13 @@ export function StageContextMenu({ children }: Props) {
       }
     }
 
-    setTarget(hit.kind);
+    /* 何人か選んでいるなら、**地の上で押しても選んでいる人たちへの**
+       メニューを出す（実機の報告 17-21）。丸を狙って掴み直さなくても、
+       まとめた操作へ手が届く。
+       地のメニュー（全員を選ぶ / 人を足す）が要るときは、何も選んでいない
+       状態で押す。何も無いところを左クリックすれば選択は外れる */
+    const hasSelection = useUIStore.getState().selectedDancerIds.length > 0;
+    setTarget(hit.kind === "stage" && hasSelection ? "dancer" : hit.kind);
     setIsOpen(true);
   }, []);
 

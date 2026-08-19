@@ -256,3 +256,52 @@ describe("StageContextMenu", () => {
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
   });
 });
+
+/* 実機の報告 17-21「既に複数人を選択中であれば、どこで右クリックしても、
+   選択中のダンサーに対するメニューが開くようにしたい」 */
+describe("選んでいるときの、地の右クリック", () => {
+  beforeEach(() => {
+    useSettingsStore.setState({ isAudienceOnTop: false });
+  });
+
+  it("何人か選んでいれば、地を右クリックしても選択中へのメニューが出る", async () => {
+    renderBoard();
+    useUIStore.getState().selectDancers(["dancer-1", "dancer-2"]);
+
+    rightClick(screen.getByTestId("stage"));
+
+    // 向きの升と、まとめての削除が出る
+    expect(
+      await screen.findByRole("menuitemradio", { name: "奥を向く" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("menuitem", { name: /2人を削除/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitem", { name: "全員を選ぶ" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("選択がそのまま残る（地を押しても外れない）", async () => {
+    renderBoard();
+    useUIStore.getState().selectDancers(["dancer-1", "dancer-2"]);
+
+    rightClick(screen.getByTestId("stage"));
+    await screen.findByRole("menu");
+
+    expect(useUIStore.getState().selectedDancerIds).toEqual([
+      "dancer-1",
+      "dancer-2",
+    ]);
+  });
+
+  it("誰も選んでいなければ、これまで通り地のメニュー", async () => {
+    renderBoard();
+
+    rightClick(screen.getByTestId("stage"));
+
+    expect(
+      await screen.findByRole("menuitem", { name: "全員を選ぶ" }),
+    ).toBeInTheDocument();
+  });
+});
