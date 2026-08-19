@@ -127,20 +127,38 @@ export function useStageZoom() {
     (event: ReactPointerEvent<HTMLDivElement>) => {
       pointers.current.delete(event.pointerId);
 
-      if (pointers.current.size === 0) {
-        start.current = null;
-        setGesturing(false);
-        setScale((current) => {
-          const settled = settledScale(current);
-          if (settled === 1) setOffset({ x: 0, y: 0 });
-          return settled;
-        });
+      if (pointers.current.size > 0) {
+        // 指が1本残ったら、そこから測り直す（残った指で位置を動かせる）
+        beginGesture();
         return;
       }
-      // 指が1本残ったら、そこから測り直す（残った指で位置を動かせる）
-      beginGesture();
+
+      start.current = null;
+      setGesturing(false);
+
+      /* 位置は動かしている最中に締めてある（onPointerMove が毎回
+         clampPan を通す）ので、ここで締め直す必要は無い。
+         等倍まで戻ったときだけ、真ん中へ寄せる */
+      const settled = settledScale(scale);
+      setScale(settled);
+      if (settled === 1) setOffset({ x: 0, y: 0 });
     },
-    [beginGesture],
+    [beginGesture, scale],
+  );
+
+  /**
+   * 指を見失ったときの後始末。
+   *
+   * 捕捉が外れる（別の要素へ持っていかれる・端末が割り込む）と
+   * pointerup が来ないことがある。控えを残したままにすると、
+   * **次のジェスチャが前の指を数えたまま始まって**、倍率が飛ぶ。
+   */
+  const onLostPointerCapture = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (!pointers.current.has(event.pointerId)) return;
+      endPointer(event);
+    },
+    [endPointer],
   );
 
   return {
@@ -154,6 +172,7 @@ export function useStageZoom() {
       onPointerMove,
       onPointerUp: endPointer,
       onPointerCancel: endPointer,
+      onLostPointerCapture,
     },
   };
 }

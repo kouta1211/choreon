@@ -36,8 +36,8 @@ export function DancerNameLabel({ name, above = false }: Props) {
            下は鼻先（中心から 15px ほど）を避ける必要があるので少し広め、
            上は頭のふちだけなので狭い（実機の報告 06-13）。 */
         transform: above
-          ? `translate(-50%, -100%) translateY(${-(MARKER_SIZE / 4 + 2)}px)`
-          : `translate(-50%, 0%) translateY(${MARKER_SIZE / 2 - 2}px)`,
+          ? `translate(-50%, -100%) translateY(${-MARKER_SIZE / 4}px)`
+          : `translate(-50%, 0%) translateY(${MARKER_SIZE / 2 - 6}px)`,
       }}
     >
       {name}

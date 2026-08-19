@@ -112,3 +112,28 @@ describe("ViewerStage の2本指ズーム", () => {
     expect(zoomed().style.transform).toContain("translate(40px, 0px)");
   });
 });
+
+/* ズームの取りこぼし。**たまにおかしくなる**という報告を受けて足した
+   （実機の報告 2026-08-19）。どれも「1回のジェスチャでは出ないが、
+   2回目以降で出る」たぐい */
+describe("ズームの後始末", () => {
+  /* 捕捉が外れると pointerup が来ないことがある。控えが残ると、
+     次のジェスチャが前の指を数えたまま始まって倍率が飛ぶ */
+  it("指を見失っても、次のジェスチャに持ち越さない", () => {
+    hydrate();
+    render(<ViewerStage />);
+    const box = zoomBox();
+
+    fireEvent.pointerDown(box, { pointerId: 1, clientX: 200, clientY: 200 });
+    fireEvent.lostPointerCapture(box, { pointerId: 1 });
+
+    /* **別の指番号で**仕切り直す。見失った指を控えたままだと、
+       3本ぶんを数えて距離の測り方が狂う（同じ番号で置き直すと
+       上書きされてしまい、この不具合は出ない） */
+    fireEvent.pointerDown(box, { pointerId: 7, clientX: 200, clientY: 200 });
+    fireEvent.pointerDown(box, { pointerId: 8, clientX: 300, clientY: 200 });
+    fireEvent.pointerMove(box, { pointerId: 8, clientX: 400, clientY: 200 });
+
+    expect(zoomed().style.transform).toContain("scale(2)");
+  });
+});
