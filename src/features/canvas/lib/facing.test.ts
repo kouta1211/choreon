@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   FACING_DIRECTIONS,
   cellForScreenAngle,
+  facingChanges,
   facingLabelKey,
   normalizeAngle,
   sharedFacing,
   toStageFacing,
 } from "@/features/canvas/lib/facing";
+import { makePosition } from "@/test/factories";
 import { ROTATION_SNAP_STEP_DEGREES } from "@/features/canvas/lib/dragMath";
 
 describe("FACING_DIRECTIONS", () => {
@@ -121,5 +123,60 @@ describe("normalizeAngle", () => {
     expect(normalizeAngle(360)).toBe(0);
     expect(normalizeAngle(-90)).toBe(270);
     expect(normalizeAngle(450)).toBe(90);
+  });
+});
+
+describe("facingChanges", () => {
+  const positions = {
+    a: makePosition({ dancerId: "a", rotationAngle: 0 }),
+    b: makePosition({ dancerId: "b", rotationAngle: 90 }),
+  };
+
+  it("選んだ人ぶんの、前と後を組にして返す", () => {
+    const changes = facingChanges({
+      sceneId: "scene-1",
+      dancerIds: ["a", "b"],
+      positions,
+      rotationAngle: 180,
+    });
+
+    expect(changes).toHaveLength(2);
+    expect(changes[0].before.rotationAngle).toBe(0);
+    expect(changes[0].after.rotationAngle).toBe(180);
+    expect(changes[0].sceneId).toBe("scene-1");
+  });
+
+  it("既にその向きの人は入れない（何も変わらない1手を履歴に積まない）", () => {
+    const changes = facingChanges({
+      sceneId: "scene-1",
+      dancerIds: ["a", "b"],
+      positions,
+      rotationAngle: 90,
+    });
+
+    expect(changes.map((change) => change.dancerId)).toEqual(["a"]);
+  });
+
+  it("そのシーンに立っていない人は飛ばす", () => {
+    const changes = facingChanges({
+      sceneId: "scene-1",
+      dancerIds: ["a", "居ない人"],
+      positions,
+      rotationAngle: 180,
+    });
+
+    expect(changes.map((change) => change.dancerId)).toEqual(["a"]);
+  });
+
+  it("向き以外は触らない", () => {
+    const changes = facingChanges({
+      sceneId: "scene-1",
+      dancerIds: ["a"],
+      positions,
+      rotationAngle: 180,
+    });
+
+    expect(changes[0].after.xCoordinate).toBe(positions.a.xCoordinate);
+    expect(changes[0].after.yCoordinate).toBe(positions.a.yCoordinate);
   });
 });

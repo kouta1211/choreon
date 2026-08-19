@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  alignmentChanges,
   alignmentTarget,
   evenlyDistributed,
   type AlignPoint,
 } from "@/features/canvas/lib/alignment";
+import { makePosition } from "@/test/factories";
 import { toScreenY } from "@/features/canvas/lib/stageFlip";
 
 function point(dancerId: string, x: number, y: number): AlignPoint {
@@ -106,5 +108,78 @@ describe("evenlyDistributed", () => {
     const second = evenlyDistributed([...points].reverse(), "x");
 
     expect([...first.entries()].sort()).toEqual([...second.entries()].sort());
+  });
+});
+
+describe("alignmentChanges", () => {
+  /** x は 2 / 6 / 3、y は 2 / 2 / 5 */
+  const positions = {
+    a: makePosition({ dancerId: "a", xCoordinate: 2, yCoordinate: 2 }),
+    b: makePosition({ dancerId: "b", xCoordinate: 6, yCoordinate: 2 }),
+    c: makePosition({ dancerId: "c", xCoordinate: 3, yCoordinate: 5 }),
+  };
+  const base = { sceneId: "scene-1", dancerIds: ["a", "b", "c"], positions };
+
+  it("横一列に揃えると、前後だけが重心へ動く", () => {
+    const changes = alignmentChanges({ ...base, axis: "y", mode: "align" });
+
+    // 重心は 3。既に 3 の人は居ないので3人とも動く
+    expect(changes).toHaveLength(3);
+    for (const change of changes) {
+      expect(change.after.yCoordinate).toBe(3);
+      // 左右は触らない
+      expect(change.after.xCoordinate).toBe(change.before.xCoordinate);
+    }
+  });
+
+  it("等間隔に配ると、両端は入らない（動かないので）", () => {
+    const changes = alignmentChanges({
+      ...base,
+      axis: "x",
+      mode: "distribute",
+    });
+
+    // 端の a(2) と b(6) は動かず、間の c だけが 4 へ
+    expect(changes.map((change) => change.dancerId)).toEqual(["c"]);
+    expect(changes[0].after.xCoordinate).toBe(4);
+  });
+
+  it("既に揃っていれば、変更は空（履歴に積まない）", () => {
+    const aligned = {
+      a: makePosition({ dancerId: "a", xCoordinate: 1, yCoordinate: 4 }),
+      b: makePosition({ dancerId: "b", xCoordinate: 5, yCoordinate: 4 }),
+    };
+    const changes = alignmentChanges({
+      sceneId: "scene-1",
+      dancerIds: ["a", "b"],
+      positions: aligned,
+      axis: "y",
+      mode: "align",
+    });
+
+    expect(changes).toEqual([]);
+  });
+
+  it("そのシーンに立っていない人は飛ばす", () => {
+    const changes = alignmentChanges({
+      ...base,
+      dancerIds: ["a", "b", "c", "居ない人"],
+      axis: "y",
+      mode: "align",
+    });
+
+    expect(changes.map((change) => change.dancerId)).toEqual(["a", "b", "c"]);
+  });
+
+  it("2人では配れないので、等間隔の変更は空", () => {
+    const changes = alignmentChanges({
+      sceneId: "scene-1",
+      dancerIds: ["a", "b"],
+      positions,
+      axis: "x",
+      mode: "distribute",
+    });
+
+    expect(changes).toEqual([]);
   });
 });

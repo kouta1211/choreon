@@ -1,3 +1,5 @@
+import type { Position } from "@/features/scene/types";
+import type { PositionChange } from "@/features/canvas/store/useHistoryStore";
 /**
  * 選んだ人たちを「揃える」「等間隔に配る」計算。
  *
@@ -77,4 +79,65 @@ export function evenlyDistributed(
     result.set(point.dancerId, first + step * index);
   });
   return result;
+}
+
+/** 揃えるのか、配るのか */
+export type AlignMode = "align" | "distribute";
+
+/**
+ * 整列したときの、変更の一覧。
+ *
+ * 揃える（重心へ）と配る（等間隔）で、行き先の決め方だけが違う。
+ * **動かない人は入れない** — 入れると「何も変わらない1手」が履歴に積まれる。
+ *
+ * 触るのは指定した軸だけ。横一列に揃えても左右は動かない。
+ */
+export function alignmentChanges({
+  sceneId,
+  dancerIds,
+  positions,
+  axis,
+  mode,
+}: {
+  sceneId: string;
+  dancerIds: string[];
+  positions: Record<string, Position>;
+  axis: AlignAxis;
+  mode: AlignMode;
+}): PositionChange[] {
+  const points = dancerIds.flatMap((dancerId) => {
+    const position = positions[dancerId];
+    return position
+      ? [
+          {
+            dancerId,
+            x: position.xCoordinate,
+            y: position.yCoordinate,
+          },
+        ]
+      : [];
+  });
+
+  const target = mode === "align" ? alignmentTarget(points, axis) : null;
+  const distributed =
+    mode === "distribute"
+      ? evenlyDistributed(points, axis)
+      : new Map<string, number>();
+  const nextValue = (dancerId: string): number | undefined =>
+    mode === "distribute" ? distributed.get(dancerId) : (target ?? undefined);
+
+  const key = axis === "x" ? "xCoordinate" : "yCoordinate";
+  return dancerIds.flatMap((dancerId) => {
+    const before = positions[dancerId];
+    const value = nextValue(dancerId);
+    if (!before || value === undefined || before[key] === value) return [];
+    return [
+      {
+        sceneId,
+        dancerId,
+        before,
+        after: { ...before, [key]: value },
+      },
+    ];
+  });
 }

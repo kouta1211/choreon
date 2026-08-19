@@ -31,7 +31,6 @@ import {
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useScreenKind } from "@/components/hooks/useIsWideScreen";
 import {
-  boundedGroupDelta,
   clamp,
   isCloseToInteger,
   pixelDeltaToUnitDelta,
@@ -45,6 +44,7 @@ import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { stageYSign, toScreenY } from "@/features/canvas/lib/stageFlip";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
 import { usePositionCommit } from "@/features/scene/hooks/usePositionCommit";
+import { groupMoveChanges } from "@/features/canvas/lib/groupMove";
 import { useHydrateProject } from "@/features/project/hooks/useHydrateProject";
 import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
 import { useStageScrubGesture } from "@/features/canvas/hooks/useStageScrubGesture";
@@ -354,38 +354,20 @@ export function CanvasBoard({
   const groupMove = useCallback(
     (sceneId: string, grabbedId: string, dx: number, dy: number) => {
       const { selectedDancerIds } = useUIStore.getState();
-      const ids = selectedDancerIds.includes(grabbedId)
-        ? selectedDancerIds
-        : [grabbedId];
-      if (!selectedDancerIds.includes(grabbedId)) selectDancer(grabbedId);
+      const isGrabbedSelected = selectedDancerIds.includes(grabbedId);
+      /* 選ばれていない人を掴んだら、その人だけに選び直す。掴んだ本人が
+         動くのに選択は別の人のまま、という食い違いを作らない */
+      if (!isGrabbedSelected) selectDancer(grabbedId);
 
-      const moving = ids
-        .map((dancerId) => ({
-          dancerId,
-          before: positionAt(sceneId, dancerId),
-        }))
-        .filter(
-          (one): one is { dancerId: string; before: Position } =>
-            one.before !== undefined,
-        );
-      if (moving.length === 0) return null;
-
-      const bounded = boundedGroupDelta(
-        moving.map((one) => one.before),
-        { x: dx, y: dy },
-        { width: project.stageWidth, height: project.stageHeight },
-      );
-
-      return moving.map(({ dancerId, before }) => ({
+      const changes = groupMoveChanges({
         sceneId,
-        dancerId,
-        before,
-        after: {
-          ...before,
-          xCoordinate: before.xCoordinate + bounded.x,
-          yCoordinate: before.yCoordinate + bounded.y,
-        },
-      }));
+        dancerIds: isGrabbedSelected ? selectedDancerIds : [grabbedId],
+        positions: useProjectStore.getState().positionsBySceneId[sceneId] ?? {},
+        delta: { x: dx, y: dy },
+        stage: { width: project.stageWidth, height: project.stageHeight },
+      });
+      // 呼び出し側は「動かせなかった」を null で見ているので、形を変えない
+      return changes.length > 0 ? changes : null;
     },
     [project.stageWidth, project.stageHeight, selectDancer],
   );

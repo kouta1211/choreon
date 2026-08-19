@@ -1,3 +1,5 @@
+import type { Position } from "@/features/scene/types";
+import type { PositionChange } from "@/features/canvas/store/useHistoryStore";
 import { ROTATION_SNAP_STEP_DEGREES } from "@/features/canvas/lib/dragMath";
 import { mirrorAngle } from "@/features/canvas/lib/stageFlip";
 
@@ -146,3 +148,36 @@ export function sharedFacing(angles: number[]): number | null {
 export const FACING_DIRECTIONS_IN_READING_ORDER: FacingDirection[] = [
   ...FACING_DIRECTIONS,
 ].sort((a, b) => a.cell.row - b.cell.row || a.cell.column - b.cell.column);
+
+/**
+ * 選んだ人たちを同じ向きへ揃えるときの、変更の一覧。
+ *
+ * **既にその向きの人は入れない。** 入れると「何も変わらない1手」が履歴に
+ * 積まれて、元に戻すを押しても見た目が動かない回が混ざる。
+ *
+ * 立ち位置を持たない人（そのシーンに居ない人）も飛ばす。
+ */
+export function facingChanges({
+  sceneId,
+  dancerIds,
+  positions,
+  rotationAngle,
+}: {
+  sceneId: string;
+  dancerIds: string[];
+  positions: Record<string, Position>;
+  rotationAngle: number;
+}): PositionChange[] {
+  return dancerIds.flatMap((dancerId) => {
+    const before = positions[dancerId];
+    if (!before || before.rotationAngle === rotationAngle) return [];
+    return [
+      {
+        sceneId,
+        dancerId,
+        before,
+        after: { ...before, rotationAngle },
+      },
+    ];
+  });
+}
