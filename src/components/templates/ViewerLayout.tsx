@@ -6,7 +6,7 @@ import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { saveLastViewed } from "@/features/viewer/lib/lastViewed";
 import { ViewerEntry } from "@/components/organisms/ViewerEntry";
 import { ViewerStage } from "@/components/organisms/ViewerStage";
-import { ViewerScrub } from "@/components/organisms/ViewerScrub";
+import { ViewerSceneStrip } from "@/components/organisms/ViewerSceneStrip";
 import { ViewerRoute } from "@/components/organisms/ViewerRoute";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { RotateToPortraitNotice } from "@/components/molecules/RotateToPortraitNotice";
@@ -237,9 +237,11 @@ export function ViewerLayout({
         <ViewerRoute />
       </div>
 
-      {/* 帯はいちばん下。親指の届く所に置く */}
+      {/* シーンの帯はいちばん下。親指の届く所に置く。
+          **等間隔に並べる**ので、時刻が近くてもコマは重ならない
+          （実機の報告 06-11） */}
       <div className="shrink-0 px-3.5 pt-2">
-        <ViewerScrub />
+        <ViewerSceneStrip />
       </div>
     </div>
   );

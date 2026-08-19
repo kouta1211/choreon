@@ -41,6 +41,13 @@ if (typeof globalThis.ResizeObserver === "undefined") {
   };
 }
 
+// jsdom は scrollIntoView を持っていない。呼ぶだけで例外になるので、
+// 「呼べる」ことだけを用意する(ResizeObserver と同じ理由)。
+// 見る画面の帯が、いまのシーンを真ん中へ寄せるのに使っている
+if (typeof Element.prototype.scrollIntoView !== "function") {
+  Element.prototype.scrollIntoView = function scrollIntoView() {};
+}
+
 // globals: true を使わないと@testing-library/reactの自動afterEach cleanupが
 // 効かず、あるテストで描画したDOMが次のテストに残ってしまう。
 // (例: 同じdata-testidを持つ要素が複数ヒットしてgetByTestId等が失敗する)
