@@ -5,12 +5,13 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
-import { createScene } from "@/features/scene/api/scenes";
+import { createScene, updateSceneTimes } from "@/features/scene/api/scenes";
 import { upsertPositions } from "@/features/scene/api/positions";
 import type { Project } from "@/features/project/types";
 import { randomId } from "@/lib/randomId";
 import {
   duplicateTimeSeconds,
+  insertAfterSeconds,
   insertTimeSeconds,
 } from "@/features/scene/lib/sceneTiming";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
@@ -47,6 +48,7 @@ export function useAddScene(project: Project) {
   const [isCreating, setIsCreating] = useState(false);
   const scenes = useProjectStore((state) => state.scenes);
   const addScene = useProjectStore((state) => state.addScene);
+  const applySceneTimes = useProjectStore((state) => state.applySceneTimes);
   const removeScene = useProjectStore((state) => state.removeScene);
   const updateDancerPosition = useProjectStore(
     (state) => state.updateDancerPosition,
@@ -59,29 +61,41 @@ export function useAddScene(project: Project) {
     const previousSelectedSceneId = useUIStore.getState().selectedSceneId;
 
     const hasMusic = useMusicStore.getState().objectUrl !== null;
+    const isMetronomeEnabled =
+      useProjectStore.getState().project?.isMetronomeEnabled ?? false;
     // 作成に失敗したときに戻す先。再生ヘッドを動かすのは曲が無いときだけ
     const previousTime = useMusicStore.getState().currentTime;
     const segmentSeconds = useSettingsStore.getState().defaultSegmentSeconds;
+
+    /** 選んでいるシーン。選ばれていなければ末尾 */
+    const source =
+      scenes.find((scene) => scene.id === previousSelectedSceneId) ??
+      scenes[scenes.length - 1];
+
+    /* 時刻という概念を出していないときは、**後ろを押しのけて**差し込む。
+       中間へ置くと、間に1つ足すたびに前後の移動時間が半分になり、
+       user が決めた秒数が勝手に変わる（lib/timelineMode の考え方） */
+    const rippled =
+      !hasMusic && !isMetronomeEnabled && scenes.length > 0
+        ? insertAfterSeconds(scenes, source, segmentSeconds)
+        : null;
 
     // シーンがまだ1つも無いときは曲の頭から始める(最初の隊形は
     // 「曲のこの秒から」ではなく「はじまり」なので)
     const timeSeconds =
       scenes.length === 0
         ? 0
-        : hasMusic
-          ? // 押した瞬間の再生位置。曲が止まっていればシークした位置になる
-            insertTimeSeconds(
-              scenes,
-              useMusicStore.getState().currentTime,
-              segmentSeconds,
-            )
-          : // 曲が無いときは選択中のシーンの隣。選ばれていなければ末尾の隣
-            duplicateTimeSeconds(
-              scenes,
-              scenes.find((scene) => scene.id === previousSelectedSceneId) ??
-                scenes[scenes.length - 1],
-              segmentSeconds,
-            );
+        : rippled
+          ? rippled.timeSeconds
+          : hasMusic
+            ? // 押した瞬間の再生位置。曲が止まっていればシークした位置になる
+              insertTimeSeconds(
+                scenes,
+                useMusicStore.getState().currentTime,
+                segmentSeconds,
+              )
+            : // 拍はあるが曲が無いとき。選択中のシーンの隣へ割り込む
+              duplicateTimeSeconds(scenes, source, segmentSeconds);
 
     const scene = {
       id: randomId(),
@@ -101,6 +115,10 @@ export function useAddScene(project: Project) {
     ).map((position) => ({ ...position, sceneId: scene.id }));
 
     // 楽観的更新: 先にローカルへ反映し、保存に失敗したら取り消す
+    const previousTimes = new Map(
+      scenes.map((item) => [item.id, item.timeSeconds]),
+    );
+    if (rippled?.shifted.size) applySceneTimes(rippled.shifted);
     addScene(scene);
     for (const position of copiedPositions) {
       updateDancerPosition(scene.id, position.dancerId, position);
@@ -121,9 +139,21 @@ export function useAddScene(project: Project) {
       await persist(async (supabase) => {
         await createScene(supabase, scene);
         await upsertPositions(supabase, copiedPositions);
+        // 押しのけたぶんも同じ往復で送る。片方だけ通ると、画面と
+        // 保存されているものがずれたまま気づけない
+        if (rippled?.shifted.size) {
+          await updateSceneTimes(
+            supabase,
+            [...rippled.shifted].map(([id, timeSeconds]) => ({
+              id,
+              timeSeconds,
+            })),
+          );
+        }
       });
     } catch (error) {
       removeScene(scene.id);
+      if (rippled?.shifted.size) applySceneTimes(previousTimes);
       selectScene(previousSelectedSceneId);
       if (!hasMusic) useMusicStore.getState().setCurrentTime(previousTime);
       showToast({

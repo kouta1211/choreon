@@ -14,9 +14,12 @@ import type { Scene } from "@/features/scene/types";
 import {
   moveSceneTo,
   retimeForOrder,
+  restackForOrder,
   retimeScene,
 } from "@/features/scene/lib/sceneTiming";
 import { useT } from "@/features/i18n/LocaleProvider";
+import { useOrderOnlyTimeline } from "@/features/scene/hooks/useOrderOnlyTimeline";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 
 /**
  * シーンの改名・並び替え・遷移時間・削除。
@@ -29,6 +32,11 @@ import { useT } from "@/features/i18n/LocaleProvider";
  */
 export function useSceneActions() {
   const t = useT();
+  /* 時刻という概念を出しているかどうか。並び替えの直し方がここで変わる */
+  const isOrderOnly = useOrderOnlyTimeline();
+  const defaultSegmentSeconds = useSettingsStore(
+    (state) => state.defaultSegmentSeconds,
+  );
   const scenes = useProjectStore((state) => state.scenes);
   const positionsBySceneId = useProjectStore(
     (state) => state.positionsBySceneId,
@@ -61,11 +69,21 @@ export function useSceneActions() {
    * 一覧で行を並び替えたとき。
    *
    * 並び順の正は時刻なので、順番そのものを保存する場所は無い。
-   * 動かした行の【時刻】を新しい隣同士の中間へ書き換えることで、
-   * 結果としてその位置に並ぶ(sceneTiming の retimeForOrder)。
+   * 時刻を書き換えることで、結果としてその位置に並ぶ。**書き換え方が
+   * 2通りある**（どちらを使うかは lib/timelineMode の条件と同じ）。
+   *
+   * - 曲か拍がある … 動かした1つだけを新しい隣同士の中間へ。
+   *   触っていないシーンを動かさない（曲に合わせて置いた隊形を守る）
+   * - どちらも無い … 各シーンの移動時間を持ち歩いて積み直す。
+   *   秒数そのものが user の決めた値なので、並べ替えただけで
+   *   4秒 が 2秒 になってはいけない
    */
   const reorderTo = async (orderedSceneIds: string[]) => {
-    await commitTimes(retimeForOrder(scenes, orderedSceneIds));
+    await commitTimes(
+      isOrderOnly
+        ? restackForOrder(scenes, orderedSceneIds, defaultSegmentSeconds)
+        : retimeForOrder(scenes, orderedSceneIds),
+    );
   };
 
   /** シーンを別の時刻へ動かす。
@@ -160,8 +178,7 @@ export function useSceneActions() {
 
     requestConfirm({
       title: t.sceneActions.deleteTitle(scene.name),
-      description:
-        t.sceneActions.deleteDescription,
+      description: t.sceneActions.deleteDescription,
       meta: [t.sceneActions.deleteMeta(dancerCount)],
       onConfirm: async () => {
         try {

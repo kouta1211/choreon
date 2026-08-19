@@ -220,6 +220,84 @@ export function retimeForOrder(
 }
 
 /**
+ * あるシーンの【すぐ後ろ】へ、**後ろを押しのけて**差し込む時刻。
+ *
+ * 曲も拍も無いとき（順番だけで作っているとき）の追加はこちら。
+ * `duplicateTimeSeconds` は元と次の【中間】へ置くので、**間に1つ足すたびに
+ * 前後の移動時間が半分になる**。秒数そのものが user の決めた値である
+ * 作品では、足しただけで 4秒 が 2秒 になってはいけない。
+ *
+ * ここでは新しいシーンに `segmentSeconds` を与え、それより後ろのシーンを
+ * 同じだけまとめて後ろへずらす。**触っていないシーンの移動時間は変わらない**
+ * （変わるのは「新しいシーンが1つ挟まった」ことだけ）。
+ *
+ * @returns 新しいシーンの時刻と、ずらす必要があるシーンの新しい時刻
+ */
+export function insertAfterSeconds(
+  scenes: TimedScene[],
+  source: TimedScene | undefined,
+  segmentSeconds: number = DEFAULT_SEGMENT_SECONDS,
+): { timeSeconds: number; shifted: Map<string, number> } {
+  const shifted = new Map<string, number>();
+  const step = Math.max(MIN_SEGMENT_SECONDS, segmentSeconds);
+
+  if (!source) return { timeSeconds: 0, shifted };
+
+  const timeSeconds = roundSeconds(source.timeSeconds + step);
+  const index = scenes.findIndex((scene) => scene.id === source.id);
+  if (index === -1) return { timeSeconds, shifted };
+
+  for (const scene of scenes.slice(index + 1)) {
+    shifted.set(scene.id, roundSeconds(scene.timeSeconds + step));
+  }
+  return { timeSeconds, shifted };
+}
+
+/**
+ * 並び替えた結果を、**各シーンの移動時間を保ったまま**積み直す。
+ *
+ * 曲も拍も無いとき（順番だけで作っているとき）の並び替えはこちら。
+ * `retimeForOrder` は動いた1つを新しい隣同士の【中間】へ置くので、
+ * その前後の移動時間が勝手に変わる。時刻を合わせる相手が居る作品では
+ * それが正しい（触っていないシーンを動かさない）が、**秒数そのものが
+ * user の決めた値**である作品では、並べ替えただけで 4秒 が 2秒 になる。
+ *
+ * ここでは各シーンが「入ってくるのにかかる秒数」を持ち歩き、新しい順に
+ * 積み直す。先頭は0から始まる。
+ *
+ * 先頭だったシーンが後ろへ動くと、持ち歩く秒数が無い（先頭は入ってくる
+ * 元を持たない）。そのときだけ既定の秒数を使う — 0 にすると前のシーンと
+ * 同じ時刻に重なり、どちらの隊形を出すか決まらなくなる。
+ */
+export function restackForOrder(
+  scenes: TimedScene[],
+  orderedIds: string[],
+  /** 先頭だったシーンが後ろへ動いたときに使う秒数 */
+  segmentSeconds: number = DEFAULT_SEGMENT_SECONDS,
+): Map<string, number> {
+  const durations = sceneDurations(scenes);
+  const carried = new Map(
+    scenes.map((scene, index) => [scene.id, durations[index]]),
+  );
+
+  const timesById = new Map(scenes.map((s) => [s.id, s.timeSeconds]));
+  let cursor = scenes[0]?.timeSeconds ?? 0;
+
+  orderedIds.forEach((id, index) => {
+    if (!timesById.has(id)) return;
+    if (index === 0) {
+      timesById.set(id, roundSeconds(cursor));
+      return;
+    }
+    const step = carried.get(id) || segmentSeconds;
+    cursor = roundSeconds(cursor + Math.max(MIN_SEGMENT_SECONDS, step));
+    timesById.set(id, cursor);
+  });
+
+  return timesById;
+}
+
+/**
  * 新しいシーンを置く時刻。押した瞬間の再生位置に作る。
  *
  * そこに既に居る場合は、次のシーンとの中間へ割り込む。曲を聴きながら
