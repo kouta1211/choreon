@@ -148,6 +148,8 @@ type UIState = {
   toggleDancer: (dancerId: string) => void;
   /** まとめて選ぶ（マウスで囲んだとき）。additive なら今の選択へ足す */
   selectDancers: (dancerIds: string[], additive?: boolean) => void;
+  /** まとめて外す（Alt を押しながら囲んだとき）。居ない ID は無視する */
+  deselectDancers: (dancerIds: string[]) => void;
   setGridMode: (mode: GridMode) => void;
   showToast: (toast: Toast) => void;
   clearToast: () => void;
@@ -305,6 +307,16 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   /* 足すときも**重ねない**。囲み直したときに同じ人が2回入ると、
      まとめて動かすときにその人だけ2回ぶん書き込むことになる */
+  deselectDancers: (dancerIds) =>
+    set((state) => {
+      const removed = new Set(dancerIds);
+      return {
+        selectedDancerIds: state.selectedDancerIds.filter(
+          (id) => !removed.has(id),
+        ),
+      };
+    }),
+
   selectDancers: (dancerIds, additive = false) =>
     set((state) => {
       if (!additive) return { selectedDancerIds: dancerIds };
@@ -360,7 +372,8 @@ export const useUIStore = create<UIState>((set, get) => ({
     // (アプリ全体の SettingsLoader と、作品を開いた EditorLayout)、
     // React は子の効果を先に走らせる。省略を「ホーム」と解すると、
     // あとから走る親側の呼び出しが作品の範囲を毎回消してしまう
-    const scope = projectId === undefined ? get().viewScopeProjectId : projectId;
+    const scope =
+      projectId === undefined ? get().viewScopeProjectId : projectId;
     let preference = DEFAULT_VIEW_PREFERENCE;
     try {
       // 土台をまず読み、作品を開いていればその上に重ねる。

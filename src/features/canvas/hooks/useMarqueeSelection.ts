@@ -1,9 +1,36 @@
 "use client";
 
-import { useCallback, useRef, type PointerEvent as ReactPointerEvent } from "react";
+import {
+  useCallback,
+  useRef,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { dancersInMarquee, marqueeBox } from "@/features/canvas/lib/marquee";
+
+/**
+ * 囲んだ結果の混ぜ方。修飾キーで決まる。
+ *
+ *   何も押さない … 置き換え
+ *   Shift / Ctrl / ⌘ … 足す
+ *   Alt … 外す（囲んだ中の人を、今の選択から除く）
+ *
+ * **Alt が優先。** 同時に押されたときは「外す」を採る — 足しながら外す
+ * ことはできないので、後から足した方の意図を通す。
+ */
+type MarqueeMode = "replace" | "add" | "remove";
+
+function marqueeMode(event: {
+  shiftKey: boolean;
+  metaKey: boolean;
+  ctrlKey: boolean;
+  altKey: boolean;
+}): MarqueeMode {
+  if (event.altKey) return "remove";
+  if (event.shiftKey || event.metaKey || event.ctrlKey) return "add";
+  return "replace";
+}
 
 /** これを越えて動いたら「囲んだ」。下回れば「叩いた」＝選択を外す */
 const DRAG_THRESHOLD_PX = 6;
@@ -45,6 +72,7 @@ export function useMarqueeSelection({
 }: Params) {
   const selectDancer = useUIStore((state) => state.selectDancer);
   const selectDancers = useUIStore((state) => state.selectDancers);
+  const deselectDancers = useUIStore((state) => state.deselectDancers);
 
   // ジェスチャ1回ぶんの走り書き。state に置くと毎 pointermove で描き直る
   const gesture = useRef<{
@@ -53,7 +81,8 @@ export function useMarqueeSelection({
     startY: number;
     /** しきい値を越えたか。越えていなければ「叩いた」扱い */
     isDragging: boolean;
-    additive: boolean;
+    /** 囲んだ結果を、今の選択にどう混ぜるか */
+    mode: MarqueeMode;
   } | null>(null);
 
   const hideBox = useCallback(() => {
@@ -86,8 +115,7 @@ export function useMarqueeSelection({
         startX: event.clientX,
         startY: event.clientY,
         isDragging: false,
-        // 修飾キーを押したまま囲めば、いまの選択へ足す
-        additive: event.shiftKey || event.metaKey || event.ctrlKey,
+        mode: marqueeMode(event),
       };
     },
     [selectedSceneId],
@@ -104,10 +132,7 @@ export function useMarqueeSelection({
 
       const dx = event.clientX - current.startX;
       const dy = event.clientY - current.startY;
-      if (
-        !current.isDragging &&
-        Math.hypot(dx, dy) < DRAG_THRESHOLD_PX
-      ) {
+      if (!current.isDragging && Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) {
         return;
       }
       current.isDragging = true;
@@ -139,9 +164,11 @@ export function useMarqueeSelection({
       }
 
       /* 動いていない = 囲んだのではなく叩いた。何も無いところを叩いたら
-         選択を外す（払って送る側と同じ作法。マウスでも同じにしておく） */
+         選択を外す（払って送る側と同じ作法。マウスでも同じにしておく）。
+         ただし修飾キーを押していたなら外さない — 足す / 外すつもりで
+         押していて空振りしただけなので、全部消えると取り返しが面倒 */
       if (!current.isDragging) {
-        selectDancer(null);
+        if (current.mode === "replace") selectDancer(null);
         return;
       }
 
@@ -163,15 +190,20 @@ export function useMarqueeSelection({
         isAudienceOnTop,
       });
 
-      /* 空振りでも、足すつもりで囲んだのなら今の選択は残す。
-         足すつもりが無いなら、囲んだ結果が空 = 解除 */
-      if (ids.length === 0 && current.additive) return;
-      selectDancers(ids, current.additive);
+      /* 空振りでも、足す / 外すつもりで囲んだのなら今の選択は残す。
+         置き換えるつもりなら、囲んだ結果が空 = 解除 */
+      if (ids.length === 0 && current.mode !== "replace") return;
+      if (current.mode === "remove") {
+        deselectDancers(ids);
+        return;
+      }
+      selectDancers(ids, current.mode === "add");
     },
     [
       hideBox,
       selectDancer,
       selectDancers,
+      deselectDancers,
       stageRef,
       selectedSceneId,
       stageWidthUnits,
