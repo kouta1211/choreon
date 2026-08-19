@@ -240,15 +240,25 @@ export function SceneDock({ project }: Props) {
               </div>
               {/* 時刻は【いま再生している位置】。選択中シーンの時刻ではなく
                   再生位置を出すのは、時間軸を触ってシークしたときに
-                  どこまで進んだかを読む先がここしか無いため */}
+                  どこまで進んだかを読む先がここしか無いため。
+
+                  順番だけで作っているときは秒を出さない。**代わりに
+                  「何番目か」**を置く — この行を空にすると、再生中に
+                  どこに居るのかを読む先が無くなる（実機の報告 17-3） */}
               <span className="block truncate font-mono text-mono-s text-fg-muted">
-                <PlayheadClock
-                  totalSeconds={totalSeconds > 0 ? totalSeconds : null}
-                  counts={countSetting}
-                />
-                {selectedIndex > 0 &&
-                  t.editor.dock.moveSeconds(durations[selectedIndex])}
-                {musicFileName && ` · ♪ ${musicFileName}`}
+                {isOrderOnly ? (
+                  t.editor.dock.scenePosition(selectedIndex + 1, scenes.length)
+                ) : (
+                  <>
+                    <PlayheadClock
+                      totalSeconds={totalSeconds > 0 ? totalSeconds : null}
+                      counts={countSetting}
+                    />
+                    {selectedIndex > 0 &&
+                      t.editor.dock.moveSeconds(durations[selectedIndex])}
+                    {musicFileName && ` · ♪ ${musicFileName}`}
+                  </>
+                )}
               </span>
             </div>
           </>

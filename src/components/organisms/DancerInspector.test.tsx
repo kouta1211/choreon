@@ -7,7 +7,13 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import * as dancersApi from "@/features/dancer/api/dancers";
 
-import { makeDancer } from "@/test/factories";
+import {
+  makeDancer,
+  makePosition,
+  makeProject,
+  makeScene,
+} from "@/test/factories";
+import { LocaleProvider } from "@/features/i18n/LocaleProvider";
 
 /** 削除は確認ダイアログ越しになったため、インスペクター単体ではなく
  * ダイアログと一緒に描画する(本番ではレイアウトが1つだけ描いている) */
@@ -256,5 +262,49 @@ describe("DancerInspector の置き場所", () => {
     useUIStore.setState({ selectedDancerIds: [] });
     const { container } = render(<DancerInspector variant="panel" />);
     expect(container.firstChild).toBeNull();
+  });
+});
+
+/* 実機の報告 17-3。移動がどれも同じ秒数の作品で、1人ぶんの秒数だけ
+   置いても比べる相手が無い */
+describe("DancerInspector の秒数（曲もメトロノームも無いとき）", () => {
+  it("この人だけの秒数の欄を出さない", () => {
+    useProjectStore.setState({
+      project: makeProject({ isMetronomeEnabled: false }),
+      dancers: { "dancer-1": makeDancer() },
+      scenes: [makeScene()],
+      positionsBySceneId: { "scene-1": { "dancer-1": makePosition() } },
+    });
+    useUIStore.setState({
+      selectedDancerIds: ["dancer-1"],
+      selectedSceneId: "scene-1",
+    });
+
+    render(
+      <LocaleProvider locale="ja">
+        <DancerInspector />
+      </LocaleProvider>,
+    );
+    expect(screen.queryByLabelText(/この人だけ|秒/)).toBeNull();
+  });
+
+  it("拍があるときは出す", () => {
+    useProjectStore.setState({
+      project: makeProject({ isMetronomeEnabled: true }),
+      dancers: { "dancer-1": makeDancer() },
+      scenes: [makeScene()],
+      positionsBySceneId: { "scene-1": { "dancer-1": makePosition() } },
+    });
+    useUIStore.setState({
+      selectedDancerIds: ["dancer-1"],
+      selectedSceneId: "scene-1",
+    });
+
+    render(
+      <LocaleProvider locale="ja">
+        <DancerInspector />
+      </LocaleProvider>,
+    );
+    expect(screen.getByLabelText(/この人だけ|秒/)).toBeInTheDocument();
   });
 });

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   act,
   fireEvent,
@@ -53,6 +53,9 @@ afterEach(() => {
 describe("SceneDock", () => {
   it("選択中のシーンの番号と名前を出す", () => {
     useProjectStore.setState({
+      // 秒数の行が出るのは【合わせる相手があるとき】。曲も拍も無いと
+      // 「シーン 2 / 2」に変わる（features/scene/lib/timelineMode）
+      project: makeProject({ isMetronomeEnabled: true }),
       scenes: [
         makeScene({ timeSeconds: 0 }),
         makeScene({
@@ -330,5 +333,36 @@ describe("SceneDock", () => {
 
       expect(useUIStore.getState().isPlaying).toBe(true);
     });
+  });
+});
+
+/**
+ * 順番だけで作っているときは、ドックの行から秒が消える。
+ * 空にすると再生中にどこに居るのか読む先が無くなるので、
+ * 代わりに「何番目か」を置いている（実機の報告 17-3）。
+ */
+describe("SceneDock（曲もメトロノームも無いとき）", () => {
+  beforeEach(() => {
+    useProjectStore.setState({
+      project: makeProject({ isMetronomeEnabled: false }),
+      scenes: [
+        makeScene({ timeSeconds: 0 }),
+        makeScene({
+          id: "scene-2",
+          name: "サビ",
+          orderIndex: 1,
+          timeSeconds: 4,
+        }),
+      ],
+    });
+    useUIStore.setState({ selectedSceneId: "scene-2" });
+  });
+
+  it("秒を出さず、何番目かを出す", () => {
+    render(<SceneDock project={makeProject()} />);
+
+    expect(screen.getByText("シーン 2 / 2")).toBeInTheDocument();
+    expect(screen.queryByText(/秒で移動/)).toBeNull();
+    expect(screen.queryByText(/0:0/)).toBeNull();
   });
 });

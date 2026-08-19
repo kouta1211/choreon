@@ -2,9 +2,8 @@
 
 import { BottomSheet } from "@/components/molecules/BottomSheet";
 import { SceneList } from "@/components/organisms/SceneList";
-import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import { totalTransitionSeconds } from "@/features/scene/lib/playback";
+import { useSceneSummary } from "@/features/scene/hooks/useSceneSummary";
 import type { Project } from "@/features/project/types";
 import { useT } from "@/features/i18n/LocaleProvider";
 
@@ -21,19 +20,16 @@ type Props = {
  */
 export function SceneListSheet({ project }: Props) {
   const t = useT();
+  const sceneSummary = useSceneSummary();
   const isOpen = useUIStore((state) => state.isSceneSheetOpen);
   const setSceneSheetOpen = useUIStore((state) => state.setSceneSheetOpen);
-  const scenes = useProjectStore((state) => state.scenes);
 
   return (
     <BottomSheet
       isOpen={isOpen}
       onClose={() => setSceneSheetOpen(false)}
       title={t.editor.scenes.title}
-      titleRight={t.editor.scenes.summary(
-        scenes.length,
-        totalTransitionSeconds(scenes),
-      )}
+      titleRight={sceneSummary}
       isTall
     >
       <div className="px-3.5 py-3">

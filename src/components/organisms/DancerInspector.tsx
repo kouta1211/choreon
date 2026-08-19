@@ -22,6 +22,7 @@ import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { sceneDurations } from "@/features/scene/lib/sceneTiming";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { useT } from "@/features/i18n/LocaleProvider";
+import { useOrderOnlyTimeline } from "@/features/scene/hooks/useOrderOnlyTimeline";
 
 /** ダンサー個別の遷移時間の入力が許容する範囲。schema.sqlのCHECK制約と合わせている */
 const MIN_DURATION_SECONDS = 0.1;
@@ -58,6 +59,7 @@ type Props = {
 
 export function DancerInspector({ variant = "floating" }: Props) {
   const t = useT();
+  const isOrderOnly = useOrderOnlyTimeline();
   // 1人だけ選んでいるときの板。複数のときは null になって出ない
   const selectedDancerId = useUIStore(selectPrimaryDancerId);
   const selectDancer = useUIStore((state) => state.selectDancer);
@@ -200,7 +202,10 @@ export function DancerInspector({ variant = "floating" }: Props) {
             textClassName="text-label font-semibold"
           />
 
-          {selectedSceneId && position && (
+          {/* この人だけ移動を速く/遅くする欄。**順番だけで作っている
+              ときは出さない** — 移動がどれも同じ秒数の作品で、1人ぶんの
+              秒数だけ置いても比べる相手が無い（実機の報告 17-3） */}
+          {selectedSceneId && position && !isOrderOnly && (
             <DurationSecondsInput
               key={`${dancer.id}-${selectedSceneId}`}
               label={t.dancer.inspector.ownDuration}

@@ -223,6 +223,8 @@ export const en = {
       play: "Play to the last scene",
       sceneSettings: (name: string) => `Open the settings for “${name}”`,
       moveSeconds: (seconds: number) => ` · ${seconds}s to get there`,
+      scenePosition: (index: number, total: number) =>
+        `Scene ${index} / ${total}`,
       addScene: "Add a scene",
       hideTimeline: "Collapse the timeline",
       showTimeline: "Show the timeline",
@@ -242,6 +244,7 @@ export const en = {
       sceneName: "Scene name",
       summary: (count: number, seconds: number) =>
         `${count} scenes · ${seconds}s in total`,
+      summaryCount: (count: number) => `${count} scenes`,
       moveIn: (seconds: number) => ` · ${seconds}s to get there`,
       segment: (seconds: number) => `→ ${seconds}s`,
       moveSeconds: "Seconds to get here",

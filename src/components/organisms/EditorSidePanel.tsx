@@ -5,7 +5,7 @@ import { SceneList } from "@/components/organisms/SceneList";
 import { DancerList } from "@/components/organisms/DancerList";
 import { DancerInspector } from "@/components/organisms/DancerInspector";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
-import { totalTransitionSeconds } from "@/features/scene/lib/playback";
+import { useSceneSummary } from "@/features/scene/hooks/useSceneSummary";
 import type { Project } from "@/features/project/types";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { useT } from "@/features/i18n/LocaleProvider";
@@ -30,6 +30,7 @@ type Tab = "scenes" | "dancers";
  */
 export function EditorSidePanel({ project, showScenes }: Props) {
   const t = useT();
+  const sceneSummary = useSceneSummary();
   const [tab, setTab] = useState<Tab>("scenes");
   const scenes = useProjectStore((state) => state.scenes);
   const activeTab: Tab = showScenes ? tab : "dancers";
@@ -70,10 +71,7 @@ export function EditorSidePanel({ project, showScenes }: Props) {
               {t.editor.scenes.title}
             </span>
             <span className="shrink-0 font-mono text-caption text-fg-muted">
-              {t.editor.scenes.summary(
-                scenes.length,
-                totalTransitionSeconds(scenes),
-              )}
+              {sceneSummary}
             </span>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">

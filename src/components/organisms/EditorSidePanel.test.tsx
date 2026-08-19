@@ -50,3 +50,28 @@ describe("EditorSidePanel", () => {
     expect(screen.getByText("あいり")).toBeInTheDocument();
   });
 });
+
+/* 実機の報告 17-3。合計の秒数も「秒数系の情報」で、これが残っていた */
+describe("EditorSidePanel の見出し", () => {
+  function withScenes(isMetronomeEnabled: boolean) {
+    useProjectStore.setState({
+      project: makeProject({ isMetronomeEnabled }),
+      scenes: [
+        makeScene({ timeSeconds: 0 }),
+        makeScene({ id: "scene-2", orderIndex: 1, timeSeconds: 4 }),
+      ],
+    });
+  }
+
+  it("曲も拍も無ければ、件数だけを出す", () => {
+    withScenes(false);
+    show(true);
+    expect(screen.getByText("2件")).toBeInTheDocument();
+  });
+
+  it("拍があれば、合計の秒数も出す", () => {
+    withScenes(true);
+    show(true);
+    expect(screen.getByText(/合計/)).toBeInTheDocument();
+  });
+});

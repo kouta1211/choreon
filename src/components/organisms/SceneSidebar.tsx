@@ -1,8 +1,7 @@
 "use client";
 
 import { SceneList } from "@/components/organisms/SceneList";
-import { useProjectStore } from "@/features/project/store/useProjectStore";
-import { totalTransitionSeconds } from "@/features/scene/lib/playback";
+import { useSceneSummary } from "@/features/scene/hooks/useSceneSummary";
 import type { Project } from "@/features/project/types";
 import { useT } from "@/features/i18n/LocaleProvider";
 
@@ -21,7 +20,7 @@ type Props = {
  */
 export function SceneSidebar({ project }: Props) {
   const t = useT();
-  const scenes = useProjectStore((state) => state.scenes);
+  const sceneSummary = useSceneSummary();
 
   return (
     <aside className="flex w-[268px] shrink-0 flex-col overflow-hidden rounded-xl border border-line bg-surface/60">
@@ -30,10 +29,7 @@ export function SceneSidebar({ project }: Props) {
           {t.editor.scenes.title}
         </span>
         <span className="shrink-0 font-mono text-caption text-fg-muted">
-          {t.editor.scenes.summary(
-            scenes.length,
-            totalTransitionSeconds(scenes),
-          )}
+          {sceneSummary}
         </span>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">

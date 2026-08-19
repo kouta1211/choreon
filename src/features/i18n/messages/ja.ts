@@ -246,6 +246,9 @@ export const ja = {
       play: "最後のシーンまで再生",
       sceneSettings: (name: string) => `「${name}」の設定を開く`,
       moveSeconds: (seconds: number) => ` · ${seconds}秒で移動`,
+      /** 順番だけで作っているとき。時計の代わりに「何番目か」を出す */
+      scenePosition: (index: number, total: number) =>
+        `シーン ${index} / ${total}`,
       addScene: "シーンを追加",
       hideTimeline: "時間軸を畳む",
       showTimeline: "時間軸を出す",
@@ -264,6 +267,8 @@ export const ja = {
       sceneName: "シーン名",
       summary: (count: number, seconds: number) =>
         `${count}件 · 合計 ${seconds}s`,
+      /** 順番だけで作っているとき。合計の秒数は出さない */
+      summaryCount: (count: number) => `${count}件`,
       moveIn: (seconds: number) => ` · ${seconds}s で移動`,
       /** 等間隔の帯で、コマとコマの間に出す区間の秒数 */
       segment: (seconds: number) => `→ ${seconds}s`,

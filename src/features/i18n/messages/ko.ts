@@ -223,6 +223,8 @@ export const ko = {
       play: "마지막 장면까지 재생",
       sceneSettings: (name: string) => `'${name}' 설정 열기`,
       moveSeconds: (seconds: number) => ` · ${seconds}초 동안 이동`,
+      scenePosition: (index: number, total: number) =>
+        `장면 ${index} / ${total}`,
       addScene: "장면 추가",
       hideTimeline: "시간축 접기",
       showTimeline: "시간축 펼치기",
@@ -241,6 +243,7 @@ export const ko = {
       sceneName: "장면 이름",
       summary: (count: number, seconds: number) =>
         `${count}개 · 합계 ${seconds}s`,
+      summaryCount: (count: number) => `${count}개`,
       moveIn: (seconds: number) => ` · ${seconds}s 동안 이동`,
       segment: (seconds: number) => `→ ${seconds}s`,
       moveSeconds: "앞 장면에서 몇 초로 이동할지",
