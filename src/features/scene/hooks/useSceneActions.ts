@@ -14,7 +14,7 @@ import type { Scene } from "@/features/scene/types";
 import {
   moveSceneTo,
   retimeForOrder,
-  restackForOrder,
+  uniformTimes,
   retimeScene,
 } from "@/features/scene/lib/sceneTiming";
 import { useT } from "@/features/i18n/LocaleProvider";
@@ -74,14 +74,13 @@ export function useSceneActions() {
    *
    * - 曲か拍がある … 動かした1つだけを新しい隣同士の中間へ。
    *   触っていないシーンを動かさない（曲に合わせて置いた隊形を守る）
-   * - どちらも無い … 各シーンの移動時間を持ち歩いて積み直す。
-   *   秒数そのものが user の決めた値なので、並べ替えただけで
-   *   4秒 が 2秒 になってはいけない
+   * - どちらも無い … 全部を同じ秒数で積み直す。この形では時刻が
+   *   順番以上のことを持たないので、書き換えても失われるものが無い
    */
   const reorderTo = async (orderedSceneIds: string[]) => {
     await commitTimes(
       isOrderOnly
-        ? restackForOrder(scenes, orderedSceneIds, defaultSegmentSeconds)
+        ? uniformTimes(orderedSceneIds, defaultSegmentSeconds)
         : retimeForOrder(scenes, orderedSceneIds),
     );
   };
@@ -186,6 +185,17 @@ export function useSceneActions() {
           removeScene(scene.id);
           const remaining = scenes.filter((s) => s.id !== scene.id);
           selectScene(remaining[0]?.id ?? null);
+          /* 順番だけで作っているときは、消したぶんの穴を詰める。
+             詰めないと、そこだけ移動に2倍の時間がかかる。**画面には
+             秒数が出ない**ので、再生してみるまで気づけない */
+          if (isOrderOnly) {
+            await commitTimes(
+              uniformTimes(
+                remaining.map((item) => item.id),
+                defaultSegmentSeconds,
+              ),
+            );
+          }
         } catch (error) {
           showToast({
             message: toUserMessage(error, t.sceneActions.deleteFailed),

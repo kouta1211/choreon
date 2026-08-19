@@ -46,15 +46,15 @@ afterEach(() => vi.restoreAllMocks());
  * **どちらが選ばれるか**はこの1箇所で決まるので、ここで縛る。
  */
 describe("useSceneActions の並び替え", () => {
-  it("曲も拍も無いときは、各シーンの移動時間を保ったまま積み直す", async () => {
+  it("曲も拍も無いときは、全部を同じ秒数で積み直す", async () => {
     const { result } = setup({ isMetronomeEnabled: false });
 
     await act(async () => {
       await result.current.reorderTo(["a", "c", "b"]);
     });
 
-    // c は自分の 2秒 を持ち歩く。b は 4秒 のまま
-    await waitFor(() => expect(timesById()).toEqual({ a: 0, c: 2, b: 6 }));
+    // 並びは a → c → b。間隔はどれも既定の 4秒
+    await waitFor(() => expect(timesById()).toEqual({ a: 0, c: 4, b: 8 }));
   });
 
   /* 拍という物差しがあるときは、触っていないシーンを動かさないのが正しい

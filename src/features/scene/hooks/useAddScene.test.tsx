@@ -53,15 +53,15 @@ afterEach(() => vi.restoreAllMocks());
  * **どちらが選ばれるか**をここで縛る。
  */
 describe("useAddScene の割り込み方", () => {
-  it("曲も拍も無いときは、後ろを押しのけて足す（秒数が変わらない）", async () => {
+  it("曲も拍も無いときは、全部を同じ秒数で積み直す", async () => {
     const { result } = setup({ isMetronomeEnabled: false });
 
     await act(async () => {
       await result.current.addScene();
     });
 
-    // 0 →(4) 新 →(4) b →(2) c。元の 4秒 と 2秒 が保たれている
-    await waitFor(() => expect(times()).toEqual([0, 4, 8, 10]));
+    // 選んでいた a の次へ入り、全部が既定の 4秒 間隔になる
+    await waitFor(() => expect(times()).toEqual([0, 4, 8, 12]));
   });
 
   /* 拍があるときは、触っていないシーンを動かさないのが正しい

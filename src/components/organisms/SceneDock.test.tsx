@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SceneDock } from "./SceneDock";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
@@ -310,7 +316,7 @@ describe("SceneDock", () => {
 
       // 数えている間はまだ動き出していない。ボタンには残りの拍が出る
       expect(useUIStore.getState().isPlaying).toBe(false);
-      expect(screen.getByRole("status")).toHaveTextContent("4");
+      expect(screen.getByTestId("count-in-beat")).toHaveTextContent("4");
     });
 
     it("予備拍が無ければ、その場で始まる", () => {

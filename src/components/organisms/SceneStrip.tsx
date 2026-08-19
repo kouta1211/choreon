@@ -1,12 +1,28 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { SceneThumbnail } from "@/components/molecules/SceneThumbnail";
+import {
+  DndContext,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  horizontalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { SceneStripCard } from "@/components/molecules/SceneStripCard";
+import {
+  ROW_DRAG_DELAY_MS,
+  ROW_DRAG_DISTANCE_PX,
+  ROW_DRAG_TOLERANCE_PX,
+  SceneRowMouseSensor,
+  SceneStripTouchSensor,
+} from "@/features/scene/lib/sceneRowSensors";
+import { reorderSceneIds } from "@/features/scene/lib/sceneReorder";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useSceneActions } from "@/features/scene/hooks/useSceneActions";
-import { sceneDurations } from "@/features/scene/lib/sceneTiming";
-import { useT } from "@/features/i18n/LocaleProvider";
 import type { Project } from "@/features/project/types";
 
 /** コマの幅。時間軸のコマと同じ見え方になるように合わせてある */
@@ -28,68 +44,97 @@ type Props = {
  * 「何秒目か」を捨てて、順番と「何秒で動くか」だけを出す。
  * どちらを出すかは `useOrderOnlyTimeline` が決める。
  *
- * ■ 移動時間はコマとコマの間に出す
- * コマの中に書くと「このシーンが何秒か」に読めるが、実際は
- * **前のシーンからここへ来るのにかかる時間**で、区間の値。
- * 区間の場所に置けば、読み違えようが無い。
+ * ■ 掴んで並び替えられる
+ * この帯が、この形での**シーンの主な操作場所**になる（実機の要望 17-1）。
+ * 一覧を開かずに順番を直せる。掴み始めの規則も確定の道も、一覧
+ * （SceneList）と同じものを使う — 2つ書くと必ず片方がずれる。
+ *
+ * ■ 秒数は出さない
+ * この形では移動がどれも同じ秒数なので（sceneTiming の `uniformTimes`）、
+ * コマごとに言うことが無い。数字が消えたぶん、コマそのものが読みやすい。
  */
 export function SceneStrip({ project }: Props) {
-  const t = useT();
   const scenes = useProjectStore((state) => state.scenes);
   const thumbnailBySceneId = useProjectStore(
     (state) => state.thumbnailBySceneId,
   );
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
-  const { selectSceneManually } = useSceneActions();
+  const { selectSceneManually, reorderTo } = useSceneActions();
 
-  const durations = sceneDurations(scenes);
-  const selectedRef = useRef<HTMLLIElement>(null);
+  /* マウスは距離で、指は長押しで始まる（指を距離で始めると、帯を横へ
+     スクロールできなくなる）。**指用だけ帯専用**にしてある — コマの中の
+     ボタンは「選ぶ」1つだけなので、そこから掴めないと指では並び替えが
+     どこからも始められない（sceneRowSensors） */
+  const sensors = useSensors(
+    useSensor(SceneRowMouseSensor, {
+      activationConstraint: { distance: ROW_DRAG_DISTANCE_PX },
+    }),
+    useSensor(SceneStripTouchSensor, {
+      activationConstraint: {
+        delay: ROW_DRAG_DELAY_MS,
+        tolerance: ROW_DRAG_TOLERANCE_PX,
+      },
+    }),
+  );
+
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over) return;
+    // 確定は一覧と同じ道。失敗したときに元へ戻すのは commitTimes の仕事
+    void reorderTo(
+      reorderSceneIds(
+        scenes.map((scene) => scene.id),
+        String(active.id),
+        String(over.id),
+      ),
+    );
+  };
+
+  const listRef = useRef<HTMLOListElement>(null);
 
   /* 選んでいるコマを見える所へ。シーンが増えると帯からはみ出すので、
-     一覧やキーボードで飛んだときに画面の外のままになる */
+     一覧やキーボードで飛んだときに画面の外のままになる。
+
+     コマは並び替えの部品（useSortable）で、その ref は dnd-kit が
+     使っている。横取りせず、**帯から印を辿って**探す */
   useEffect(() => {
-    selectedRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      inline: "nearest",
-    });
+    if (!selectedSceneId) return;
+    listRef.current
+      ?.querySelector(`[data-scene-id="${CSS.escape(selectedSceneId)}"]`)
+      ?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "nearest",
+      });
   }, [selectedSceneId]);
 
   if (scenes.length === 0) return null;
 
   return (
-    <ol
-      data-testid="scene-strip"
-      className="flex items-end gap-1 overflow-x-auto px-0.5 pb-1"
-    >
-      {scenes.map((scene, index) => {
-        const isSelected = scene.id === selectedSceneId;
-        return (
-          <li
-            key={scene.id}
-            ref={isSelected ? selectedRef : undefined}
-            className="flex shrink-0 items-end gap-1"
-          >
-            {/* 区間の秒数。先頭には入ってくる元が無い */}
-            {index > 0 && (
-              <span className="shrink-0 pb-6 font-mono text-caption whitespace-nowrap text-fg-muted">
-                {t.editor.scenes.segment(durations[index])}
-              </span>
-            )}
-            <SceneThumbnail
+    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      <SortableContext
+        items={scenes.map((scene) => scene.id)}
+        strategy={horizontalListSortingStrategy}
+      >
+        <ol
+          ref={listRef}
+          data-testid="scene-strip"
+          className="flex items-end gap-1 overflow-x-auto px-0.5 pb-1"
+        >
+          {scenes.map((scene, index) => (
+            <SceneStripCard
+              key={scene.id}
               scene={scene}
+              number={index + 1}
               thumbnail={thumbnailBySceneId[scene.id]}
               stageWidthUnits={project.stageWidth}
               stageHeightUnits={project.stageHeight}
-              isSelected={isSelected}
-              onClick={() => selectSceneManually(scene.id)}
-              index={index + 1}
+              isSelected={scene.id === selectedSceneId}
               sizePx={CARD_WIDTH_PX}
-              showLabel
+              onSelect={() => selectSceneManually(scene.id)}
             />
-          </li>
-        );
-      })}
-    </ol>
+          ))}
+        </ol>
+      </SortableContext>
+    </DndContext>
   );
 }

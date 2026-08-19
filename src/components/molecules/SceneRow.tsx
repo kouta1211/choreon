@@ -10,7 +10,6 @@ import {
   formatClock,
   SceneTimeField,
 } from "@/components/molecules/SceneTimeField";
-import { SceneDurationField } from "@/components/molecules/SceneDurationField";
 import { useOrderOnlyTimeline } from "@/features/scene/hooks/useOrderOnlyTimeline";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { isRowSelectClick } from "@/features/scene/lib/sceneRowSensors";
@@ -156,7 +155,7 @@ export function SceneRow({
             }`}
           >
             {isOrderOnly
-              ? index > 0 && t.editor.scenes.segment(segmentSeconds)
+              ? null
               : [
                   formatClock(scene.timeSeconds),
                   index > 0 ? t.editor.scenes.moveIn(segmentSeconds) : "",
@@ -170,23 +169,10 @@ export function SceneRow({
           全行に並べると一覧として読めなくなる */}
       {isSelected && (
         <div className="flex flex-col gap-2 px-2.5 pb-2.5">
-          {/* 合わせる相手（曲・拍）が無いときは、時刻ではなく
-              「何秒で動くか」を入れさせる。先頭のシーンには入ってくる元が
-              無いので、そのときは何も出さない（理由は lib/timelineMode） */}
-          {isOrderOnly ? (
-            index > 0 && (
-              <SceneDurationField
-                fieldKey={scene.id}
-                segmentSeconds={segmentSeconds}
-                onCommit={(seconds) =>
-                  onChangeTime(
-                    scene.timeSeconds - segmentSeconds + seconds,
-                    true,
-                  )
-                }
-              />
-            )
-          ) : (
+          {/* 合わせる相手（曲・拍）が無いときは、時刻も移動時間も出さない。
+              移動はどれも同じ秒数なので、シーンごとに言うことが無い
+              （理由は lib/timelineMode / sceneTiming の uniformTimes） */}
+          {!isOrderOnly && (
             <SceneTimeField
               fieldKey={scene.id}
               timeSeconds={scene.timeSeconds}

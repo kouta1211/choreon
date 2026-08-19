@@ -47,6 +47,7 @@ export function CountInOverlay({
           やり直させる。数が減っていることが動きでも分かる */}
       <span
         key={remainingBeats}
+        data-testid="count-in-beat"
         role="status"
         aria-live="assertive"
         className="count-in-beat font-mono text-[22vmin] leading-none font-bold tabular-nums text-fg-strong"

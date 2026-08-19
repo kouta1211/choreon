@@ -11,7 +11,7 @@ import type { Project } from "@/features/project/types";
 import { randomId } from "@/lib/randomId";
 import {
   duplicateTimeSeconds,
-  insertAfterSeconds,
+  uniformTimes,
   insertTimeSeconds,
 } from "@/features/scene/lib/sceneTiming";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
@@ -72,12 +72,18 @@ export function useAddScene(project: Project) {
       scenes.find((scene) => scene.id === previousSelectedSceneId) ??
       scenes[scenes.length - 1];
 
-    /* 時刻という概念を出していないときは、**後ろを押しのけて**差し込む。
-       中間へ置くと、間に1つ足すたびに前後の移動時間が半分になり、
-       user が決めた秒数が勝手に変わる（lib/timelineMode の考え方） */
-    const rippled =
+    /* 順番だけで作っているときは、**選んでいるシーンの次**へ入れて
+       全部を同じ秒数で積み直す。この形では時刻が順番以上のことを
+       持たないので、書き換えても失われるものが無い（lib/timelineMode） */
+    const newSceneId = randomId();
+    const restacked =
       !hasMusic && !isMetronomeEnabled && scenes.length > 0
-        ? insertAfterSeconds(scenes, source, segmentSeconds)
+        ? uniformTimes(
+            scenes.flatMap((item) =>
+              item.id === source.id ? [item.id, newSceneId] : [item.id],
+            ),
+            segmentSeconds,
+          )
         : null;
 
     // シーンがまだ1つも無いときは曲の頭から始める(最初の隊形は
@@ -85,8 +91,8 @@ export function useAddScene(project: Project) {
     const timeSeconds =
       scenes.length === 0
         ? 0
-        : rippled
-          ? rippled.timeSeconds
+        : restacked
+          ? (restacked.get(newSceneId) ?? 0)
           : hasMusic
             ? // 押した瞬間の再生位置。曲が止まっていればシークした位置になる
               insertTimeSeconds(
@@ -98,7 +104,7 @@ export function useAddScene(project: Project) {
               duplicateTimeSeconds(scenes, source, segmentSeconds);
 
     const scene = {
-      id: randomId(),
+      id: newSceneId,
       projectId: project.id,
       // 件数＋1 ではなく「空いているいちばん小さい番号」。3つ作って
       // 真ん中を消すと、件数＋1 は既にある名前とぶつかる(sceneName.ts)
@@ -118,7 +124,7 @@ export function useAddScene(project: Project) {
     const previousTimes = new Map(
       scenes.map((item) => [item.id, item.timeSeconds]),
     );
-    if (rippled?.shifted.size) applySceneTimes(rippled.shifted);
+    if (restacked) applySceneTimes(restacked);
     addScene(scene);
     for (const position of copiedPositions) {
       updateDancerPosition(scene.id, position.dancerId, position);
@@ -141,19 +147,23 @@ export function useAddScene(project: Project) {
         await upsertPositions(supabase, copiedPositions);
         // 押しのけたぶんも同じ往復で送る。片方だけ通ると、画面と
         // 保存されているものがずれたまま気づけない
-        if (rippled?.shifted.size) {
+        if (restacked) {
+          // 押し出したぶんも同じ往復で送る。片方だけ通ると、画面と
+          // 保存されているものがずれたまま気づけない
           await updateSceneTimes(
             supabase,
-            [...rippled.shifted].map(([id, timeSeconds]) => ({
-              id,
-              timeSeconds,
-            })),
+            scenes
+              .filter((item) => restacked.get(item.id) !== item.timeSeconds)
+              .map((item) => ({
+                id: item.id,
+                timeSeconds: restacked.get(item.id)!,
+              })),
           );
         }
       });
     } catch (error) {
       removeScene(scene.id);
-      if (rippled?.shifted.size) applySceneTimes(previousTimes);
+      if (restacked) applySceneTimes(previousTimes);
       selectScene(previousSelectedSceneId);
       if (!hasMusic) useMusicStore.getState().setCurrentTime(previousTime);
       showToast({

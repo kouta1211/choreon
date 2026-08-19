@@ -220,81 +220,31 @@ export function retimeForOrder(
 }
 
 /**
- * あるシーンの【すぐ後ろ】へ、**後ろを押しのけて**差し込む時刻。
+ * 順番だけで作っているときの時刻。**全部の移動を同じ秒数にする**。
  *
- * 曲も拍も無いとき（順番だけで作っているとき）の追加はこちら。
- * `duplicateTimeSeconds` は元と次の【中間】へ置くので、**間に1つ足すたびに
- * 前後の移動時間が半分になる**。秒数そのものが user の決めた値である
- * 作品では、足しただけで 4秒 が 2秒 になってはいけない。
+ * ■ なぜ1つずつ持たせないのか（user の判断 2026-08-19）
+ * 曲も拍も無いなら、時刻に意味が無い。ひとつ手前で「時刻」をやめて
+ * 「何秒で動くか」だけにしたが、**その秒数も要らない**という結論になった。
+ * 秒数が消えると、シーンのカードから数字がまるごと落ちて一覧が読みやすい。
  *
- * ここでは新しいシーンに `segmentSeconds` を与え、それより後ろのシーンを
- * 同じだけまとめて後ろへずらす。**触っていないシーンの移動時間は変わらない**
- * （変わるのは「新しいシーンが1つ挟まった」ことだけ）。
+ * ■ 何秒にするか
+ * 設定の「新しいシーンを何秒後に置くか」(`defaultSegmentSeconds`)を使う。
+ * この形では**その値がそのまま全部の移動時間**になる。数字をここに
+ * 書き込まない — 設定を直した瞬間に嘘になる。
  *
- * @returns 新しいシーンの時刻と、ずらす必要があるシーンの新しい時刻
+ * ■ 情報を捨てているわけではない
+ * この形の間、時刻は順番以上のことを何も持たない（`index × 秒数`）ので、
+ * 書き換えても失われるものが無い。曲を入れれば時間軸へ戻り、そこからは
+ * また1つずつ動かせる。
  */
-export function insertAfterSeconds(
-  scenes: TimedScene[],
-  source: TimedScene | undefined,
-  segmentSeconds: number = DEFAULT_SEGMENT_SECONDS,
-): { timeSeconds: number; shifted: Map<string, number> } {
-  const shifted = new Map<string, number>();
-  const step = Math.max(MIN_SEGMENT_SECONDS, segmentSeconds);
-
-  if (!source) return { timeSeconds: 0, shifted };
-
-  const timeSeconds = roundSeconds(source.timeSeconds + step);
-  const index = scenes.findIndex((scene) => scene.id === source.id);
-  if (index === -1) return { timeSeconds, shifted };
-
-  for (const scene of scenes.slice(index + 1)) {
-    shifted.set(scene.id, roundSeconds(scene.timeSeconds + step));
-  }
-  return { timeSeconds, shifted };
-}
-
-/**
- * 並び替えた結果を、**各シーンの移動時間を保ったまま**積み直す。
- *
- * 曲も拍も無いとき（順番だけで作っているとき）の並び替えはこちら。
- * `retimeForOrder` は動いた1つを新しい隣同士の【中間】へ置くので、
- * その前後の移動時間が勝手に変わる。時刻を合わせる相手が居る作品では
- * それが正しい（触っていないシーンを動かさない）が、**秒数そのものが
- * user の決めた値**である作品では、並べ替えただけで 4秒 が 2秒 になる。
- *
- * ここでは各シーンが「入ってくるのにかかる秒数」を持ち歩き、新しい順に
- * 積み直す。先頭は0から始まる。
- *
- * 先頭だったシーンが後ろへ動くと、持ち歩く秒数が無い（先頭は入ってくる
- * 元を持たない）。そのときだけ既定の秒数を使う — 0 にすると前のシーンと
- * 同じ時刻に重なり、どちらの隊形を出すか決まらなくなる。
- */
-export function restackForOrder(
-  scenes: TimedScene[],
+export function uniformTimes(
   orderedIds: string[],
-  /** 先頭だったシーンが後ろへ動いたときに使う秒数 */
   segmentSeconds: number = DEFAULT_SEGMENT_SECONDS,
 ): Map<string, number> {
-  const durations = sceneDurations(scenes);
-  const carried = new Map(
-    scenes.map((scene, index) => [scene.id, durations[index]]),
+  const step = Math.max(MIN_SEGMENT_SECONDS, segmentSeconds);
+  return new Map(
+    orderedIds.map((id, index) => [id, roundSeconds(index * step)]),
   );
-
-  const timesById = new Map(scenes.map((s) => [s.id, s.timeSeconds]));
-  let cursor = scenes[0]?.timeSeconds ?? 0;
-
-  orderedIds.forEach((id, index) => {
-    if (!timesById.has(id)) return;
-    if (index === 0) {
-      timesById.set(id, roundSeconds(cursor));
-      return;
-    }
-    const step = carried.get(id) || segmentSeconds;
-    cursor = roundSeconds(cursor + Math.max(MIN_SEGMENT_SECONDS, step));
-    timesById.set(id, cursor);
-  });
-
-  return timesById;
 }
 
 /**

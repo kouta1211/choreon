@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  insertAfterSeconds,
-  restackForOrder,
+  uniformTimes,
   DEFAULT_SEGMENT_SECONDS,
   duplicateTimeSeconds,
   insertTimeSeconds,
@@ -245,89 +244,27 @@ describe("sortScenes", () => {
   });
 });
 
-describe("restackForOrder", () => {
-  /** 0 → 4 → 6 秒。移動時間は 4秒 と 2秒 */
-  const scenes = [
-    { id: "a", timeSeconds: 0 },
-    { id: "b", timeSeconds: 4 },
-    { id: "c", timeSeconds: 6 },
-  ];
-
-  const times = (map: Map<string, number>, ids: string[]) =>
-    ids.map((id) => map.get(id));
-
-  it("並べ替えても、各シーンの移動時間はそのまま付いてくる", () => {
-    // c を b の前へ。c は 2秒 を持ち歩く
-    const result = restackForOrder(scenes, ["a", "c", "b"]);
-
-    expect(times(result, ["a", "c", "b"])).toEqual([0, 2, 6]);
+describe("uniformTimes", () => {
+  it("全部を同じ秒数で積む", () => {
+    const times = uniformTimes(["a", "b", "c"], 4);
+    expect([...times.values()]).toEqual([0, 4, 8]);
   });
 
-  it("並べ替えないなら、何も動かない", () => {
-    const result = restackForOrder(scenes, ["a", "b", "c"]);
-    expect(times(result, ["a", "b", "c"])).toEqual([0, 4, 6]);
+  it("先頭は0から始まる", () => {
+    expect(uniformTimes(["a"], 4).get("a")).toBe(0);
   });
 
-  /* 先頭は「入ってくる元」を持たないので、持ち歩く秒数が無い。
-     0 にすると前のシーンと同じ時刻に重なる */
-  it("先頭だったシーンが後ろへ動いたら、既定の秒数を使う", () => {
-    const result = restackForOrder(scenes, ["b", "c", "a"], 3);
-
-    // b が先頭(0) → c は 2秒 → a は既定の 3秒
-    expect(times(result, ["b", "c", "a"])).toEqual([0, 2, 5]);
+  it("秒数を変えれば、間隔もそのぶん変わる", () => {
+    expect([...uniformTimes(["a", "b"], 1.5).values()]).toEqual([0, 1.5]);
   });
 
-  it("先頭の時刻は、元の先頭の時刻から始める（曲の頭出しを壊さない）", () => {
-    const offset = [
-      { id: "a", timeSeconds: 10 },
-      { id: "b", timeSeconds: 14 },
-    ];
-    const result = restackForOrder(offset, ["b", "a"], 3);
-    expect(times(result, ["b", "a"])).toEqual([10, 13]);
+  /* 0 にすると全部が同じ時刻に重なり、どの隊形を出すか決まらなくなる */
+  it("0 を渡されても、最小の間隔は空ける", () => {
+    const times = uniformTimes(["a", "b"], 0);
+    expect(times.get("b")).toBe(MIN_SEGMENT_SECONDS);
   });
 
-  it("シーンが1つでも落ちない", () => {
-    const one = [{ id: "a", timeSeconds: 2 }];
-    expect(times(restackForOrder(one, ["a"]), ["a"])).toEqual([2]);
-  });
-});
-
-describe("insertAfterSeconds", () => {
-  /** 0 → 4 → 6 秒。移動時間は 4秒 と 2秒 */
-  const scenes = [
-    { id: "a", timeSeconds: 0 },
-    { id: "b", timeSeconds: 4 },
-    { id: "c", timeSeconds: 6 },
-  ];
-
-  /* ここが「間に足すたびに秒数が半分になる」不具合の芯 */
-  it("間に足しても、前後の移動時間が変わらない", () => {
-    const { timeSeconds, shifted } = insertAfterSeconds(scenes, scenes[0], 4);
-
-    // 新しいシーンは a の 4秒後
-    expect(timeSeconds).toBe(4);
-    // b と c は 4秒 ずつ後ろへ。互いの間隔（2秒）は変わらない
-    expect(shifted.get("b")).toBe(8);
-    expect(shifted.get("c")).toBe(10);
-    expect(shifted.get("b")! - timeSeconds).toBe(4);
-    expect(shifted.get("c")! - shifted.get("b")!).toBe(2);
-  });
-
-  it("末尾の後ろへ足すときは、押しのける相手が居ない", () => {
-    const { timeSeconds, shifted } = insertAfterSeconds(scenes, scenes[2], 4);
-
-    expect(timeSeconds).toBe(10);
-    expect(shifted.size).toBe(0);
-  });
-
-  it("秒数は最小の間隔を下回らない（同じ時刻に重ねない）", () => {
-    const { timeSeconds } = insertAfterSeconds(scenes, scenes[0], 0);
-    expect(timeSeconds).toBe(MIN_SEGMENT_SECONDS);
-  });
-
-  it("元にするシーンが無ければ、頭に置く", () => {
-    const { timeSeconds, shifted } = insertAfterSeconds([], undefined, 4);
-    expect(timeSeconds).toBe(0);
-    expect(shifted.size).toBe(0);
+  it("シーンが無ければ空", () => {
+    expect(uniformTimes([], 4).size).toBe(0);
   });
 });

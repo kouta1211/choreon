@@ -222,38 +222,14 @@ describe("SceneList（曲もメトロノームも無いとき）", () => {
     expect(screen.queryByText(/0:02\.0/)).toBeNull();
   });
 
-  it("代わりに「何秒で動くか」を入れさせる", () => {
+  it("移動時間の欄も出さない（どの移動も同じ秒数なので、言うことが無い）", () => {
     render(<SceneList project={makeProject()} />);
-    expect(
-      screen.getByLabelText(/前のシーンから何秒で動くか/),
-    ).toBeInTheDocument();
+    expect(screen.queryByLabelText(/何秒で動くか/)).toBeNull();
   });
 
-  /* 先頭には入ってくる元が無い。空の欄を出すと「入れられるのに効かない」
-     ように見える */
-  it("先頭のシーンには、その欄も出さない", () => {
-    useUIStore.setState({ selectedSceneId: "scene-1" });
+  /* カードから数字がまるごと落ちる。これが「一覧を簡略にしたい」への答え */
+  it("カードに秒数の行を出さない", () => {
     render(<SceneList project={makeProject()} />);
-    expect(screen.queryByLabelText(/前のシーンから何秒で動くか/)).toBeNull();
-  });
-
-  /* 入れた数がそのまま結果になる。時刻の欄は「後ろを押しのけない」のが
-     既定で、詰まっていると入れた秒数どおりにならない */
-  it("秒数を変えると、以降のシーンもまとめてずれる", async () => {
-    const upsert = vi
-      .spyOn(scenesApi, "updateSceneTimes")
-      .mockResolvedValue(undefined);
-    const user = userEvent.setup();
-
-    render(<SceneList project={makeProject()} />);
-    const field = screen.getByLabelText(/前のシーンから何秒で動くか/);
-    await user.clear(field);
-    await user.type(field, "5");
-    await user.tab();
-
-    await waitFor(() => expect(upsert).toHaveBeenCalled());
-    // scene-2 は 2秒 → 5秒。scene-1(先頭)は動かない
-    expect(useProjectStore.getState().scenes[1].timeSeconds).toBe(5);
-    expect(useProjectStore.getState().scenes[0].timeSeconds).toBe(0);
+    expect(screen.queryByText(/s で移動/)).toBeNull();
   });
 });

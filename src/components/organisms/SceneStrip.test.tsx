@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SceneStrip } from "./SceneStrip";
 import { LocaleProvider } from "@/features/i18n/LocaleProvider";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { makeProject, makeScene } from "@/test/factories";
+import * as scenesApi from "@/features/scene/api/scenes";
 
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({}) }));
 
@@ -45,18 +46,12 @@ describe("SceneStrip", () => {
     ]);
   });
 
-  /* 秒数は「このシーンの長さ」ではなく【区間】の値。コマの中ではなく
-     コマとコマの間に出す */
-  it("コマとコマの間に、そこへ来るまでの秒数を出す", () => {
+  /* この形では移動がどれも同じ秒数なので、コマごとに言うことが無い。
+     数字が消えたぶん、コマそのものが読みやすい */
+  it("秒数を出さない", () => {
     show();
-    expect(screen.getByText("→ 4s")).toBeInTheDocument();
-    expect(screen.getByText("→ 0.2s")).toBeInTheDocument();
-  });
-
-  it("先頭には、入ってくる秒数を出さない（入ってくる元が無い）", () => {
-    show();
-    // 区間は「シーンの数 - 1」個
-    expect(screen.getAllByText(/^→ /)).toHaveLength(2);
+    expect(screen.queryByText(/^→ /)).toBeNull();
+    expect(screen.queryByText(/s$/)).toBeNull();
   });
 
   it("押すと、そのシーンに切り替わる", async () => {
@@ -69,5 +64,55 @@ describe("SceneStrip", () => {
     useProjectStore.setState({ scenes: [] });
     show();
     expect(screen.queryByTestId("scene-strip")).toBeNull();
+  });
+});
+
+/**
+ * 帯の上で掴んで並び替える（実機の要望 17-1）。
+ *
+ * jsdom は寸法を持たないので、**コマの矩形を自分で与える**（PathOverlay の
+ * テストと同じ手）。与えないと dnd-kit が落とし先を決められず、
+ * 掴んでも `over` が null のまま終わる。
+ */
+describe("SceneStrip の並び替え", () => {
+  /** 74px 幅のコマが横に並んでいることにする */
+  function layOutCards() {
+    screen.getAllByRole("listitem").forEach((item, index) => {
+      item.getBoundingClientRect = () =>
+        ({
+          x: index * 80,
+          y: 0,
+          left: index * 80,
+          top: 0,
+          right: index * 80 + 74,
+          bottom: 74,
+          width: 74,
+          height: 74,
+          toJSON: () => ({}),
+        }) as DOMRect;
+      item.setPointerCapture = () => {};
+      item.releasePointerCapture = () => {};
+    });
+  }
+
+  it("コマを掴んで動かすと、その順番で確定する", async () => {
+    const update = vi
+      .spyOn(scenesApi, "updateSceneTimes")
+      .mockResolvedValue(undefined);
+    show();
+    layOutCards();
+
+    /* マウスは onMouseDown で始まる（SceneRowMouseSensor）。
+       8px 動かないと掴んだことにならないので、まず小さく動かす */
+    const first = screen.getAllByRole("listitem")[0];
+    fireEvent.mouseDown(first, { clientX: 0, clientY: 0 });
+    fireEvent.mouseMove(document, { clientX: 20, clientY: 0 });
+    fireEvent.mouseMove(document, { clientX: 170, clientY: 0 });
+    fireEvent.mouseUp(document, { clientX: 170, clientY: 0 });
+
+    await waitFor(() => expect(update).toHaveBeenCalled());
+    // 中身は reorderSceneIds / uniformTimes のテストが持っている。
+    // ここで見るのは【掴んで確定まで届いたか】
+    expect(useProjectStore.getState().scenes[0].id).not.toBe("scene-1");
   });
 });
