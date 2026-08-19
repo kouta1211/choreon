@@ -2,7 +2,6 @@
 
 import { Stage } from "@/components/organisms/Stage";
 import { StageMarks } from "@/components/molecules/StageMarks";
-import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import {
   positionsAtSeconds,
@@ -11,6 +10,7 @@ import {
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { mirrorAngle, toScreenY } from "@/features/canvas/lib/stageFlip";
 import { DancerMarker } from "@/components/molecules/DancerIcon";
+import { PathOverlay } from "@/components/molecules/PathOverlay";
 
 /* 自分を一回り大きくするのは DancerMarker が isFocused で行う。
    ここで重ねて掛けると二重になる */
@@ -25,11 +25,11 @@ const OTHER_OPACITY = 0.45;
  * 結局どれが自分か読めない。塗り→輪郭という【描き方そのものの変換】が
  * 効いていて、塗られているものが1つしかない画面になる。
  *
- * ■ 導線は【これからどこへ動くか】
- * いまの位置から、次のシーンの位置へ矢印を引く（実機の報告 2026-08-19）。
- * 以前は「どこから来たか」を破線で残していたが、user の言う導線は
- * 「今のシーンから次のシーンへ移る線」で、作る画面の導線とも意味が揃う。
- * 見る人が知りたいのは**次にどこへ行くか**で、来た道ではない。
+ * ■ 導線は【これからどこへ動くか】。描くのは作る画面と同じ部品
+ * いまの位置から、次のシーンの位置へ（実機の報告 2026-08-19）。
+ * 線の引き方は `PathOverlay` にそのまま任せる — 見た目を作り直すと
+ * 作る画面と少しずつずれていく（点線の刻み・矢印・曲線の扱い）。
+ * **渡すのを自分のぶんだけに絞れば、1本だけ描かれる**。
  * 他人の導線は出さない — 6本引くと自分の1本が埋もれる。
  */
 export function ViewerStage() {
@@ -53,14 +53,31 @@ export function ViewerStage() {
   );
   const dancerById = new Map(dancers.map((dancer) => [dancer.id, dancer]));
 
-  /* 自分が「これからどこへ行くか」。区間の終わりの位置。
-     最後のシーンには行き先が無いので、そのときは線を引かない */
   const span = sceneSpanAt(scenes, currentSeconds);
-  const goingTo =
-    focusedDancerId && span?.to
-      ? positionsBySceneId[span.to.id]?.[focusedDancerId]
-      : undefined;
   const own = positions.find((p) => p.dancerId === focusedDancerId);
+
+  /* 自分の導線1本ぶん。始点は【いまの位置】なので、再生中は線が縮んで
+     残りの道のりを指し続ける。最後のシーンには行き先が無いので出さない。
+     PathOverlay は「動かない人には線を引かない」ので、その場に留まる
+     シーンでも余計な線は出ない */
+  const goingTo =
+    own && span?.to
+      ? positionsBySceneId[span.to.id]?.[own.dancerId]
+      : undefined;
+  const ownPath =
+    own && span && goingTo
+      ? {
+          dancerId: own.dancerId,
+          from: {
+            sceneId: span.from.id,
+            dancerId: own.dancerId,
+            xCoordinate: own.x,
+            yCoordinate: own.y,
+            rotationAngle: own.rotationAngle,
+          },
+          to: goingTo,
+        }
+      : null;
   // 見る側の端末でも「客席を上にする」は効く。踊る人が稽古場で鏡を
   // 見ながら確かめるための設定なので、見る画面でこそ要る(stageFlip.ts)
   const screenY = (value: number) =>
@@ -73,41 +90,17 @@ export function ViewerStage() {
         stageHeightUnits={project.stageHeight}
       />
 
-      {/* これからどこへ動くか。いまの位置から、次のシーンの位置へ */}
-      {isPathVisible && own && goingTo && (
-        <svg
-          aria-hidden
-          viewBox={`0 0 ${project.stageWidth} ${project.stageHeight}`}
-          preserveAspectRatio="none"
-          className="pointer-events-none absolute inset-0 h-full w-full"
-        >
-          <defs>
-            <marker
-              id="viewer-path-arrow"
-              viewBox="0 0 10 10"
-              refX="8"
-              refY="5"
-              markerWidth="4"
-              markerHeight="4"
-              orient="auto-start-reverse"
-            >
-              <path d="M0,0 L10,5 L0,10 z" fill="context-stroke" />
-            </marker>
-          </defs>
-          <line
-            x1={own.x}
-            y1={screenY(own.y)}
-            x2={goingTo.xCoordinate}
-            y2={screenY(goingTo.yCoordinate)}
-            stroke={themedDancerColor(
-              dancerById.get(own.dancerId)?.color ?? "#888",
-            )}
-            strokeDasharray="0.3 0.22"
-            vectorEffect="non-scaling-stroke"
-            style={{ strokeWidth: 2 }}
-            markerEnd="url(#viewer-path-arrow)"
-          />
-        </svg>
+      {/* これからどこへ動くか。作る画面と同じ部品で描く */}
+      {isPathVisible && ownPath && (
+        <PathOverlay
+          currentPositions={{ [ownPath.dancerId]: ownPath.from }}
+          nextPositions={{ [ownPath.dancerId]: ownPath.to }}
+          dancers={Object.fromEntries(
+            dancers.map((dancer) => [dancer.id, dancer]),
+          )}
+          stageWidthUnits={project.stageWidth}
+          stageHeightUnits={project.stageHeight}
+        />
       )}
 
       {positions.map((position) => {

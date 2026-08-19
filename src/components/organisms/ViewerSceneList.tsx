@@ -34,7 +34,8 @@ export function ViewerSceneList() {
   const [isOpen, setOpen] = useState(false);
   const scenes = useViewerStore((state) => state.scenes);
   const currentSeconds = useViewerStore((state) => state.currentSeconds);
-  const setCurrentSeconds = useViewerStore((state) => state.setCurrentSeconds);
+  /* 飛ぶときは再生を止める（帯と同じ作法） */
+  const jumpToSeconds = useViewerStore((state) => state.jumpToSeconds);
 
   if (scenes.length === 0) return null;
 
@@ -70,7 +71,7 @@ export function ViewerSceneList() {
               <li key={scene.id}>
                 <PressableButton
                   onClick={() => {
-                    setCurrentSeconds(scene.timeSeconds);
+                    jumpToSeconds(scene.timeSeconds);
                     setOpen(false);
                   }}
                   aria-current={isHere ? "true" : undefined}

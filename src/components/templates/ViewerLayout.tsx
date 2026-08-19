@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { ChevronDown, Pause, Play, Spline } from "lucide-react";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { saveLastViewed } from "@/features/viewer/lib/lastViewed";
@@ -63,7 +63,10 @@ export function ViewerLayout({
   const togglePath = useViewerStore((state) => state.togglePath);
   const currentSeconds = useViewerStore((state) => state.currentSeconds);
   const setCurrentSeconds = useViewerStore((state) => state.setCurrentSeconds);
-  const [isPlaying, setIsPlaying] = useState(false);
+  /* 再生中かはストアが持つ。帯やシーン一覧から飛ぶときに止める必要があり、
+     ここに閉じ込めていると止められない（実機の要望 2026-08-19） */
+  const isPlaying = useViewerStore((state) => state.isPlaying);
+  const setIsPlaying = useViewerStore((state) => state.setIsPlaying);
   const hasMusic = useMusicStore((state) => state.objectUrl !== null);
 
   useEffect(() => {
@@ -96,7 +99,7 @@ export function ViewerLayout({
     };
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
-  }, [isPlaying, hasMusic, lastSeconds, setCurrentSeconds]);
+  }, [isPlaying, hasMusic, lastSeconds, setCurrentSeconds, setIsPlaying]);
 
   /* 開けたリンクを端末に覚えておく。ホーム画面のアイコンは
      トップページを開くので、圏外だとここへ戻る道が無かった
@@ -204,7 +207,7 @@ export function ViewerLayout({
           kind="icon"
           onClick={() => {
             if (currentSeconds >= lastSeconds) setCurrentSeconds(0);
-            setIsPlaying((playing) => !playing);
+            setIsPlaying(!isPlaying);
           }}
           aria-label={isPlaying ? t.viewer.route.stop : t.viewer.route.play}
           /* 主役はスクラブなので、再生は静かなボタンに格下げしてある */

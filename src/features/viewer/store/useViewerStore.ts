@@ -24,6 +24,14 @@ type ViewerState = {
   currentSeconds: number;
   /** 自分の導線を出すか。隊形だけ見たいことがある */
   isPathVisible: boolean;
+  /**
+   * 再生中か。
+   *
+   * 画面のローカル状態ではなく**ここに置く**。帯やシーン一覧から
+   * 「別のシーンへ飛ぶ」ときに止める必要があり、持ち主が離れていると
+   * 止められない（実機の要望 2026-08-19）。
+   */
+  isPlaying: boolean;
 
   hydrate: (input: {
     project: Project;
@@ -38,6 +46,14 @@ type ViewerState = {
    * 選び直さずにそのまま入れるように、選択は消さない */
   chooseAgain: () => void;
   setCurrentSeconds: (seconds: number) => void;
+  setIsPlaying: (isPlaying: boolean) => void;
+  /**
+   * 別のシーンへ飛ぶ。**再生中なら止める**。
+   *
+   * 再生そのものは毎フレーム `setCurrentSeconds` を呼ぶので、そちらで
+   * 止めるわけにはいかない。「人が飛んだ」ときだけ通る口を分けてある。
+   */
+  jumpToSeconds: (seconds: number) => void;
   togglePath: () => void;
 };
 
@@ -64,6 +80,7 @@ export const useViewerStore = create<ViewerState>((set, get) => ({
   hasChosen: false,
   currentSeconds: 0,
   isPathVisible: true,
+  isPlaying: false,
 
   hydrate: ({ project, dancers, scenes, positions, requestedDancerId }) => {
     const positionsBySceneId: PositionsBySceneId = {};
@@ -102,8 +119,12 @@ export const useViewerStore = create<ViewerState>((set, get) => ({
 
   chooseAgain: () => set({ hasChosen: false }),
 
-  setCurrentSeconds: (seconds) =>
-    set({ currentSeconds: Math.max(0, seconds) }),
+  setCurrentSeconds: (seconds) => set({ currentSeconds: Math.max(0, seconds) }),
+
+  setIsPlaying: (isPlaying) => set({ isPlaying }),
+
+  jumpToSeconds: (seconds) =>
+    set({ currentSeconds: Math.max(0, seconds), isPlaying: false }),
 
   togglePath: () => set((state) => ({ isPathVisible: !state.isPathVisible })),
 }));

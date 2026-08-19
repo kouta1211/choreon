@@ -81,3 +81,31 @@ describe("ViewerSceneStrip", () => {
     expect(container).toBeEmptyDOMElement();
   });
 });
+
+/* 実機の要望 2026-08-19「再生中に別シーンをタップしたら、再生を止めて
+   そのシーンへ遷移する」。止めないと押した先から再生が続いて、
+   見たかったシーンをすぐ通り過ぎる */
+describe("再生中にコマを押したとき", () => {
+  it("再生が止まって、そのシーンへ移る", async () => {
+    const user = userEvent.setup();
+    hydrate();
+    useViewerStore.setState({ isPlaying: true });
+    render(<ViewerSceneStrip />);
+
+    await user.click(screen.getByRole("button", { name: "3 シーン3" }));
+
+    expect(useViewerStore.getState().isPlaying).toBe(false);
+    expect(useViewerStore.getState().currentSeconds).toBe(30);
+  });
+
+  /* 再生そのものは毎フレーム currentSeconds を動かすので、
+     そちらで止めてしまうと再生できなくなる */
+  it("再生による時刻の更新では止まらない", () => {
+    hydrate();
+    useViewerStore.setState({ isPlaying: true });
+
+    useViewerStore.getState().setCurrentSeconds(12);
+
+    expect(useViewerStore.getState().isPlaying).toBe(true);
+  });
+});

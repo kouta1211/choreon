@@ -16,6 +16,7 @@ import { RotationHandle } from "@/components/atoms/RotationHandle";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useDancerMotion } from "@/features/canvas/hooks/useDancerMotion";
 import { nudgeForKey } from "@/features/canvas/lib/nudgeKey";
+import { shouldPlaceNameAbove } from "@/features/dancer/lib/nameLabel";
 import type { Collision } from "@/features/canvas/lib/collision";
 import { DEFAULT_TRANSITION_DURATION_SECONDS } from "@/features/canvas/constants";
 import type { Dancer } from "@/features/dancer/types";
@@ -333,6 +334,9 @@ function DraggableDancerIconImpl({
       <DancerMarker
         dancer={dancer}
         rotationAngle={screenRotation}
+        /* 下端に居る人は名前を上へ返す。下のままだと枠の外の札と重なる
+           （実機の報告 06-14）。y は既に画面の向きへ写してある */
+        isNameAbove={shouldPlaceNameAbove(y, stageHeightUnits)}
         isSelected={isSelected}
         isHovered={isHovered}
         isDragging={isDragging}

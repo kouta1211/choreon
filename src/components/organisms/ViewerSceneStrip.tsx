@@ -39,7 +39,9 @@ export function ViewerSceneStrip() {
     (state) => state.positionsBySceneId,
   );
   const currentSeconds = useViewerStore((state) => state.currentSeconds);
-  const setCurrentSeconds = useViewerStore((state) => state.setCurrentSeconds);
+  /* 飛ぶときは再生を止める（実機の要望 2026-08-19）。止めないと、
+     押した先から再生が続いて、見たかったシーンをすぐ通り過ぎる */
+  const jumpToSeconds = useViewerStore((state) => state.jumpToSeconds);
   const focusedDancerId = useViewerStore((state) => state.focusedDancerId);
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
 
@@ -76,7 +78,7 @@ export function ViewerSceneStrip() {
             className="shrink-0 snap-center"
           >
             <PressableButton
-              onClick={() => setCurrentSeconds(scene.timeSeconds)}
+              onClick={() => jumpToSeconds(scene.timeSeconds)}
               aria-current={isCurrent ? "true" : undefined}
               aria-label={`${index + 1} ${scene.name}`}
               style={{ width: CARD_WIDTH }}

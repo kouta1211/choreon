@@ -58,6 +58,7 @@ function DancerMarkerImpl({
   collisionWithName = "",
   hasKeyboardFocus = false,
   transitionDurationSeconds = 0.3,
+  isNameAbove = false,
 }: {
   dancer: Dancer;
   rotationAngle: number;
@@ -92,6 +93,9 @@ function DancerMarkerImpl({
    * ヒント。Tabキーでの巡回は無効にしてある(DraggableDancerIconのtabIndex: -1)
    * ため、フォーカスはクリックによって当たる */
   hasKeyboardFocus?: boolean;
+  /** 名前を丸の上へ出すか。ステージの下端に居る人だけ true にする
+   *  （下へ出すと枠の外の札と重なる。実機の報告 06-14） */
+  isNameAbove?: boolean;
   /** シーン切り替え時、向きの補間アニメーションにかける秒数。省略時は0.3秒 */
   transitionDurationSeconds?: number;
 }) {
@@ -254,7 +258,7 @@ function DancerMarkerImpl({
           隊形そのものが読めなくなるため */}
       {(nameDisplay === "always" ||
         (nameDisplay === "selected" && isSelected)) && (
-        <DancerNameLabel name={dancer.name} />
+        <DancerNameLabel name={dancer.name} above={isNameAbove} />
       )}
       {isBlocked && (
         <DancerBlindSpotBadge dancerName={dancer.name} dancerId={dancer.id} />
