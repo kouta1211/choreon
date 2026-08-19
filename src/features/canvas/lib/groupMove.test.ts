@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupMoveChanges } from "@/features/canvas/lib/groupMove";
+import { groupMoveChanges, movingWith } from "@/features/canvas/lib/groupMove";
 import { makePosition } from "@/test/factories";
 
 const STAGE = { width: 10, height: 10 };
@@ -26,12 +26,12 @@ describe("groupMoveChanges", () => {
       stage: STAGE,
     });
 
-    expect(changes.map((c) => [c.after.xCoordinate, c.after.yCoordinate])).toEqual(
-      [
-        [4, 5],
-        [6, 5],
-      ],
-    );
+    expect(
+      changes.map((c) => [c.after.xCoordinate, c.after.yCoordinate]),
+    ).toEqual([
+      [4, 5],
+      [6, 5],
+    ]);
   });
 
   /* ここが「隊形が潰れる」不具合の芯。1人ずつ端で止めると、壁に当たった
@@ -130,5 +130,25 @@ describe("groupMoveChanges", () => {
 
     expect(change.after.rotationAngle).toBe(90);
     expect(change.after.dancerTransitionDurationSeconds).toBe(1.5);
+  });
+});
+
+describe("movingWith", () => {
+  it("掴んだ人が選択に入っていれば、選択ぜんぶ", () => {
+    expect(movingWith("b", ["a", "b", "c"])).toEqual(["a", "b", "c"]);
+  });
+
+  /* 選択外を掴んだのに選んでいた全員が動くのは事故になる
+     （PC の一般的な作法でもある） */
+  it("選択の外を掴んだら、その人だけ", () => {
+    expect(movingWith("z", ["a", "b"])).toEqual(["z"]);
+  });
+
+  it("誰も掴んでいなければ空", () => {
+    expect(movingWith(null, ["a", "b"])).toEqual([]);
+  });
+
+  it("何も選んでいなければ、掴んだ人だけ", () => {
+    expect(movingWith("a", [])).toEqual(["a"]);
   });
 });

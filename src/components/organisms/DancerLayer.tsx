@@ -13,6 +13,7 @@ import {
 } from "@/features/canvas/store/useUIStore";
 import { getSceneStep } from "@/features/canvas/lib/sceneStep";
 import { useGroupDrag } from "@/features/canvas/hooks/useGroupDrag";
+import { movingWith } from "@/features/canvas/lib/groupMove";
 import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
 import { useSceneWarnings } from "@/features/canvas/hooks/useSceneWarnings";
 import {
@@ -86,12 +87,12 @@ export function DancerLayer({
   const selectedDancerIds = useUIStore((state) => state.selectedDancerIds);
   const groupDrag = useGroupDrag();
   const grabbedDancerId = groupDrag?.activeDancerId ?? null;
-  const movingDancerIds = useMemo(() => {
-    if (!grabbedDancerId) return [];
-    return selectedDancerIds.includes(grabbedDancerId)
-      ? selectedDancerIds
-      : [grabbedDancerId];
-  }, [grabbedDancerId, selectedDancerIds]);
+  /* 決め方は、掴んでいる間の丸め・離した瞬間の確定と**同じ関数**を通す。
+     3か所が違う答えを出すと「動いて見えるのに離すと戻る」が起きる */
+  const movingDancerIds = useMemo(
+    () => movingWith(grabbedDancerId, selectedDancerIds),
+    [grabbedDancerId, selectedDancerIds],
+  );
   const isPathVisible = useUIStore((state) => state.isPathVisible);
   const isStageMarksVisible = useUIStore((state) => state.isStageMarksVisible);
   const isBlindSpotCheckVisible = useUIStore(

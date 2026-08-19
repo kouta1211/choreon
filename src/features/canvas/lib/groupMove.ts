@@ -58,3 +58,29 @@ export function groupMoveChanges({
     },
   }));
 }
+
+/**
+ * 掴んだ人と**一緒に動く人たち**。
+ *
+ * 掴んだ人が選択に入っていれば選択ぜんぶ、入っていなければ本人だけ
+ * （選択外を掴んだのに選んでいた全員が動くのは事故になる）。
+ *
+ * ■ なぜ切り出してあるのか
+ * この規則は**3か所が同じ答えを出さないと壊れる**:
+ *   1. 掴んでいる間の丸め（`groupBoundsModifier`）
+ *   2. 離した瞬間の確定（`groupMoveChanges` に渡す人たち）
+ *   3. 掴んでいる間の導線の追随（`PathOverlay` の movingDancerIds）
+ *
+ * 実際に**1 と 2 が違う物を見ていて**、「他の人も動いて見えるのに離すと
+ * 戻る」という報告になった（2026-08-19）。3か所に書き写すのをやめて、
+ * 答えを1つにする。
+ */
+export function movingWith(
+  grabbedDancerId: string | null,
+  selectedDancerIds: string[],
+): string[] {
+  if (!grabbedDancerId) return [];
+  return selectedDancerIds.includes(grabbedDancerId)
+    ? selectedDancerIds
+    : [grabbedDancerId];
+}
