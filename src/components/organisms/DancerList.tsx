@@ -5,7 +5,13 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { PressableButton } from "@/components/atoms/PressableButton";
-import { useT } from "@/features/i18n/LocaleProvider";
+import { useLocale, useT } from "@/features/i18n/LocaleProvider";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
+import { SegmentedControl } from "@/components/atoms/SegmentedControl";
+import {
+  DANCER_SORTS,
+  sortDancerRows,
+} from "@/features/dancer/lib/dancerOrder";
 
 /**
  * いまのシーンにいるダンサーの一覧。画面が広いときだけ出す右パネルの中身。
@@ -19,6 +25,7 @@ import { useT } from "@/features/i18n/LocaleProvider";
  */
 export function DancerList() {
   const t = useT();
+  const locale = useLocale();
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const selectedDancerIds = useUIStore((state) => state.selectedDancerIds);
   const selectDancer = useUIStore((state) => state.selectDancer);
@@ -31,10 +38,17 @@ export function DancerList() {
     (state) => state.positionsBySceneId[selectedSceneId ?? ""],
   );
 
-  const rows = Object.values(positions ?? {})
-    .map((position) => ({ position, dancer: dancers[position.dancerId] }))
-    .filter((row) => row.dancer !== undefined)
-    .sort((a, b) => a.dancer.createdAt.localeCompare(b.dancer.createdAt));
+  /* 並べ替えは端末の好み（作品の中身ではない）。設定と同じ場所へ覚える */
+  const dancerSort = useSettingsStore((state) => state.dancerSort);
+  const updateSetting = useSettingsStore((state) => state.update);
+
+  const rows = sortDancerRows(
+    Object.values(positions ?? {})
+      .map((position) => ({ position, dancer: dancers[position.dancerId] }))
+      .filter((row) => row.dancer !== undefined),
+    dancerSort,
+    locale,
+  );
 
   return (
     <div className="flex min-h-0 flex-col">
@@ -46,6 +60,22 @@ export function DancerList() {
           {rows.length}人
         </span>
       </div>
+
+      {/* 並べ替え。**2人以下では出さない** — 並べ替える意味が無いのに
+          場所だけ取る（一覧の高さはステージの取り分と競っている） */}
+      {rows.length > 2 && (
+        <div className="shrink-0 px-3 pb-2">
+          <SegmentedControl
+            label={t.dancer.list.sortLabel}
+            value={dancerSort}
+            options={DANCER_SORTS.map((value) => ({
+              value,
+              label: t.dancer.list.sorts[value],
+            }))}
+            onChange={(next) => updateSetting("dancerSort", next)}
+          />
+        </div>
+      )}
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
         {rows.length === 0 ? (

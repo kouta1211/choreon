@@ -795,6 +795,8 @@ export const ko = {
     list: {
       title: "댄서",
       empty: "이 장면에는 아직 아무도 없습니다.",
+      sortLabel: "정렬",
+      sorts: { added: "추가순", name: "이름순" },
     },
     inspector: {
       name: "댄서 이름",

@@ -849,6 +849,8 @@ export const ja = {
     list: {
       title: "ダンサー",
       empty: "このシーンにはまだ誰もいません。",
+      sortLabel: "並べ替え",
+      sorts: { added: "追加順", name: "名前順" },
     },
     inspector: {
       name: "ダンサー名",

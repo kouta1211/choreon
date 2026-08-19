@@ -19,6 +19,12 @@
  * 既定へ落とす(themePreference / viewPreference と同じ作法)。
  */
 
+import {
+  DEFAULT_DANCER_SORT,
+  isDancerSort,
+  type DancerSort,
+} from "@/features/dancer/lib/dancerOrder";
+
 /** ダンサー名の出し方 */
 export type DancerNameDisplay = "always" | "selected" | "never";
 const DANCER_NAME_DISPLAYS: DancerNameDisplay[] = [
@@ -70,6 +76,8 @@ export type Settings = {
    * もう一つの入口として並べているだけ。
    */
   dancerNameDisplay: DancerNameDisplay;
+  /** 一覧に並べるダンサーの順。並べ替えるのは見た目だけで、保存は動かない */
+  dancerSort: DancerSort;
 
   // --- アプリ ---
   /** 触るたびに保存するか。切ると、保存は手で押したときだけになる */
@@ -86,6 +94,7 @@ export const DEFAULT_SETTINGS: Settings = {
   defaultBpm: 120,
   defaultSegmentSeconds: 4,
   dancerNameDisplay: "always",
+  dancerSort: DEFAULT_DANCER_SORT,
   isAutoSaveEnabled: true,
 };
 
@@ -151,7 +160,10 @@ export function parseSettings(raw: string | null): Settings {
       MAX_STAGE_UNITS,
       DEFAULT_SETTINGS.defaultStageHeight,
     ),
-    isSnapEnabled: boolean(record.isSnapEnabled, DEFAULT_SETTINGS.isSnapEnabled),
+    isSnapEnabled: boolean(
+      record.isSnapEnabled,
+      DEFAULT_SETTINGS.isSnapEnabled,
+    ),
     isCenterLineVisible: boolean(
       record.isCenterLineVisible,
       DEFAULT_SETTINGS.isCenterLineVisible,
@@ -159,7 +171,12 @@ export function parseSettings(raw: string | null): Settings {
     countIn: COUNT_INS.includes(record.countIn as CountIn)
       ? (record.countIn as CountIn)
       : DEFAULT_SETTINGS.countIn,
-    defaultBpm: clampInt(record.defaultBpm, 40, 240, DEFAULT_SETTINGS.defaultBpm),
+    defaultBpm: clampInt(
+      record.defaultBpm,
+      40,
+      240,
+      DEFAULT_SETTINGS.defaultBpm,
+    ),
     defaultSegmentSeconds: clampNumber(
       record.defaultSegmentSeconds,
       MIN_SEGMENT_SETTING,
@@ -171,6 +188,9 @@ export function parseSettings(raw: string | null): Settings {
     )
       ? (record.dancerNameDisplay as DancerNameDisplay)
       : DEFAULT_SETTINGS.dancerNameDisplay,
+    dancerSort: isDancerSort(record.dancerSort)
+      ? record.dancerSort
+      : DEFAULT_SETTINGS.dancerSort,
     isAutoSaveEnabled: boolean(
       record.isAutoSaveEnabled,
       DEFAULT_SETTINGS.isAutoSaveEnabled,
@@ -194,11 +214,14 @@ export const PROJECT_SCOPED_KEYS = [
   "countIn",
   "defaultSegmentSeconds",
   "dancerNameDisplay",
+  "dancerSort",
 ] as const satisfies readonly (keyof Settings)[];
 
 export type ProjectScopedKey = (typeof PROJECT_SCOPED_KEYS)[number];
 
-export function isProjectScopedKey(key: keyof Settings): key is ProjectScopedKey {
+export function isProjectScopedKey(
+  key: keyof Settings,
+): key is ProjectScopedKey {
   return (PROJECT_SCOPED_KEYS as readonly string[]).includes(key);
 }
 

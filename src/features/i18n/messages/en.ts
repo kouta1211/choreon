@@ -808,6 +808,8 @@ export const en = {
     list: {
       title: "Dancers",
       empty: "Nobody is in this scene yet.",
+      sortLabel: "Sort",
+      sorts: { added: "Added", name: "Name" },
     },
     inspector: {
       name: "Dancer name",
