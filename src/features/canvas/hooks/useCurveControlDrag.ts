@@ -1,7 +1,17 @@
 "use client";
 
-import { useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
+import {
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+  type RefObject,
+} from "react";
 import { clamp } from "@/features/canvas/lib/dragMath";
+import {
+  snapCurveControlPoint,
+  type CurveSnapKind,
+} from "@/features/canvas/lib/curveSnap";
+import { CURVE_SNAP_TOLERANCE_UNITS } from "@/features/canvas/constants";
 
 /** ステージ座標系の点(0..stageWidthUnits / 0..stageHeightUnits) */
 export type StagePoint = { x: number; y: number };
@@ -18,6 +28,13 @@ type Args = {
   screenY: (value: number) => number;
   /** しきい値を超えて離したときだけ呼ばれる */
   onCommit?: (dancerId: string, point: StagePoint) => void;
+  /**
+   * いま編集できる導線の両端（ステージ座標）。
+   *
+   * まっすぐ／左右対称へ自動で寄せるのに要る。掴めるハンドルは1人ぶんしか
+   * 出ないので、1組で足りる。無ければ寄せない（素の指の位置のまま）。
+   */
+  segment?: { from: StagePoint; to: StagePoint } | null;
 };
 
 /**
@@ -35,10 +52,14 @@ export function useCurveControlDrag({
   stageHeightUnits,
   screenY,
   onCommit,
+  segment = null,
 }: Args) {
   const [liveControlPoint, setLiveControlPoint] = useState<StagePoint | null>(
     null,
   );
+  /* いま何に吸着しているか。格子の吸着線・回転のガイド線と同じで、
+     効いていることが指先では分からないので見た目で返す */
+  const [snapKind, setSnapKind] = useState<CurveSnapKind>(null);
   // ドラッグ開始位置と「しきい値を超えたか」を保持する。再レンダーを起こす
   // 必要がない(見た目に直接出ない)値なのでstateではなくrefで持つ
   const dragRef = useRef<{
@@ -50,6 +71,17 @@ export function useCurveControlDrag({
   // クライアント座標(px)を、ステージ座標系に変換する。gridSnapModifierの
   // px⇔ユニット変換と同じ考え方。SVGはステージいっぱい(absolute inset-0)に
   // 敷いてあるため、その矩形がそのままステージの矩形として使える
+  /** 指の位置を、まっすぐ／左右対称の近くなら寄せる。遠ければそのまま */
+  const withSnap = (point: StagePoint) => {
+    if (!segment) return { point, kind: null as CurveSnapKind };
+    return snapCurveControlPoint({
+      point,
+      from: segment.from,
+      to: segment.to,
+      tolerance: CURVE_SNAP_TOLERANCE_UNITS,
+    });
+  };
+
   const toStagePoint = (
     clientX: number,
     clientY: number,
@@ -97,8 +129,11 @@ export function useCurveControlDrag({
       drag.hasMoved = true;
     }
 
-    const point = toStagePoint(event.clientX, event.clientY);
-    if (point) setLiveControlPoint(point);
+    const raw = toStagePoint(event.clientX, event.clientY);
+    if (!raw) return;
+    const { point, kind } = withSnap(raw);
+    setLiveControlPoint(point);
+    setSnapKind(kind);
   };
 
   const onPointerUp = (
@@ -108,21 +143,25 @@ export function useCurveControlDrag({
     const drag = dragRef.current;
     dragRef.current = null;
     setLiveControlPoint(null);
+    setSnapKind(null);
     // しきい値を超えずに離した＝タップ。何も確定しない(ダブルクリックで
     // 直線に戻す操作を邪魔しないためでもある)
     if (!drag?.hasMoved) return;
 
-    const point = toStagePoint(event.clientX, event.clientY);
-    if (point) onCommit?.(dancerId, point);
+    const raw = toStagePoint(event.clientX, event.clientY);
+    // 確定する値も寄せた後のもの。見えている形とずれた値を保存しない
+    if (raw) onCommit?.(dancerId, withSnap(raw).point);
   };
 
   const onPointerCancel = () => {
     dragRef.current = null;
     setLiveControlPoint(null);
+    setSnapKind(null);
   };
 
   return {
     liveControlPoint,
+    snapKind,
     onPointerDown,
     onPointerMove,
     onPointerUp,

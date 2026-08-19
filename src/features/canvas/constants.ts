@@ -73,3 +73,13 @@ export function resolveTransitionDuration(seconds: number): number {
  * 丸の3.5割。これだけずれていれば下の人の縁が出て掴める。
  */
 export const OVERLAP_DISTANCE_PX = Math.round(MARKER_SIZE * 0.35);
+
+/**
+ * 導線の曲線ハンドルが「まっすぐ」「左右対称」へ吸着し始める距離
+ * （ステージ座標のユニット）。
+ *
+ * 格子の吸着（`GRID_SNAP_TOLERANCE`）より広い。あちらは線が縦横に何本も
+ * 走っていて近くに必ず候補があるが、こちらは**寄せ先が中点の1点と
+ * 直交する線1本しか無い**ので、同じ狭さだと狙って合わせられない。
+ */
+export const CURVE_SNAP_TOLERANCE_UNITS = 0.35;

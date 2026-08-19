@@ -210,7 +210,7 @@ PWA・オフライン・軽さといった Web の強みも、そのまま見る
 - Zustand（作品の状態と画面の状態を別ストアに分離）
 - Supabase（Auth / PostgreSQL / RLS）
 - dnd-kit（ドラッグ）/ motion（シーン切り替えの補間）
-- Vitest — **1184件**
+- Vitest — **1195件**
 - PWA（マニフェスト / Service Worker / オフライン画面）
 
 **ネイティブ（`choreon-app/`・フェーズ4で停止）**

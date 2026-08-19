@@ -103,8 +103,25 @@ export function PathOverlay({
     toScreenY(value, stageHeightUnits, isAudienceOnTop);
   // 制御点を掴んで動かす操作。引いている間はここが持つ点を出し、
   // 離した時点で初めて確定する
+  /* いま編集できる導線の両端。まっすぐ／左右対称へ寄せるのに要る
+     （実機の報告 2026-08-19）。掴めるハンドルは1人ぶんしか出ない */
+  const editableFrom = editableDancerId
+    ? currentPositions[editableDancerId]
+    : undefined;
+  const editableTo = editableDancerId
+    ? nextPositions[editableDancerId]
+    : undefined;
+  const editableSegment =
+    editableFrom && editableTo
+      ? {
+          from: { x: editableFrom.xCoordinate, y: editableFrom.yCoordinate },
+          to: { x: editableTo.xCoordinate, y: editableTo.yCoordinate },
+        }
+      : null;
+
   const {
     liveControlPoint,
+    snapKind,
     onPointerDown: handlePointerDown,
     onPointerMove: handlePointerMove,
     onPointerUp: handlePointerUp,
@@ -114,6 +131,7 @@ export function PathOverlay({
     stageWidthUnits,
     stageHeightUnits,
     screenY,
+    segment: editableSegment,
     onCommit: (dancerId, point) => onCurveControlPointChange?.(dancerId, point),
   });
 
@@ -333,9 +351,16 @@ export function PathOverlay({
             onPointerCancel={handlePointerCancel}
             onDoubleClick={() => onCurveControlPointChange?.(segment.id, null)}
           >
+            {/* 吸着していることを見た目で返す。効いているかが指先では
+                分からないのは、格子の吸着線・回転のガイド線と同じ */}
             <span
               aria-hidden
-              className="h-3.5 w-3.5 rounded-full border-2 border-white shadow-sm"
+              data-snapped={snapKind ?? undefined}
+              className={
+                snapKind
+                  ? "h-4 w-4 rounded-full border-2 border-white shadow-[0_0_6px_2px_color-mix(in_oklab,var(--accent-soft)_80%,transparent)]"
+                  : "h-3.5 w-3.5 rounded-full border-2 border-white shadow-sm"
+              }
               style={{ backgroundColor: segment.color }}
             />
           </div>

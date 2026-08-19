@@ -184,3 +184,66 @@ describe("PathOverlay", () => {
     expect(handleChange).toHaveBeenCalledWith("dancer-1", null);
   });
 });
+
+/* 実機の報告 2026-08-19「導線を曲線にするときに、まっすぐときれいな曲線に
+   近づいたときは、既存の機能と同様に自動補間が効くようにしたい」。
+   導線は (2,2)→(6,6)、8ユニットを800pxで描いているので 1ユニット=100px。
+   中点は (4,4) = 400px */
+describe("PathOverlay の曲線の自動補間", () => {
+  /** ハンドルを掴んで (clientX, clientY) まで運んで離す */
+  function dragHandle(clientX: number, clientY: number) {
+    const handle = screen.getByTestId("path-overlay-curve-handle");
+    fireEvent.pointerDown(handle, { pointerId: 1, clientX: 400, clientY: 400 });
+    fireEvent.pointerMove(handle, { pointerId: 1, clientX, clientY });
+    fireEvent.pointerUp(handle, { pointerId: 1, clientX, clientY });
+  }
+
+  it("中点の近くで離すと、ちょうど中点が保存される（＝まっすぐ）", () => {
+    const onChange = vi.fn();
+    renderEditableOverlay(onChange);
+
+    dragHandle(412, 418);
+
+    expect(onChange).toHaveBeenCalledWith("dancer-1", { x: 4, y: 4 });
+  });
+
+  it("直交する線の近くなら、膨らみを保ったまま傾きだけ正す", () => {
+    const onChange = vi.fn();
+    renderEditableOverlay(onChange);
+
+    // 中点から左上へ出た所（線に直交する向き）を、少しずらして掴む
+    dragHandle(270, 540);
+
+    const point = onChange.mock.calls[0][1] as { x: number; y: number };
+    // 中点からのベクトルが、導線の向き (4,4) と直交している
+    expect((point.x - 4) * 4 + (point.y - 4) * 4).toBeCloseTo(0);
+  });
+
+  it("どちらからも遠ければ、指の位置のまま保存される", () => {
+    const onChange = vi.fn();
+    renderEditableOverlay(onChange);
+
+    /* (6,2) は直交する線の【上】に乗ってしまうので使わない
+       — 遠いつもりが吸着して、テストが何も守らなくなる */
+    dragHandle(600, 300);
+
+    expect(onChange).toHaveBeenCalledWith("dancer-1", { x: 6, y: 3 });
+  });
+
+  it("吸着している間は、ハンドルに印が出る", () => {
+    const onChange = vi.fn();
+    renderEditableOverlay(onChange);
+
+    const handle = screen.getByTestId("path-overlay-curve-handle");
+    fireEvent.pointerDown(handle, { pointerId: 1, clientX: 400, clientY: 400 });
+    fireEvent.pointerMove(handle, { pointerId: 1, clientX: 412, clientY: 418 });
+
+    expect(
+      handle.querySelector('[data-snapped="straight"]'),
+    ).toBeInTheDocument();
+
+    // 離したら消える
+    fireEvent.pointerUp(handle, { pointerId: 1, clientX: 412, clientY: 418 });
+    expect(handle.querySelector("[data-snapped]")).not.toBeInTheDocument();
+  });
+});
