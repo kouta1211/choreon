@@ -7,6 +7,7 @@ import { useHistoryActions } from "@/features/canvas/hooks/useHistoryActions";
 import { Tooltip } from "@/components/atoms/Tooltip";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { useT } from "@/features/i18n/LocaleProvider";
+import { useModifierLabel } from "@/features/canvas/hooks/useModifierLabel";
 import { useBrowserBackUndo } from "@/features/canvas/hooks/useBrowserBackUndo";
 
 /** キーボードショートカットを無視する要素。テキスト入力中のCtrl+Zは
@@ -39,6 +40,8 @@ function isTextEntryElement(target: EventTarget | null): boolean {
  */
 export function HistoryControls() {
   const t = useT();
+  /* Mac は ⌘。案内の文だけ端末に合わせる（効くキーは両方受けている） */
+  const modifier = useModifierLabel();
   const canUndo = useHistoryStore((state) => state.past.length > 0);
   const canRedo = useHistoryStore((state) => state.future.length > 0);
   const { undo: handleUndo, redo: handleRedo } = useHistoryActions();
@@ -84,7 +87,7 @@ export function HistoryControls() {
   // 消えると押し場所を覚え直すことになるから
   return (
     <div className="flex gap-1.5">
-      <Tooltip label={t.editor.history.undoHint} placement="top">
+      <Tooltip label={t.editor.history.undoHint(modifier)} placement="top">
         <PressableButton
           kind="icon"
           onClick={handleUndo}
@@ -95,7 +98,11 @@ export function HistoryControls() {
           <Undo2 size={17} />
         </PressableButton>
       </Tooltip>
-      <Tooltip label={t.editor.history.redoHint} placement="top" align="right">
+      <Tooltip
+        label={t.editor.history.redoHint(modifier)}
+        placement="top"
+        align="right"
+      >
         <PressableButton
           kind="icon"
           onClick={handleRedo}

@@ -202,7 +202,6 @@ export const ja = {
       assist: "言葉で頼む",
       exportVideo: "動画にする",
       tour: "チュートリアルを開始する",
-      shortcuts: "キーボード操作",
       settings: "設定",
     },
 
@@ -281,9 +280,10 @@ export const ja = {
 
     history: {
       undo: "元に戻す",
-      undoHint: "元に戻す (Ctrl+Z)",
+      /** 修飾キーの綴りは端末で変わる（Mac は ⌘）。useModifierLabel から渡す */
+      undoHint: (mod: string) => `元に戻す (${mod}+Z)`,
       redo: "やり直す",
-      redoHint: "やり直す (Ctrl+Shift+Z)",
+      redoHint: (mod: string) => `やり直す (${mod}+Shift+Z)`,
     },
 
     template: {
@@ -1015,6 +1015,10 @@ export const ja = {
       },
     },
 
+    shortcuts: {
+      title: "キーボード操作",
+      summary: "キーとマウスでできることの一覧",
+    },
     app: {
       title: "アプリ",
       summary: "言語・見た目・自動保存",

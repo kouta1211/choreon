@@ -7,6 +7,7 @@ import {
   Eye,
   Frame,
   Grid2x2,
+  Keyboard,
   Play,
   Settings2,
   UserRoundCog,
@@ -20,6 +21,7 @@ import { SettingsGridSection } from "@/components/organisms/SettingsGridSection"
 import { SettingsPlaybackSection } from "@/components/organisms/SettingsPlaybackSection";
 import { SettingsDisplaySection } from "@/components/organisms/SettingsDisplaySection";
 import { SettingsAppSection } from "@/components/organisms/SettingsAppSection";
+import { ShortcutList } from "@/components/molecules/ShortcutList";
 import { SettingsAccountSection } from "@/components/organisms/SettingsAccountSection";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
@@ -88,6 +90,7 @@ type SectionId =
   | "grid"
   | "playback"
   | "display"
+  | "shortcuts"
   | "app"
   | "data"
   | "account";
@@ -188,6 +191,15 @@ export function SettingsSheet({
       summary: t.settings.display.summary,
       icon: <Eye size={20} />,
       body: <SettingsDisplaySection />,
+    },
+    /* キーボード操作は「切り替える設定」ではなく案内だが、**据え置きの
+       入口はここが素直**（実機の要望 2026-08-19）。`?` でも同じものが出る */
+    {
+      id: "shortcuts",
+      title: t.settings.shortcuts.title,
+      summary: t.settings.shortcuts.summary,
+      icon: <Keyboard size={20} />,
+      body: <ShortcutList />,
     },
     {
       id: "app",

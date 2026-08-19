@@ -14,7 +14,6 @@ import {
   Spline,
   Target,
   HelpCircle,
-  Keyboard,
 } from "lucide-react";
 import { useUIStore, type GridMode } from "@/features/canvas/store/useUIStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
@@ -83,7 +82,6 @@ export function DisplayModeMenu({
   const [isOpen, setIsOpen] = useState(false);
   const requestTour = useUIStore((state) => state.requestTour);
   const setExportSheetOpen = useUIStore((state) => state.setExportSheetOpen);
-  const setShortcutsOpen = useUIStore((state) => state.setShortcutsOpen);
 
   const gridMode = useUIStore((state) => state.gridMode);
   const setGridMode = useUIStore((state) => state.setGridMode);
@@ -288,15 +286,6 @@ export function DisplayModeMenu({
         <DropdownMenuItem onSelect={() => requestTour()}>
           <HelpCircle size={16} className="shrink-0 text-fg-muted" />
           {t.editor.view.tour}
-        </DropdownMenuItem>
-        {/* キーボード操作の一覧。**PC / タブレットの話**なので、
-            指で触る端末には出さない（出しても押せるキーが無い） */}
-        <DropdownMenuItem
-          className="max-[767px]:hidden"
-          onSelect={() => setShortcutsOpen(true)}
-        >
-          <Keyboard size={16} className="shrink-0 text-fg-muted" />
-          {t.editor.view.shortcuts}
         </DropdownMenuItem>
         {/* 設定はアプリ全体のものだが、書き出し・取り込み・初期化だけは
             開いている作品が要る。だからホームだけでなくここにも入口を置く */}

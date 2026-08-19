@@ -8,6 +8,7 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import * as positionsApi from "@/features/scene/api/positions";
 import type { Position } from "@/features/scene/types";
 import { makePosition as makeBasePosition } from "@/test/factories";
+import { LocaleProvider } from "@/features/i18n/LocaleProvider";
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({}),
@@ -203,5 +204,36 @@ describe("HistoryControls", () => {
 
     expect(upsertSpy).not.toHaveBeenCalled();
     expect(currentX()).toBe(5);
+  });
+});
+
+/* 実機の報告 17-43。**案内の文が Ctrl 固定**で、Mac の人には嘘だった。
+   効くキーは両方受けていた（ctrlKey || metaKey）ので、直すのは文の方 */
+describe("HistoryControls の案内", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  function hintOf(userAgent: string) {
+    vi.spyOn(navigator, "userAgent", "get").mockReturnValue(userAgent);
+    const view = render(
+      <LocaleProvider locale="ja">
+        <HistoryControls />
+      </LocaleProvider>,
+    );
+    // 文言はツールチップの側にある（ボタンの aria-label は短い名前）
+    const text = view.container.textContent ?? "";
+    view.unmount();
+    return text;
+  }
+
+  it("Windows では Ctrl+Z と案内する", () => {
+    expect(hintOf("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")).toContain(
+      "Ctrl+Z",
+    );
+  });
+
+  it("Mac では ⌘+Z と案内する", () => {
+    expect(hintOf("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)")).toContain(
+      "⌘+Z",
+    );
   });
 });

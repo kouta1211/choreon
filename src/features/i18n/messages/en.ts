@@ -181,7 +181,6 @@ export const en = {
       assist: "Ask in words",
       exportVideo: "Make a video",
       tour: "Start the tutorial",
-      shortcuts: "Keyboard shortcuts",
       settings: "Settings",
     },
 
@@ -259,9 +258,9 @@ export const en = {
 
     history: {
       undo: "Undo",
-      undoHint: "Undo (Ctrl+Z)",
+      undoHint: (mod: string) => `Undo (${mod}+Z)`,
       redo: "Redo",
-      redoHint: "Redo (Ctrl+Shift+Z)",
+      redoHint: (mod: string) => `Redo (${mod}+Shift+Z)`,
     },
 
     template: {
@@ -965,6 +964,10 @@ export const en = {
       },
     },
 
+    shortcuts: {
+      title: "Keyboard shortcuts",
+      summary: "What the keys and the mouse can do",
+    },
     app: {
       title: "App",
       summary: "Language, look, autosave",

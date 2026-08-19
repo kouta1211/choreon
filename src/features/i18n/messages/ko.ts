@@ -181,7 +181,6 @@ export const ko = {
       assist: "말로 부탁하기",
       exportVideo: "영상으로 만들기",
       tour: "튜토리얼 시작하기",
-      shortcuts: "키보드 조작",
       settings: "설정",
     },
 
@@ -258,9 +257,9 @@ export const ko = {
 
     history: {
       undo: "실행 취소",
-      undoHint: "실행 취소 (Ctrl+Z)",
+      undoHint: (mod: string) => `실행 취소 (${mod}+Z)`,
       redo: "다시 실행",
-      redoHint: "다시 실행 (Ctrl+Shift+Z)",
+      redoHint: (mod: string) => `다시 실행 (${mod}+Shift+Z)`,
     },
 
     template: {
@@ -952,6 +951,10 @@ export const ko = {
       },
     },
 
+    shortcuts: {
+      title: "키보드 조작",
+      summary: "키와 마우스로 할 수 있는 것",
+    },
     app: {
       title: "앱",
       summary: "언어 · 화면 모양 · 자동 저장",

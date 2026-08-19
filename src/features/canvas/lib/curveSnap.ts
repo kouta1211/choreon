@@ -8,8 +8,12 @@
  *
  * 寄せ先は2つ。
  *
- * - **まっすぐ**（`straight`）… 制御点が始点と終点の中点に来ると、
- *   二次ベジェは直線になる。曲げるのをやめたいときの帰り道
+ * - **まっすぐ**（`straight`）… 制御点が**始点と終点を結ぶ線の上**に来ると、
+ *   二次ベジェは直線になる。曲げるのをやめたいときの帰り道。
+ *   寄せ先は中点（そこに置くと進む速さも一定になる）だが、**効く範囲は
+ *   線ぜんたい**。中点の近くだけにしていたら「つまみが真ん中に無いと
+ *   効かない」という声をもらった（実機の報告 17-13）— まっすぐに見える
+ *   場所はどこも線の上なので、そちらに合わせる
  * - **左右対称**（`symmetric`）… 中点から**線に直交する向き**へ出た所。
  *   膨らみの量はそのままに、傾きだけを正す。ここを外すと、同じ弧に
  *   見えて片側だけ寄った「歪んだ曲線」になる
@@ -37,7 +41,7 @@ function distance(a: Point, b: Point): number {
  * 制御点を、まっすぐ／左右対称の近くまで来たら寄せる。
  *
  * どちらにも遠ければ、指の位置をそのまま返す（`snapToGrid` と同じ作法）。
- * **まっすぐが優先** — 中点の近くは対称の線の上でもあるので、先に見ないと
+ * **まっすぐが優先** — 線の上は対称の線とも交わるので、先に見ないと
  * 「まっすぐにしたいのに、わずかに膨らんだまま止まる」ことになる。
  */
 export function snapCurveControlPoint({
@@ -59,18 +63,25 @@ export function snapCurveControlPoint({
   const span = distance(from, to);
   if (span === 0) return { point, kind: null };
 
-  if (distance(point, midpoint) <= tolerance) {
+  /* 線に沿う向きと、直交する向きの単位ベクトル */
+  const tangent = { x: (to.x - from.x) / span, y: (to.y - from.y) / span };
+  const normal = { x: -tangent.y, y: tangent.x };
+
+  const offset = { x: point.x - midpoint.x, y: point.y - midpoint.y };
+  /** 中点からの、線に沿った距離（±span/2 の間なら2点の間に居る） */
+  const alongLine = offset.x * tangent.x + offset.y * tangent.y;
+  /** 線からの、直交方向の距離。曲がりの深さそのもの */
+  const along = offset.x * normal.x + offset.y * normal.y;
+
+  /* 【まっすぐ】。**線の上のどこでも**効かせる。ただし2点の間だけ —
+     端の外側まで広げると、遠くを掴んでいるのに中点まで飛ぶ */
+  const isBetweenEnds = Math.abs(alongLine) <= span / 2;
+  if (isBetweenEnds && Math.abs(along) <= tolerance) {
     return { point: midpoint, kind: "straight" };
   }
 
-  /* 中点を通り、線に直交する向きの単位ベクトル。
-     制御点をこの線の上へ落とすと、膨らみの量を保ったまま左右対称になる */
-  const normal = {
-    x: -(to.y - from.y) / span,
-    y: (to.x - from.x) / span,
-  };
-  const offset = { x: point.x - midpoint.x, y: point.y - midpoint.y };
-  const along = offset.x * normal.x + offset.y * normal.y;
+  /* 【左右対称】。制御点を直交する線の上へ落とすと、
+     膨らみの量を保ったまま左右対称になる */
   const projected = {
     x: midpoint.x + normal.x * along,
     y: midpoint.y + normal.y * along,

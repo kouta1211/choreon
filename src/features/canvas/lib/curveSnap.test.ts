@@ -76,8 +76,32 @@ describe("snapCurveControlPoint", () => {
     expect(result.point).toEqual({ x: 3, y: 3 });
   });
 
+  /* ここが実機の報告 17-13。**つまみが真ん中でなくても**、線の上まで
+     持っていけばまっすぐになる。以前は中点の近くだけを見ていた */
+  it("線の上なら、真ん中から離れていてもまっすぐへ寄せる", () => {
+    // 終点寄り（x=7.5）だが、線（y=4）の上に居る
+    const result = snap({ x: 7.5, y: 4.2 });
+
+    expect(result.kind).toBe("straight");
+    expect(result.point).toEqual({ x: 5, y: 4 });
+  });
+
+  it("線から離れていれば、真ん中の真横でも寄せない", () => {
+    const result = snap({ x: 5.1, y: 4 + TOLERANCE + 0.01 });
+
+    expect(result.kind).not.toBe("straight");
+  });
+
+  /* 2点の外側まで広げると、遠くを掴んでいるのに中点まで飛ぶ */
+  it("2点の外側は、線の延長上でも寄せない", () => {
+    const result = snap({ x: 9.5, y: 4 });
+
+    expect(result.kind).toBeNull();
+    expect(result.point).toEqual({ x: 9.5, y: 4 });
+  });
+
   it("しきい値ちょうどは寄せる（境目を落とさない）", () => {
-    const result = snap({ x: 5 + TOLERANCE, y: 4 });
+    const result = snap({ x: 5, y: 4 + TOLERANCE });
 
     expect(result.kind).toBe("straight");
   });
