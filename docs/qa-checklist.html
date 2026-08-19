@@ -63,6 +63,20 @@
     font-size: 16px;
     line-height: 1.75;
     -webkit-text-size-adjust: 100%;
+
+    /* 日本語を読める所で折る。auto-phrase は文節で折る(Chrome 119+/Edge。
+       iOS Safari と Firefox は未対応なので、そこは今まで通り)。
+       pretty は最終行に1〜2文字だけ残るのを減らす(Chrome 117+/Safari 26+) */
+    word-break: auto-phrase;
+    text-wrap: pretty;
+  }
+
+  /* 等幅で並べているものは途中で折らない(桁がずれて読み違える) */
+  .mono,
+  code,
+  .code-out,
+  textarea.out {
+    word-break: normal;
   }
 
   .mono {

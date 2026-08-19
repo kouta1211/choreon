@@ -138,6 +138,40 @@ body {
   /* ステージ上でダンサーをドラッグ/回転操作中に、指の動きがブラウザの
      Pull-to-refreshや意図しないスクロールとして扱われるのを防ぐ */
   overscroll-behavior-y: contain;
+
+  /* ■ 日本語を、読める所で折る（2026-08-19、実機の報告）
+     日本語には単語の区切りが無いので、既定ではどこでも折れる。
+     「速すぎ／ます」のように語の途中で切れて読みにくい、という指摘への答え。
+
+     auto-phrase は【文節】で折る。html の lang が ja のときだけ効き、
+     読めないブラウザは今まで通り(=悪化しない)。
+     対応: Chrome 119+ / Edge。**iOS Safari と Firefox は未対応**
+     （2026-08-19 に caniuse で確認）。作る側は PC なのでここが効く。
+
+     pretty は最終行に1〜2文字だけ残るのを減らす。
+     対応: Chrome 117+ / Safari・iOS Safari 26+（Firefox は未対応）。
+     こちらはスマホでも効く。 */
+  word-break: auto-phrase;
+  text-wrap: pretty;
+}
+
+/* 見出しは【行の長さを揃える】方を選ぶ。短い見出しが「あと1文字だけ
+   2行目」になるのがいちばん目立つため。pretty より balance が向く
+   （balance は Chrome 114+ / Safari 17.5+ と、pretty より広く効く） */
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+/* 数字・秒数・コードは文節で折らない。等幅で並べているものを途中で
+   折ると、桁の並びが崩れて読み違える */
+.font-mono,
+code,
+kbd,
+samp,
+pre {
+  word-break: normal;
 }
 
 /* スクロールの棒。
