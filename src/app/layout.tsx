@@ -9,6 +9,7 @@ import { ServiceWorkerRegistrar } from "@/components/atoms/ServiceWorkerRegistra
 import { SplashScreen } from "@/components/organisms/SplashScreen";
 import { SettingsLoader } from "@/components/atoms/SettingsLoader";
 import { LocaleProvider } from "@/features/i18n/LocaleProvider";
+import { NarrowScreenGate } from "@/components/organisms/NarrowScreenGate";
 import { getLocale, getMessages } from "@/features/i18n/server";
 
 const geistSans = Geist({
@@ -117,6 +118,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           {/* 画面をまたいで使う重ね物はここで1回だけ描く。
               以前はエディタ画面だけがToastを持っていたため、プロジェクト一覧の
               失敗はページ内のテキストで知らせる、という別扱いになっていた */}
+          {/* 狭い幅では作る側の画面を使わせない。**見る側(/view)以外の
+              すべての画面**で出る。中身は幅(CSS)で出し分ける */}
+          <NarrowScreenGate />
           <Toast />
           <ConfirmDialog />
           <AuthDialog />

@@ -9,12 +9,10 @@ import {
   buildShareLink,
   parseShareLink,
 } from "@/features/project/lib/shareLink";
-import type { Project } from "@/features/project/types";
+import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useT } from "@/features/i18n/LocaleProvider";
 
-type Props = {
-  project: Project;
-};
+
 
 /**
  * **狭い幅**で作成画面を開いた人に、この幅では組めないと伝える板。
@@ -45,8 +43,11 @@ type Props = {
  * 共有していない作品でビューアへのリンクを出すと、押しても開けない。
  * 合鍵(shareToken)があるときだけ出す。
  */
-export function NarrowScreenNotice({ project }: Props) {
+export function NarrowScreenNotice() {
   const t = useT();
+  /* いま作品を開いていれば、その共有リンクへの入口も出す。
+     開いていなければ null（ホーム・ログインなど） */
+  const project = useProjectStore((state) => state.project);
   const router = useRouter();
   const [pasted, setPasted] = useState("");
   const [hasError, setHasError] = useState(false);
@@ -68,10 +69,11 @@ export function NarrowScreenNotice({ project }: Props) {
 
     router.push(`/view/${link.projectId}${search === "" ? "" : `?${search}`}`);
   };
-  /* 共有していれば、そのまま見る側で開ける。origin は描くのがブラウザの中
-     だけなので、ここで読んでよい(この板はクライアント専用) */
+  /* 作品を開いている最中で、かつ共有していれば、そのまま見る側で開ける。
+     ホームやログインから来たときは開く相手が無いので出さない。
+     origin は描くのがブラウザの中だけなので、ここで読んでよい */
   const viewerHref =
-    project.isShared && project.shareToken
+    project && project.isShared && project.shareToken
       ? buildShareLink({
           origin: window.location.origin,
           projectId: project.id,

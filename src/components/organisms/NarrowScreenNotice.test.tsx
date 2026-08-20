@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { NarrowScreenNotice } from "./NarrowScreenNotice";
 import { makeProject } from "@/test/factories";
+import { useProjectStore } from "@/features/project/store/useProjectStore";
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
@@ -17,12 +18,27 @@ beforeEach(() => push.mockReset());
  * （jsdom にレイアウトが無い）。確かめるのは中身の3つ —
  * 抜け道が無いこと・開けないリンクを出さないこと・出すなら正しい先。
  */
+beforeEach(() => {
+  // 既定は「作品を開いていない」= ホームやログインから来た状態
+  useProjectStore.setState({ project: null });
+});
+
 describe("NarrowScreenNotice", () => {
+  /* 作成画面だけの板ではない（2026-08-20）。ホームや設定から来ても
+     同じ板が出て、そこから見る側へ行ける */
+  it("作品を開いていなくても、貼って開く口は出る", () => {
+    render(<NarrowScreenNotice />);
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByLabelText(/共有リンクを貼って開く/)).toBeInTheDocument();
+    expect(screen.queryByText(/見るだけならこちら/)).toBeNull();
+  });
+
   /* 2026-08-20 に user の判断で閉じた。以前は「このまま開く(非推奨)」で
      入れたが、入れても操作できない画面へ通していただけだった */
   it("この板から先へ進む道は無い", async () => {
     const user = userEvent.setup();
-    render(<NarrowScreenNotice project={makeProject()} />);
+    render(<NarrowScreenNotice />);
 
     expect(screen.queryByText(/このまま開く/)).toBeNull();
 
@@ -33,11 +49,10 @@ describe("NarrowScreenNotice", () => {
 
   /** 押しても開けないリンクを置かない */
   it("共有していない作品では、見る側への出口を出さない", () => {
-    render(
-      <NarrowScreenNotice
-        project={makeProject({ isShared: false, shareToken: null })}
-      />,
-    );
+    useProjectStore.setState({
+      project: makeProject({ isShared: false, shareToken: null }),
+    });
+    render(<NarrowScreenNotice />);
 
     expect(screen.queryByText(/見るだけならこちら/)).not.toBeInTheDocument();
     // 開く先が無くても、貼って開く口は残す（そこが唯一の出口）
@@ -45,15 +60,14 @@ describe("NarrowScreenNotice", () => {
   });
 
   it("共有していれば、合鍵つきのビューアへ行ける", () => {
-    render(
-      <NarrowScreenNotice
-        project={makeProject({
-          id: "project-9",
-          isShared: true,
-          shareToken: "token-9",
-        })}
-      />,
-    );
+    useProjectStore.setState({
+      project: makeProject({
+        id: "project-9",
+        isShared: true,
+        shareToken: "token-9",
+      }),
+    });
+    render(<NarrowScreenNotice />);
 
     expect(screen.getByText(/見るだけならこちら/).getAttribute("href")).toContain(
       "/view/project-9?t=token-9",
@@ -63,7 +77,7 @@ describe("NarrowScreenNotice", () => {
   /* 幅で出し分けているので、PC でウィンドウを狭めても出る。
      「スマホでは」と書くと、その人には嘘になる */
   it("見出しは【端末】ではなく【幅】の話をする", () => {
-    render(<NarrowScreenNotice project={makeProject()} />);
+    render(<NarrowScreenNotice />);
 
     expect(
       screen.getByRole("dialog", { name: /ブラウザ幅では操作できません/ }),
@@ -78,7 +92,7 @@ describe("NarrowScreenNotice の「共有リンクを貼って開く」", () => 
 
   async function paste(text: string) {
     const user = userEvent.setup();
-    render(<NarrowScreenNotice project={makeProject()} />);
+    render(<NarrowScreenNotice />);
     await user.type(screen.getByLabelText(/共有リンクを貼って開く/), text);
     await user.click(screen.getByRole("button", { name: "開く" }));
     return user;
@@ -106,7 +120,7 @@ describe("NarrowScreenNotice の「共有リンクを貼って開く」", () => 
   });
 
   it("何も貼っていないときは押せない", () => {
-    render(<NarrowScreenNotice project={makeProject()} />);
+    render(<NarrowScreenNotice />);
 
     expect(screen.getByRole("button", { name: "開く" })).toBeDisabled();
   });
