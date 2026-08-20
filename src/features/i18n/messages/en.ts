@@ -382,8 +382,6 @@ export const en = {
     insecureWhy: (https: string, localhost: string) =>
       `Browsers treat only ${https} and ${localhost} as secure, and switch off what sign-in needs everywhere else. To try it on a phone, open it over`,
     insecureHow: "instead.",
-    draftHere: "What you are making right now lives only on this device.",
-    draftSaved: "Create an account and it is kept as it is.",
     draftPending:
       "Nothing is saved until the address is confirmed. Keep this tab open, follow the link in the email, and come back.",
   },
@@ -392,8 +390,6 @@ export const en = {
     lastViewed: {
       label: "Last viewed",
     },
-    tagline:
-      "The formation sheets you hand out at rehearsal, moving in time with the track.",
     guestStart: "Start as a guest",
     withTour: "Start with the walkthrough",
     tourAsk: {
@@ -401,7 +397,6 @@ export const en = {
       body: "About a minute, pointing at the real screen: the stage, the dancers, and the scenes.",
       withTour: "Show me around",
     },
-    guestNote: "No account needed. What you make stays on this device.",
     or: "or",
   },
 

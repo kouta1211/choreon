@@ -418,8 +418,6 @@ export const ja = {
     insecureWhy: (https: string, localhost: string) =>
       `ブラウザは ${https} と ${localhost} だけを安全とみなし、認証に必要な機能をそれ以外で無効にします。実機で試すときは`,
     insecureHow: "で開いてください。",
-    draftHere: "いま作っている作品は、この端末の中にだけあります。",
-    draftSaved: "登録すると、そのまま保存されます。",
     draftPending:
       "確認が済むまで作品は保存されません。このタブを閉じずに、メールのリンクを開いてから戻ってください。",
   },
@@ -429,7 +427,6 @@ export const ja = {
     lastViewed: {
       label: "前に見た振付",
     },
-    tagline: "稽古場で配る隊形図を、曲に合わせて動く形に。",
     guestStart: "ゲストで始める",
     withTour: "使い方の案内から始める",
     tourAsk: {
@@ -437,7 +434,6 @@ export const ja = {
       body: "ステージ・ダンサー・シーンの3つを、実際の画面を指しながら1分ほどで案内します。",
       withTour: "案内から始める",
     },
-    guestNote: "登録は要りません。作ったものはこの端末にだけ残ります。",
     or: "または",
   },
 

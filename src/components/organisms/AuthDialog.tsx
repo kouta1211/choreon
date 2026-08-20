@@ -51,14 +51,6 @@ export function AuthDialog() {
           mode={mode ?? "signup"}
           onModeChange={openAuthDialog}
           onAuthenticated={handleAuthenticated}
-          intro={
-            isGuest ? (
-              <p className="rounded-lg border border-line bg-surface-strong/60 px-gutter py-unit text-label leading-relaxed text-fg-sub">
-                {t.auth.draftHere}
-                <span className="text-fg-strong">{t.auth.draftSaved}</span>
-              </p>
-            ) : null
-          }
           emailSentNote={
             isGuest ? <AuthNotice>{t.auth.draftPending}</AuthNotice> : null
           }

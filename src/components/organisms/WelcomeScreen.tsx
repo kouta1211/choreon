@@ -76,17 +76,10 @@ export function WelcomeScreen({ onGuestStart }: Props) {
   return (
     <AuthScreen>
       <div className="flex flex-col gap-gutter">
-        {/* 何のアプリかを、押す前に1行だけ書く。
-            **URLを渡された人は、ここしか読まない。** ブランドマークと
-            「Choreon」だけでは、踊る人の道具なのかどうかも分からない。
-
-            以前は2行あったが「長い、そのぶんタイトルを強調して」という
-            指摘を受けて1行にした。消したのは
-            「メンバーに渡すのはURL1本…」の方 — 何のアプリかは残し、
-            使い方の説明は落とす、という分け方。 */}
-        <p className="text-center text-body leading-relaxed text-fg-strong">
-          {t.welcome.tagline}
-        </p>
+        {/* 説明の1行はここにあったが、2026-08-20 に user の判断で外した。
+            2行 → 1行 → 無し、と削ってきた場所。**戻すときは
+            「他の隊形アプリでも言える文」になっていないかを見る** —
+            そうなっていたのが外した理由。 */}
 
         {/* **一度見た振付へ戻る道**(2026-08-18、実機の報告 05-5)。
             ホーム画面に置いたアイコンはトップページを開くので、圏外だと
@@ -111,23 +104,16 @@ export function WelcomeScreen({ onGuestStart }: Props) {
           </a>
         )}
 
-        <div className="flex flex-col gap-unit">
-          <PressableButton
-            kind="primary"
-            onClick={() => setIsAsking(true)}
-            className="h-target-lg w-full rounded-lg bg-accent text-headline text-accent-fg"
-          >
-            {t.welcome.guestStart}
-          </PressableButton>
-
-          {/* 「登録なしで始められる」ことと「消えること」は同じ重さで
-              伝える。後者を伏せると、作った後で裏切ることになる。
-              添え物の色(fg-muted)ではなく fg-sub なのはそのため —
-              読み飛ばされて困る一行を、薄い方の色で書かない */}
-          <p className="text-center text-label leading-relaxed text-fg-sub">
-            {t.welcome.guestNote}
-          </p>
-        </div>
+        {/* ボタンの下の注記も、同じ判断で外した（2026-08-20）。
+            **「作ったものはこの端末にだけ残ります」は、いまどこにも
+            出ていない。** 戻すならこのすぐ下 */}
+        <PressableButton
+          kind="primary"
+          onClick={() => setIsAsking(true)}
+          className="h-target-lg w-full rounded-lg bg-accent text-headline text-accent-fg"
+        >
+          {t.welcome.guestStart}
+        </PressableButton>
 
         <div className="flex items-center gap-unit">
           <span aria-hidden className="h-px flex-1 bg-line" />

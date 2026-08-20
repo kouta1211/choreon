@@ -27,8 +27,6 @@ type Props = {
   /** 認証に成功した直後の処理。ゲストの下書きの保存など。
    * 完了するまでボタンはスピナーのままにしたいのでawaitする */
   onAuthenticated: (userId: string) => void | Promise<void>;
-  /** 「登録するとどうなるか」を、その場面に合わせて添える文 */
-  intro?: ReactNode;
   /** 確認メールを送った後に添える文(下書きがあるときの注意など) */
   emailSentNote?: ReactNode;
 };
@@ -47,7 +45,6 @@ export function AuthForm({
   mode,
   onModeChange,
   onAuthenticated,
-  intro,
   emailSentNote,
 }: Props) {
   const t = useT();
@@ -160,8 +157,6 @@ export function AuthForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-gutter">
-      {intro}
-
       {isInsecureOrigin && (
         <AuthNotice>
           {t.auth.insecure}

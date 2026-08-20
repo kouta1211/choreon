@@ -380,8 +380,6 @@ export const ko = {
     insecureWhy: (https: string, localhost: string) =>
       `브라우저는 ${https}와 ${localhost}만 안전하다고 보고, 그 밖에서는 로그인에 필요한 기능을 끕니다. 실제 기기에서 시험할 때는`,
     insecureHow: "로 열어 주세요.",
-    draftHere: "지금 만들고 있는 작품은 이 기기 안에만 있습니다.",
-    draftSaved: "가입하면 그대로 저장됩니다.",
     draftPending:
       "확인이 끝날 때까지 작품은 저장되지 않습니다. 이 탭을 닫지 말고 메일의 링크를 연 뒤 돌아와 주세요.",
   },
@@ -390,7 +388,6 @@ export const ko = {
     lastViewed: {
       label: "이전에 본 안무",
     },
-    tagline: "연습실에서 나눠 주는 대형도를, 곡에 맞춰 움직이는 형태로.",
     guestStart: "게스트로 시작하기",
     withTour: "사용법 안내부터 시작하기",
     tourAsk: {
@@ -398,7 +395,6 @@ export const ko = {
       body: "무대·댄서·장면 세 가지를 실제 화면을 짚어 가며 1분 정도 안내합니다.",
       withTour: "안내부터 시작하기",
     },
-    guestNote: "가입하지 않아도 됩니다. 만든 것은 이 기기에만 남습니다.",
     or: "또는",
   },
 
