@@ -6,7 +6,6 @@ import {
   Grid3x3,
   Music4,
   Settings,
-  Share2,
   SlidersHorizontal,
   Sparkles,
   EyeOff,
@@ -66,14 +65,12 @@ const GRID_LABEL_KEYS = {
 type Props = {
   /** ヘッダーから畳んだ入口。下書き(ゲスト)には共有が無いので任意 */
   onOpenMusic?: () => void;
-  onOpenShare?: () => void;
   onOpenReview?: () => void;
   onOpenSettings?: () => void;
 };
 
 export function DisplayModeMenu({
   onOpenMusic,
-  onOpenShare,
   onOpenReview,
   onOpenSettings,
 }: Props) {
@@ -250,12 +247,6 @@ export function DisplayModeMenu({
           <Music4 size={16} className="shrink-0 text-fg-muted" />
           {t.editor.view.music}
         </DropdownMenuItem>
-        {onOpenShare && (
-          <DropdownMenuItem onSelect={() => onOpenShare()}>
-            <Share2 size={16} className="shrink-0 text-fg-muted" />
-            {t.editor.view.share}
-          </DropdownMenuItem>
-        )}
         <DropdownMenuItem onSelect={() => onOpenReview?.()}>
           <Sparkles size={16} className="shrink-0 text-fg-muted" />
           {t.editor.view.review}

@@ -11,6 +11,9 @@ const AUTO_DISMISS_MS = 4000;
 const AUTO_DISMISS_WITH_ACTION_MS = 7000;
 /** これだけ横へ払ったら消す */
 const SWIPE_DISMISS_PX = 64;
+/** 消えるときに薄くなっていく時間。**この1つが正**で、実際の transition
+ * にもここから流す（クラス側にも数を書くと、片方だけ直して食い違う） */
+const FADE_OUT_MS = 320;
 
 /**
  * 画面の下から出る短い知らせ。
@@ -29,6 +32,10 @@ const SWIPE_DISMISS_PX = 64;
  *
  * ■ 同時に出るのは1つ
  * 積み上げると、古い知らせが新しい操作の邪魔をする。次が来たら差し替える。
+ *
+ * ■ 消えるときは、だんだん薄くする(実機の要望 2026-08-20)
+ * ぱっと消えると「見ていなかった間に何か出ていた」ことにすら気づけない。
+ * 薄くなっていく途中が見えれば、読み損ねても「いま消えた」と分かる。
  */
 export function Toast() {
   const toast = useUIStore((state) => state.toast);
@@ -38,14 +45,26 @@ export function Toast() {
   const [drag, setDrag] = useState<{ id: unknown; px: number } | null>(null);
   const dragPx = drag && drag.id === toast?.message ? drag.px : 0;
   const startXRef = useRef<number | null>(null);
+  /* 消え始めたかどうか。**消したい相手を覚えておく**（次の知らせに
+     差し替わったら、それは薄くしない） */
+  const [leaving, setLeaving] = useState<unknown>(null);
+  const isLeaving = toast !== null && leaving === toast.message;
 
   useEffect(() => {
     if (!toast) return;
-    const timer = setTimeout(
-      clearToast,
-      toast.action ? AUTO_DISMISS_WITH_ACTION_MS : AUTO_DISMISS_MS,
-    );
-    return () => clearTimeout(timer);
+
+    /* 2段構え。まず薄くし始めて、消えきってから捨てる。
+       いきなり捨てると、要素ごと消えるので薄くなる途中が描かれない */
+    const fadeAt = toast.action
+      ? AUTO_DISMISS_WITH_ACTION_MS
+      : AUTO_DISMISS_MS;
+    const fade = setTimeout(() => setLeaving(toast.message), fadeAt);
+    const clear = setTimeout(clearToast, fadeAt + FADE_OUT_MS);
+
+    return () => {
+      clearTimeout(fade);
+      clearTimeout(clear);
+    };
   }, [toast, clearToast]);
 
   if (!toast) return null;
@@ -98,7 +117,9 @@ export function Toast() {
         onPointerCancel={handlePointerUp}
         style={{
           transform: `translateX(${dragPx}px)`,
-          opacity: Math.max(0.2, 1 - Math.abs(dragPx) / (SWIPE_DISMISS_PX * 2)),
+          opacity: isLeaving
+          ? 0
+          : Math.max(0.2, 1 - Math.abs(dragPx) / (SWIPE_DISMISS_PX * 2)),
         }}
         className={`overlay-panel pointer-events-auto flex h-target-lg w-full touch-pan-y items-center gap-unit rounded-2xl px-gutter md:w-[380px] ${
           dragPx === 0

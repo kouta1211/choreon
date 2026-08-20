@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ChevronLeft, UserPlus } from "lucide-react";
+import { ChevronLeft, Share2, UserPlus } from "lucide-react";
 import { ProjectTitle } from "@/components/organisms/ProjectTitle";
 import { DisplayModeMenu } from "@/components/organisms/DisplayModeMenu";
 import { SaveToCloudButton } from "@/components/organisms/SaveToCloudButton";
@@ -106,9 +106,28 @@ export function EditorHeader({ project }: Props) {
         </PressableButton>
       </Tooltip>
 
+      {/* 共有はこのアプリの目玉なので、**メニューの中に隠さない**
+          （実機の要望 2026-08-20）。ヘッダーに据えて、押せば開く。
+          メニューの中の「共有」は同じ役だったので消した — 同じものへの
+          入口が2つあると、どちらが正か分からなくなる。
+
+          ゲストには出さない。共有はクラウドへ保存された作品のもので、
+          ゲストの下書きは端末の中にしかない */}
+      {!isGuest && (
+        <Tooltip label={t.editor.view.share} align="right">
+          <PressableButton
+            kind="icon"
+            onClick={() => setOpenSheet("share")}
+            aria-label={t.editor.view.share}
+            className="flex h-target w-target shrink-0 items-center justify-center rounded-full text-fg-sub transition-colors hover:bg-surface hover:text-fg"
+          >
+            <Share2 size={19} />
+          </PressableButton>
+        </Tooltip>
+      )}
+
       <DisplayModeMenu
         onOpenMusic={() => setMusicSheetOpen(true)}
-        onOpenShare={isGuest ? undefined : () => setOpenSheet("share")}
         onOpenReview={() => setOpenSheet("review")}
         onOpenSettings={() => setOpenSheet("settings")}
       />
