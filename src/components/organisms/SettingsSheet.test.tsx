@@ -224,3 +224,66 @@ describe("SettingsSheet の「舞台」", () => {
     expect(screen.getByRole("button", { name: /適用/ })).toBeInTheDocument();
   });
 });
+
+/**
+ * 並びは【触る回数の多い順】（2026-08-20）。
+ *
+ * 上から「いま画面に見えているもの → この作品のこと → 道具 → アプリの
+ * こと」で、**壊せるもの（データ・アカウント）はいちばん下**。
+ * 束を足すときに、この順を崩していないかをここで見る。
+ */
+describe("SettingsSheet の並び", () => {
+  /** 画面に出ている順で、渡した言葉の位置を返す */
+  function orderOf(container: HTMLElement, labels: string[]) {
+    const text = container.textContent ?? "";
+    return labels.map((label) => text.indexOf(label));
+  }
+
+  it("ホームでは、よく触る束が上に来る", () => {
+    const { container } = render(<SettingsSheet isOpen onClose={vi.fn()} />);
+
+    const found = orderOf(container, [
+      "表示",
+      "目盛り",
+      "再生",
+      "キーボード操作",
+      "アプリ",
+      "アカウント",
+    ]);
+
+    expect(found.every((index) => index >= 0)).toBe(true);
+    expect([...found].sort((a, b) => a - b)).toEqual(found);
+  });
+
+  it("作品を開いているときは、舞台が再生の次に入る", () => {
+    useProjectStore.setState({
+      isGuest: true,
+      project: makeProject(),
+    });
+    const { container } = render(<SettingsSheet isOpen onClose={vi.fn()} />);
+
+    const found = orderOf(container, ["再生", "舞台", "キーボード操作"]);
+
+    expect(found.every((index) => index >= 0)).toBe(true);
+    expect([...found].sort((a, b) => a - b)).toEqual(found);
+  });
+
+  /* 客席の向きは1回決めたら二度と変えない人が多いので、いちばん下。
+     上に置くと、毎回それを跨いで下の行へ行くことになる */
+  it("「表示」の中も、よく触る行が上に来る", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<SettingsSheet isOpen onClose={vi.fn()} />);
+
+    await user.click(screen.getByText("表示"));
+    const found = orderOf(container, [
+      "ダンサー名",
+      "導線",
+      "顔被りチェック",
+      "バミリ",
+      "客席を上にする",
+    ]);
+
+    expect(found.every((index) => index >= 0)).toBe(true);
+    expect([...found].sort((a, b) => a - b)).toEqual(found);
+  });
+});

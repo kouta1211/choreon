@@ -39,14 +39,6 @@ export function SettingsDisplaySection() {
 
   return (
     <SettingsGroup description={t.settings.display.description}>
-      {/* 客席の向きは「舞台」から移した(2026-08-20)。作品の性質ではなく
-          **この端末の見せ方**で、名前・導線・バミリと同じ仲間 */}
-      <SettingsSwitchRow
-        label={t.settings.stage.audienceOnTop.label}
-        description={t.settings.stage.audienceOnTop.description}
-        checked={isAudienceOnTop}
-        onChange={() => update("isAudienceOnTop", !isAudienceOnTop)}
-      />
       <SettingsSegmentRow
         label={t.settings.display.dancerName.label}
         description={t.settings.display.dancerName.description}
@@ -65,16 +57,27 @@ export function SettingsDisplaySection() {
         onChange={togglePathVisible}
       />
       <SettingsSwitchRow
+        label={t.settings.display.blindSpot.label}
+        description={t.settings.display.blindSpot.description}
+        checked={isBlindSpotCheckVisible}
+        onChange={toggleBlindSpotCheck}
+      />
+      <SettingsSwitchRow
         label={t.settings.display.stageMarks.label}
         description={t.settings.display.stageMarks.description}
         checked={isStageMarksVisible}
         onChange={toggleStageMarks}
       />
+      {/* 客席の向きは「舞台」から移した(2026-08-20)。作品の性質ではなく
+          **この端末の見せ方**で、名前・導線と同じ仲間。
+
+          ただし**いちばん下に置く**。人によって1回決めたら二度と変えない
+          もので、上に置くと毎回それを跨いで下の行へ行くことになる */}
       <SettingsSwitchRow
-        label={t.settings.display.blindSpot.label}
-        description={t.settings.display.blindSpot.description}
-        checked={isBlindSpotCheckVisible}
-        onChange={toggleBlindSpotCheck}
+        label={t.settings.stage.audienceOnTop.label}
+        description={t.settings.stage.audienceOnTop.description}
+        checked={isAudienceOnTop}
+        onChange={() => update("isAudienceOnTop", !isAudienceOnTop)}
       />
     </SettingsGroup>
   );

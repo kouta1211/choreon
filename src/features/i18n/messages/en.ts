@@ -936,7 +936,7 @@ export const en = {
       title: "Display",
       summary: "Audience side, names, paths, floor marks, blind spots",
       description:
-        "The four below are the same switches as in the editor's View and modes. Either way in points at the same state.",
+        "Paths, blind spots and floor marks are the same switches as in the editor's menu. Either way in points at the same state.",
       dancerName: {
         label: "Dancer names",
         description:

@@ -159,21 +159,22 @@ export function SettingsSheet({
 
   // 束の目次。body の要素を作るだけでは中身は動かないので、
   // 開いていない束のぶんは何もしない
+  /* 【並びは、触る回数の多い順】(2026-08-20)。
+     上から順に「いま画面に見えているもの → この作品のこと → 道具 →
+     アプリのこと」。**壊せるもの（データ・アカウント）はいちばん下**に置く。
+
+     - 表示 / 目盛り … 組んでいる最中に何度も切り替える
+     - 再生 / 舞台 … 作品ごとに1〜2回決める
+     - キーボード操作 … 読むだけ（`?` でも開く）
+     - アプリ / データ / アカウント … 最初に1回、あとは滅多に触らない */
   const sections: Section[] = [
-    /* 舞台は**作品を開いているときだけ**（2026-08-20）。
-       中身はその作品の広さで、ホームには相手が居ない。
-       これから作る作品の広さは、作るときの板でその場で決める */
-    ...(hasProject
-      ? [
-          {
-            id: "stage" as const,
-            title: t.settings.stage.title,
-            summary: t.settings.stage.summaryInProject,
-            icon: <Frame size={20} />,
-            body: <SettingsStageSection />,
-          },
-        ]
-      : []),
+    {
+      id: "display",
+      title: t.settings.display.title,
+      summary: t.settings.display.summary,
+      icon: <Eye size={20} />,
+      body: <SettingsDisplaySection />,
+    },
     {
       id: "grid",
       title: t.settings.grid.title,
@@ -188,13 +189,20 @@ export function SettingsSheet({
       icon: <Play size={20} />,
       body: <SettingsPlaybackSection />,
     },
-    {
-      id: "display",
-      title: t.settings.display.title,
-      summary: t.settings.display.summary,
-      icon: <Eye size={20} />,
-      body: <SettingsDisplaySection />,
-    },
+    /* 舞台は**作品を開いているときだけ**（2026-08-20）。
+       中身はその作品の広さで、ホームには相手が居ない。
+       これから作る作品の広さは、作るときの板でその場で決める */
+    ...(hasProject
+      ? [
+          {
+            id: "stage" as const,
+            title: t.settings.stage.title,
+            summary: t.settings.stage.summaryInProject,
+            icon: <Frame size={20} />,
+            body: <SettingsStageSection />,
+          },
+        ]
+      : []),
     /* キーボード操作は「切り替える設定」ではなく案内だが、**据え置きの
        入口はここが素直**（実機の要望 2026-08-19）。`?` でも同じものが出る */
     {

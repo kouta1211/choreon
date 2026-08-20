@@ -29,6 +29,20 @@ export function SettingsPlaybackSection() {
 
   return (
     <SettingsGroup>
+      {/* 【並びは触る回数の多い順】(2026-08-20)。
+          移動の秒数は、曲もメトロノームも無い作品では**全部の移動時間**に
+          なるので、組んでいる最中に何度も触る。カウントインは1回決めたら
+          そのまま。速さの既定は**これから作る作品**にしか効かないので最後 */}
+      <SettingsNumberRow
+        label={t.settings.playback.segment.label}
+        description={t.settings.playback.segment.description}
+        value={defaultSegmentSeconds}
+        min={MIN_SEGMENT_SETTING}
+        max={MAX_SEGMENT_SETTING}
+        step={0.5}
+        unit={t.settings.playback.segment.unit}
+        onChange={(value) => update("defaultSegmentSeconds", value)}
+      />
       <SettingsSegmentRow
         label={t.settings.playback.countIn.label}
         description={t.settings.playback.countIn.description}
@@ -48,16 +62,6 @@ export function SettingsPlaybackSection() {
         max={240}
         unit={t.settings.playback.bpm.unit}
         onChange={(value) => update("defaultBpm", value)}
-      />
-      <SettingsNumberRow
-        label={t.settings.playback.segment.label}
-        description={t.settings.playback.segment.description}
-        value={defaultSegmentSeconds}
-        min={MIN_SEGMENT_SETTING}
-        max={MAX_SEGMENT_SETTING}
-        step={0.5}
-        unit={t.settings.playback.segment.unit}
-        onChange={(value) => update("defaultSegmentSeconds", value)}
       />
     </SettingsGroup>
   );
