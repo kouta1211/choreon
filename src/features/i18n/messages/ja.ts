@@ -158,6 +158,10 @@ export const ja = {
       openViewer: "見るだけならこちら",
       viewerNote:
         "配られた URL を開けば、スマホでも自分の道順が読めます（見る側はスマホ向けに作ってあります）。",
+      pasteLabel: "共有リンクを貼って開く",
+      pastePlaceholder: "https://... または /view/...",
+      pasteOpen: "開く",
+      pasteInvalid: "共有リンクとして読めませんでした。配られた URL をそのまま貼ってください。",
     },
 
     view: {

@@ -1,8 +1,14 @@
 "use client";
 
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { Phrase } from "@/components/atoms/Phrase";
-import { Monitor } from "lucide-react";
-import { buildShareLink } from "@/features/project/lib/shareLink";
+import { Monitor, X } from "lucide-react";
+import { PressableButton } from "@/components/atoms/PressableButton";
+import {
+  buildShareLink,
+  parseShareLink,
+} from "@/features/project/lib/shareLink";
 import type { Project } from "@/features/project/types";
 import { useT } from "@/features/i18n/LocaleProvider";
 
@@ -41,6 +47,27 @@ type Props = {
  */
 export function NarrowScreenNotice({ project }: Props) {
   const t = useT();
+  const router = useRouter();
+  const [pasted, setPasted] = useState("");
+  const [hasError, setHasError] = useState(false);
+
+  const handleOpen = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const link = parseShareLink(pasted);
+    if (!link) {
+      setHasError(true);
+      return;
+    }
+
+    /* 貼られたのが他所のURLでも、開くのは【このアプリの中】。
+       合鍵とポジションだけを持っていく */
+    const query = new URLSearchParams();
+    if (link.shareToken) query.set("t", link.shareToken);
+    if (link.dancerId) query.set("p", link.dancerId);
+    const search = query.toString();
+
+    router.push(`/view/${link.projectId}${search === "" ? "" : `?${search}`}`);
+  };
   /* 共有していれば、そのまま見る側で開ける。origin は描くのがブラウザの中
      だけなので、ここで読んでよい(この板はクライアント専用) */
   const viewerHref =
@@ -58,9 +85,9 @@ export function NarrowScreenNotice({ project }: Props) {
        シート(40)・トースト(50) より上 */
     <div
       role="dialog"
-      /* aria-modal は付けない。**後ろを本当に不活性にしていない**（「このまま
-         開く」で触れる作りなので、そうしていない）。付けると読み上げには
-         「後ろは触れません」と嘘を言うことになる */
+      /* aria-modal は付けない。後ろの作成画面は**描かれたまま**で、
+         幅を戻せばそのまま使える（消しているわけではない）。
+         付けると読み上げに「後ろは無いもの」と伝わってしまう */
       aria-label={t.editor.narrowScreen.title}
       className="fixed inset-0 z-[70] flex flex-col items-center justify-center gap-gutter bg-page px-gutter-lg text-center min-[768px]:hidden"
     >
@@ -80,7 +107,7 @@ export function NarrowScreenNotice({ project }: Props) {
         </p>
       </div>
 
-      <div className="flex w-full max-w-xs flex-col gap-unit">
+      <div className="flex w-full max-w-xs flex-col gap-gutter">
         {viewerHref && (
           <a
             href={viewerHref}
@@ -89,6 +116,61 @@ export function NarrowScreenNotice({ project }: Props) {
             {t.editor.narrowScreen.openViewer}
           </a>
         )}
+
+        {/* 配られたリンクを貼って、見る側へ行く道(2026-08-20)。
+            この板は行き止まりなので、**ここから開ける先**を1つ置く。
+            いま開いている作品と関係なくてよい — 狭い幅で来た人が
+            やりたいのは「自分に配られた振付を見ること」だから */}
+        <form onSubmit={handleOpen} className="flex flex-col gap-unit">
+          <label className="flex flex-col gap-base text-left">
+            <span className="text-label text-fg-sub">
+              {t.editor.narrowScreen.pasteLabel}
+            </span>
+            <input
+              value={pasted}
+              onChange={(event) => {
+                setPasted(event.target.value);
+                setHasError(false);
+              }}
+              type="text"
+              inputMode="url"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              placeholder={t.editor.narrowScreen.pastePlaceholder}
+              aria-label={t.editor.narrowScreen.pasteLabel}
+              aria-invalid={hasError}
+              className={`h-target w-full rounded-lg border bg-surface-raised px-gutter text-body text-fg-strong placeholder:text-fg-muted focus:ring-[3px] focus:ring-accent/16 focus:outline-none ${
+                hasError ? "border-accent" : "border-line focus:border-accent"
+              }`}
+            />
+          </label>
+
+          {/* 失敗は【形】で伝える。この画面だけ赤い文にしない */}
+          {hasError && (
+            <p
+              role="alert"
+              className="flex items-start gap-unit text-left text-label text-fg"
+            >
+              <span
+                aria-hidden
+                className="mt-px flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-surface-strong text-fg-strong"
+              >
+                <X size={10} strokeWidth={3} />
+              </span>
+              {t.editor.narrowScreen.pasteInvalid}
+            </p>
+          )}
+
+          <PressableButton
+            type="submit"
+            disabled={pasted.trim() === ""}
+            className="flex h-target w-full items-center justify-center rounded-lg border border-line bg-surface-raised text-body text-fg-strong disabled:opacity-40"
+          >
+            {t.editor.narrowScreen.pasteOpen}
+          </PressableButton>
+        </form>
+
         <p className="text-caption leading-relaxed text-fg-muted">
           <Phrase>{t.editor.narrowScreen.viewerNote}</Phrase>
         </p>

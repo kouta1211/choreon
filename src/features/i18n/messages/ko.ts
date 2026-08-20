@@ -144,6 +144,11 @@ export const ko = {
       openViewer: "보기만 한다면 이쪽",
       viewerNote:
         "공유된 URL을 열면 휴대폰에서도 자기 동선을 읽을 수 있습니다(보는 쪽은 휴대폰에 맞춰 만들었습니다).",
+      pasteLabel: "공유 링크를 붙여 넣어 열기",
+      pastePlaceholder: "https://... 또는 /view/...",
+      pasteOpen: "열기",
+      pasteInvalid:
+        "공유 링크로 읽을 수 없었습니다. 받은 URL을 그대로 붙여 넣어 주세요.",
     },
 
     view: {

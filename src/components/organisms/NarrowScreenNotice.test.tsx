@@ -1,8 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { NarrowScreenNotice } from "./NarrowScreenNotice";
 import { makeProject } from "@/test/factories";
+
+const push = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+
+beforeEach(() => push.mockReset());
 
 /**
  * 狭い幅で作成画面を開いた人への案内（2026-08-18 の方針転換、
@@ -21,8 +26,7 @@ describe("NarrowScreenNotice", () => {
 
     expect(screen.queryByText(/このまま開く/)).toBeNull();
 
-    // 板の中で押せるのは、共有しているときのビューアへのリンクだけ
-    expect(screen.queryAllByRole("button")).toHaveLength(0);
+    // 板の中を押しても、後ろの作成画面へは戻れない
     await user.click(screen.getByRole("dialog"));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
@@ -64,5 +68,46 @@ describe("NarrowScreenNotice", () => {
     expect(
       screen.getByRole("dialog", { name: /この幅では/ }),
     ).toBeInTheDocument();
+  });
+});
+
+/* この板は行き止まりなので、開ける先を1つ置いた（2026-08-20）。
+   いま開いている作品とは関係なく、配られたリンクを開くための口 */
+describe("NarrowScreenNotice の「共有リンクを貼って開く」", () => {
+  const TOKEN = "3f2504e0-4f89-41d3-9a0c-0305e82c3301";
+
+  async function paste(text: string) {
+    const user = userEvent.setup();
+    render(<NarrowScreenNotice project={makeProject()} />);
+    await user.type(screen.getByLabelText(/共有リンクを貼って開く/), text);
+    await user.click(screen.getByRole("button", { name: "開く" }));
+    return user;
+  }
+
+  it("貼ったリンクの作品を、見る側で開く", async () => {
+    await paste(`https://choreon.vercel.app/view/p1?t=${TOKEN}`);
+
+    expect(push).toHaveBeenCalledWith(`/view/p1?t=${TOKEN}`);
+  });
+
+  /* 貼られたのが本番のURLでも、開くのはこのアプリの中。
+     持っていくのは合鍵とポジションだけ */
+  it("ポジション付きのリンクも、そのまま持っていく", async () => {
+    await paste(`/view/p1?t=${TOKEN}&p=dancer-3`);
+
+    expect(push).toHaveBeenCalledWith(`/view/p1?t=${TOKEN}&p=dancer-3`);
+  });
+
+  it("読めないものを貼ったら、その場で言って移動しない", async () => {
+    await paste("これはただの文です");
+
+    expect(push).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent(/共有リンクとして読めません/);
+  });
+
+  it("何も貼っていないときは押せない", () => {
+    render(<NarrowScreenNotice project={makeProject()} />);
+
+    expect(screen.getByRole("button", { name: "開く" })).toBeDisabled();
   });
 });

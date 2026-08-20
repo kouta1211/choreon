@@ -144,6 +144,11 @@ export const en = {
       openViewer: "Just want to view? Open here",
       viewerNote:
         "Opening a shared URL shows your own route on a phone — the viewing side is built for phones.",
+      pasteLabel: "Paste a shared link to open it",
+      pastePlaceholder: "https://... or /view/...",
+      pasteOpen: "Open",
+      pasteInvalid:
+        "That does not look like a shared link. Paste the URL you were given, as it is.",
     },
 
     view: {
