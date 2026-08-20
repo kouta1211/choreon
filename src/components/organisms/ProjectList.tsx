@@ -108,7 +108,9 @@ export function ProjectList({ projects }: Props) {
 
   return (
     <div className="flex flex-col gap-unit">
-      <p className="mx-base text-caption tracking-[0.14em] text-fg-muted">
+      {/* 字送りは段(text-caption)が持っている。ここだけ上書きすると、
+          同じ見出しの文字間が画面ごとに変わる */}
+      <p className="mx-base text-caption text-fg-muted">
         {t.projects.count(projects.length)}
       </p>
       <ul className="grid gap-unit md:grid-cols-2">
@@ -244,10 +246,10 @@ function ProjectThumbnail({ project }: { project: ProjectSummary }) {
 function EmptyProjectList() {
   const t = useT();
   return (
-    <div className="rounded-2xl border border-dashed border-line-strong px-5 py-6 text-center">
+    <div className="flex flex-col items-center gap-gutter rounded-2xl border border-dashed border-line-strong px-gutter py-gutter-lg text-center">
       <span
         aria-hidden
-        className="relative mx-auto mb-3.5 block h-10 w-[110px] opacity-50"
+        className="relative block h-10 w-[110px] opacity-50"
       >
         {[
           { left: 6, top: 26, color: "var(--line-strong)" },
@@ -262,14 +264,15 @@ function EmptyProjectList() {
           />
         ))}
       </span>
-      <p className="text-sm leading-relaxed font-medium text-fg">
-        {t.projects.empty}
-      </p>
-      <p className="mt-1.5 text-xs leading-relaxed text-fg-muted">
-        {t.projects.emptyHint}
-        <br />
-
-      </p>
+      {/* 文字は段から取る（text-sm / text-xs のような素の大きさを足すと、
+          同じ役割の文字が画面ごとに少しずつ違う大きさになる）。
+          末尾に <br /> が1つ残っていたので落とした */}
+      <div className="flex flex-col gap-base">
+        <p className="text-body leading-relaxed text-fg">{t.projects.empty}</p>
+        <p className="text-label leading-relaxed text-fg-muted">
+          {t.projects.emptyHint}
+        </p>
+      </div>
     </div>
   );
 }
