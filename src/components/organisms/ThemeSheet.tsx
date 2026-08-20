@@ -134,7 +134,11 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
       title={t.themeSheet.title}
       titleRight={t.themeSheet.themeCount(THEMES.length)}
       isTall
-      wideMaxWidthClassName="min-[1200px]:max-w-2xl"
+      /* 【並べて選ぶものは、横へ伸ばす】(2026-08-20)。
+         作る側を PC に絞ったので、広い窓では列を増やせる。
+         ミニチュアは小さいほど「そのテーマ自身の見た目」が読めなくなるので、
+         幅が増えたぶんは**列の数**に使い、1枚の大きさは保つ */
+      wideMaxWidthClassName="min-[1200px]:max-w-4xl"
     >
       <div className="flex items-center gap-1.5 border-b border-line px-[18px] py-3">
         {FILTERS.map((item) => {
@@ -177,7 +181,10 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
               <p className="mb-2.5 text-caption font-semibold tracking-[0.14em] text-fg-sub">
                 {t.themeSheet[heading]}
               </p>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-3.5 lg:grid-cols-3">
+              {/* 列を増やす境目は、**シートの幅が変わる境目と同じ**にする。
+                  Tailwind の段は窓の幅を見るので、ここだけ lg(1024px) に
+                  しておくと、シートがまだ 560px のときに3列になって潰れる */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3.5 min-[1200px]:grid-cols-3 min-[1560px]:grid-cols-4">
                 {themes.map((theme) => {
                   const isSelected = current.theme === theme.id;
                   return (

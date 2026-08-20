@@ -62,6 +62,11 @@ export function BottomSheet({
   title,
   titleRight,
   isTall = false,
+  /* 既定は lg(512px)。**広げるかどうかは中身で決める**(2026-08-20)。
+     - 並べて選ぶもの（テーマ・フォーメーション）… 横へ伸ばすほど選びやすい
+     - 一覧・設定の行 … 少しだけ（2xl まで）。行の中身は増えない
+     - 読む・打つもの（説明文・入力欄）… **広げない**。1行が長いほど
+       読みにくく、入力欄も横に伸ばして楽になるものではない */
   wideMaxWidthClassName = "min-[1200px]:max-w-lg",
   children,
 }: Props) {

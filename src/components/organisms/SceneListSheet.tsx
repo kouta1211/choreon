@@ -31,6 +31,10 @@ export function SceneListSheet({ project }: Props) {
       title={t.editor.scenes.title}
       titleRight={sceneSummary}
       isTall
+      /* 1行にミニチュア・名前・時刻・操作が並ぶので、少し広い方が
+         名前の切れる作品が減る。ただし**行の中身は増えない**ので、
+         テーマの一覧ほどは広げない(2026-08-20) */
+      wideMaxWidthClassName="min-[1200px]:max-w-2xl"
     >
       <div className="px-3.5 py-3">
         <SceneList project={project} />

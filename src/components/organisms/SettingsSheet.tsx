@@ -261,6 +261,9 @@ export function SettingsSheet({
       onBack={current ? () => setOpenSection(null) : undefined}
       title={current ? current.title : t.settings.title}
       isTall
+      /* 設定の行は「名前 ＋ 操作」の2つしか無いので、広げすぎると
+         その間が間延びする。**一覧の行が読みやすい幅まで**(2026-08-20) */
+      wideMaxWidthClassName="min-[1200px]:max-w-2xl"
     >
       {/* 潜る/戻るを横スライドで見せる。**以前はその場で中身が
           差し替わっていた**ので、1枚目へ戻ったのか別の束へ移ったのかが
