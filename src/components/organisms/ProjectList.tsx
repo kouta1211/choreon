@@ -125,8 +125,12 @@ export function ProjectList({ projects }: Props) {
             /* この画面でいちばん大きい塊。作るボタン(56px)やヘッダーと
                同じ高さで並ぶと、どれが主役か読めない(実機の報告
                2026-08-20)。ミニチュアを一回り大きくし、内側の余白も
-               1段広げて、帯ではなく【板】として立たせる */
-            className="flex items-center gap-gutter rounded-2xl border border-line bg-surface-raised p-gutter transition-colors hover:border-line-strong hover:bg-surface-strong"
+               1段広げて、帯ではなく【板】として立たせる。
+
+               面は `.card-surface`(globals.css)。**テーマによって
+               半透明だったり不透明だったりする**面の色を、地の上へ
+               重ねて必ず不透明にする — 質感が透けて文字が沈むため */
+            className="card-surface flex items-center gap-gutter rounded-2xl border border-line-strong p-gutter transition-colors"
           >
             <Link
               href={`/projects/${project.id}`}

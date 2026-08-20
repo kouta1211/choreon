@@ -283,6 +283,35 @@ body::before {
   color: var(--fg);
 }
 
+/* 一覧に並ぶカードの面(ホームの作品カードなど)。
+
+   ■ なぜクラスにするか(実機の報告 2026-08-20「透けすぎ」)
+   `--surface-raised` は**テーマによって中身が違う**。暗い系は
+   「白を7%重ねる」半透明で、紙・黒板系は不透明な色そのもの。
+   半透明の側では、地に敷いた質感(方眼・グレイン・ホリゾント幕)が
+   カードを透かして、文字も枠も沈んで見えていた。
+
+   ここでは【地の色を1枚敷いてから、面の色を重ねる】。結果は必ず
+   不透明になり、**どのテーマでも同じ厚みのカード**に見える。
+   色そのものはテーマの値をそのまま使うので、色替えには追従する。
+
+   浮きもの(.overlay-panel)とは別。あちらは「地の上に浮いて、後ろが
+   少し透ける」ことに意味がある板で、こちらは並べて読むための面 */
+.card-surface {
+  background-color: var(--bg);
+  background-image: linear-gradient(
+    var(--surface-raised),
+    var(--surface-raised)
+  );
+}
+
+.card-surface:hover {
+  background-image: linear-gradient(
+    var(--surface-strong),
+    var(--surface-strong)
+  );
+}
+
 /* スマホを横に持ったときだけ出す板(RotateToPortraitNotice)。
 
    ■ なぜ Tailwind の任意メディアクエリを使わないか
