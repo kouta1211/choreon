@@ -6,12 +6,16 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
-import { Mail } from "lucide-react";
+import { Mail, X } from "lucide-react";
 import {
   signInWithPassword,
   signUpWithPassword,
 } from "@/features/auth/api/auth";
-import { AuthField, AuthSubmitButton } from "@/components/molecules/AuthScreen";
+import {
+  AuthField,
+  AuthNotice,
+  AuthSubmitButton,
+} from "@/components/molecules/AuthScreen";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { useT } from "@/features/i18n/LocaleProvider";
 
@@ -125,26 +129,28 @@ export function AuthForm({
   // 送るべきなのかメールを待つべきなのかが分からなくなるため
   if (isEmailSent) {
     return (
-      <div className="flex flex-col items-center gap-3 py-2 text-center">
+      <div className="flex flex-col items-center gap-gutter text-center">
+        {/* 成否は【形】で伝え、面の色は変えない — トーストと同じ作法。
+            以前はここだけ緑の丸で、画面の中で1つだけ別の言葉だった */}
         <span
           aria-hidden
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-600/16 text-emerald-400"
+          className="flex h-target w-target items-center justify-center rounded-full bg-surface-strong text-fg-strong"
         >
           <Mail size={20} />
         </span>
-        <p className="text-sm font-medium text-fg-strong">
-          {t.auth.confirmSent}
-        </p>
-        <p className="text-xs leading-relaxed text-fg-muted">
-          {t.auth.confirmOpen}
-        </p>
+        <div className="flex flex-col gap-base">
+          <p className="text-headline text-fg-strong">{t.auth.confirmSent}</p>
+          <p className="text-label leading-relaxed text-fg-sub">
+            {t.auth.confirmOpen}
+          </p>
+        </div>
         {emailSentNote}
         <PressableButton
           onClick={() => {
             setIsEmailSent(false);
             onModeChange("login");
           }}
-          className="mt-1 text-xs text-accent-soft underline"
+          className="text-label text-accent-soft underline"
         >
           {t.auth.backToSignIn}
         </PressableButton>
@@ -153,21 +159,18 @@ export function AuthForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3.5">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-gutter">
       {intro}
 
       {isInsecureOrigin && (
-        <p
-          role="status"
-          className="rounded-[calc(var(--radius)*0.6667)] border border-amber-500/40 bg-amber-500/10 px-3 py-2.5 text-label leading-relaxed text-amber-200"
-        >
+        <AuthNotice>
           {t.auth.insecure}
-          <span className="mt-1 block text-amber-200/80">
+          <span className="mt-base block text-amber-200/80">
             {t.auth.insecureWhy("https", "localhost")}
             <code className="font-mono"> npm run dev:https </code>
             {t.auth.insecureHow}
           </span>
-        </p>
+        </AuthNotice>
       )}
 
       <AuthField
@@ -193,7 +196,20 @@ export function AuthForm({
         onChange={(event) => setPassword(event.target.value)}
       />
 
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {/* 失敗も【形】で伝える（トーストと同じ）。赤の一行だけで出していた
+          ときは、入力欄の枠(アクセント色)と言っていることが食い違って
+          いた。文字は本文と同じ濃さで、印だけを添える */}
+      {error && (
+        <p role="alert" className="flex items-start gap-unit text-label text-fg">
+          <span
+            aria-hidden
+            className="mt-px flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-surface-strong text-fg-strong"
+          >
+            <X size={10} strokeWidth={3} />
+          </span>
+          {error}
+        </p>
+      )}
 
       <AuthSubmitButton
         isSubmitting={isSubmitting}
@@ -202,16 +218,16 @@ export function AuthForm({
         {mode === "signup" ? t.auth.submitSignUp : t.auth.signIn}
       </AuthSubmitButton>
 
-      <p className="text-center text-xs text-fg-muted">
-        {mode === "signup"
-          ? t.auth.haveAccount
-          : t.auth.noAccount}
+      {/* 文と押す所の間は、文字列の末尾の空白ではなく gap で開ける。
+          空白は3言語ぶん写す必要があるうえ、翻訳で必ず落ちる */}
+      <p className="flex flex-wrap items-center justify-center gap-base text-label text-fg-muted">
+        {mode === "signup" ? t.auth.haveAccount : t.auth.noAccount}
         <PressableButton
           onClick={() => {
             setError(null);
             onModeChange(mode === "signup" ? "login" : "signup");
           }}
-          className="text-accent-soft underline"
+          className="text-label text-accent-soft underline"
         >
           {mode === "signup" ? t.auth.signIn : t.auth.signUp}
         </PressableButton>

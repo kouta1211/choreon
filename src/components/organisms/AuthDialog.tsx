@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { BottomSheet } from "@/components/molecules/BottomSheet";
 import { AuthForm } from "@/components/organisms/AuthForm";
+import { AuthNotice } from "@/components/molecules/AuthScreen";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useSaveGuestProject } from "@/features/project/hooks/useSaveGuestProject";
@@ -52,21 +53,14 @@ export function AuthDialog() {
           onAuthenticated={handleAuthenticated}
           intro={
             isGuest ? (
-              <p className="rounded-xl border border-line bg-surface-strong/60 p-3 text-xs leading-relaxed text-fg-sub">
+              <p className="rounded-lg border border-line bg-surface-strong/60 px-gutter py-unit text-label leading-relaxed text-fg-sub">
                 {t.auth.draftHere}
-                <span className="text-fg-strong">
-                  {t.auth.draftSaved}
-                </span>
+                <span className="text-fg-strong">{t.auth.draftSaved}</span>
               </p>
             ) : null
           }
           emailSentNote={
-            isGuest ? (
-              <p className="rounded-lg bg-amber-950/60 px-3 py-2 text-caption leading-relaxed text-amber-300">
-                {t.auth.draftPending}
-
-              </p>
-            ) : null
+            isGuest ? <AuthNotice>{t.auth.draftPending}</AuthNotice> : null
           }
         />
       </div>

@@ -27,24 +27,36 @@ export function AuthScreen({ children }: Props) {
         aria-hidden
         className="pointer-events-none absolute inset-x-[-10%] top-[-20%] bottom-[44%] bg-[linear-gradient(to_right,var(--line-strong)_1px,transparent_1px),linear-gradient(to_bottom,var(--line-strong)_1px,transparent_1px)] bg-[length:48px_48px] opacity-90 [transform:perspective(600px)_rotateX(52deg)]"
       />
-      {/* 上手からの照明。床が見えるようになったぶん、光も届く範囲を
-          広げて、床の奥から手前へ落ちてくるように見せる */}
+      {/* 照明。床の奥から手前へ落ちてくるように見せる。
+
+          【器の端で切らない】。以前は高さ260pxの箱に入れ、その箱の
+          **下辺に光の中心**を置いていた。中心＝いちばん濃いところで
+          箱が終わるので、画面を横切る一直線の切り口ができていた
+          （実機の報告 2026-08-20）。
+
+          いまは画面いっぱいの器に、中心を床の奥（上から45%）へ置いて、
+          四方とも透明へ抜いてある。どこにも辺が来ないので切れない */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-[60px] h-[260px] bg-[radial-gradient(70%_100%_at_50%_100%,color-mix(in_oklab,var(--accent)_30%,transparent),transparent_72%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(58%_42%_at_50%_45%,color-mix(in_oklab,var(--accent)_26%,transparent),transparent_70%)]"
       />
 
       <div className="relative w-full max-w-sm">
         {/* 板の中に入れる。ブランドを外に置くと、カードとの間隔が
-            画面の高さによって伸び縮みして、置き場所が定まらない */}
-        <div className="overlay-panel flex flex-col gap-gutter-lg rounded-2xl p-8">
+            画面の高さによって伸び縮みして、置き場所が定まらない。
+
+            【間隔は3つだけ】。板の内側の余白と、塊と塊の間はどちらも
+            gutter-lg、塊の中は gutter か unit。ここに 14px や 32px の
+            ような名前の無い数を混ぜると、同じ「間」が場所ごとに違って
+            見える（実機の報告 2026-08-20「ところどころバラバラ」） */}
+        <div className="overlay-panel flex flex-col gap-gutter-lg rounded-2xl p-gutter-lg">
           {/* タイトルを強く。**ここはこのアプリが名乗る唯一の場所**で、
               下の説明より弱く見えていた(display は板の中の見出しと同じ段)。
               一点物を足さないよう、タイポに hero という段を1つ設けて
               そこから取っている(globals.css)。マークも一回り大きくして、
               名前と一緒に1つの塊に見えるようにした */}
-          <div className="flex flex-col items-center gap-unit py-unit">
-            <BrandMark className="mb-gutter scale-[1.4]" />
+          <div className="flex flex-col items-center gap-gutter pt-unit">
+            <BrandMark className="scale-[1.4]" />
             <h1 className="text-hero text-fg-strong">Choreon</h1>
           </div>
 
@@ -84,6 +96,24 @@ export function AuthField({
         }`}
       />
     </label>
+  );
+}
+
+/**
+ * この画面で注意を引く枠。安全でない接続・下書きが未保存、など。
+ *
+ * 以前は AuthForm と AuthDialog がそれぞれ別の作り方で琥珀の枠を組んで
+ * いて、同じ「注意」が場所ごとに違う濃さで出ていた。作法はここ1箇所。
+ * 琥珀は意味を運ぶ色（＝トークンに無い）なので、直書きはここだけに閉じる。
+ */
+export function AuthNotice({ children }: { children: ReactNode }) {
+  return (
+    <p
+      role="status"
+      className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-gutter py-unit text-label leading-relaxed text-amber-200"
+    >
+      {children}
+    </p>
   );
 }
 
