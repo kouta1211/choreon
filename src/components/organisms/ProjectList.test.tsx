@@ -24,6 +24,7 @@ function makeProject(overrides: Partial<ProjectSummary> = {}): ProjectSummary {
     title: "サンプルプロジェクト",
     stageWidth: 8,
     stageHeight: 8,
+    musicTitle: null,
     isMetronomeEnabled: false,
     musicOffsetSeconds: 0,
     bpm: 120,
@@ -175,5 +176,38 @@ describe("ProjectList", () => {
         "プロジェクトの削除に失敗しました",
       );
     });
+  });
+});
+
+/* カードは「どれか」を見分けるためのもの。数（シーン数・人数・尺）は
+   落とし、代わりに曲の名前を出す（実機の報告 2026-08-20） */
+describe("ProjectList のカードに出すもの", () => {
+  it("曲を入れていれば、その名前を出す", () => {
+    render(
+      <ProjectList
+        projects={[makeProject({ musicTitle: "midnight.mp3" })]}
+      />,
+    );
+
+    expect(screen.getByText("midnight.mp3")).toBeInTheDocument();
+  });
+
+  it("曲を入れていなければ、その行ごと出さない", () => {
+    render(<ProjectList projects={[makeProject({ musicTitle: null })]} />);
+
+    expect(screen.queryByText(/mp3/)).toBeNull();
+  });
+
+  it("シーン数・人数・通しの尺は出さない", () => {
+    render(
+      <ProjectList
+        projects={[
+          makeProject({ sceneCount: 3, dancerCount: 5, totalSeconds: 12 }),
+        ]}
+      />,
+    );
+
+    expect(screen.queryByText(/シーン ·|3 シーン|5 人/)).toBeNull();
+    expect(screen.queryByText("12s")).toBeNull();
   });
 });

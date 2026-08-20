@@ -441,17 +441,15 @@ export const ja = {
   },
 
   projects: {
-    cardSummary: (scenes: number, dancers: number) =>
-      `${scenes} シーン · ${dancers} 人`,
     count: (n: number) => `プロジェクト ${n}件`,
     empty: "まだプロジェクトがありません。",
     emptyHint: "上の入力から曲名を入れると、ステージが1つ立ち上がります。",
-    newName: "新しいプロジェクト名",
+    newTitle: "新しい作品",
+    newName: "作品の名前",
     create: "プロジェクトを作成",
     createFailed: "プロジェクトの作成に失敗しました",
     renamedForClash: (title: string) =>
       `同じ名前があったので「${title}」で作りました`,
-    tapToStart: "タップして最初のシーンを作る",
     noScenes: "シーン 0",
     remove: (title: string) => `${title}を削除`,
     deleteTitle: (title: string) => `「${title}」を削除しますか?`,
@@ -801,6 +799,7 @@ export const ja = {
     pickAnother: "別の曲を選ぶ",
     file: "曲のファイル",
     remove: "曲を外す",
+    titleFailed: "曲の名前を保存できませんでした",
     keptOnDevice: "この端末に控えてあります。開き直しても入ったままです。",
     notShared:
       "音源はこの端末から出ません。作品を共有しても曲は付いていかないので、相手には同じ曲を選んでもらってください(開始位置は共有されます)。",

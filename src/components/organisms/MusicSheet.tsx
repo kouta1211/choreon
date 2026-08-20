@@ -11,7 +11,10 @@ import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { persist } from "@/features/project/lib/persistence";
-import { updateMusicOffset } from "@/features/project/api/projects";
+import {
+  updateMusicOffset,
+  updateMusicTitle,
+} from "@/features/project/api/projects";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { totalTransitionSeconds } from "@/features/scene/lib/playback";
 import { MetronomeControls } from "@/components/molecules/MetronomeControls";
@@ -66,6 +69,25 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
       : project.musicOffsetSeconds,
   );
   const setMusicOffset = useProjectStore((state) => state.setMusicOffset);
+  const setProjectMusicTitle = useProjectStore((state) => state.setMusicTitle);
+
+  /* 曲の【名前だけ】を作品へ覚えさせる。音源は端末に置いたまま
+     （方針は変えていない）。一覧のカードに「どの曲で組んだ作品か」を
+     出すために要る。失敗しても再生には響かないので、画面は止めずに
+     知らせるだけ（ゲストのときは persist が握りつぶす） */
+  const rememberTitle = async (musicTitle: string | null) => {
+    setProjectMusicTitle(musicTitle);
+    try {
+      await persist((supabase) =>
+        updateMusicTitle(supabase, project.id, musicTitle),
+      );
+    } catch (error) {
+      showToast({
+        message: toUserMessage(error, t.music.titleFailed),
+        type: "error",
+      });
+    }
+  };
 
   const preview = useOffsetPreview();
   const offsetField = useNumberDraft({
@@ -119,7 +141,10 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
             aria-label={t.music.file}
             onChange={(event) => {
               const file = event.target.files?.[0];
-              if (file) loadMusic(file, project.id);
+              if (file) {
+                loadMusic(file, project.id);
+                void rememberTitle(file.name);
+              }
               // 同じファイルをもう一度選んでもchangeが飛ぶようにする
               event.target.value = "";
             }}
@@ -139,7 +164,10 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
                 )}
                 <PressableButton
                   kind="icon"
-                  onClick={() => clearMusic(project.id)}
+                  onClick={() => {
+                    clearMusic(project.id);
+                    void rememberTitle(null);
+                  }}
                   aria-label={t.music.remove}
                   className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-muted"
                 >

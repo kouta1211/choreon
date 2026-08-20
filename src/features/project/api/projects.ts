@@ -19,6 +19,7 @@ function toProject(row: ProjectRow): Project {
     // 通すと秒数の計算がNaNになり、曲を鳴らしていなくてもシーンの選択が
     // おかしくなる。既定値(0)はDB側のdefaultと同じなので、無ければ0に落とす
     musicOffsetSeconds: row.music_offset_seconds ?? 0,
+    musicTitle: row.music_title ?? null,
     // 速さ・拍子を足す前のスキーマのままのDBには、この2つの列がまだ無い。
     // 既定値はDB側のdefaultと同じ
     bpm: row.bpm ?? DEFAULT_BPM,
@@ -165,6 +166,23 @@ export async function updateStageSize(
   const { error } = await supabase
     .from("projects")
     .update({ stage_width: stageWidth, stage_height: stageHeight })
+    .eq("id", projectId);
+
+  if (error) throw error;
+}
+
+/**
+ * 選んでいる曲の名前を覚える。**音源は上げない**（方針は変えていない）。
+ * 一覧のカードに「どの曲で組んだ作品か」を出すためだけの1列。
+ */
+export async function updateMusicTitle(
+  supabase: SupabaseClient<Database>,
+  projectId: string,
+  musicTitle: string | null,
+): Promise<void> {
+  const { error } = await supabase
+    .from("projects")
+    .update({ music_title: musicTitle })
     .eq("id", projectId);
 
   if (error) throw error;

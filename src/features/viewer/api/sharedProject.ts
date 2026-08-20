@@ -30,6 +30,7 @@ type SharedPayload = {
     stage_width: number;
     stage_height: number;
     music_offset_seconds: number;
+    music_title: string | null;
     bpm?: number;
     beats_per_bar?: number;
     is_metronome_enabled?: boolean;
@@ -107,6 +108,7 @@ export async function getSharedProject(
       stageWidth: payload.project.stage_width,
       stageHeight: payload.project.stage_height,
       musicOffsetSeconds: payload.project.music_offset_seconds ?? 0,
+      musicTitle: payload.project.music_title ?? null,
       bpm: payload.project.bpm ?? DEFAULT_BPM,
       beatsPerBar: payload.project.beats_per_bar ?? 4,
       isMetronomeEnabled: payload.project.is_metronome_enabled ?? false,

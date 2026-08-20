@@ -14,6 +14,7 @@ export type Database = {
           stage_width: number;
           stage_height: number;
           music_offset_seconds: number;
+          music_title: string | null;
           bpm: number;
           beats_per_bar: number;
           is_metronome_enabled: boolean;
@@ -30,6 +31,7 @@ export type Database = {
           stage_width?: number;
           stage_height?: number;
           music_offset_seconds?: number;
+          music_title?: string | null;
           bpm?: number;
           beats_per_bar?: number;
           is_metronome_enabled?: boolean;
@@ -45,6 +47,7 @@ export type Database = {
           stage_width?: number;
           stage_height?: number;
           music_offset_seconds?: number;
+          music_title?: string | null;
           bpm?: number;
           beats_per_bar?: number;
           is_metronome_enabled?: boolean;

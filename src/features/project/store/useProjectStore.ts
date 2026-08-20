@@ -52,6 +52,8 @@ type ProjectState = {
   /** 曲の開始位置(秒)の変更。プロジェクト名と同じく、表示中の値の置き場を
    * storeに一本化するために持たせている */
   setMusicOffset: (seconds: number) => void;
+  /** 選んでいる曲の名前。**音源は端末に置いたまま**で、名前だけが作品に付く */
+  setMusicTitle: (musicTitle: string | null) => void;
 
   /** プロジェクト名の変更。ゲストの下書きをそのままクラウドへ保存するとき、
    * 名前も含めて送れるようにここへ持たせている */
@@ -181,6 +183,11 @@ export const useProjectStore = create<ProjectState>((set) => ({
   setShareToken: (shareToken: string) =>
     set((state) =>
       state.project ? { project: { ...state.project, shareToken } } : {},
+    ),
+
+  setMusicTitle: (musicTitle) =>
+    set((state) =>
+      state.project ? { project: { ...state.project, musicTitle } } : {},
     ),
 
   setMusicOffset: (musicOffsetSeconds) =>

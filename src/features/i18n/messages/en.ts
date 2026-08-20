@@ -404,17 +404,15 @@ export const en = {
   },
 
   projects: {
-    cardSummary: (scenes: number, dancers: number) =>
-      `${scenes} scenes · ${dancers} dancers`,
     count: (n: number) => `${n} pieces`,
     empty: "No pieces yet.",
     emptyHint: "Type a track name above and a stage appears.",
-    newName: "Name for the new piece",
+    newTitle: "New piece",
+    newName: "Name",
     create: "Create the piece",
     createFailed: "Could not create the piece",
     renamedForClash: (title: string) =>
       `That name was taken, so this one is “${title}”`,
-    tapToStart: "Tap to make the first scene",
     noScenes: "no scenes",
     remove: (title: string) => `Delete ${title}`,
     deleteTitle: (title: string) => `Delete “${title}”?`,
@@ -758,6 +756,7 @@ export const en = {
     pickAnother: "Choose a different track",
     file: "Music file",
     remove: "Remove the track",
+    titleFailed: "Could not save the track name",
     keptOnDevice: "Kept on this device. It is still here when you come back.",
     notShared:
       "The audio never leaves this device. Sharing a piece does not carry the track, so ask the other person to pick the same one (the start position is shared).",

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
+import { Music, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toUserMessage } from "@/lib/supabase/errors";
 import {
@@ -115,11 +115,12 @@ export function ProjectList({ projects }: Props) {
       </p>
       <ul className="grid gap-unit md:grid-cols-2">
         {projects.map((project) => (
-          /* 面は surface-1。枠線を持たせず、地との明度差だけで浮かせる
-             (押せることは面の変化で示す) */
+          /* 【面はしっかり置く】(実機の報告 2026-08-20)。以前は surface
+             (暗いテーマでは白4%)だけで、地の質感が透けて「カードが薄い」
+             状態だった。1段上の面と1pxの縁で、板として立たせる */
           <li
             key={project.id}
-            className="flex items-center gap-gutter rounded-2xl bg-surface p-unit transition-colors hover:bg-surface-raised"
+            className="flex items-center gap-gutter rounded-2xl border border-line bg-surface-raised p-unit transition-colors hover:border-line-strong hover:bg-surface-strong"
           >
             <Link
               href={`/projects/${project.id}`}
@@ -141,41 +142,29 @@ export function ProjectList({ projects }: Props) {
                 textClassName="text-title"
                 fullWidth
               />
-              <Link
-                href={`/projects/${project.id}`}
-                className="flex min-w-0 flex-col gap-base"
-              >
-                <span className="font-mono text-mono-s text-fg-sub">
-                  {t.projects.cardSummary(
-                    project.sceneCount,
-                    project.dancerCount,
-                  )}
-                  {project.sceneCount > 1 && (
-                    <>
-                      {" · "}
-                      <span className="text-accent-soft">
-                        {project.totalSeconds}s
-                      </span>
-                    </>
-                  )}
-                </span>
-                {project.dancerColors.length > 0 ? (
-                  <span className="flex gap-base">
-                    {project.dancerColors.map((color, index) => (
-                      <span
-                        key={`${color}-${index}`}
-                        aria-hidden
-                        className="block h-1.5 w-1.5 rounded-full"
-                        style={{ backgroundColor: themedDancerColor(color) }}
-                      />
-                    ))}
+              {/* シーン数・人数の点・通しの尺は出さない(実機の報告
+                  2026-08-20)。**開く前に知りたいのは「どれか」**であって
+                  数ではない。見分けるのはミニチュアと名前の役。
+
+                  代わりに曲の名前を出す。**音源そのものは端末にしか
+                  無い**ので、別の端末で開くと「名前は出るが鳴らない」
+                  ことがある — それでも「どの曲で組んだ作品か」は
+                  ここでしか分からない */}
+              {project.musicTitle && (
+                <Link
+                  href={`/projects/${project.id}`}
+                  className="flex min-w-0 items-center gap-base"
+                >
+                  <Music
+                    size={13}
+                    aria-hidden
+                    className="shrink-0 text-accent-soft"
+                  />
+                  <span className="min-w-0 truncate text-caption text-fg-sub">
+                    {project.musicTitle}
                   </span>
-                ) : (
-                  <span className="text-caption text-fg-muted">
-                    {t.projects.tapToStart}
-                  </span>
-                )}
-              </Link>
+                </Link>
+              )}
             </div>
             {/* 削除は赤い面にしない。赤いダンサーが隣に並ぶので、
                 面が赤いと「危険」ではなく「誰かの色」に見える */}

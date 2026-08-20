@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { listProjectSummaries } from "@/features/project/api/projects";
 import { ProjectList } from "@/components/organisms/ProjectList";
-import { CreateProjectForm } from "@/components/organisms/CreateProjectForm";
+import { NewProjectButton } from "@/components/organisms/NewProjectButton";
 import { SettingsButton } from "@/components/organisms/SettingsButton";
 import { WelcomeGate } from "@/components/organisms/WelcomeGate";
 import { AppHeader } from "@/components/molecules/AppHeader";
@@ -41,7 +41,7 @@ export default async function Home() {
           </div>
         </AppHeader>
 
-        <CreateProjectForm userId={user.id} />
+        <NewProjectButton userId={user.id} />
 
         <ProjectList projects={projects} />
       </div>

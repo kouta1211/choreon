@@ -93,6 +93,7 @@ export function createGuestProject(
     stageHeight: STAGE_HEIGHT,
     // 曲はまだ選ばれていないので頭出しも無い(DBのdefaultと同じ0)
     musicOffsetSeconds: 0,
+    musicTitle: null,
     // 曲を入れずにカウントで組み始めることもできる。DBのdefaultと同じ
     bpm: DEFAULT_BPM,
     beatsPerBar: 4,

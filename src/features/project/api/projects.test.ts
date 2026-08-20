@@ -13,6 +13,7 @@ const ROW: ProjectRow = {
   stage_width: 14,
   stage_height: 10,
   music_offset_seconds: 0,
+  music_title: null,
   bpm: 120,
   beats_per_bar: 4,
   is_metronome_enabled: false,

@@ -402,17 +402,15 @@ export const ko = {
   },
 
   projects: {
-    cardSummary: (scenes: number, dancers: number) =>
-      `${scenes}장면 · ${dancers}명`,
     count: (n: number) => `작품 ${n}개`,
     empty: "아직 작품이 없습니다.",
     emptyHint: "위 입력란에 곡 이름을 넣으면 무대가 하나 만들어집니다.",
-    newName: "새 작품 이름",
+    newTitle: "새 작품",
+    newName: "작품 이름",
     create: "작품 만들기",
     createFailed: "작품을 만들지 못했습니다",
     renamedForClash: (title: string) =>
       `같은 이름이 있어서 '${title}'으로 만들었습니다`,
-    tapToStart: "눌러서 첫 장면 만들기",
     noScenes: "장면 0",
     remove: (title: string) => `${title} 삭제`,
     deleteTitle: (title: string) => `'${title}'을(를) 삭제할까요?`,
@@ -745,6 +743,7 @@ export const ko = {
     pickAnother: "다른 곡 고르기",
     file: "음악 파일",
     remove: "곡 빼기",
+    titleFailed: "곡 이름을 저장하지 못했습니다",
     keptOnDevice: "이 기기에 보관해 둡니다. 다시 열어도 그대로 있습니다.",
     notShared:
       "음원은 이 기기 밖으로 나가지 않습니다. 작품을 공유해도 곡은 따라가지 않으니 상대에게 같은 곡을 고르라고 알려 주세요(시작 위치는 공유됩니다).",

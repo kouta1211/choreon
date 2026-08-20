@@ -98,6 +98,8 @@ export function loadGuestDraft(): GuestDraft | null {
       id: GUEST_PROJECT_ID,
       userId: "guest",
       isMetronomeEnabled: backup.project.isMetronomeEnabled ?? false,
+      // 曲の名前は書き出しに入っていない（音源ごと端末の外へは出さない）
+      musicTitle: null,
       shareToken: null,
       isShared: false,
       createdAt: now,
