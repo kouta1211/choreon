@@ -305,7 +305,10 @@ body::before {
   );
 }
 
-.card-surface:hover {
+/* 押せるカードだけ、指を乗せたときに一段明るくする。
+   **面のクラスと分けてある** — 押せない板(右のパネルなど)にも同じ面を
+   使うので、そちらで手応えが出てしまうと「押せる」と嘘をつくことになる */
+.card-surface-interactive:hover {
   background-image: linear-gradient(
     var(--surface-strong),
     var(--surface-strong)

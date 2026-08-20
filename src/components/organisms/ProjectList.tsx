@@ -130,7 +130,7 @@ export function ProjectList({ projects }: Props) {
                面は `.card-surface`(globals.css)。**テーマによって
                半透明だったり不透明だったりする**面の色を、地の上へ
                重ねて必ず不透明にする — 質感が透けて文字が沈むため */
-            className="card-surface flex items-center gap-gutter rounded-2xl border border-line-strong p-gutter transition-colors"
+            className="card-surface card-surface-interactive flex items-center gap-gutter rounded-2xl border border-line-strong p-gutter transition-colors"
           >
             <Link
               href={`/projects/${project.id}`}

@@ -36,7 +36,11 @@ export function EditorSidePanel({ project, showScenes }: Props) {
   const activeTab: Tab = showScenes ? tab : "dancers";
 
   return (
-    <aside className="flex w-[288px] shrink-0 flex-col overflow-hidden rounded-xl border border-line bg-surface/60 xl:w-[300px]">
+    /* 面は `.card-surface`(globals.css)。**テーマによって半透明だったり
+       不透明だったりする**面の色を、地の上へ重ねて必ず不透明にする。
+       ここが半透明だと、地の質感（方眼・グレイン）がパネルを透かして、
+       中の一覧の文字が沈む（ホームのカードと同じ話。2026-08-20） */
+    <aside className="card-surface flex w-[288px] shrink-0 flex-col overflow-hidden rounded-xl border border-line xl:w-[300px]">
       {showScenes ? (
         <div className="flex shrink-0 gap-1 border-b border-line p-2">
           {[

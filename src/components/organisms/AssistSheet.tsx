@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ArrowRight, Check, Wand2 } from "lucide-react";
 import { BottomSheet } from "@/components/molecules/BottomSheet";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { TextField } from "@/components/atoms/TextField";
 import { useAssistContext } from "@/features/assist/hooks/useAssistContext";
 import {
   useAssistPlan,
@@ -132,13 +133,13 @@ export function AssistSheet({ project, isOpen, onClose, onOpenSheet }: Props) {
           }}
           className="flex flex-col gap-2"
         >
-          <input
+          <TextField
+            label={t.assist.inputLabel}
+            isLabelVisible={false}
             value={text}
             onChange={(event) => setText(event.target.value)}
             placeholder={t.assist.placeholder}
-            aria-label={t.assist.inputLabel}
             maxLength={200}
-            className="h-11 w-full rounded-[calc(var(--radius)*0.8)] border border-line-strong bg-surface-sunken px-3 text-label text-fg placeholder:text-fg-muted focus:border-accent focus:outline-none"
           />
 
           {/* 何を書けばいいのか分からない、を先に潰す。押すと欄へ入る */}
