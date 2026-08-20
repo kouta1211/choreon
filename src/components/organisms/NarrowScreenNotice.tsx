@@ -2,7 +2,6 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Phrase } from "@/components/atoms/Phrase";
 import { Monitor, X } from "lucide-react";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import {
@@ -89,7 +88,7 @@ export function NarrowScreenNotice({ project }: Props) {
          幅を戻せばそのまま使える（消しているわけではない）。
          付けると読み上げに「後ろは無いもの」と伝わってしまう */
       aria-label={t.editor.narrowScreen.title}
-      className="fixed inset-0 z-[70] flex flex-col items-center justify-center gap-gutter bg-page px-gutter-lg text-center min-[768px]:hidden"
+      className="fixed inset-0 z-[70] flex flex-col items-center justify-center gap-gutter-lg bg-page px-gutter-lg text-center min-[768px]:hidden"
     >
       <span
         aria-hidden
@@ -98,15 +97,19 @@ export function NarrowScreenNotice({ project }: Props) {
         <Monitor size={26} />
       </span>
 
-      <div className="flex flex-col gap-unit">
+      <div className="flex max-w-xs flex-col gap-unit">
         <h1 className="text-title text-fg-strong">
           {t.editor.narrowScreen.title}
         </h1>
-        <p className="max-w-xs text-label leading-relaxed text-fg-sub">
-          <Phrase>{t.editor.narrowScreen.body}</Phrase>
+        {/* 改行の位置は文が持っている(user が決めた3行)。折り返しを
+            ブラウザ任せにせず、そのまま出す。**自動の文節折り(Phrase)は
+            通さない** — 決めた改行と二重に効くと、行の切れ方が読めなくなる */}
+        <p className="text-label leading-relaxed whitespace-pre-line text-fg-sub">
+          {t.editor.narrowScreen.body}
         </p>
       </div>
 
+      {/* 押せるものだけを、1つの塊にまとめる */}
       <div className="flex w-full max-w-xs flex-col gap-gutter">
         {viewerHref && (
           <a
@@ -170,10 +173,6 @@ export function NarrowScreenNotice({ project }: Props) {
             {t.editor.narrowScreen.pasteOpen}
           </PressableButton>
         </form>
-
-        <p className="text-caption leading-relaxed text-fg-muted">
-          <Phrase>{t.editor.narrowScreen.viewerNote}</Phrase>
-        </p>
       </div>
     </div>
   );

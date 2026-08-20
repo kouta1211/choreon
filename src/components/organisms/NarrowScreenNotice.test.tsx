@@ -40,8 +40,8 @@ describe("NarrowScreenNotice", () => {
     );
 
     expect(screen.queryByText(/見るだけならこちら/)).not.toBeInTheDocument();
-    // 説明の文は残す（配られた URL なら読める、という案内）
-    expect(screen.getByText(/配られた URL/)).toBeInTheDocument();
+    // 開く先が無くても、貼って開く口は残す（そこが唯一の出口）
+    expect(screen.getByLabelText(/共有リンクを貼って開く/)).toBeInTheDocument();
   });
 
   it("共有していれば、合鍵つきのビューアへ行ける", () => {
@@ -66,7 +66,7 @@ describe("NarrowScreenNotice", () => {
     render(<NarrowScreenNotice project={makeProject()} />);
 
     expect(
-      screen.getByRole("dialog", { name: /この幅では/ }),
+      screen.getByRole("dialog", { name: /ブラウザ幅では操作できません/ }),
     ).toBeInTheDocument();
   });
 });

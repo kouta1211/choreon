@@ -139,11 +139,9 @@ export const en = {
     copyCurrent: "Copy this formation into a new scene",
 
     narrowScreen: {
-      title: "This width is too narrow to build formations",
-      body: "Placing dancers cell by cell needs a mouse and a wide screen. On a computer, widen the window. In a phone browser, swiping fights with the browser's own back gesture.",
+      title: "This browser width cannot be used for editing",
+      body: "At this width, Choreon is for viewing shared choreography.\nEditing is turned off here.\nWiden the browser window to keep working.",
       openViewer: "Just want to view? Open here",
-      viewerNote:
-        "Opening a shared URL shows your own route on a phone — the viewing side is built for phones.",
       pasteLabel: "Paste a shared link to open it",
       pastePlaceholder: "https://... or /view/...",
       pasteOpen: "Open",
