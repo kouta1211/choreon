@@ -12,10 +12,10 @@ import {
   signUpWithPassword,
 } from "@/features/auth/api/auth";
 import {
-  AuthField,
   AuthNotice,
   AuthSubmitButton,
 } from "@/components/molecules/AuthScreen";
+import { TextField } from "@/components/atoms/TextField";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { useT } from "@/features/i18n/LocaleProvider";
 
@@ -168,7 +168,7 @@ export function AuthForm({
         </AuthNotice>
       )}
 
-      <AuthField
+      <TextField
         label={t.auth.email}
         id={`${mode}-email`}
         type="email"
@@ -179,7 +179,7 @@ export function AuthForm({
         onChange={(event) => setEmail(event.target.value)}
       />
 
-      <AuthField
+      <TextField
         label={mode === "signup" ? t.auth.passwordSignUp : t.auth.password}
         id={`${mode}-password`}
         type="password"

@@ -28,7 +28,7 @@ src/components/
 
 | 層        | 目安                                                                      | 例                                                  |
 | --------- | ------------------------------------------------------------------------- | --------------------------------------------------- |
-| atoms     | ストアに触らない。propsだけで完結し、他のアプリ内コンポーネントも使わない | `Tooltip` `Switch` `RotationHandle`                 |
+| atoms     | ストアに触らない。propsだけで完結し、他のアプリ内コンポーネントも使わない | `Tooltip` `Switch` `TextField` `RotationHandle`     |
 | molecules | ストアに触らない。atomsや他のmoleculesを組み立てる                        | `InlineEditableText` `BottomSheet` `SceneThumbnail` |
 | organisms | ストアを読む・書く、またはSupabaseを呼ぶ                                  | `CanvasBoard` `SceneDock` `DancerInspector`         |
 

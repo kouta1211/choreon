@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Monitor, X } from "lucide-react";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { TextField } from "@/components/atoms/TextField";
 import {
   buildShareLink,
   parseShareLink,
@@ -131,11 +132,10 @@ export function NarrowScreenNotice({ project }: Props) {
             いま開いている作品と関係なくてよい — 狭い幅で来た人が
             やりたいのは「自分に配られた振付を見ること」だから */}
           <form onSubmit={handleOpen} className="flex flex-col gap-unit">
-            <label className="flex flex-col gap-base text-left">
-              <span className="text-label text-fg-sub">
-                {t.editor.narrowScreen.pasteLabel}
-              </span>
-              <input
+            <div className="text-left">
+              <TextField
+                label={t.editor.narrowScreen.pasteLabel}
+                hasError={hasError}
                 value={pasted}
                 onChange={(event) => {
                   setPasted(event.target.value);
@@ -147,13 +147,8 @@ export function NarrowScreenNotice({ project }: Props) {
                 autoCorrect="off"
                 spellCheck={false}
                 placeholder={t.editor.narrowScreen.pastePlaceholder}
-                aria-label={t.editor.narrowScreen.pasteLabel}
-                aria-invalid={hasError}
-                className={`h-target w-full rounded-lg border bg-surface-raised px-gutter text-body text-fg-strong placeholder:text-fg-muted focus:ring-[3px] focus:ring-accent/16 focus:outline-none ${
-                  hasError ? "border-accent" : "border-line focus:border-accent"
-                }`}
               />
-            </label>
+            </div>
 
             {/* 失敗は【形】で伝える。この画面だけ赤い文にしない */}
             {hasError && (

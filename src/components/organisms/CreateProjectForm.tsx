@@ -9,6 +9,7 @@ import { createProject } from "@/features/project/api/projects";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { TextField } from "@/components/atoms/TextField";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
@@ -59,17 +60,18 @@ export function CreateProjectForm({ userId }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="flex gap-unit">
-      <label className="flex-1">
-        <span className="sr-only">{t.projects.newName}</span>
-        <input
+      <div className="flex-1">
+        <TextField
+          label={t.projects.newName}
+          isLabelVisible={false}
+          size="lg"
           type="text"
           required
           placeholder={t.projects.newName}
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          className="h-target-lg w-full rounded-lg border border-line bg-surface-raised px-gutter text-body text-fg-strong placeholder:text-fg-muted focus:border-accent focus:outline-none"
         />
-      </label>
+      </div>
       <PressableButton
         kind="primary"
         type="submit"

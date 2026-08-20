@@ -89,30 +89,6 @@ export function AuthScreen({ children }: Props) {
   );
 }
 
-/** 認証フォームの入力欄。両画面で同じ見た目にするためここに置く */
-export function AuthField({
-  label,
-  hasError = false,
-  ...props
-}: {
-  label: string;
-  hasError?: boolean;
-} & React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <label className="flex flex-col gap-base">
-      <span className="text-label text-fg-sub">{label}</span>
-      <input
-        {...props}
-        className={`h-target rounded-lg border bg-surface-raised px-gutter text-body text-fg-strong placeholder:text-fg-muted focus:ring-[3px] focus:ring-accent/16 focus:outline-none ${
-          /* 失敗を面の赤で示さない。枠線だけを強くして、
-             何が起きたかは下の文で伝える */
-          hasError ? "border-accent" : "border-line focus:border-accent"
-        }`}
-      />
-    </label>
-  );
-}
-
 /**
  * この画面で注意を引く枠。安全でない接続・下書きが未保存、など。
  *
