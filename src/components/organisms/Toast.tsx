@@ -74,53 +74,72 @@ export function Toast() {
   };
 
   return (
+    /* 【本文の真ん中に出す】(実機の要望 2026-08-20)。
+       以前は画面の右端へ貼り付けていたので、エディタでは**右のパネルの上に
+       重なって**いた。アプリの中身は左右とも中央寄せなので、画面の中央へ
+       置けば、ちょうどステージの上に来て、左のレールも右のパネルも踏まない。
+
+       **場面ごとに動かす案は採らなかった**（user と相談）。知らせは
+       いつも同じ場所に出る方が見つけやすく、場合分けは画面が増えるたびに
+       直すことになる。
+
+       置き場を外側の器に持たせているのは、中の板が払って消すための
+       transform を自分で使っているから（中央寄せを transform でやると
+       取り合いになる）。器は指を通す(pointer-events-none)。 */
     <div
-      role="status"
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      style={{
-        transform: `translateX(${dragPx}px)`,
-        opacity: Math.max(0.2, 1 - Math.abs(dragPx) / (SWIPE_DISMISS_PX * 2)),
-      }}
-      className={`overlay-panel fixed right-gutter bottom-[var(--toast-bottom,24px)] left-gutter z-50 flex h-target-lg touch-pan-y items-center gap-unit rounded-2xl px-gutter md:left-auto md:w-[380px] ${
-        dragPx === 0
-          ? "transition-[transform,opacity] duration-200 motion-reduce:transition-none"
-          : ""
-      }`}
+      aria-hidden={false}
+      className="pointer-events-none fixed inset-x-gutter bottom-[var(--toast-bottom,24px)] z-50 flex justify-center"
     >
-      {/* 面の色は変えない。成否は【形】で伝える
-          — 色で伝えると、ステージのダンサーの色と競合する */}
-      <span
-        aria-hidden
-        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface-strong text-fg-strong"
+      <div
+        role="status"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        style={{
+          transform: `translateX(${dragPx}px)`,
+          opacity: Math.max(0.2, 1 - Math.abs(dragPx) / (SWIPE_DISMISS_PX * 2)),
+        }}
+        className={`overlay-panel pointer-events-auto flex h-target-lg w-full touch-pan-y items-center gap-unit rounded-2xl px-gutter md:w-[380px] ${
+          dragPx === 0
+            ? "transition-[transform,opacity] duration-200 motion-reduce:transition-none"
+            : ""
+        }`}
       >
-        {isError ? (
-          <X size={12} strokeWidth={3} />
-        ) : isWarning ? (
-          <AlertTriangle size={12} strokeWidth={2.5} />
-        ) : (
-          <Check size={12} strokeWidth={3} />
-        )}
-      </span>
-
-      <span className="min-w-0 flex-1 text-label text-fg">{toast.message}</span>
-
-      {toast.action && (
-        <PressableButton
-          onClick={() => {
-            // 押した時点で消す。処理の結果は次のトーストが知らせる
-            clearToast();
-            toast.action?.onAction();
-          }}
-          // 横スワイプで消す判定は板の側にある。ボタンから始めても
-          // 同じように払えるよう、ここでイベントを止めない
-          className="flex h-[30px] shrink-0 items-center rounded-[calc(var(--radius)*0.6)] border border-line-strong px-[11px] text-label font-medium text-fg-strong"
+        {/* 面の色は変えない。成否は【形】で伝える
+          — 色で伝えると、ステージのダンサーの色と競合する */}
+        <span
+          aria-hidden
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface-strong text-fg-strong"
         >
-          {toast.action.label}
-        </PressableButton>
-      )}
+          {isError ? (
+            <X size={12} strokeWidth={3} />
+          ) : isWarning ? (
+            <AlertTriangle size={12} strokeWidth={2.5} />
+          ) : (
+            <Check size={12} strokeWidth={3} />
+          )}
+        </span>
+
+        <span className="min-w-0 flex-1 text-label text-fg">
+          {toast.message}
+        </span>
+
+        {toast.action && (
+          <PressableButton
+            onClick={() => {
+              // 押した時点で消す。処理の結果は次のトーストが知らせる
+              clearToast();
+              toast.action?.onAction();
+            }}
+            // 横スワイプで消す判定は板の側にある。ボタンから始めても
+            // 同じように払えるよう、ここでイベントを止めない
+            className="flex h-[30px] shrink-0 items-center rounded-[calc(var(--radius)*0.6)] border border-line-strong px-[11px] text-label font-medium text-fg-strong"
+          >
+            {toast.action.label}
+          </PressableButton>
+        )}
+      </div>
     </div>
   );
 }
