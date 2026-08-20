@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { Phrase } from "@/components/atoms/Phrase";
 import { Monitor } from "lucide-react";
-import { PressableButton } from "@/components/atoms/PressableButton";
 import { buildShareLink } from "@/features/project/lib/shareLink";
 import type { Project } from "@/features/project/types";
 import { useT } from "@/features/i18n/LocaleProvider";
@@ -13,7 +11,7 @@ type Props = {
 };
 
 /**
- * スマホ幅で**作成画面**を開いた人に、そこは PC / タブレット向けだと伝える板。
+ * **狭い幅**で作成画面を開いた人に、この幅では組めないと伝える板。
  *
  * ■ なぜ出すのか(2026-08-18 の方針転換)
  * 作るのは PC / タブレット、見るのはスマホ、と UX を割った。実機で触ると、
@@ -22,10 +20,14 @@ type Props = {
  * 二番手になるだけ**なので、直すのではなく行き先を分ける方を選んだ。
  * 経緯は README のフェーズ6にある。
  *
- * ■ 締め出さない
- * 「このまま開く」を残してある。スマホで URL を開いた人が**何も試せない**
- * 状態にはしない — 初めての人が触る入口でもあるため。非推奨だと伝えて、
- * 決めるのは開いた人に任せる。
+ * ■ 逃げ道は無い(2026-08-20 に user の判断で閉じた)
+ * 以前は「このまま開く(非推奨)」を残していたが、**入れても操作できない**
+ * 画面へ通していただけだった。いまは抜けられない。
+ *
+ * ■ 言うのは【端末】ではなく【幅】
+ * 出し分けは幅(`min-[768px]:hidden`)なので、PC でウィンドウを狭めても出る。
+ * 「スマホでは使えません」と書くと、PC の人には嘘になる。**この幅では
+ * 組めない・広げれば戻る**、と幅の話として書く(user の言葉、2026-08-20)。
  *
  * ■ 出し分けは CSS でやる(`min-[768px]:hidden`)
  * JavaScript(`useScreenKind`)で分けると、**サーバー側には画面幅が無いので
@@ -39,10 +41,6 @@ type Props = {
  */
 export function NarrowScreenNotice({ project }: Props) {
   const t = useT();
-  const [isDismissed, setIsDismissed] = useState(false);
-
-  if (isDismissed) return null;
-
   /* 共有していれば、そのまま見る側で開ける。origin は描くのがブラウザの中
      だけなので、ここで読んでよい(この板はクライアント専用) */
   const viewerHref =
@@ -95,14 +93,6 @@ export function NarrowScreenNotice({ project }: Props) {
           <Phrase>{t.editor.narrowScreen.viewerNote}</Phrase>
         </p>
       </div>
-
-      {/* 締め出さない。押した人の判断で、これまで通り触れる */}
-      <PressableButton
-        onClick={() => setIsDismissed(true)}
-        className="h-target rounded-lg px-gutter text-label text-fg-muted underline underline-offset-4"
-      >
-        {t.editor.narrowScreen.openAnyway}
-      </PressableButton>
     </div>
   );
 }

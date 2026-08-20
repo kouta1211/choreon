@@ -5,22 +5,26 @@ import { NarrowScreenNotice } from "./NarrowScreenNotice";
 import { makeProject } from "@/test/factories";
 
 /**
- * スマホ幅で作成画面を開いた人への案内（2026-08-18 の方針転換）。
+ * 狭い幅で作成画面を開いた人への案内（2026-08-18 の方針転換、
+ * 2026-08-20 に逃げ道を閉じた）。
  *
  * **幅の出し分けは CSS でやっている**ので、ここでは見られない
  * （jsdom にレイアウトが無い）。確かめるのは中身の3つ —
- * 締め出さないこと・開けないリンクを出さないこと・出すなら正しい先。
+ * 抜け道が無いこと・開けないリンクを出さないこと・出すなら正しい先。
  */
 describe("NarrowScreenNotice", () => {
-  it("「このまま開く」で消える。締め出さない", async () => {
+  /* 2026-08-20 に user の判断で閉じた。以前は「このまま開く(非推奨)」で
+     入れたが、入れても操作できない画面へ通していただけだった */
+  it("この板から先へ進む道は無い", async () => {
     const user = userEvent.setup();
     render(<NarrowScreenNotice project={makeProject()} />);
 
+    expect(screen.queryByText(/このまま開く/)).toBeNull();
+
+    // 板の中で押せるのは、共有しているときのビューアへのリンクだけ
+    expect(screen.queryAllByRole("button")).toHaveLength(0);
+    await user.click(screen.getByRole("dialog"));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-
-    await user.click(screen.getByText(/このまま開く/));
-
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   /** 押しても開けないリンクを置かない */
@@ -52,11 +56,13 @@ describe("NarrowScreenNotice", () => {
     );
   });
 
-  it("見出しは、どの端末で開くべきかを言う", () => {
+  /* 幅で出し分けているので、PC でウィンドウを狭めても出る。
+     「スマホでは」と書くと、その人には嘘になる */
+  it("見出しは【端末】ではなく【幅】の話をする", () => {
     render(<NarrowScreenNotice project={makeProject()} />);
 
     expect(
-      screen.getByRole("dialog", { name: /PC かタブレットで/ }),
+      screen.getByRole("dialog", { name: /この幅では/ }),
     ).toBeInTheDocument();
   });
 });

@@ -28,9 +28,9 @@ import { useT } from "@/features/i18n/LocaleProvider";
  * ここ1箇所なので、確実な方を採った。
  *
  * ■ 逃げ道を作らない
- * 作成画面の板（`NarrowScreenNotice`）には「このまま開く」を残しているが、
- * あちらは**入口**で、締め出すと何も試せなくなるため。こちらは
  * 端末を回せば必ず抜けられるので、選ばせる意味が無い。
+ * 作成画面の板（`NarrowScreenNotice`）も、2026-08-20 に逃げ道を閉じた
+ * ので、いまはどちらも「抜ける道は1つだけ」で揃っている。
  */
 
 export function RotateToPortraitNotice() {

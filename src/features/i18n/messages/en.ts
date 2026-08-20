@@ -139,12 +139,11 @@ export const en = {
     copyCurrent: "Copy this formation into a new scene",
 
     narrowScreen: {
-      title: "Build formations on a computer or tablet",
-      body: "Placing dancers cell by cell needs a mouse and a wide screen. In a phone browser, swiping fights with the browser's own back gesture.",
+      title: "This width is too narrow to build formations",
+      body: "Placing dancers cell by cell needs a mouse and a wide screen. On a computer, widen the window. In a phone browser, swiping fights with the browser's own back gesture.",
       openViewer: "Just want to view? Open here",
       viewerNote:
         "Opening a shared URL shows your own route on a phone — the viewing side is built for phones.",
-      openAnyway: "Open it anyway (not recommended)",
     },
 
     view: {
