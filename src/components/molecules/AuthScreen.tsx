@@ -30,10 +30,16 @@ export function AuthScreen({ children }: Props) {
           光と同じで、**どの辺も画面の中で立たない**のが狙い。
 
           mask は transform の前に効くので、ここでの「下」は
-          倒したあとの【手前】になる。奥（上）は濃いまま残る */}
+          倒したあとの【手前】になる。奥（上）は濃いまま残る。
+
+          【78% は目分量ではない】。倒してあるぶん、奥は画面の上で潰れ、
+          手前は引き伸ばされる。指定の 38% で消し始めたときは、
+          画面で見えている格子の**ほとんどが薄くなる途中**になっていて
+          「消えるのが早すぎる」と報告が来た（2026-08-20）。
+          薄くするのは【いちばん手前の一帯だけ】でよい */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-[-10%] top-[-20%] bottom-[38%] bg-[linear-gradient(to_right,var(--line-strong)_1px,transparent_1px),linear-gradient(to_bottom,var(--line-strong)_1px,transparent_1px)] bg-[length:48px_48px] opacity-90 [transform:perspective(600px)_rotateX(52deg)] [-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_38%,transparent_92%)] [mask-image:linear-gradient(to_bottom,black_0%,black_38%,transparent_92%)]"
+        className="pointer-events-none absolute inset-x-[-10%] top-[-20%] bottom-[38%] bg-[linear-gradient(to_right,var(--line-strong)_1px,transparent_1px),linear-gradient(to_bottom,var(--line-strong)_1px,transparent_1px)] bg-[length:48px_48px] opacity-90 [transform:perspective(600px)_rotateX(52deg)] [-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_78%,transparent_100%)] [mask-image:linear-gradient(to_bottom,black_0%,black_78%,transparent_100%)]"
       />
       {/* 照明。床の奥から手前へ落ちてくるように見せる。
 
