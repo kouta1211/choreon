@@ -22,10 +22,18 @@ export function AuthScreen({ children }: Props) {
     <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden px-4">
       {/* 舞台の床。perspectiveで奥へ倒して遠近を付ける。
           薄すぎて「何も無い黒地」に見えていたので、線を1段強い方
-          (--line-strong)にして、透かしも浅くした */}
+          (--line-strong)にして、透かしも浅くした。
+
+          【手前へ向かって消す】。以前は器の下辺で格子が一直線に終わって
+          いて、上半分と下半分が別のデザインに見えていた
+          （実機の報告 2026-08-20）。mask で手前ほど薄くしてある —
+          光と同じで、**どの辺も画面の中で立たない**のが狙い。
+
+          mask は transform の前に効くので、ここでの「下」は
+          倒したあとの【手前】になる。奥（上）は濃いまま残る */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-[-10%] top-[-20%] bottom-[44%] bg-[linear-gradient(to_right,var(--line-strong)_1px,transparent_1px),linear-gradient(to_bottom,var(--line-strong)_1px,transparent_1px)] bg-[length:48px_48px] opacity-90 [transform:perspective(600px)_rotateX(52deg)]"
+        className="pointer-events-none absolute inset-x-[-10%] top-[-20%] bottom-[38%] bg-[linear-gradient(to_right,var(--line-strong)_1px,transparent_1px),linear-gradient(to_bottom,var(--line-strong)_1px,transparent_1px)] bg-[length:48px_48px] opacity-90 [transform:perspective(600px)_rotateX(52deg)] [-webkit-mask-image:linear-gradient(to_bottom,black_0%,black_38%,transparent_92%)] [mask-image:linear-gradient(to_bottom,black_0%,black_38%,transparent_92%)]"
       />
       {/* 照明。床の奥から手前へ落ちてくるように見せる。
 
