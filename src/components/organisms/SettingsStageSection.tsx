@@ -3,9 +3,7 @@
 import {
   SettingsGroup,
   SettingsNumberRow,
-  SettingsSwitchRow,
 } from "@/components/molecules/SettingsRow";
-import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { persist } from "@/features/project/lib/persistence";
@@ -36,63 +34,21 @@ import { useT } from "@/features/i18n/LocaleProvider";
  * 親(SettingsSheet)がまとめて読んで配ると、設定を1つ変えるだけで
  * シート全体が描き直される。
  */
-export function SettingsStageSection() {
-  const hasProject = useProjectStore((state) => state.project !== null);
-  return hasProject ? <ProjectStage /> : <DefaultStage />;
-}
-
-/** 客席の向き。作品を開いていてもいなくても同じ話なので、両方に出す */
-function AudienceRow() {
-  const t = useT();
-  const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
-  const update = useSettingsStore((state) => state.update);
-
-  return (
-    <SettingsSwitchRow
-      label={t.settings.stage.audienceOnTop.label}
-      description={t.settings.stage.audienceOnTop.description}
-      checked={isAudienceOnTop}
-      onChange={() => update("isAudienceOnTop", !isAudienceOnTop)}
-    />
-  );
-}
-
 /**
- * ホームから開いたとき。広さは【これから作る作品】の初期値で、
- * 既にある作品には効かない。
+ * 設定の「舞台」。**作品を開いているときだけ出る**（その作品の広さ）。
+ *
+ * ■ 初期値の束は廃した(2026-08-20)
+ * 以前はホームから開くと「これから作る作品の初期値」を編集できたが、
+ * **作るときの板でその場で広さを決められる**ようになったので、別の画面に
+ * 初期値を置いておく意味が無くなった。出発点は定数
+ * （`DEFAULT_STAGE_WIDTH` / `DEFAULT_STAGE_HEIGHT`）が持つ。
+ *
+ * ■ 客席の向きは「表示」へ移した
+ * あれは作品の性質ではなく**この端末の見せ方**で、名前・導線・バミリと
+ * 同じ仲間。ここに残すと、束の名前（舞台＝この作品）と中身がずれる。
  */
-function DefaultStage() {
-  const t = useT();
-  const defaultStageWidth = useSettingsStore(
-    (state) => state.defaultStageWidth,
-  );
-  const defaultStageHeight = useSettingsStore(
-    (state) => state.defaultStageHeight,
-  );
-  const update = useSettingsStore((state) => state.update);
-
-  return (
-    <SettingsGroup description={t.settings.stage.description}>
-      <AudienceRow />
-      <SettingsNumberRow
-        label={t.settings.stage.width}
-        value={defaultStageWidth}
-        min={MIN_STAGE_UNITS}
-        max={MAX_STAGE_UNITS}
-        unit={t.settings.stage.unit}
-        onChange={(value) => update("defaultStageWidth", value)}
-      />
-      <SettingsNumberRow
-        label={t.settings.stage.depth}
-        description={t.settings.stage.depthDescription}
-        value={defaultStageHeight}
-        min={MIN_STAGE_UNITS}
-        max={MAX_STAGE_UNITS}
-        unit={t.settings.stage.unit}
-        onChange={(value) => update("defaultStageHeight", value)}
-      />
-    </SettingsGroup>
-  );
+export function SettingsStageSection() {
+  return <ProjectStage />;
 }
 
 /**
@@ -214,7 +170,6 @@ function ProjectStage() {
           : t.settings.projectStage.description
       }
     >
-      <AudienceRow />
       <SettingsNumberRow
         label={t.settings.stage.width}
         value={project.stageWidth}

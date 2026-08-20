@@ -160,17 +160,20 @@ export function SettingsSheet({
   // 束の目次。body の要素を作るだけでは中身は動かないので、
   // 開いていない束のぶんは何もしない
   const sections: Section[] = [
-    {
-      id: "stage",
-      title: t.settings.stage.title,
-      /* 中の「ステージの幅」が指す先は、作品を開いているかで変わる。
-         一覧の行にもそれを書く — 開く前に、どちらの広さの話なのかが読める */
-      summary: hasProject
-        ? t.settings.stage.summaryInProject
-        : t.settings.stage.summary,
-      icon: <Frame size={20} />,
-      body: <SettingsStageSection />,
-    },
+    /* 舞台は**作品を開いているときだけ**（2026-08-20）。
+       中身はその作品の広さで、ホームには相手が居ない。
+       これから作る作品の広さは、作るときの板でその場で決める */
+    ...(hasProject
+      ? [
+          {
+            id: "stage" as const,
+            title: t.settings.stage.title,
+            summary: t.settings.stage.summaryInProject,
+            icon: <Frame size={20} />,
+            body: <SettingsStageSection />,
+          },
+        ]
+      : []),
     {
       id: "grid",
       title: t.settings.grid.title,

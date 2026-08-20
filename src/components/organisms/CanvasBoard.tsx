@@ -29,7 +29,6 @@ import {
   useProjectStore,
 } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import { useScreenKind } from "@/components/hooks/useIsWideScreen";
 import {
   clamp,
   isCloseToInteger,
@@ -217,11 +216,7 @@ export function CanvasBoard({
   // 横並びの帯、PCは左右のペインに縦並びなので、そのまま横/縦が入れ替わる。
   // 「PCでは横に払っても、その方向にシーンが無い」という指摘への答え
   const scenes = useProjectStore((state) => state.scenes);
-  const screenKind = useScreenKind();
   const scrub = useSceneScrub();
-  const isSwipeSceneChangeEnabled = useUIStore(
-    (state) => state.isSwipeSceneChangeEnabled,
-  );
   const sceneIds = useMemo(() => scenes.map((scene) => scene.id), [scenes]);
   /* 囲んで選ぶ枠。**style を直に書き換える**ので、動かしても React は
      描き直さない（ダンサーの丸が全部描き直されると重い） */
@@ -256,12 +251,14 @@ export function CanvasBoard({
   const groupOffsetX = useMotionValue(0);
   const groupOffsetY = useMotionValue(0);
 
-  /* 払ってシーンを送るのは**スマホ幅だけ**にした(2026-08-18、実機の報告 18-11)。
-     以前は幅の広い画面で「縦に払う」を受け付けていたが、作る側は PC が主で、
-     シーンの移動はドック・時間軸・← → キーで足りている。縦の払いは
-     囲んで選ぶ操作と場所を取り合うだけで、使われていなかった。
-     閲覧画面(スマホ)の横払いはそのまま残る */
-  const isSwipeEnabled = isSwipeSceneChangeEnabled && screenKind === "phone";
+  /* 作る画面では、払ってのシーン送りは受け付けない。
+
+     もともとスマホ幅だけの操作だったが(2026-08-18、報告 18-11)、
+     **その幅では作る画面に入れなくなった**ので、切り替える相手が居ない
+     (2026-08-20)。設定とメニューからも項目を落としてある。
+     ここを true にすると、横の払いが【囲んで選ぶ】と場所を取り合う。
+     閲覧画面(スマホ)の横払いは別の作りで、そのまま残っている */
+  const isSwipeEnabled = false;
 
   const scrubHandlers = useStageScrubGesture({
     stageRef,

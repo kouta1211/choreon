@@ -86,8 +86,6 @@ type UIState = {
   isStageMarksVisible: boolean;
   /** 客席から見えなくなる人(顔被り)を警告するか。移動中も含めて調べる */
   isBlindSpotCheckVisible: boolean;
-  /** ステージを払ってシーンを送る操作を受け付けるか */
-  isSwipeSceneChangeEnabled: boolean;
   /** 下端の時間軸を出すか。畳むとステージがそのぶん広くなる */
   isTimelineVisible: boolean;
   /** ドラッグ中の格子スナップ状態(CanvasBoardのonDragMoveが更新し、Stageが
@@ -179,7 +177,6 @@ type UIState = {
   togglePathVisible: () => void;
   toggleStageMarks: () => void;
   toggleBlindSpotCheck: () => void;
-  toggleSwipeSceneChange: () => void;
   toggleTimelineVisible: () => void;
   setDragSnapLine: (line: DragSnapLine) => void;
   setIsPlaying: (isPlaying: boolean) => void;
@@ -254,7 +251,6 @@ function persistFromState(
       isPathVisible: state.isPathVisible,
       isStageMarksVisible: state.isStageMarksVisible,
       isBlindSpotCheckVisible: state.isBlindSpotCheckVisible,
-      isSwipeSceneChangeEnabled: state.isSwipeSceneChangeEnabled,
       isTimelineVisible: state.isTimelineVisible,
       ...changed,
     },
@@ -288,7 +284,6 @@ export const useUIStore = create<UIState>((set, get) => ({
   isPathVisible: DEFAULT_VIEW_PREFERENCE.isPathVisible,
   isStageMarksVisible: DEFAULT_VIEW_PREFERENCE.isStageMarksVisible,
   isBlindSpotCheckVisible: DEFAULT_VIEW_PREFERENCE.isBlindSpotCheckVisible,
-  isSwipeSceneChangeEnabled: DEFAULT_VIEW_PREFERENCE.isSwipeSceneChangeEnabled,
   isTimelineVisible: DEFAULT_VIEW_PREFERENCE.isTimelineVisible,
   viewScopeProjectId: null,
   dragSnapLine: { x: null, y: null },
@@ -368,12 +363,6 @@ export const useUIStore = create<UIState>((set, get) => ({
       const isStageMarksVisible = !state.isStageMarksVisible;
       persistFromState(state, { isStageMarksVisible });
       return { isStageMarksVisible };
-    }),
-  toggleSwipeSceneChange: () =>
-    set((state) => {
-      const isSwipeSceneChangeEnabled = !state.isSwipeSceneChangeEnabled;
-      persistFromState(state, { isSwipeSceneChangeEnabled });
-      return { isSwipeSceneChangeEnabled };
     }),
   toggleTimelineVisible: () =>
     set((state) => {

@@ -172,11 +172,6 @@ export const en = {
         label: "Spike marks",
         description: "Lays every scene's positions on the floor",
       },
-      swipe: {
-        label: "Swipe to change scene",
-        description:
-          "Swipe the stage with a finger for the next or previous scene (a mouse drag draws a selection box instead)",
-      },
       thisProject: "This piece",
       music: "Music",
       share: "Share",
@@ -885,8 +880,7 @@ export const en = {
     },
     stage: {
       title: "Stage",
-      summary: "Audience side, size of new pieces",
-      summaryInProject: "Audience side, size of this piece",
+      summaryInProject: "Stage size for this piece",
       description:
         "Flipping the view never moves a saved position. Only the direction things are drawn, and the words used for it, swap over.",
       audienceOnTop: {
@@ -940,7 +934,7 @@ export const en = {
 
     display: {
       title: "Display",
-      summary: "Names, paths, floor marks, blind spots, swipe",
+      summary: "Audience side, names, paths, floor marks, blind spots",
       description:
         "The four below are the same switches as in the editor's View and modes. Either way in points at the same state.",
       dancerName: {
@@ -963,11 +957,6 @@ export const en = {
         label: "Blocked-view check",
         description:
           "Marks anyone standing directly behind someone, out of sight from the audience.",
-      },
-      swipe: {
-        label: "Swipe to change scene",
-        description:
-          "Swipe the stage with a finger to move to the next or previous scene (a mouse drag draws a selection box instead).",
       },
     },
 

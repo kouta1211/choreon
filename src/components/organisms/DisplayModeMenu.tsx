@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import {
   Film,
   Grid3x3,
-  Hand,
   Music4,
   Settings,
   Share2,
@@ -95,12 +94,6 @@ export function DisplayModeMenu({
   const toggleBlindSpotCheck = useUIStore(
     (state) => state.toggleBlindSpotCheck,
   );
-  const isSwipeSceneChangeEnabled = useUIStore(
-    (state) => state.isSwipeSceneChangeEnabled,
-  );
-  const toggleSwipeSceneChange = useUIStore(
-    (state) => state.toggleSwipeSceneChange,
-  );
   const dancerCount = useProjectStore(
     (state) => Object.keys(state.dancers).length,
   );
@@ -146,13 +139,6 @@ export function DisplayModeMenu({
       icon: Target,
       checked: isStageMarksVisible,
       onChange: toggleStageMarks,
-    },
-    {
-      label: t.editor.view.swipe.label,
-      description: t.editor.view.swipe.description,
-      icon: Hand,
-      checked: isSwipeSceneChangeEnabled,
-      onChange: toggleSwipeSceneChange,
     },
   ];
   // 目盛りは「出す/出さない」ではなく3択なので、オンの数には数えない。

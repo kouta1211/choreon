@@ -24,6 +24,7 @@ export function SettingsDisplaySection() {
     (state) => state.dancerNameDisplay,
   );
   const update = useSettingsStore((state) => state.update);
+  const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
 
   const isPathVisible = useUIStore((state) => state.isPathVisible);
   const togglePathVisible = useUIStore((state) => state.togglePathVisible);
@@ -35,15 +36,17 @@ export function SettingsDisplaySection() {
   const toggleBlindSpotCheck = useUIStore(
     (state) => state.toggleBlindSpotCheck,
   );
-  const isSwipeSceneChangeEnabled = useUIStore(
-    (state) => state.isSwipeSceneChangeEnabled,
-  );
-  const toggleSwipeSceneChange = useUIStore(
-    (state) => state.toggleSwipeSceneChange,
-  );
 
   return (
     <SettingsGroup description={t.settings.display.description}>
+      {/* 客席の向きは「舞台」から移した(2026-08-20)。作品の性質ではなく
+          **この端末の見せ方**で、名前・導線・バミリと同じ仲間 */}
+      <SettingsSwitchRow
+        label={t.settings.stage.audienceOnTop.label}
+        description={t.settings.stage.audienceOnTop.description}
+        checked={isAudienceOnTop}
+        onChange={() => update("isAudienceOnTop", !isAudienceOnTop)}
+      />
       <SettingsSegmentRow
         label={t.settings.display.dancerName.label}
         description={t.settings.display.dancerName.description}
@@ -73,23 +76,6 @@ export function SettingsDisplaySection() {
         checked={isBlindSpotCheckVisible}
         onChange={toggleBlindSpotCheck}
       />
-      {/* 払ってシーンを送るのはスマホ幅だけの操作になったので、
-          それ以外の画面では出さない。押しても何も起きないつまみを
-          残すと、壊れているように見える(2026-08-18、報告 18-11)。
-
-          **出し分けは CSS でやる。** useScreenKind はサーバーでは "phone" を
-          返すので、JSX を出し分けると【サーバーでは出て、PC のブラウザでは
-          消える】ことになり、一瞬ちらつく。規約どおり幅で消す
-          (.claude/rules/frontend.md「画面幅で分けるときは CSS でやる」)。
-          外側の箱ごと display:none になるので、行を割っている線も一緒に消える */}
-      <div className="min-[768px]:hidden">
-        <SettingsSwitchRow
-          label={t.settings.display.swipe.label}
-          description={t.settings.display.swipe.description}
-          checked={isSwipeSceneChangeEnabled}
-          onChange={toggleSwipeSceneChange}
-        />
-      </div>
     </SettingsGroup>
   );
 }

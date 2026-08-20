@@ -45,7 +45,6 @@ export type ViewPreference = {
   /** ステージを払ってシーンを送る操作を受け付けるか。
    * マウスでは「掴んで動かす」より場所を取る操作になってしまうので、
    * 指のある端末だけ既定でオンにする(defaultViewPreference参照) */
-  isSwipeSceneChangeEnabled: boolean;
   /**
    * 下端の時間軸(曲とシーンの帯)を出すか。
    *
@@ -61,27 +60,18 @@ export const DEFAULT_VIEW_PREFERENCE: ViewPreference = {
   isPathVisible: false,
   isStageMarksVisible: false,
   isBlindSpotCheckVisible: false,
-  isSwipeSceneChangeEnabled: false,
   isTimelineVisible: true,
 };
 
 /**
  * まだ何も保存されていない端末での初期値。
  *
- * スワイプでのシーン送りだけは、端末によって「あると助かる」「邪魔になる」が
- * はっきり分かれる。指で払うのが自然なタッチ端末では既定でオンにし、
- * マウスでは既定でオフにする。どちらも設定から変えられる。
+ * 以前はここで「指で払うのが自然な端末か」を見て、払ってのシーン送りだけ
+ * 既定を分けていた。**その操作は狭い幅（スマホ）専用で、その幅では作る
+ * 画面に入れなくなった**ので、丸ごと畳んだ（2026-08-20）。
  */
 export function defaultViewPreference(): ViewPreference {
-  const isCoarsePointer =
-    typeof window !== "undefined" &&
-    typeof window.matchMedia === "function" &&
-    window.matchMedia("(pointer: coarse)").matches;
-
-  return {
-    ...DEFAULT_VIEW_PREFERENCE,
-    isSwipeSceneChangeEnabled: isCoarsePointer,
-  };
+  return { ...DEFAULT_VIEW_PREFERENCE };
 }
 
 /**
@@ -119,10 +109,6 @@ export function parseViewPreference(raw: string | null): ViewPreference {
       typeof record.isBlindSpotCheckVisible === "boolean"
         ? record.isBlindSpotCheckVisible
         : fallback.isBlindSpotCheckVisible,
-    isSwipeSceneChangeEnabled:
-      typeof record.isSwipeSceneChangeEnabled === "boolean"
-        ? record.isSwipeSceneChangeEnabled
-        : fallback.isSwipeSceneChangeEnabled,
     isTimelineVisible:
       typeof record.isTimelineVisible === "boolean"
         ? record.isTimelineVisible

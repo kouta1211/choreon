@@ -28,23 +28,32 @@ describe("SettingsSheet", () => {
   it("開いた直後は束の名前だけが並び、中の行は出ていない", () => {
     render(<SettingsSheet isOpen onClose={vi.fn()} />);
 
-    expect(screen.getByText("舞台")).toBeInTheDocument();
     expect(screen.getByText("表示")).toBeInTheDocument();
-    expect(screen.queryByText("ステージの幅")).not.toBeInTheDocument();
+    expect(screen.getByText("再生")).toBeInTheDocument();
     expect(screen.queryByText("客席を上にする")).not.toBeInTheDocument();
+    expect(screen.queryByText("既定の速さ")).not.toBeInTheDocument();
   });
 
   it("束を押すと中の行が出て、見出しがその束の名前になる", async () => {
     const user = userEvent.setup();
     render(<SettingsSheet isOpen onClose={vi.fn()} />);
 
-    await user.click(screen.getByText("舞台"));
+    await user.click(screen.getByText("表示"));
 
-    expect(screen.getByText("ステージの幅")).toBeInTheDocument();
+    expect(screen.getByText("客席を上にする")).toBeInTheDocument();
     // 見出し(シートのラベル)も入れ替わる
-    expect(screen.getByRole("dialog", { name: "舞台" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "表示" })).toBeInTheDocument();
     // 他の束は出ていない
-    expect(screen.queryByText("客席の向き・新しい作品の広さ")).toBeNull();
+    expect(screen.queryByText("既定の速さ")).toBeNull();
+  });
+
+  /* ホームには広さを変える相手が居ない。作るときの板で決める形にした
+     ので、初期値の束ごと外した（2026-08-20） */
+  it("作品を開いていなければ「舞台」の束を出さない", () => {
+    render(<SettingsSheet isOpen onClose={vi.fn()} />);
+
+    expect(screen.queryByText("舞台")).toBeNull();
+    expect(screen.queryByText("ステージの幅")).toBeNull();
   });
 
   it("戻るで一覧へ戻る", async () => {
@@ -56,7 +65,7 @@ describe("SettingsSheet", () => {
 
     await user.click(screen.getByLabelText("戻る"));
 
-    expect(screen.getByText("舞台")).toBeInTheDocument();
+    expect(screen.getByText("表示")).toBeInTheDocument();
     expect(screen.queryByText("既定の速さ")).not.toBeInTheDocument();
   });
 
@@ -71,7 +80,7 @@ describe("SettingsSheet", () => {
     rerender(<SettingsSheet isOpen={false} onClose={vi.fn()} />);
     rerender(<SettingsSheet isOpen onClose={vi.fn()} />);
 
-    expect(screen.getByText("舞台")).toBeInTheDocument();
+    expect(screen.getByText("表示")).toBeInTheDocument();
     expect(screen.queryByText("自動保存")).not.toBeInTheDocument();
   });
 
@@ -203,6 +212,7 @@ describe("SettingsSheet の「舞台」", () => {
 
   // スイッチだけの束に、押しても何も起きないボタンを常設しない
   it("数を入れる行が無い束には「適用」を出さない", async () => {
+    openProject();
     const user = userEvent.setup();
     render(<SettingsSheet isOpen onClose={vi.fn()} />);
 

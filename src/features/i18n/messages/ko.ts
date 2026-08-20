@@ -172,11 +172,6 @@ export const ko = {
         label: "바닥 표시",
         description: "모든 장면의 위치를 바닥에 겹쳐 보여 줍니다",
       },
-      swipe: {
-        label: "밀어서 장면 넘기기",
-        description:
-          "무대를 손가락으로 밀면 앞뒤 장면으로(마우스 드래그는 둘러싸서 선택하는 조작입니다)",
-      },
       thisProject: "이 작품",
       music: "음악",
       share: "공유",
@@ -872,8 +867,7 @@ export const ko = {
     },
     stage: {
       title: "무대",
-      summary: "객석 방향 · 새 작품의 크기",
-      summaryInProject: "객석 방향 · 이 작품의 크기",
+      summaryInProject: "이 작품의 무대 크기",
       description:
         "방향을 바꿔도 저장된 위치는 움직이지 않습니다. 그리는 방향과 안내 문구만 바뀝니다.",
       audienceOnTop: {
@@ -927,7 +921,7 @@ export const ko = {
 
     display: {
       title: "표시",
-      summary: "이름 · 이동선 · 바닥 표시 · 가림 · 스와이프",
+      summary: "객석 방향 · 이름 · 이동선 · 바닥 표시 · 가림",
       description:
         "아래 네 가지는 편집 화면의 '표시와 모드'와 같은 스위치입니다. 어느 쪽에서 바꿔도 같은 상태를 가리킵니다.",
       dancerName: {
@@ -950,11 +944,6 @@ export const ko = {
         label: "가림 확인",
         description:
           "앞사람 바로 뒤에 서서 객석에서 보이지 않는 사람을 표시합니다.",
-      },
-      swipe: {
-        label: "밀어서 장면 넘기기",
-        description:
-          "무대를 손가락으로 밀면 앞뒤 장면으로 넘어갑니다(마우스 드래그는 둘러싸서 선택하는 조작입니다).",
       },
     },
 

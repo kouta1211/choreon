@@ -13,6 +13,8 @@ import { PressableButton } from "@/components/atoms/PressableButton";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import {
+  DEFAULT_STAGE_HEIGHT,
+  DEFAULT_STAGE_WIDTH,
   MAX_STAGE_UNITS,
   MIN_STAGE_UNITS,
 } from "@/features/settings/lib/settings";
@@ -39,26 +41,20 @@ export function NewProjectButton({ userId }: Props) {
   const t = useT();
   const router = useRouter();
   const showToast = useUIStore((state) => state.showToast);
-  const defaultStageWidth = useSettingsStore(
-    (state) => state.defaultStageWidth,
-  );
-  const defaultStageHeight = useSettingsStore(
-    (state) => state.defaultStageHeight,
-  );
   const defaultBpm = useSettingsStore((state) => state.defaultBpm);
 
   const [isOpen, setIsOpen] = useState(false);
   const [title, setTitle] = useState("");
-  const [stageWidth, setStageWidth] = useState(defaultStageWidth);
-  const [stageHeight, setStageHeight] = useState(defaultStageHeight);
+  const [stageWidth, setStageWidth] = useState(DEFAULT_STAGE_WIDTH);
+  const [stageHeight, setStageHeight] = useState(DEFAULT_STAGE_HEIGHT);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  /* 開くたびに、設定の初期値から始め直す。前に開いたときの数字が
-     残っていると、設定を変えたのに反映されていないように見える */
+  /* 開くたびに、決まった出発点から始め直す。前に開いたときの数字が
+     残っていると、「前の作品の広さ」を引きずったように見える */
   const open = () => {
     setTitle("");
-    setStageWidth(defaultStageWidth);
-    setStageHeight(defaultStageHeight);
+    setStageWidth(DEFAULT_STAGE_WIDTH);
+    setStageHeight(DEFAULT_STAGE_HEIGHT);
     setIsOpen(true);
   };
 

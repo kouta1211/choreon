@@ -50,8 +50,6 @@ export type Settings = {
    */
   isAudienceOnTop: boolean;
   /** 新しい作品のステージの広さ(1マス=90cm) */
-  defaultStageWidth: number;
-  defaultStageHeight: number;
   /** ドラッグを格子へ吸着させるか */
   isSnapEnabled: boolean;
   /** センターライン(0の列)を強調するか */
@@ -86,8 +84,6 @@ export type Settings = {
 
 export const DEFAULT_SETTINGS: Settings = {
   isAudienceOnTop: false,
-  defaultStageWidth: 14,
-  defaultStageHeight: 10,
   isSnapEnabled: true,
   isCenterLineVisible: true,
   countIn: 0,
@@ -106,6 +102,17 @@ export const DEFAULT_SETTINGS: Settings = {
  * 4 つしかなく、ダンサーが3人いる時点で隊形にならない。稽古場の
  * いちばん狭い区画がだいたい 3.6m 四方なので、そこを底にしている。
  */
+/**
+ * 新しい作品の広さ。**設定ではなく定数**にした（2026-08-20）。
+ *
+ * 作るときの板でその場で決めるようになったので、別の画面に「初期値」を
+ * 置いておく意味が無くなった。ここは板の出発点と、読み込み中の骨組みが
+ * 使う。実寸では 12.6m × 9m ほど（1ユニット = 約90cm）。
+ * 幅を偶数にしているのは、奇数だと中心が格子点の間に来るため。
+ */
+export const DEFAULT_STAGE_WIDTH = 14;
+export const DEFAULT_STAGE_HEIGHT = 10;
+
 export const MIN_STAGE_UNITS = 4;
 export const MAX_STAGE_UNITS = 30;
 /** シーンの間隔。0.1未満だと2つのシーンが同じ時刻に重なる */
@@ -147,18 +154,6 @@ export function parseSettings(raw: string | null): Settings {
     isAudienceOnTop: boolean(
       record.isAudienceOnTop,
       DEFAULT_SETTINGS.isAudienceOnTop,
-    ),
-    defaultStageWidth: clampInt(
-      record.defaultStageWidth,
-      MIN_STAGE_UNITS,
-      MAX_STAGE_UNITS,
-      DEFAULT_SETTINGS.defaultStageWidth,
-    ),
-    defaultStageHeight: clampInt(
-      record.defaultStageHeight,
-      MIN_STAGE_UNITS,
-      MAX_STAGE_UNITS,
-      DEFAULT_SETTINGS.defaultStageHeight,
     ),
     isSnapEnabled: boolean(
       record.isSnapEnabled,
@@ -202,8 +197,8 @@ export function parseSettings(raw: string | null): Settings {
  * 作品ごとに変えられる項目。
  *
  * ここに無いものは、作品を開いた状態で変えても土台へ書く:
- * - `defaultStageWidth` / `defaultStageHeight` / `defaultBpm`
- *   … **新しく作るときの初期値**。既にある作品には元から効かない
+ * - `defaultBpm` … **新しく作るときの初期値**。既にある作品には元から効かない
+ *   （広さは設定から外し、作るときの板で決める形にした。2026-08-20）
  * - `isAutoSaveEnabled` … この端末の決めごと。作品ごとに切り替えると
  *   「どの作品を開いていたか」で保存の挙動が変わり、事故になる
  */

@@ -3,11 +3,14 @@ import {
   SkeletonBox,
 } from "@/components/molecules/ScreenSkeleton";
 import { stageWidthRule } from "@/features/canvas/lib/stageSize";
-import { DEFAULT_SETTINGS } from "@/features/settings/lib/settings";
+import {
+  DEFAULT_STAGE_HEIGHT,
+  DEFAULT_STAGE_WIDTH,
+} from "@/features/settings/lib/settings";
 
 // 作品ごとの縦横はまだ届いていないので、既定(14×10)を仮に置く
-const { defaultStageWidth: WIDTH_UNITS, defaultStageHeight: HEIGHT_UNITS } =
-  DEFAULT_SETTINGS;
+const WIDTH_UNITS = DEFAULT_STAGE_WIDTH;
+const HEIGHT_UNITS = DEFAULT_STAGE_HEIGHT;
 
 /**
  * 閲覧専用ビューアを開いている間に出す骨格。

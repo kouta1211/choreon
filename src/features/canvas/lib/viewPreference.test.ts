@@ -18,7 +18,6 @@ describe("parseViewPreference", () => {
       isPathVisible: true,
       isStageMarksVisible: true,
       isBlindSpotCheckVisible: true,
-      isSwipeSceneChangeEnabled: true,
       isTimelineVisible: false,
     });
 
@@ -27,7 +26,6 @@ describe("parseViewPreference", () => {
       isPathVisible: true,
       isStageMarksVisible: true,
       isBlindSpotCheckVisible: true,
-      isSwipeSceneChangeEnabled: true,
       isTimelineVisible: false,
     });
   });
@@ -87,20 +85,10 @@ describe("defaultViewPreference", () => {
       media: query,
     }));
 
-  // マウスでは、払う操作は掴んで動かすより場所を取るだけになりやすい
-  it("マウスの端末では、払ってのシーン送りを既定でオフにする", () => {
-    stubPointer(false);
-    expect(defaultViewPreference().isSwipeSceneChangeEnabled).toBe(false);
-  });
-
-  it("指の端末では既定でオンにする", () => {
+  it("保存が無いときは、既定がそのまま返る", () => {
     stubPointer(true);
-    expect(defaultViewPreference().isSwipeSceneChangeEnabled).toBe(true);
-  });
 
-  it("保存が無いときは、その既定がそのまま返る", () => {
-    stubPointer(true);
-    expect(parseViewPreference(null).isSwipeSceneChangeEnabled).toBe(true);
+    expect(parseViewPreference(null)).toEqual(defaultViewPreference());
   });
 });
 

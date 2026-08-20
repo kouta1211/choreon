@@ -80,21 +80,24 @@ describe("useSettingsStore の効く範囲", () => {
   });
 
   /**
-   * ステージの広さは「新しく作るときの初期値」で、既にある作品には
+   * 曲の速さの初期値は「新しく作るときの値」で、既にある作品には
    * 元から効かない。作品ごとに持たせると、効かない値を作品ごとに
    * 抱えることになる。
+   *
+   * （ステージの広さも同じ仲間だったが、作るときの板でその場で決める
+   * 形にしたので、設定から外した。2026-08-20）
    */
   it("新しく作るときの初期値は、作品を開いていても土台へ書く", () => {
     const { setScope, update } = useSettingsStore.getState();
 
     setScope("project-1");
-    update("defaultStageWidth", 8);
+    update("defaultBpm", 132);
 
     expect(useSettingsStore.getState().byProject["project-1"]).toBeUndefined();
-    expect(useSettingsStore.getState().base.defaultStageWidth).toBe(8);
+    expect(useSettingsStore.getState().base.defaultBpm).toBe(132);
 
     setScope(null);
-    expect(useSettingsStore.getState().defaultStageWidth).toBe(8);
+    expect(useSettingsStore.getState().defaultBpm).toBe(132);
   });
 
   it("自動保存も土台へ書く。作品ごとに変わると保存の挙動が読めなくなる", () => {

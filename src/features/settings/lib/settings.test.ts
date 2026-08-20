@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_SETTINGS,
-  MAX_STAGE_UNITS,
-  MIN_STAGE_UNITS,
   parseSettings,
 } from "./settings";
 
@@ -47,23 +45,11 @@ describe("parseSettings", () => {
 
   it("数は範囲に収める", () => {
     const parsed = parseSettings(
-      JSON.stringify({
-        defaultStageWidth: 999,
-        defaultStageHeight: 1,
-        defaultBpm: 0,
-        defaultSegmentSeconds: 100,
-      }),
+      JSON.stringify({ defaultBpm: 0, defaultSegmentSeconds: 100 }),
     );
 
-    expect(parsed.defaultStageWidth).toBe(MAX_STAGE_UNITS);
-    expect(parsed.defaultStageHeight).toBe(MIN_STAGE_UNITS);
     expect(parsed.defaultBpm).toBe(40);
     expect(parsed.defaultSegmentSeconds).toBe(16);
-  });
-
-  it("小数で来たマス数は整数へ寄せる(ステージの広さはマス目で数えるため)", () => {
-    const parsed = parseSettings(JSON.stringify({ defaultStageWidth: 12.6 }));
-    expect(parsed.defaultStageWidth).toBe(13);
   });
 
   it("覚えていない項目は既定で埋める(後から増えた設定)", () => {

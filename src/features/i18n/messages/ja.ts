@@ -193,11 +193,6 @@ export const ja = {
         label: "バミリ",
         description: "全シーンの立ち位置を床に重ねて出す",
       },
-      swipe: {
-        label: "払ってシーンを送る",
-        description:
-          "ステージを指で払うと前後のシーンへ（マウスのドラッグは囲んで選ぶ操作です）",
-      },
       thisProject: "この作品",
       music: "曲",
       share: "共有",
@@ -939,9 +934,8 @@ export const ja = {
     },
     stage: {
       title: "舞台",
-      summary: "客席の向き・新しい作品の広さ",
-      /** 作品を開いているとき。ここで変える広さは、その作品のものになる */
-      summaryInProject: "客席の向き・この作品の広さ",
+      /** 舞台の束は、作品を開いているときだけ出る（2026-08-20） */
+      summaryInProject: "この作品のステージの広さ",
       description:
         "向きを変えても、保存されている立ち位置は動きません。描く向きと、道順の言葉づかいだけが入れ替わります。",
       audienceOnTop: {
@@ -994,7 +988,7 @@ export const ja = {
 
     display: {
       title: "表示",
-      summary: "ダンサー名・導線・バミリ・顔被り・払って送る",
+      summary: "客席の向き・ダンサー名・導線・バミリ・顔被り",
       description:
         "下の4つは、エディタの メニュー → ステージの見せ方 と同じスイッチです。どちらから変えても同じ状態を指します。",
       dancerName: {
@@ -1017,11 +1011,6 @@ export const ja = {
         label: "顔被りチェック",
         description:
           "手前の人の真後ろに入って、客席から見えない人に印を付けます",
-      },
-      swipe: {
-        label: "払ってシーンを送る",
-        description:
-          "ステージを指で払うと、前後のシーンへ移ります（マウスのドラッグは囲んで選ぶ操作です）",
       },
     },
 
