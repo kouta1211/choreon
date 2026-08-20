@@ -88,91 +88,98 @@ export function NarrowScreenNotice({ project }: Props) {
          幅を戻せばそのまま使える（消しているわけではない）。
          付けると読み上げに「後ろは無いもの」と伝わってしまう */
       aria-label={t.editor.narrowScreen.title}
-      className="fixed inset-0 z-[70] flex flex-col items-center justify-center gap-gutter-lg bg-page px-gutter-lg text-center min-[768px]:hidden"
+      className="fixed inset-0 z-[70] flex flex-col items-center justify-center bg-page px-gutter text-center min-[768px]:hidden"
     >
-      <span
-        aria-hidden
-        className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-raised text-fg-sub"
-      >
-        <Monitor size={26} />
-      </span>
+      {/* 地の上に直接、字と入力欄を置かない（実機の報告 2026-08-20）。
+          真っ黒な地に線と字だけが浮いていると、どこまでが1つの話なのかの
+          手がかりが無く、入力欄の枠も地に沈む。**この板もアプリの他の
+          浮きものと同じ素材（overlay-panel）に載せる** — 不透明度と
+          ぼかしはテーマが持っているので、紙のテーマでも破綻しない */}
+      <div className="overlay-panel flex w-full max-w-xs flex-col items-center gap-gutter-lg rounded-2xl p-gutter-lg">
+        <span
+          aria-hidden
+          className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-raised text-fg-sub"
+        >
+          <Monitor size={26} />
+        </span>
 
-      <div className="flex max-w-xs flex-col gap-unit">
-        <h1 className="text-title text-fg-strong">
-          {t.editor.narrowScreen.title}
-        </h1>
-        {/* 改行の位置は文が持っている(user が決めた3行)。折り返しを
+        <div className="flex flex-col gap-unit">
+          <h1 className="text-title text-fg-strong">
+            {t.editor.narrowScreen.title}
+          </h1>
+          {/* 改行の位置は文が持っている(user が決めた3行)。折り返しを
             ブラウザ任せにせず、そのまま出す。**自動の文節折り(Phrase)は
             通さない** — 決めた改行と二重に効くと、行の切れ方が読めなくなる */}
-        <p className="text-label leading-relaxed whitespace-pre-line text-fg-sub">
-          {t.editor.narrowScreen.body}
-        </p>
-      </div>
+          <p className="text-label leading-relaxed whitespace-pre-line text-fg-sub">
+            {t.editor.narrowScreen.body}
+          </p>
+        </div>
 
-      {/* 押せるものだけを、1つの塊にまとめる */}
-      <div className="flex w-full max-w-xs flex-col gap-gutter">
-        {viewerHref && (
-          <a
-            href={viewerHref}
-            className="flex h-target-lg w-full items-center justify-center rounded-lg bg-accent text-headline text-accent-fg"
-          >
-            {t.editor.narrowScreen.openViewer}
-          </a>
-        )}
+        {/* 押せるものだけを、1つの塊にまとめる */}
+        <div className="flex w-full flex-col gap-gutter">
+          {viewerHref && (
+            <a
+              href={viewerHref}
+              className="flex h-target-lg w-full items-center justify-center rounded-lg bg-accent text-headline text-accent-fg"
+            >
+              {t.editor.narrowScreen.openViewer}
+            </a>
+          )}
 
-        {/* 配られたリンクを貼って、見る側へ行く道(2026-08-20)。
+          {/* 配られたリンクを貼って、見る側へ行く道(2026-08-20)。
             この板は行き止まりなので、**ここから開ける先**を1つ置く。
             いま開いている作品と関係なくてよい — 狭い幅で来た人が
             やりたいのは「自分に配られた振付を見ること」だから */}
-        <form onSubmit={handleOpen} className="flex flex-col gap-unit">
-          <label className="flex flex-col gap-base text-left">
-            <span className="text-label text-fg-sub">
-              {t.editor.narrowScreen.pasteLabel}
-            </span>
-            <input
-              value={pasted}
-              onChange={(event) => {
-                setPasted(event.target.value);
-                setHasError(false);
-              }}
-              type="text"
-              inputMode="url"
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellCheck={false}
-              placeholder={t.editor.narrowScreen.pastePlaceholder}
-              aria-label={t.editor.narrowScreen.pasteLabel}
-              aria-invalid={hasError}
-              className={`h-target w-full rounded-lg border bg-surface-raised px-gutter text-body text-fg-strong placeholder:text-fg-muted focus:ring-[3px] focus:ring-accent/16 focus:outline-none ${
-                hasError ? "border-accent" : "border-line focus:border-accent"
-              }`}
-            />
-          </label>
-
-          {/* 失敗は【形】で伝える。この画面だけ赤い文にしない */}
-          {hasError && (
-            <p
-              role="alert"
-              className="flex items-start gap-unit text-left text-label text-fg"
-            >
-              <span
-                aria-hidden
-                className="mt-px flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-surface-strong text-fg-strong"
-              >
-                <X size={10} strokeWidth={3} />
+          <form onSubmit={handleOpen} className="flex flex-col gap-unit">
+            <label className="flex flex-col gap-base text-left">
+              <span className="text-label text-fg-sub">
+                {t.editor.narrowScreen.pasteLabel}
               </span>
-              {t.editor.narrowScreen.pasteInvalid}
-            </p>
-          )}
+              <input
+                value={pasted}
+                onChange={(event) => {
+                  setPasted(event.target.value);
+                  setHasError(false);
+                }}
+                type="text"
+                inputMode="url"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                placeholder={t.editor.narrowScreen.pastePlaceholder}
+                aria-label={t.editor.narrowScreen.pasteLabel}
+                aria-invalid={hasError}
+                className={`h-target w-full rounded-lg border bg-surface-raised px-gutter text-body text-fg-strong placeholder:text-fg-muted focus:ring-[3px] focus:ring-accent/16 focus:outline-none ${
+                  hasError ? "border-accent" : "border-line focus:border-accent"
+                }`}
+              />
+            </label>
 
-          <PressableButton
-            type="submit"
-            disabled={pasted.trim() === ""}
-            className="flex h-target w-full items-center justify-center rounded-lg border border-line bg-surface-raised text-body text-fg-strong disabled:opacity-40"
-          >
-            {t.editor.narrowScreen.pasteOpen}
-          </PressableButton>
-        </form>
+            {/* 失敗は【形】で伝える。この画面だけ赤い文にしない */}
+            {hasError && (
+              <p
+                role="alert"
+                className="flex items-start gap-unit text-left text-label text-fg"
+              >
+                <span
+                  aria-hidden
+                  className="mt-px flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-surface-strong text-fg-strong"
+                >
+                  <X size={10} strokeWidth={3} />
+                </span>
+                {t.editor.narrowScreen.pasteInvalid}
+              </p>
+            )}
+
+            <PressableButton
+              type="submit"
+              disabled={pasted.trim() === ""}
+              className="flex h-target w-full items-center justify-center rounded-lg border border-line bg-surface-raised text-body text-fg-strong disabled:opacity-40"
+            >
+              {t.editor.narrowScreen.pasteOpen}
+            </PressableButton>
+          </form>
+        </div>
       </div>
     </div>
   );

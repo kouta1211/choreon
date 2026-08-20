@@ -42,20 +42,24 @@ export function RotateToPortraitNotice() {
       /* aria-modal は付けない。後ろを不活性にしているわけではなく、
          端末を回せばそのまま元の画面に戻るだけなので */
       aria-label={t.viewer.rotate.title}
-      className="landscape-only fixed inset-0 z-[70] flex-col items-center justify-center gap-gutter bg-page px-gutter-lg text-center"
+      className="landscape-only fixed inset-0 z-[70] flex-col items-center justify-center bg-page px-gutter text-center"
     >
-      <span
-        aria-hidden
-        className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-raised text-fg-sub"
-      >
-        <RotateCcwSquare size={26} />
-      </span>
+      {/* 地の上に直接置かず、他の浮きものと同じ素材の板へ載せる
+          （`NarrowScreenNotice` と同じ理由。2026-08-20） */}
+      <div className="overlay-panel flex w-full max-w-xs flex-col items-center gap-gutter rounded-2xl p-gutter-lg">
+        <span
+          aria-hidden
+          className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-raised text-fg-sub"
+        >
+          <RotateCcwSquare size={26} />
+        </span>
 
-      <div className="flex flex-col gap-unit">
-        <h1 className="text-title text-fg-strong">{t.viewer.rotate.title}</h1>
-        <p className="max-w-xs text-label leading-relaxed text-fg-sub">
-          <Phrase>{t.viewer.rotate.body}</Phrase>
-        </p>
+        <div className="flex flex-col gap-unit">
+          <h1 className="text-title text-fg-strong">{t.viewer.rotate.title}</h1>
+          <p className="text-label leading-relaxed text-fg-sub">
+            <Phrase>{t.viewer.rotate.body}</Phrase>
+          </p>
+        </div>
       </div>
     </div>
   );
