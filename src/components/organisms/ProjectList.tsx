@@ -113,14 +113,20 @@ export function ProjectList({ projects }: Props) {
       <p className="mx-base text-caption text-fg-muted">
         {t.projects.count(projects.length)}
       </p>
-      <ul className="grid gap-unit md:grid-cols-2">
+      {/* カードとカードの間は、カードの内側の余白と同じ幅にする。
+          狭いと1枚の帯に見え、広いと関係が切れる */}
+      <ul className="grid gap-gutter md:grid-cols-2">
         {projects.map((project) => (
           /* 【面はしっかり置く】(実機の報告 2026-08-20)。以前は surface
              (暗いテーマでは白4%)だけで、地の質感が透けて「カードが薄い」
              状態だった。1段上の面と1pxの縁で、板として立たせる */
           <li
             key={project.id}
-            className="flex items-center gap-gutter rounded-2xl border border-line bg-surface-raised p-unit transition-colors hover:border-line-strong hover:bg-surface-strong"
+            /* この画面でいちばん大きい塊。作るボタン(56px)やヘッダーと
+               同じ高さで並ぶと、どれが主役か読めない(実機の報告
+               2026-08-20)。ミニチュアを一回り大きくし、内側の余白も
+               1段広げて、帯ではなく【板】として立たせる */
+            className="flex items-center gap-gutter rounded-2xl border border-line bg-surface-raised p-gutter transition-colors hover:border-line-strong hover:bg-surface-strong"
           >
             <Link
               href={`/projects/${project.id}`}
@@ -130,7 +136,7 @@ export function ProjectList({ projects }: Props) {
             >
               <ProjectThumbnail project={project} />
             </Link>
-            <div className="flex min-w-0 flex-1 flex-col gap-base">
+            <div className="flex min-w-0 flex-1 flex-col gap-unit">
               {/* 名前だけリンクの外に出す。中に鉛筆ボタンを入れると
                   「リンクの中のボタン」になり、押したときにどちらが
                   効くのかブラウザ任せになる */}
@@ -193,7 +199,7 @@ function ProjectThumbnail({ project }: { project: ProjectSummary }) {
     return (
       <span
         aria-hidden
-        className="flex w-20 shrink-0 items-center justify-center rounded-lg border border-dashed border-line-strong bg-surface-sunken font-mono text-mono-s text-fg-muted"
+        className="flex w-28 shrink-0 items-center justify-center rounded-lg border border-dashed border-line-strong bg-surface-sunken font-mono text-mono-s text-fg-muted"
         style={{ aspectRatio }}
       >
         {t.projects.noScenes}
@@ -204,7 +210,7 @@ function ProjectThumbnail({ project }: { project: ProjectSummary }) {
   return (
     <span
       aria-hidden
-      className="relative block w-20 shrink-0 overflow-hidden rounded-lg border border-line bg-surface-sunken"
+      className="relative block w-28 shrink-0 overflow-hidden rounded-lg border border-line bg-surface-sunken"
       style={{ aspectRatio }}
     >
       <span

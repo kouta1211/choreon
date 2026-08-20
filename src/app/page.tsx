@@ -32,8 +32,15 @@ export default async function Home() {
   const projects = await listProjectSummaries(supabase);
 
   return (
+    /* 【段を3つに分ける】(実機の報告 2026-08-20)。以前はヘッダーも作る
+       ボタンもカードも 56〜73px の帯で、どれが主役か読めなかった。
+
+       この画面で毎日やるのは【開く】で、【作る】はたまに。だから
+       いちばん大きい塊は一覧のカードにする。名乗り(ヘッダー)はいちばん
+       軽く、作る入口はその中間。間隔も、名乗り → 本題 は広く、
+       本題の中は狭く取る */
     <div className="flex flex-1 flex-col px-gutter pb-gutter-lg">
-      <div className="mx-auto flex w-full max-w-md flex-col gap-gutter-lg md:max-w-3xl">
+      <div className="mx-auto flex w-full max-w-md flex-col md:max-w-3xl">
         <AppHeader>
           <div className="flex items-center gap-unit">
             <ThemeButton />
@@ -41,9 +48,10 @@ export default async function Home() {
           </div>
         </AppHeader>
 
-        <NewProjectButton userId={user.id} />
-
-        <ProjectList projects={projects} />
+        <div className="mt-gutter-lg flex flex-col gap-gutter">
+          <NewProjectButton userId={user.id} />
+          <ProjectList projects={projects} />
+        </div>
       </div>
     </div>
   );
