@@ -166,6 +166,17 @@ describe("SceneList", () => {
 
   // ×は「小さいので誤タップしやすい」場所にある。押した瞬間に消えるのでは
   // なく、必ず確認をはさむ(シーン削除は元に戻せない)
+  /* 選んでいる行は敷き色と番号の色で既に分かる。文字で言うと二重になる
+     （実機の報告 17-4） */
+  it("選んでいる行に「表示中」の札を出さない", () => {
+    useProjectStore.setState({ scenes: SCENES });
+    useUIStore.setState({ selectedSceneId: "scene-2" });
+    render(<SceneList project={makeProject()} />);
+
+    expect(screen.getByText("シーン2")).toBeInTheDocument();
+    expect(screen.queryByText(/表示中/)).toBeNull();
+  });
+
   it("サムネイルの×を押すと、即削除ではなく確認ダイアログを出す", async () => {
     useProjectStore.setState({ scenes: SCENES });
     useUIStore.setState({ selectedSceneId: "scene-1" });

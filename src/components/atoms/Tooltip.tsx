@@ -27,6 +27,12 @@ type Props = {
  *
  * 中身は見た目だけの要素にしてある(aria-hidden)。読み上げには中のボタンが
  * 持つaria-labelが使われるので、ここで読ませると二重になる。
+ *
+ * 【地は overlay-panel】。以前は bg-surface-strong(暗いテーマでは白11%)
+ * だったので、下の格子やパネルが透けて文字が読めなかった(実機の報告 17-8)。
+ * surface 系は「地の上に重ねて段を作る色」で、**浮きものの地ではない**。
+ * ステージの上に浮くもの(ダンサーの詳細・表示とモード)は全部この素材を
+ * 使っていて、不透明度とぼかしはテーマが持っている(themes.css)。
  */
 const ALIGNMENT = {
   center: "left-1/2 -translate-x-1/2",
@@ -45,7 +51,7 @@ export function Tooltip({
       {children}
       <span
         aria-hidden
-        className={`pointer-events-none absolute z-30 rounded-md border border-line-strong bg-surface-strong px-2 py-1 text-caption whitespace-nowrap text-fg opacity-0 shadow-lg transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 ${
+        className={`overlay-panel pointer-events-none absolute z-30 rounded-md px-2 py-1 text-caption whitespace-nowrap opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 ${
           placement === "bottom" ? "top-full mt-1.5" : "bottom-full mb-1.5"
         } ${ALIGNMENT[align]}`}
       >

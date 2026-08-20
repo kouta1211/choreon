@@ -309,8 +309,9 @@ describe("DancerInspector の秒数（曲もメトロノームも無いとき）
   });
 });
 
-/* 実機の報告 17-5。狭いパネルに移したので、右端に置くと説明の吹き出しが
-   枠で切れ、名前の長さでボタンの位置も動いていた */
+/* 実機の報告 17-7。17-5 で左へ寄せたが、右端へ戻した。名前の長さで位置が
+   動くのは「名前のすぐ隣」に置いたときだけで、ml-auto で右へ寄せれば動かない。
+   吹き出しは右揃えにして、パネルの縁で切れないようにする */
 describe("DancerInspector の操作ボタン", () => {
   function showInspector() {
     useProjectStore.setState({
@@ -330,14 +331,34 @@ describe("DancerInspector の操作ボタン", () => {
     );
   }
 
-  it("ボタンは名前より先（＝左）に並ぶ", () => {
+  it("ボタンは名前より後（＝右）に並ぶ", () => {
     showInspector();
     const focus = screen.getByLabelText("マイ・フォーカス");
     const name = screen.getByText("あいり");
 
     expect(
-      focus.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_FOLLOWING,
+      name.compareDocumentPosition(focus) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+
+  /* 名前の長さでボタンが動かないのは、隣に置かず ml-auto で右端へ
+     押し出しているから。ここが外れると 17-5 の問題が戻る */
+  it("ボタンの組は ml-auto で右端へ寄せる", () => {
+    showInspector();
+    const focus = screen.getByLabelText("マイ・フォーカス");
+    const group = focus.closest("div.ml-auto");
+
+    expect(group).not.toBeNull();
+  });
+
+  /* 右端にあるので、中央や左に出すとパネルの縁からはみ出す */
+  it("説明の吹き出しは右揃えで出す", () => {
+    const { container } = showInspector();
+    const tip = [...container.querySelectorAll("span[aria-hidden]")].find(
+      (span) => span.textContent === "マイ・フォーカス",
+    );
+
+    expect(tip?.className).toContain("right-0");
   });
 
   /* 上に出すと、この行はパネルのいちばん上なので枠の外になって切れる */

@@ -7,8 +7,6 @@ import type { Scene } from "@/features/scene/types";
 
 type Props = {
   scene: Scene;
-  /** 1始まりの番号 */
-  number: number;
   thumbnail: string | undefined;
   stageWidthUnits: number;
   stageHeightUnits: number;
@@ -28,7 +26,6 @@ type Props = {
  */
 export function SceneStripCard({
   scene,
-  number,
   thumbnail,
   stageWidthUnits,
   stageHeightUnits,
@@ -57,7 +54,9 @@ export function SceneStripCard({
       {showArrow && (
         <span
           aria-hidden
-          className="shrink-0 self-center px-0.5 text-caption text-fg-muted"
+          /* 左右の余白は【同じ幅】。ここが間隔を決める唯一の場所なので、
+             帯の側に gap を足さない（実機の報告 17-4） */
+          className="shrink-0 self-center px-2.5 text-caption text-fg-muted"
         >
           →
         </span>
@@ -69,7 +68,6 @@ export function SceneStripCard({
         stageHeightUnits={stageHeightUnits}
         isSelected={isSelected}
         onClick={onSelect}
-        index={number}
         sizePx={sizePx}
         showLabel
       />

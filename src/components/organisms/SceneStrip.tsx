@@ -120,7 +120,10 @@ export function SceneStrip({ project }: Props) {
         <ol
           ref={listRef}
           data-testid="scene-strip"
-          className="flex items-end gap-1 overflow-x-auto px-0.5 pb-1"
+          /* コマとコマの間隔は【矢印の左右の余白だけ】で決める。ここに
+             gap を足すと、矢印の左だけが広くなって間隔がばらばらに
+             見える（実機の報告 17-4） */
+          className="flex items-end overflow-x-auto px-0.5 pb-1"
         >
           {scenes.map((scene, index) => (
             <SceneStripCard
@@ -128,7 +131,6 @@ export function SceneStrip({ project }: Props) {
               /* 先頭には入ってくる元が無いので、矢印も出さない */
               showArrow={index > 0}
               scene={scene}
-              number={index + 1}
               thumbnail={thumbnailBySceneId[scene.id]}
               stageWidthUnits={project.stageWidth}
               stageHeightUnits={project.stageHeight}

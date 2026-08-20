@@ -149,19 +149,20 @@ export function SceneRow({
             }
             fullWidth
           />
-          <span
-            className={`mt-1 block font-mono text-caption ${
-              isSelected ? "text-accent-bright" : "text-fg-muted"
-            }`}
-          >
-            {isOrderOnly
-              ? null
-              : [
-                  formatClock(scene.timeSeconds),
-                  index > 0 ? t.editor.scenes.moveIn(segmentSeconds) : "",
-                ].join("")}
-            {isSelected && t.editor.scenes.showing}
-          </span>
+          {/* 「表示中」の札は出さない(実機の報告 17-4)。選んでいる行は
+              敷き色と番号の色で既に分かるので、文字で言うと二重になる。
+              順番だけで作っているときは、この行ごと出さない
+              （時刻も移動の秒数も無いので、空の行が残るだけになる） */}
+          {!isOrderOnly && (
+            <span
+              className={`mt-1 block font-mono text-caption ${
+                isSelected ? "text-accent-bright" : "text-fg-muted"
+              }`}
+            >
+              {formatClock(scene.timeSeconds)}
+              {index > 0 && t.editor.scenes.moveIn(segmentSeconds)}
+            </span>
+          )}
         </div>
       </div>
 

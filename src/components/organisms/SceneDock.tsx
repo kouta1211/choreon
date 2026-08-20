@@ -170,8 +170,12 @@ export function SceneDock({ project }: Props) {
     <div
       ref={dockRef}
       /* 常設の板なので、すりガラスは掛けない(ステージのドラッグ中ずっと
-         背後の再合成が走り、指の追従が落ちる)。面と1pxの縁で浮かせる */
-      className="rounded-t-3xl border-t border-line-strong bg-surface pt-unit pb-gutter md:rounded-none"
+         背後の再合成が走り、指の追従が落ちる)。浮かせるのは【面の色だけ】。
+
+         上端の1本線は引かない(実機の報告 17-4)。この板は常に出ているので
+         境目は面の色で足りるうえ、**画面の中で線で区切られている場所が
+         ここだけ**になり、その1本が余計に目立っていた */
+      className="rounded-t-3xl bg-surface pt-unit pb-gutter md:rounded-none"
     >
       {/* 持ち手。シートが下から出てくることを形で示す。狭い画面だけ
           (広い画面では一覧が横に常時出ていて、開く相手が無い) */}

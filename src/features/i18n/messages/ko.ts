@@ -248,7 +248,6 @@ export const ko = {
       segment: (seconds: number) => `→ ${seconds}s`,
       moveSeconds: "앞 장면에서 몇 초로 이동할지",
       moveSecondsNote: "바꾸면 뒤의 장면도 같은 만큼 밀립니다.",
-      showing: " · 보는 중",
       duplicate: "복제",
       delete: "삭제",
     },

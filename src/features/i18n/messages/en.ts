@@ -250,7 +250,6 @@ export const en = {
       moveSeconds: "Seconds to get here",
       moveSecondsNote:
         "Changing this shifts every later scene by the same amount.",
-      showing: " · showing",
       duplicate: "Duplicate",
       delete: "Delete",
     },

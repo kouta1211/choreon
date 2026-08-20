@@ -47,14 +47,9 @@ export function TemplateButton() {
         className="relative flex h-11 w-11 items-center justify-center rounded-[calc(var(--radius)*1.0833)] border border-line-strong bg-surface/90 text-fg disabled:pointer-events-none disabled:opacity-30"
       >
         <LayoutGrid size={18} />
-        {isAvailable && (
-          <span
-            aria-hidden
-            className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-surface-strong px-1 font-mono text-caption font-semibold text-fg"
-          >
-            {dancerCount}
-          </span>
-        )}
+        {/* 人数の数字は右上に出さない(実機の報告 17-4)。人数は
+            ステージを見れば分かるうえ、シートを開けば見出しに出る。
+            ここに置く価値があるのは「押す価値があるか」の点(下)だけ */}
         {isSuggested && (
           <span
             aria-hidden

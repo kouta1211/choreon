@@ -61,6 +61,13 @@ describe("SceneStrip", () => {
     expect(screen.getAllByText("→")).toHaveLength(2);
   });
 
+  /* 番号は下のバーの見出しと一覧が持っている。幅74pxのコマに重ねると
+     名前を狭めるだけだった（実機の報告 17-4） */
+  it("コマに通し番号を出さない", () => {
+    show();
+    expect(screen.queryByText(/^0\d$/)).toBeNull();
+  });
+
   it("押すと、そのシーンに切り替わる", async () => {
     show();
     await userEvent.click(screen.getByText("おわり"));

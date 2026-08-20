@@ -12,14 +12,12 @@ type Props = {
   stageHeightUnits: number;
   isSelected: boolean;
   onClick: () => void;
-  /** 並び順の表示用(1始まり)。showLabelがtrueのときだけ使う */
-  index?: number;
   /** サムネイル本体の幅(px)。シーン一覧シートは78px、狭いサイドバーは64px */
   sizePx?: number;
   /** ミニチュアの中に格子を描くか。小さく出す場所では線が潰れて
    * ノイズになるだけなので、大きく出す側でだけ描く */
   showGrid?: boolean;
-  /** 名前と番号の行を出すか。ストリップ(SceneTabs)はここに出し、
+  /** 名前の行を出すか。ストリップ(SceneTabs)はここに出し、
    * シーン一覧(SceneList)は行ごと別レイアウトで組むので出さない。
    *
    * ボタンの【中】に入れているのは、名前の部分を押しても選択できるように
@@ -52,7 +50,6 @@ export function SceneThumbnail({
   stageHeightUnits,
   isSelected,
   onClick,
-  index,
   sizePx = DEFAULT_SIZE_PX,
   showGrid = false,
   showLabel = false,
@@ -101,23 +98,16 @@ export function SceneThumbnail({
             />
           )}
         </div>
+        {/* 通し番号は出さない(実機の報告 17-4)。番号は下のバーの見出しと
+            一覧が持っていて、幅74pxのコマの中では名前を狭めるだけだった */}
         {showLabel && (
-          <div className="mt-1 flex w-full items-baseline justify-between gap-1">
-            <span
-              className={`min-w-0 truncate text-caption ${
-                isSelected ? "font-semibold text-accent-soft" : "text-fg-sub"
-              }`}
-            >
-              {scene.name}
-            </span>
-            <span
-              className={`shrink-0 font-mono text-caption ${
-                isSelected ? "font-semibold text-accent-soft" : "text-fg-muted"
-              }`}
-            >
-              {String(index ?? 0).padStart(2, "0")}
-            </span>
-          </div>
+          <span
+            className={`mt-1 block w-full truncate text-caption ${
+              isSelected ? "font-semibold text-accent-soft" : "text-fg-sub"
+            }`}
+          >
+            {scene.name}
+          </span>
         )}
       </PressableButton>
 

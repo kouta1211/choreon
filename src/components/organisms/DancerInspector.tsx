@@ -191,65 +191,12 @@ export function DancerInspector({ variant = "floating" }: Props) {
           backgroundImage: `linear-gradient(90deg, color-mix(in oklab, ${themedDancerColor(dancer.color)} 12%, transparent), transparent 65%)`,
         }}
       >
+        {/* 名前が左、操作のボタンは**行の右端**へ（実機の報告 17-7）。
+            ml-auto で右へ寄せているので、**名前の長さでボタンの位置は
+            動かない** — 動くのは「名前のすぐ隣」に置いたときだけ。
+            吹き出しは右揃え(align="right")で出して、パネルの縁から
+            はみ出さないようにする */}
         <div className="flex items-center gap-2">
-          {/* 操作のボタンは**行の左**へ（実機の報告 17-5）。
-              右端に置くと、名前の長さでボタンの位置が動くうえ、
-              説明の吹き出しがパネルの縁で切れる */}
-          <div className="flex shrink-0 items-center gap-1">
-            {/* 吹き出しは【下】へ出す。この行はパネルのいちばん上なので、
-                上に出すと枠の外になって切れる（枠は角丸と色帯のために
-                overflow-hidden にしてある） */}
-            <Tooltip
-              label={t.dancer.inspector.focus}
-              placement="bottom"
-              align="left"
-            >
-              <PressableButton
-                kind="icon"
-                onClick={() => setFocusedDancer(isFocused ? null : dancer.id)}
-                aria-pressed={isFocused}
-                aria-label={t.dancer.inspector.focus}
-                className={`flex h-7 w-7 items-center justify-center rounded-lg ${
-                  isFocused
-                    ? "bg-amber-950 text-amber-400"
-                    : "text-fg-muted hover:bg-line-strong"
-                }`}
-              >
-                <Focus size={15} />
-              </PressableButton>
-            </Tooltip>
-
-            <Tooltip
-              label={t.dancer.inspector.remove}
-              placement="bottom"
-              align="left"
-            >
-              <PressableButton
-                kind="icon"
-                onClick={handleDelete}
-                aria-label={t.dancer.inspector.remove}
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-fg-muted hover:bg-red-950 hover:text-red-400"
-              >
-                <Trash2 size={15} />
-              </PressableButton>
-            </Tooltip>
-
-            <Tooltip
-              label={t.dancer.inspector.deselect}
-              placement="bottom"
-              align="left"
-            >
-              <PressableButton
-                kind="icon"
-                onClick={() => selectDancer(null)}
-                aria-label={t.dancer.inspector.deselect}
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-fg-muted hover:bg-line-strong"
-              >
-                <X size={15} />
-              </PressableButton>
-            </Tooltip>
-          </div>
-
           {/* keyにダンサーIDを渡して、別のダンサーを選び直したときに
               編集中の入力欄が持ち越されないようにする */}
           <InlineEditableText
@@ -276,6 +223,61 @@ export function DancerInspector({ variant = "floating" }: Props) {
               tone="dancer"
             />
           )}
+
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            {/* 吹き出しは【下】へ出す。この行はパネルのいちばん上なので、
+                上に出すと枠の外になって切れる（枠は角丸と色帯のために
+                overflow-hidden にしてある） */}
+            <Tooltip
+              label={t.dancer.inspector.focus}
+              placement="bottom"
+              align="right"
+            >
+              <PressableButton
+                kind="icon"
+                onClick={() => setFocusedDancer(isFocused ? null : dancer.id)}
+                aria-pressed={isFocused}
+                aria-label={t.dancer.inspector.focus}
+                className={`flex h-7 w-7 items-center justify-center rounded-lg ${
+                  isFocused
+                    ? "bg-amber-950 text-amber-400"
+                    : "text-fg-muted hover:bg-line-strong"
+                }`}
+              >
+                <Focus size={15} />
+              </PressableButton>
+            </Tooltip>
+
+            <Tooltip
+              label={t.dancer.inspector.remove}
+              placement="bottom"
+              align="right"
+            >
+              <PressableButton
+                kind="icon"
+                onClick={handleDelete}
+                aria-label={t.dancer.inspector.remove}
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-fg-muted hover:bg-red-950 hover:text-red-400"
+              >
+                <Trash2 size={15} />
+              </PressableButton>
+            </Tooltip>
+
+            <Tooltip
+              label={t.dancer.inspector.deselect}
+              placement="bottom"
+              align="right"
+            >
+              <PressableButton
+                kind="icon"
+                onClick={() => selectDancer(null)}
+                aria-label={t.dancer.inspector.deselect}
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-fg-muted hover:bg-line-strong"
+              >
+                <X size={15} />
+              </PressableButton>
+            </Tooltip>
+          </div>
         </div>
 
         <div className="mt-2 flex items-center gap-1.5">
