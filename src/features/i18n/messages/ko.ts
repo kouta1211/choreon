@@ -812,6 +812,8 @@ export const ko = {
       remove: "댄서 삭제",
       deselect: "선택 해제",
       changeColor: (color: string) => `색을 ${color}(으)로 바꾸기`,
+      customColor: "색을 직접 고르기",
+      customColorNote: "직접 고른 색은 테마를 바꿔도 그대로 나옵니다",
       rotate: "방향 바꾸기",
       curve: (name: string) => `${name}의 곡선 모양 조정`,
       deleteTitle: (name: string) => `'${name}'을(를) 삭제할까요?`,

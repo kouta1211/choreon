@@ -826,6 +826,8 @@ export const en = {
       remove: "Delete this dancer",
       deselect: "Deselect",
       changeColor: (color: string) => `Change the colour to ${color}`,
+      customColor: "Pick any colour",
+      customColorNote: "A colour you pick stays as it is when you change themes",
       rotate: "Change the facing",
       curve: (name: string) => `Adjust the curve for ${name}`,
       deleteTitle: (name: string) => `Delete “${name}”?`,

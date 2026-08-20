@@ -14,11 +14,11 @@ import {
 } from "@/features/dancer/api/dancers";
 import { useDeleteDancers } from "@/features/dancer/hooks/useDeleteDancers";
 import { upsertPosition } from "@/features/scene/api/positions";
-import { DANCER_COLOR_PALETTE } from "@/features/dancer/constants";
 import { DurationSecondsInput } from "@/components/molecules/DurationSecondsInput";
 import { InlineEditableText } from "@/components/molecules/InlineEditableText";
 import { Tooltip } from "@/components/atoms/Tooltip";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
+import { DancerColorPicker } from "@/components/molecules/DancerColorPicker";
 import { sceneDurations } from "@/features/scene/lib/sceneTiming";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { useT } from "@/features/i18n/LocaleProvider";
@@ -158,6 +158,7 @@ export function DancerInspector({ variant = "floating" }: Props) {
 
   const isFocused = focusedDancerId === dancer.id;
 
+
   return (
     /* 面にそのダンサーの色を薄く流し、左端に色帯を置く。誰の設定を
        いじっているのかを、名前を読まなくても地の色で分かるようにするため。
@@ -281,20 +282,11 @@ export function DancerInspector({ variant = "floating" }: Props) {
         </div>
 
         <div className="mt-2 flex items-center gap-1.5">
-          {DANCER_COLOR_PALETTE.map((color) => (
-            <PressableButton
-              key={color}
-              type="button"
-              aria-label={t.dancer.inspector.changeColor(color)}
-              onClick={() => handleColorChange(color)}
-              className={`h-[22px] w-[22px] rounded-full ${
-                dancer.color === color
-                  ? "ring-2 ring-accent ring-offset-2 ring-offset-surface-strong"
-                  : ""
-              }`}
-              style={{ backgroundColor: themedDancerColor(color) }}
-            />
-          ))}
+          <DancerColorPicker
+            value={dancer.color}
+            onCommit={handleColorChange}
+          />
+
           {isFocused && (
             <span className="ml-auto text-caption text-fg-muted">
               {t.dancer.inspector.focusOn}
