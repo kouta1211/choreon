@@ -43,4 +43,39 @@ describe("Toast", () => {
 
     expect(useUIStore.getState().toast).toBeNull();
   });
+
+  /* 次の操作を始めた人は、もう読み終わっている（実機の要望 2026-08-20）。
+     時間の方は、誰も触らなかったときの下限として残してある */
+  it("画面のどこかを押したら、そこで薄くなり始める", () => {
+    useUIStore.setState({ toast: { message: "保存しました", type: "success" } });
+    render(<Toast />);
+
+    act(() => {
+      document.body.dispatchEvent(
+        new Event("pointerdown", { bubbles: true }),
+      );
+    });
+
+    expect(screen.getByRole("status").style.opacity).toBe("0");
+    // 薄くなりきるまでは捨てない
+    expect(useUIStore.getState().toast).not.toBeNull();
+
+    act(() => vi.advanceTimersByTime(320));
+    expect(useUIStore.getState().toast).toBeNull();
+  });
+
+  /* 「元に戻す」を押しにいく指で消してしまわないこと */
+  it("帯そのものを押したときは消えない", () => {
+    useUIStore.setState({ toast: { message: "保存しました", type: "success" } });
+    render(<Toast />);
+
+    act(() => {
+      screen
+        .getByRole("status")
+        .dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    });
+
+    expect(screen.getByRole("status").style.opacity).not.toBe("0");
+    expect(useUIStore.getState().toast).not.toBeNull();
+  });
 });

@@ -36,6 +36,12 @@ const FADE_OUT_MS = 320;
  * ■ 消えるときは、だんだん薄くする(実機の要望 2026-08-20)
  * ぱっと消えると「見ていなかった間に何か出ていた」ことにすら気づけない。
  * 薄くなっていく途中が見えれば、読み損ねても「いま消えた」と分かる。
+ *
+ * ■ 消えるきっかけは【次に触ったとき】(実機の要望 2026-08-20)
+ * 次の操作を始めた人は、もう読み終わっている（あるいは読む気が無い）。
+ * そこで役目は終わりなので、画面のどこかを押した時点で薄くし始める。
+ * **誰も触らなければ、これまでどおり時間で消える** — 読んでいる最中に
+ * 消えないための下限として、時間の方も残してある。
  */
 export function Toast() {
   const toast = useUIStore((state) => state.toast);
@@ -45,6 +51,8 @@ export function Toast() {
   const [drag, setDrag] = useState<{ id: unknown; px: number } | null>(null);
   const dragPx = drag && drag.id === toast?.message ? drag.px : 0;
   const startXRef = useRef<number | null>(null);
+  /** 帯そのもの。押された所が中かどうかを見るのに使う */
+  const bannerRef = useRef<HTMLDivElement>(null);
   /* 消え始めたかどうか。**消したい相手を覚えておく**（次の知らせに
      差し替わったら、それは薄くしない） */
   const [leaving, setLeaving] = useState<unknown>(null);
@@ -53,17 +61,40 @@ export function Toast() {
   useEffect(() => {
     if (!toast) return;
 
+    const id = toast.message;
+    let clearTimer: ReturnType<typeof setTimeout> | null = null;
+
     /* 2段構え。まず薄くし始めて、消えきってから捨てる。
        いきなり捨てると、要素ごと消えるので薄くなる途中が描かれない */
-    const fadeAt = toast.action
-      ? AUTO_DISMISS_WITH_ACTION_MS
-      : AUTO_DISMISS_MS;
-    const fade = setTimeout(() => setLeaving(toast.message), fadeAt);
-    const clear = setTimeout(clearToast, fadeAt + FADE_OUT_MS);
+    const beginLeave = () => {
+      setLeaving(id);
+      if (clearTimer === null) clearTimer = setTimeout(clearToast, FADE_OUT_MS);
+    };
+
+    // 誰も触らなかったときの下限
+    const autoTimer = setTimeout(
+      beginLeave,
+      toast.action ? AUTO_DISMISS_WITH_ACTION_MS : AUTO_DISMISS_MS,
+    );
+
+    /* 次に触ったら、そこで役目は終わり。
+
+       **pointerdown を見る**。click だと、この帯を出したその操作の
+       後半（同じ指の上げ下ろし）を拾って、出た瞬間に消え始める。
+       pointerdown は帯が出るより前に済んでいるので、次の操作から効く。
+
+       帯そのものの中は除く — 「元に戻す」を押しにいく指で消してしまう */
+    const onPointerDown = (event: Event) => {
+      const target = event.target;
+      if (target instanceof Node && bannerRef.current?.contains(target)) return;
+      beginLeave();
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
 
     return () => {
-      clearTimeout(fade);
-      clearTimeout(clear);
+      clearTimeout(autoTimer);
+      if (clearTimer !== null) clearTimeout(clearTimer);
+      document.removeEventListener("pointerdown", onPointerDown, true);
     };
   }, [toast, clearToast]);
 
@@ -110,6 +141,7 @@ export function Toast() {
       className="pointer-events-none fixed inset-x-gutter bottom-[var(--toast-bottom,24px)] z-50 flex justify-center"
     >
       <div
+        ref={bannerRef}
         role="status"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -118,8 +150,8 @@ export function Toast() {
         style={{
           transform: `translateX(${dragPx}px)`,
           opacity: isLeaving
-          ? 0
-          : Math.max(0.2, 1 - Math.abs(dragPx) / (SWIPE_DISMISS_PX * 2)),
+            ? 0
+            : Math.max(0.2, 1 - Math.abs(dragPx) / (SWIPE_DISMISS_PX * 2)),
         }}
         className={`overlay-panel pointer-events-auto flex h-target-lg w-full touch-pan-y items-center gap-unit rounded-2xl px-gutter md:w-[380px] ${
           dragPx === 0
