@@ -559,19 +559,15 @@ export const ko = {
     title: "공유",
     enable: "링크를 아는 사람이 볼 수 있음",
     resume: "이 링크로 다시 공유하기",
-    stop: "공유 그만두기",
     enabledNote:
-      "지금 공유 중입니다. 링크를 연 사람에게는 보기 전용 화면이 열립니다",
+      "링크를 연 사람은 자신에게 포커스한 대형을 볼 수 있습니다.",
     disabledNote:
       "지금은 공유하고 있지 않습니다. 링크를 가진 사람도 열 수 없습니다",
     noKey:
       "이 작품에는 아직 공유용 키가 없습니다. Supabase SQL Editor에서 supabase/schema.sql 을 실행하면 사용할 수 있습니다.",
-    everyone: "모두에게 줄 링크",
+    everyone: "공유 링크",
     copy: "링크 복사",
     copied: "복사했습니다",
-    perDancer: "한 사람씩 줄 링크",
-    perDancerNote:
-      "열면 그 사람이 선택된 상태로 시작합니다. 볼 수 있는 범위는 같고, 다른 사람의 동선도 볼 수 있습니다.",
     regenerate: "링크 새로 만들기",
     regenerateTitle: "링크를 새로 만들까요?",
     regenerateDescription:
@@ -581,8 +577,6 @@ export const ko = {
     regenerateFailed: "링크를 새로 만들지 못했습니다",
     copyFailed: "복사하지 못했습니다",
     saveFailed: "공유 설정을 바꾸지 못했습니다",
-    musicNote:
-      "곡은 따라가지 않습니다(음원이 이 기기 밖으로 나가지 않기 때문입니다). 시작 위치는 공유되니 같은 곡만 골라 주면 위치가 맞습니다.",
     sharing: "공유 중. 링크 열기",
   },
 

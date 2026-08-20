@@ -602,17 +602,14 @@ export const ja = {
     title: "共有",
     enable: "リンクを知っている人が見られる",
     resume: "もう一度このリンクで共有する",
-    stop: "共有をやめる",
-    enabledNote: "いま共有中です。リンクを開いた人は、見るだけの画面になります",
+    enabledNote:
+      "リンクを開いた人は、自分にフォーカスしたフォーメーションを閲覧できます。",
     disabledNote: "いまは共有していません。リンクを持っている人も開けません",
     noKey:
       "この作品にはまだ共有用の鍵がありません。supabase/schema.sql をSupabaseのSQL Editorで実行すると使えるようになります。",
-    everyone: "みんなに配るリンク",
+    everyone: "共有リンク",
     copy: "リンクをコピー",
     copied: "コピーしました",
-    perDancer: "一人ひとりに配るリンク",
-    perDancerNote:
-      "開いた時点でその人が選ばれます。見られる範囲は同じで、他の人の道順も見られます。",
     regenerate: "リンクを作り直す",
     regenerateTitle: "リンクを作り直しますか",
     regenerateDescription:
@@ -622,8 +619,6 @@ export const ja = {
     regenerateFailed: "リンクを作り直せませんでした",
     copyFailed: "コピーできませんでした",
     saveFailed: "共有の設定に失敗しました",
-    musicNote:
-      "曲は付いていきません(音源はこの端末から出ないため)。相手の画面では曲の開始位置は共有されるので、選んでもらえれば位置は合います。",
     sharing: "共有中。リンクを開く",
   },
 

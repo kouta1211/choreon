@@ -1,11 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { ShareSheet } from "./ShareSheet";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import * as projectsApi from "@/features/project/api/projects";
-import { makeProject } from "@/test/factories";
+import { makeDancer, makeProject } from "@/test/factories";
 import type { Project } from "@/features/project/types";
 
 vi.mock("@/lib/supabase/client", () => ({
@@ -57,7 +56,7 @@ describe("ShareSheet", () => {
   it("共有中なら、開いた時点でリンクが出ている", () => {
     open(SHARED);
 
-    expect(screen.getByText(/いま共有中です/)).toBeInTheDocument();
+    expect(screen.getByText(/自分にフォーカスしたフォーメーション/)).toBeInTheDocument();
     expect(screen.getByText(/tok-123/)).toBeInTheDocument();
   });
 
@@ -108,51 +107,34 @@ describe("ShareSheet", () => {
     expect(useProjectStore.getState().project?.isShared).toBe(false);
   });
 
-  /**
-   * やめても鍵は作り直さないので、同じリンクが戻る。だから確認を挟まず、
-   * **押したその場で止まる**。確認ダイアログ越しの削除と同じ重さに
-   * なっていないことを見ておく。
-   */
-  it("「共有をやめる」は、確認を挟まずその場で止まる", async () => {
-    const spy = vi
-      .spyOn(projectsApi, "updateProjectSharing")
-      .mockResolvedValue(undefined);
-    const user = userEvent.setup();
-
+  /* 共有をやめるボタンは無くした（2026-08-20 の user の判断:
+     「共有をやめることはない」）。**鍵は残っているので、必要になったら
+     戻せる** — 画面から入口を消しただけで、状態そのものは残してある */
+  it("「共有をやめる」は出さない", () => {
     open(SHARED);
-    expect(useProjectStore.getState().project?.isShared).toBe(true);
 
-    await user.click(screen.getByText("共有をやめる"));
-
-    expect(useUIStore.getState().confirm).toBeNull();
-    expect(useProjectStore.getState().project?.isShared).toBe(false);
-    await waitFor(() => {
-      expect(spy).toHaveBeenCalledWith(expect.anything(), "project-1", false);
-    });
+    expect(screen.queryByText(/共有をやめる/)).toBeNull();
   });
 
-  it("やめたあとは「もう一度このリンクで共有する」から戻せる", async () => {
-    const spy = vi
-      .spyOn(projectsApi, "updateProjectSharing")
-      .mockResolvedValue(undefined);
-    const user = userEvent.setup();
-
-    // 一度やめた状態から始める(自動で始まらないよう、開いてから止める)
+  /* 作り直しは【リンクのすぐ隣】。離れた所に置くと、どのリンクを
+     作り直すのか結び付かない（実機の要望 2026-08-20） */
+  it("リンクの隣に、コピーと作り直しが並ぶ", () => {
     open(SHARED);
-    await user.click(screen.getByText("共有をやめる"));
-    expect(useProjectStore.getState().project?.isShared).toBe(false);
 
-    await user.click(screen.getByText("もう一度このリンクで共有する"));
-
-    expect(useProjectStore.getState().project?.isShared).toBe(true);
-    // 鍵は作り直さないので、同じリンクが戻る
-    expect(useProjectStore.getState().project?.shareToken).toBe("tok-123");
-    await waitFor(() => {
-      expect(spy).toHaveBeenLastCalledWith(
-        expect.anything(),
-        "project-1",
-        true,
-      );
-    });
+    expect(screen.getByLabelText("リンクをコピー")).toBeInTheDocument();
+    expect(screen.getByLabelText("リンクを作り直す")).toBeInTheDocument();
   });
+
+  /* 一人ひとりに配るリンクは消した。**開いた先でダンサーを選べる**ので、
+     リンクを人数ぶん作り分ける必要が無い（2026-08-20） */
+  it("一人ひとりに配るリンクは出さない", () => {
+    useProjectStore.setState({
+      dancers: { "dancer-1": makeDancer({ name: "あいり" }) },
+    });
+    open(SHARED);
+
+    expect(screen.queryByText(/一人ひとり/)).toBeNull();
+    expect(screen.queryByText("あいり")).toBeNull();
+  });
+
 });

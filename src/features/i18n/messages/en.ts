@@ -565,19 +565,15 @@ export const en = {
     title: "Share",
     enable: "Anyone with the link can view",
     resume: "Share with this link again",
-    stop: "Stop sharing",
     enabledNote:
-      "Sharing is on. People who open the link get a view-only screen",
+      "People who open the link can view the formation focused on themselves.",
     disabledNote:
       "Not sharing right now. The link will not open, even for people who have it",
     noKey:
       "This piece does not have a sharing key yet. Run supabase/schema.sql from the Supabase SQL Editor to enable it.",
-    everyone: "Link for everyone",
+    everyone: "Share link",
     copy: "Copy the link",
     copied: "Copied",
-    perDancer: "A link for each dancer",
-    perDancerNote:
-      "Opening it selects that dancer. They see the same thing either way, including everyone else's routes.",
     regenerate: "Make a new link",
     regenerateTitle: "Make a new link?",
     regenerateDescription:
@@ -587,8 +583,6 @@ export const en = {
     regenerateFailed: "Could not make a new link",
     copyFailed: "Could not copy",
     saveFailed: "Could not change the sharing setting",
-    musicNote:
-      "The track does not travel with it (the audio never leaves this device). The start position is shared, so once they pick the same track it will line up.",
     sharing: "Shared. Open the link",
   },
 

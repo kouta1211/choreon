@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Copy, Link2Off, RefreshCw } from "lucide-react";
+import { Check, Copy, RefreshCw } from "lucide-react";
 import { BottomSheet } from "@/components/molecules/BottomSheet";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
@@ -12,7 +12,6 @@ import {
   updateProjectSharing,
 } from "@/features/project/api/projects";
 import { buildShareLink, copyToClipboard } from "@/features/project/lib/shareLink";
-import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { toUserMessage } from "@/lib/supabase/errors";
 import type { Project } from "@/features/project/types";
 import { useT } from "@/features/i18n/LocaleProvider";
@@ -56,8 +55,6 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
   const t = useT();
   const showToast = useUIStore((state) => state.showToast);
   const requestConfirm = useUIStore((state) => state.requestConfirm);
-  const dancers = useProjectStore((state) => state.dancers);
-
   // 保存済みの値はstoreを唯一の置き場にする(プロジェクト名と同じ考え方)
   const stored = useProjectStore((state) =>
     state.project?.id === project.id ? state.project : project,
@@ -146,7 +143,7 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
           {stored.isShared ? t.share.enabledNote : t.share.disabledNote}
         </p>
         {!stored.shareToken && (
-          <p className="rounded-xl border border-line px-3 py-2.5 text-caption leading-snug text-fg-muted">
+          <p className="rounded-lg border border-line px-gutter py-unit text-caption leading-snug text-fg-muted">
             {t.share.noKey}
           </p>
         )}
@@ -163,18 +160,20 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
         {stored.isShared && link && (
           <>
             <div>
-              <p className="mb-1.5 text-label text-fg-sub">
+              <p className="mb-unit text-label text-fg-sub">
                 {t.share.everyone}
               </p>
-              <div className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate rounded-xl border border-line-strong bg-surface-strong px-3 py-2.5 font-mono text-caption text-fg">
+              {/* 作り直しは【リンクのすぐ隣】に置く(実機の要望 2026-08-20)。
+                  離れた所に置くと、どのリンクを作り直すのか結び付かない */}
+              <div className="flex items-center gap-unit">
+                <span className="min-w-0 flex-1 truncate rounded-lg border border-line-strong bg-surface-strong px-gutter py-unit font-mono text-caption text-fg">
                   {link}
                 </span>
                 <PressableButton
                   kind="icon"
                   onClick={() => copy(link, "all")}
                   aria-label={t.share.copy}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line-strong text-fg-sub"
+                  className="flex h-target w-target shrink-0 items-center justify-center rounded-lg border border-line-strong text-fg-sub"
                 >
                   {copiedKey === "all" ? (
                     <Check size={17} className="text-accent-soft" />
@@ -182,85 +181,19 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
                     <Copy size={17} />
                   )}
                 </PressableButton>
+                <PressableButton
+                  kind="icon"
+                  onClick={rotate}
+                  aria-label={t.share.regenerate}
+                  className="flex h-target w-target shrink-0 items-center justify-center rounded-lg border border-line-strong text-fg-muted"
+                >
+                  <RefreshCw size={16} />
+                </PressableButton>
               </div>
             </div>
 
-            {Object.keys(dancers).length > 0 && (
-              <div>
-                <p className="mb-1.5 text-label text-fg-sub">
-                  {t.share.perDancer}
-                </p>
-                <ul className="flex flex-col gap-1">
-                  {Object.values(dancers).map((dancer) => (
-                    <li key={dancer.id}>
-                      <PressableButton
-                        onClick={() =>
-                          copy(
-                            buildShareLink({
-                              origin,
-                              projectId: project.id,
-                              shareToken: stored.shareToken as string,
-                              dancerId: dancer.id,
-                            }),
-                            dancer.id,
-                          )
-                        }
-                        className="flex h-11 w-full items-center gap-2.5 rounded-xl px-2 text-left text-label text-fg"
-                      >
-                        <span
-                          aria-hidden
-                          style={{ background: themedDancerColor(dancer.color) }}
-                          className="block h-2 w-2 shrink-0 rounded-full"
-                        />
-                        <span className="min-w-0 flex-1 truncate">
-                          {dancer.name}
-                        </span>
-                        {copiedKey === dancer.id ? (
-                          <span className="flex shrink-0 items-center gap-1 text-caption text-accent-soft">
-                            <Check size={13} />
-                            {t.share.copied}
-                          </span>
-                        ) : (
-                          <Copy size={15} className="shrink-0 text-fg-muted" />
-                        )}
-                      </PressableButton>
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-1.5 text-caption leading-snug text-fg-muted">
-                  {t.share.perDancerNote}
-
-                </p>
-              </div>
-            )}
-
-            <div className="flex flex-col gap-1.5">
-              <PressableButton
-                onClick={rotate}
-                className="flex h-11 items-center justify-center gap-2 rounded-xl border border-line-strong text-label text-fg-sub"
-              >
-                <RefreshCw size={15} />
-                {t.share.regenerate}
-              </PressableButton>
-              {/* 逆向きの操作。**鍵は作り直さない**ので、もう一度共有すれば
-                  同じリンクが戻る。だから確認は挟まない(取り返せる操作に
-                  確認を付けると、本当に取り返せない操作の確認が軽くなる) */}
-              <PressableButton
-                onClick={() => setSharingTo(false)}
-                className="flex h-11 items-center justify-center gap-2 rounded-xl text-label text-fg-muted"
-              >
-                <Link2Off size={15} />
-                {t.share.stop}
-              </PressableButton>
-            </div>
           </>
         )}
-
-        <p className="text-caption leading-snug text-fg-muted">
-          {t.share.musicNote}
-          8カウントの縞が地になり、同じ曲を相手の端末で選べば波形になります。
-
-        </p>
       </div>
     </BottomSheet>
   );
