@@ -145,7 +145,7 @@ export function ReviewSheet({ project, isOpen, onClose }: Props) {
       title={t.review.title}
       titleRight={scope === "piece" ? t.review.wholePiece : scene?.name}
     >
-      <div className="flex flex-col gap-3 px-[18px] py-4">
+      <div className="flex flex-col gap-gutter px-gutter py-gutter">
         {/* シーンが2つ以上ないと「流れ」の話にならない */}
         {scenes.length > 1 && (
           <SegmentedControl
@@ -247,7 +247,7 @@ export function ReviewSheet({ project, isOpen, onClose }: Props) {
                             ]);
                             void example.apply();
                           }}
-                          className="flex h-8 w-full items-center justify-center rounded-[calc(var(--radius)*0.6)] border border-accent bg-accent/12 text-label font-semibold text-accent-soft"
+                          className="flex h-8 w-full items-center justify-center rounded-lg border border-accent bg-accent/12 text-label font-semibold text-accent-soft"
                         >
                           {t.review.formationApply}
                         </PressableButton>
@@ -271,7 +271,7 @@ export function ReviewSheet({ project, isOpen, onClose }: Props) {
         )}
 
         {error && (
-          <p className="rounded-[calc(var(--radius)*0.8)] bg-fg/5 p-3 text-label text-fg-sub">
+          <p className="rounded-lg bg-fg/5 p-3 text-label text-fg-sub">
             {error}
           </p>
         )}
@@ -280,7 +280,7 @@ export function ReviewSheet({ project, isOpen, onClose }: Props) {
           kind="primary"
           onClick={() => void run()}
           disabled={isRunning || !scene}
-          className="flex h-11 items-center justify-center gap-1.5 rounded-[calc(var(--radius)*0.9)] bg-accent text-label font-semibold text-accent-fg shadow-[inset_0_1px_0_rgb(255_255_255/.22)] disabled:opacity-50"
+          className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-accent text-label font-semibold text-accent-fg shadow-[inset_0_1px_0_rgb(255_255_255/.22)] disabled:opacity-50"
         >
           <Sparkles size={15} />
           {isRunning ? t.review.running : review ? t.review.again : t.review.run}

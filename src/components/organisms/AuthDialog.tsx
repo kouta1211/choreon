@@ -46,7 +46,7 @@ export function AuthDialog() {
       title={mode === "login" ? t.auth.signIn : t.auth.createAccount}
       wideMaxWidthClassName="min-[1200px]:max-w-md"
     >
-      <div className="px-4 pt-1 pb-4">
+      <div className="px-gutter pt-base pb-gutter">
         <AuthForm
           mode={mode ?? "signup"}
           onModeChange={openAuthDialog}

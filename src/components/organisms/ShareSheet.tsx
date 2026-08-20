@@ -140,7 +140,7 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title={t.share.title}>
-      <div className="flex flex-col gap-4 px-3.5 py-3">
+      <div className="flex flex-col gap-gutter px-gutter py-gutter">
         {/* いまどの状態かを1行で。スイッチではなく状態の表示にしてある */}
         <p className="text-label leading-relaxed text-fg-sub">
           {stored.isShared ? t.share.enabledNote : t.share.disabledNote}

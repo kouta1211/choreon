@@ -153,7 +153,7 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
       onClose={isRunning ? cancel : onClose}
       title={t.exportVideo.title}
     >
-      <div className="flex flex-col gap-4 px-3.5 py-3">
+      <div className="flex flex-col gap-gutter px-gutter py-gutter">
         {!format ? (
           <p className="rounded-xl border border-line px-3 py-2.5 text-label leading-snug text-fg-muted">
             {t.exportVideo.unsupported}

@@ -157,7 +157,7 @@ export function AddDancerSheet({ project }: Props) {
     >
       <form
         onSubmit={handleSubmit}
-        className="flex flex-col gap-4 px-[18px] pt-4 pb-5"
+        className="flex flex-col gap-gutter px-gutter pt-gutter pb-gutter-lg"
       >
         <div className="flex flex-col gap-2">
           <span className="text-xs font-medium text-fg-sub">
@@ -182,7 +182,7 @@ export function AddDancerSheet({ project }: Props) {
                 if (!Number.isFinite(parsed)) return;
                 setCount(Math.min(MAX_COUNT, Math.max(1, Math.round(parsed))));
               }}
-              className="h-[46px] w-20 rounded-[calc(var(--radius)*0.9167)] border border-line-strong bg-surface-strong text-center font-mono text-lg font-semibold text-fg-strong focus:border-accent focus:ring-[3px] focus:ring-accent/16 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              className="h-[46px] w-20 rounded-xl border border-line-strong bg-surface-strong text-center font-mono text-lg font-semibold text-fg-strong focus:border-accent focus:ring-[3px] focus:ring-accent/16 focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
             <StepperButton
               label={t.dancer.add.plus}
@@ -230,14 +230,14 @@ export function AddDancerSheet({ project }: Props) {
         <div className="flex gap-2">
           <PressableButton
             onClick={close}
-            className="h-12 flex-1 rounded-[calc(var(--radius)*0.9167)] border border-line-strong text-sm font-medium text-fg-strong"
+            className="h-12 flex-1 rounded-xl border border-line-strong text-sm font-medium text-fg-strong"
           >
             {t.dancer.add.cancel}
           </PressableButton>
           <PressableButton
             type="submit"
             disabled={!selectedSceneId || isSubmitting}
-            className="h-12 flex-[2] rounded-[calc(var(--radius)*0.9167)] bg-accent text-body font-semibold text-accent-fg disabled:opacity-50"
+            className="h-12 flex-[2] rounded-xl bg-accent text-body font-semibold text-accent-fg disabled:opacity-50"
           >
             {t.dancer.add.submit(count)}
           </PressableButton>
@@ -264,7 +264,7 @@ function StepperButton({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[calc(var(--radius)*0.9167)] border border-line-strong text-fg disabled:opacity-30"
+      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line-strong text-fg disabled:opacity-30"
     >
       <Icon size={18} />
     </PressableButton>

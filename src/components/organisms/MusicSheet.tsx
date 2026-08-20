@@ -219,7 +219,7 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
             <span className="flex-1 text-label text-fg">
               {t.music.offset}
             </span>
-            <span className="flex shrink-0 items-center gap-1 rounded-[calc(var(--radius)*0.5833)] border border-line-strong bg-surface-strong px-2 py-1 font-mono text-label text-fg focus-within:border-accent">
+            <span className="flex shrink-0 items-center gap-1 rounded-lg border border-line-strong bg-surface-strong px-2 py-1 font-mono text-label text-fg focus-within:border-accent">
               <input
                 type="number"
                 inputMode="decimal"
@@ -273,7 +273,7 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
               kind="primary"
               onClick={offsetField.commit}
               disabled={Boolean(offsetField.invalid)}
-              className="mt-2 flex h-9 w-full items-center justify-center rounded-[calc(var(--radius)*0.6)] border border-accent bg-accent/12 text-label font-semibold text-accent-soft disabled:border-line-strong disabled:bg-transparent disabled:text-fg-muted"
+              className="mt-2 flex h-9 w-full items-center justify-center rounded-lg border border-accent bg-accent/12 text-label font-semibold text-accent-soft disabled:border-line-strong disabled:bg-transparent disabled:text-fg-muted"
             >
               {offsetField.invalid
                 ? t.common.numberField.fixRange
@@ -293,7 +293,7 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
                     ? preview.stop()
                     : preview.play(Number(offsetField.draft) || 0)
                 }
-                className="mt-2 flex h-9 w-full items-center justify-center gap-1.5 rounded-[calc(var(--radius)*0.6)] border border-line-strong text-label text-fg-sub"
+                className="mt-2 flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-line-strong text-label text-fg-sub"
               >
                 {preview.isPlaying ? (
                   <>

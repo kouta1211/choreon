@@ -123,7 +123,7 @@ export function AssistSheet({ project, isOpen, onClose, onOpenSheet }: Props) {
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title={t.assist.title}>
-      <div className="flex flex-col gap-3 px-[18px] py-4">
+      <div className="flex flex-col gap-gutter px-gutter py-gutter">
         <p className="text-label leading-[1.65] text-fg-sub">{t.assist.note}</p>
 
         <form
@@ -168,7 +168,7 @@ export function AssistSheet({ project, isOpen, onClose, onOpenSheet }: Props) {
             kind="primary"
             type="submit"
             disabled={isAsking || !text.trim() || !context}
-            className={`flex h-11 items-center justify-center gap-1.5 rounded-[calc(var(--radius)*0.9)] text-label font-semibold disabled:opacity-50 ${
+            className={`flex h-11 items-center justify-center gap-1.5 rounded-xl text-label font-semibold disabled:opacity-50 ${
               pending
                 ? "border border-accent bg-accent/12 text-accent-soft"
                 : "bg-accent text-accent-fg shadow-[inset_0_1px_0_rgb(255_255_255/.22)]"
@@ -187,7 +187,7 @@ export function AssistSheet({ project, isOpen, onClose, onOpenSheet }: Props) {
         {pending && (
           <div
             data-testid="assist-plan"
-            className="flex flex-col gap-2 rounded-[calc(var(--radius)*0.8)] border border-accent bg-accent/8 p-3"
+            className="flex flex-col gap-2 rounded-lg border border-accent bg-accent/8 p-3"
           >
             <p className="text-label font-semibold text-fg-strong">
               {pending.title}
@@ -218,14 +218,14 @@ export function AssistSheet({ project, isOpen, onClose, onOpenSheet }: Props) {
                   setMessage(plan.title);
                   void runPlan(plan, false);
                 }}
-                className="flex h-9 flex-1 items-center justify-center rounded-[calc(var(--radius)*0.6)] bg-accent text-label font-semibold text-accent-fg"
+                className="flex h-9 flex-1 items-center justify-center rounded-lg bg-accent text-label font-semibold text-accent-fg"
               >
                 {t.assist.confirm}
               </PressableButton>
               <PressableButton
                 kind="secondary"
                 onClick={() => setPending(null)}
-                className="flex h-9 items-center justify-center rounded-[calc(var(--radius)*0.6)] border border-line-strong px-3 text-label text-fg-sub"
+                className="flex h-9 items-center justify-center rounded-lg border border-line-strong px-3 text-label text-fg-sub"
               >
                 {t.assist.cancel}
               </PressableButton>
@@ -237,7 +237,7 @@ export function AssistSheet({ project, isOpen, onClose, onOpenSheet }: Props) {
         {message && (
           <p
             data-testid="assist-message"
-            className="flex gap-1.5 rounded-[calc(var(--radius)*0.8)] bg-fg/5 p-3 text-label leading-[1.7] text-fg-sub"
+            className="flex gap-1.5 rounded-lg bg-fg/5 p-3 text-label leading-[1.7] text-fg-sub"
           >
             <Check
               size={13}
@@ -249,7 +249,7 @@ export function AssistSheet({ project, isOpen, onClose, onOpenSheet }: Props) {
         )}
 
         {error && (
-          <p className="rounded-[calc(var(--radius)*0.8)] bg-fg/5 p-3 text-label text-fg-sub">
+          <p className="rounded-lg bg-fg/5 p-3 text-label text-fg-sub">
             {error}
           </p>
         )}

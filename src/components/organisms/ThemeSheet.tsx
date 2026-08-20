@@ -69,7 +69,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
         }
         wideMaxWidthClassName="min-[1200px]:max-w-md"
       >
-        <div className="flex flex-col gap-4 px-[18px] py-4">
+        <div className="flex flex-col gap-gutter px-gutter py-gutter">
           {/* 質感も一緒に描く。**質感は body の後ろに敷く1枚なので、
               このシートが開いている間は板に隠れて見えない** — 切り替えても
               手応えが無く、いちいち閉じて確かめることになっていた */}
@@ -92,7 +92,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
                     type="button"
                     aria-pressed={isSelected}
                     onClick={() => setAppearance({ texture: texture.id })}
-                    className={`h-9 rounded-[calc(var(--radius)*0.75)] border px-3 text-label ${
+                    className={`h-9 rounded-lg border px-3 text-label ${
                       isSelected
                         ? "border-accent bg-accent/12 font-semibold text-accent-soft"
                         : "border-line-strong text-fg-sub"
@@ -140,7 +140,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
          幅が増えたぶんは**列の数**に使い、1枚の大きさは保つ */
       wideMaxWidthClassName="min-[1200px]:max-w-4xl"
     >
-      <div className="flex items-center gap-1.5 border-b border-line px-[18px] py-3">
+      <div className="flex items-center gap-unit border-b border-line px-gutter py-unit">
         {FILTERS.map((item) => {
           const count =
             item === "all"
@@ -169,7 +169,7 @@ export function ThemeSheet({ isOpen, onClose }: Props) {
         </span>
       </div>
 
-      <div className="px-[18px] pt-4 pb-6">
+      <div className="px-gutter pt-gutter pb-gutter-lg">
         {CATEGORY_HEADINGS.filter(
           (heading) => filter === "all" || filter === heading,
         ).map((heading) => {

@@ -99,7 +99,7 @@ export function TemplateSheet({ project }: Props) {
           {t.templateSheet.needsTwoNotice}
         </p>
       ) : (
-        <div className="flex flex-col gap-3 px-3.5 py-3">
+        <div className="flex flex-col gap-gutter px-gutter py-gutter">
           <CountRail
             counts={counts}
             shownCount={shownCount}
@@ -154,11 +154,11 @@ export function TemplateSheet({ project }: Props) {
           </div>
 
           {/* 確定ボタン。スクロールしても見失わないよう下端に貼り付ける */}
-          <div className="sticky bottom-0 -mx-3.5 -mb-3 bg-surface/95 px-3.5 pt-2 pb-3 backdrop-blur">
+          <div className="sticky bottom-0 -mx-gutter -mb-gutter bg-surface/95 px-gutter pt-unit pb-gutter backdrop-blur">
             <PressableButton
               onClick={handleApply}
               disabled={!picked || isApplying}
-              className="h-12 w-full rounded-[calc(var(--radius)*0.9167)] bg-accent text-sm font-semibold text-accent-fg disabled:bg-surface-strong disabled:text-fg-muted"
+              className="h-12 w-full rounded-xl bg-accent text-sm font-semibold text-accent-fg disabled:bg-surface-strong disabled:text-fg-muted"
             >
               {picked
                 ? t.templateSheet.applyNamed(formationName(picked.label, t))
@@ -185,7 +185,7 @@ function CountRail({
 }) {
   const t = useT();
   return (
-    <div className="scrollbar-hide -mx-3.5 flex gap-1.5 overflow-x-auto px-3.5">
+    <div className="scrollbar-hide -mx-gutter flex gap-unit overflow-x-auto px-gutter">
       {counts.map((count) => {
         const isShown = count === shownCount;
         return (
@@ -194,7 +194,7 @@ function CountRail({
             type="button"
             aria-pressed={isShown}
             onClick={() => onChange(count)}
-            className={`relative flex h-9 shrink-0 items-center rounded-[calc(var(--radius)*0.8333)] border px-3 text-xs font-medium ${
+            className={`relative flex h-9 shrink-0 items-center rounded-lg border px-3 text-xs font-medium ${
               isShown
                 ? "border-accent bg-accent/12 text-accent-soft"
                 : "border-line-strong text-fg-sub"
@@ -202,7 +202,7 @@ function CountRail({
           >
             <span className="font-mono">{t.templateSheet.castCount(count)}</span>
             {count === dancerCount && (
-              <span className="ml-1.5 rounded-[calc(var(--radius)*0.4167)] bg-accent px-1 py-px text-caption font-semibold text-accent-fg">
+              <span className="ml-1.5 rounded-md bg-accent px-1 py-px text-caption font-semibold text-accent-fg">
                 {t.templateSheet.current}
               </span>
             )}
@@ -250,7 +250,7 @@ function CountMismatchNote({
 
   const gap = Math.abs(shownCount - dancerCount);
   return (
-    <p className="rounded-[calc(var(--radius)*0.8333)] border border-accent/40 bg-accent/10 px-3 py-2 text-caption leading-relaxed text-accent-bright">
+    <p className="rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-caption leading-relaxed text-accent-bright">
       {t.templateSheet.forCast(shownCount)}{" "}
       {shownCount < dancerCount
         ? t.templateSheet.leftOver(gap)

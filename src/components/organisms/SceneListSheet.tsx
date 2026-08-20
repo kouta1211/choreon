@@ -36,7 +36,7 @@ export function SceneListSheet({ project }: Props) {
          テーマの一覧ほどは広げない(2026-08-20) */
       wideMaxWidthClassName="min-[1200px]:max-w-2xl"
     >
-      <div className="px-3.5 py-3">
+      <div className="px-gutter py-gutter">
         <SceneList project={project} />
       </div>
     </BottomSheet>
