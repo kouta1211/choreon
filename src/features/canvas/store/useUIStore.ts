@@ -126,6 +126,18 @@ type UIState = {
    * null は「選んでいない」= 従来どおり初回だけ自動で出す。
    */
   guestTourIntent: "show" | "skip" | null;
+  /**
+   * ゲストが「ゲストで始める」を通って、エディタに居るか。
+   *
+   * **WelcomeGate の中の状態を、ここへ出してある。** ヘッダーの戻る矢印
+   * （画面のいちばん外側）から畳めるようにするため（2026-08-20 の要望:
+   * 押したあとタイトルへ戻る手段が無かった）。URL は分けない — 分けると
+   * ブラウザの「戻る」で履歴を跨ぐことになり、作りかけの扱いが増える。
+   *
+   * 端末には覚えない。下書きそのものは guestDraft が残しているので、
+   * 戻ってからもう一度始めれば続きから出る。
+   */
+  isGuestEditing: boolean;
   /** ダンサー追加シートを開いているか */
   isAddDancerSheetOpen: boolean;
   /** フォーメーションのテンプレートシートを開いているか */
@@ -181,6 +193,7 @@ type UIState = {
    * 同じ操作を繰り返しても値が変わるので毎回反応する */
   requestTour: () => void;
   setGuestTourIntent: (intent: "show" | "skip" | null) => void;
+  setGuestEditing: (isEditing: boolean) => void;
   setAddDancerSheetOpen: (isOpen: boolean) => void;
   setTemplateSheetOpen: (isOpen: boolean) => void;
   setExportSheetOpen: (isOpen: boolean) => void;
@@ -287,6 +300,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   tourRequestedAt: null,
   guestTourIntent: null,
   isAddDancerSheetOpen: false,
+  isGuestEditing: false,
   isTemplateSheetOpen: false,
   isExportSheetOpen: false,
   isShortcutsOpen: false,
@@ -423,6 +437,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   requestTour: () => set({ tourRequestedAt: Date.now() }),
   setGuestTourIntent: (intent) => set({ guestTourIntent: intent }),
   setAddDancerSheetOpen: (isOpen) => set({ isAddDancerSheetOpen: isOpen }),
+  setGuestEditing: (isEditing) => set({ isGuestEditing: isEditing }),
   setTemplateSheetOpen: (isOpen) => set({ isTemplateSheetOpen: isOpen }),
   setExportSheetOpen: (isOpen) => set({ isExportSheetOpen: isOpen }),
   setShortcutsOpen: (isOpen) => set({ isShortcutsOpen: isOpen }),

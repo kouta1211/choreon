@@ -126,6 +126,7 @@ export const ko = {
 
   editor: {
     backToProjects: "작품 목록으로",
+    backToStart: "시작 화면으로 돌아가기",
     addDancer: "댄서 추가",
     projectName: "작품 이름",
     projectNameFailed: "작품 이름을 바꾸지 못했습니다",

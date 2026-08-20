@@ -44,6 +44,7 @@ export function EditorHeader({ project }: Props) {
   // ゲストモードではトップページ自体がこのエディタなので、「戻る」の
   // 行き先が今いる場所になってしまう。代わりに左端の幅は詰める
   const isGuest = useProjectStore((state) => state.isGuest);
+  const setGuestEditing = useUIStore((state) => state.setGuestEditing);
 
   const [openSheet, setOpenSheet] = useState<
     "share" | "review" | "settings" | null
@@ -60,8 +61,22 @@ export function EditorHeader({ project }: Props) {
 
   return (
     <header className="flex h-target-lg items-center gap-base px-base">
+      {/* 戻り先は立場で変わる。ログイン済みなら作品の一覧、ゲストなら
+          始め方を選ぶ画面。**ゲストにも必ず出す**（2026-08-20 の要望:
+          「ゲストで始める」を押したあと、タイトルへ戻る手段が無かった）。
+
+          ゲスト側だけ Link ではなくボタンなのは、URL を分けていないから
+          （WelcomeGate の注記）。作りかけは端末に残っているので、
+          戻ってからもう一度始めれば続きから出る */}
       {isGuest ? (
-        <span className="w-base shrink-0" />
+        <PressableButton
+          kind="icon"
+          onClick={() => setGuestEditing(false)}
+          aria-label={t.editor.backToStart}
+          className="flex h-target w-target shrink-0 items-center justify-center rounded-full text-fg-sub transition-colors hover:bg-surface hover:text-fg"
+        >
+          <ChevronLeft size={22} />
+        </PressableButton>
       ) : (
         <Link
           href="/"

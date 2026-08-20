@@ -138,6 +138,7 @@ export const ja = {
 
   editor: {
     backToProjects: "プロジェクト一覧に戻る",
+    backToStart: "始め方を選ぶ画面に戻る",
     addDancer: "ダンサーを追加",
     projectName: "プロジェクト名",
     projectNameFailed: "プロジェクト名の変更に失敗しました",

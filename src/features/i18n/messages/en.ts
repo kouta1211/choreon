@@ -126,6 +126,7 @@ export const en = {
 
   editor: {
     backToProjects: "Back to your pieces",
+    backToStart: "Back to the start screen",
     addDancer: "Add a dancer",
     projectName: "Piece name",
     projectNameFailed: "Could not rename the piece",
