@@ -245,7 +245,6 @@ export const ko = {
       moveIn: (seconds: number) => ` · ${seconds}s 동안 이동`,
       segment: (seconds: number) => `→ ${seconds}s`,
       moveSeconds: "앞 장면에서 몇 초로 이동할지",
-      moveSecondsNote: "바꾸면 뒤의 장면도 같은 만큼 밀립니다.",
       duplicate: "복제",
       delete: "삭제",
     },
@@ -597,7 +596,6 @@ export const ko = {
     regenerateFailed: "링크를 새로 만들지 못했습니다",
     copyFailed: "복사하지 못했습니다",
     saveFailed: "공유 설정을 바꾸지 못했습니다",
-    sharing: "공유 중. 링크 열기",
   },
 
   assist: {
@@ -707,7 +705,6 @@ export const ko = {
     scopePieceNote:
       "모든 장면의 퍼짐 정도·무게중심·경고만 보냅니다(위치 자체는 보내지 않습니다). 흐름에 대한 이야기가 돌아옵니다.",
     inScene: (number: number, name: string) => `${number}. ${name}`,
-    goToScene: "그 장면 열기",
     wholePiece: "작품 전체",
     run: "봐 달라고 하기",
     running: "보고 있습니다...",
@@ -754,8 +751,6 @@ export const ko = {
     metronomeTitle: "곡이 없을 때의 박",
     metronome: "메트로놈",
     click: "클릭음 켜기",
-    clickWithMusic:
-      "음악이 있을 때는 클릭이 울리지 않습니다(음악에 맞추기 때문)",
     bpm: "속도(BPM)",
     beatsPerBar: "박자",
     beatsPerBarNote:

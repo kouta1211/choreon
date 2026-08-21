@@ -246,8 +246,6 @@ export const en = {
       moveIn: (seconds: number) => ` · ${seconds}s to get there`,
       segment: (seconds: number) => `→ ${seconds}s`,
       moveSeconds: "Seconds to get here",
-      moveSecondsNote:
-        "Changing this shifts every later scene by the same amount.",
       duplicate: "Duplicate",
       delete: "Delete",
     },
@@ -603,7 +601,6 @@ export const en = {
     regenerateFailed: "Could not make a new link",
     copyFailed: "Could not copy",
     saveFailed: "Could not change the sharing setting",
-    sharing: "Shared. Open the link",
   },
 
   assist: {
@@ -717,7 +714,6 @@ export const en = {
     scopePieceNote:
       "Only each scene's spread, centre and warnings are sent — not the positions themselves. What comes back is about the flow.",
     inScene: (number: number, name: string) => `${number}. ${name}`,
-    goToScene: "Open that scene",
     wholePiece: "Whole piece",
     run: "Ask",
     running: "Asking…",
@@ -765,7 +761,6 @@ export const en = {
     metronomeTitle: "A beat when there is no music",
     metronome: "Metronome",
     click: "Sound the click",
-    clickWithMusic: "No click while a track is loaded (the track keeps time)",
     bpm: "Tempo (BPM)",
     beatsPerBar: "Time signature",
     beatsPerBarNote:

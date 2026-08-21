@@ -184,12 +184,55 @@ if (fs.existsSync(CHECKLIST)) {
   }
 }
 
+/* 6. 誰も読んでいない文言が残っていないか。
+   機能を消したとき、**文言だけが3言語ぶん残る**。型は3つそろっている
+   ことしか見ないので、そろったまま誰にも読まれない(2026-08-21 に4件:
+   共有をやめたとき・メトロノームの表示を変えたとき・時刻を順番へ
+   変えたときの置き土産)。
+
+   名前が src のどこかに出てくれば「使われている」とみなす —
+   `t.themes[id]` のような動的な読み方があるので、**多めに使われている
+   側へ倒す**。消してよいものだけを挙げたい。 */
+const MESSAGES_DIR = "src/features/i18n/messages/";
+const jaMessages = "src/features/i18n/messages/ja.ts";
+if (fs.existsSync(jaMessages)) {
+  const code = [...tracked]
+    .filter((f) => f.startsWith("src/") && !f.startsWith(MESSAGES_DIR))
+    .filter((f) => /[.]tsx?$/.test(f))
+    .map((f) => {
+      try {
+        return fs.readFileSync(f, "utf8");
+      } catch {
+        return "";
+      }
+    })
+    .join("\n");
+
+  const seen = new Set();
+  for (const m of fs
+    .readFileSync(jaMessages, "utf8")
+    .matchAll(/^\s{2,}([a-zA-Z][a-zA-Z0-9_]*)\s*:/gm)) {
+    if (seen.has(m[1])) continue;
+    seen.add(m[1]);
+    counts.messageKeys = (counts.messageKeys ?? 0) + 1;
+    if (!code.includes(m[1])) {
+      fail(
+        "deadMessage",
+        jaMessages,
+        m[1],
+        "この文言を読んでいる所が src に無い(3言語ぶん消す)",
+      );
+    }
+  }
+}
+
 const summary = [
   `リンク       ${counts.links ?? 0} 件`,
   `パス参照     ${counts.paths ?? 0} 件`,
   `識別子       ${counts.symbols ?? 0} 件`,
   `コマンド行   ${counts.commands ?? 0} 件`,
   `台本のキー   ${counts.checklistKeys ?? 0} 件`,
+  `文言のキー   ${counts.messageKeys ?? 0} 件`,
   `検査ファイル ${docs.length} 件`,
 ].join(" / ");
 

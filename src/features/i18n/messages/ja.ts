@@ -271,7 +271,6 @@ export const ja = {
       /** 等間隔の帯で、コマとコマの間に出す区間の秒数 */
       segment: (seconds: number) => `→ ${seconds}s`,
       moveSeconds: "前のシーンから何秒で動くか",
-      moveSecondsNote: "変えると、これより後ろのシーンも同じだけずれます。",
       duplicate: "複製",
       delete: "削除",
     },
@@ -650,7 +649,6 @@ export const ja = {
     regenerateFailed: "リンクを作り直せませんでした",
     copyFailed: "コピーできませんでした",
     saveFailed: "共有の設定に失敗しました",
-    sharing: "共有中。リンクを開く",
   },
 
   /** 言葉で頼む（操作のサポート）。AIが選ぶのは操作だけで、数はアプリが出す */
@@ -774,7 +772,6 @@ export const ja = {
       "全シーンの散り具合・重心・警告だけを送ります（立ち位置そのものは送りません）。流れの話が返ってきます。",
     /** 作品ぜんぶのとき、その指摘がどのシーンの話か */
     inScene: (number: number, name: string) => `${number}. ${name}`,
-    goToScene: "そのシーンを開く",
     wholePiece: "作品ぜんぶ",
     run: "見てもらう",
     running: "見てもらっています...",
@@ -822,7 +819,6 @@ export const ja = {
     metronomeTitle: "曲がないときの拍",
     metronome: "メトロノーム",
     click: "クリックを鳴らす",
-    clickWithMusic: "クリックは鳴りません（曲に合わせるため）",
     bpm: "速さ(BPM)",
     beatsPerBar: "拍子",
     beatsPerBarNote:
