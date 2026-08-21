@@ -185,7 +185,7 @@ export function TimelineSceneCard({
       } ${
         isSelected
           ? "z-20 rounded-md border-2 border-accent shadow-[0_2px_12px_color-mix(in_oklab,var(--scrim)_80%,transparent)]"
-          : "z-10 rounded-[calc(var(--radius)*0.4167)] border border-line-strong"
+          : "z-10 rounded-md border border-line-strong"
       } ${isPressed ? "z-30 shadow-[0_4px_12px_-4px_color-mix(in_oklab,var(--scrim)_60%,transparent)]" : ""}`}
     >
       <span aria-hidden className="absolute inset-0 block overflow-hidden">
@@ -275,7 +275,7 @@ export function TimelineSceneFlag({
       onPointerDown={(event) => event.stopPropagation()}
       onClick={onSelect}
       style={{ left: leftPx, marginLeft: -11 }}
-      className={`absolute top-1/2 z-10 flex h-[22px] w-[22px] -translate-y-1/2 touch-none items-center justify-center rounded-[calc(var(--radius)*0.3333)] font-mono text-caption transition-colors ${
+      className={`absolute top-1/2 z-10 flex h-[22px] w-[22px] -translate-y-1/2 touch-none items-center justify-center rounded-sm font-mono text-caption transition-colors ${
         isSelected
           ? "border-2 border-accent bg-surface font-semibold text-accent-bright"
           : "border border-line-strong bg-surface/94 text-fg-sub"

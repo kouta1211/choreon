@@ -44,7 +44,7 @@ export function TemplateButton() {
             ? t.editor.template.openSame
             : t.editor.template.open
         }
-        className="relative flex h-11 w-11 items-center justify-center rounded-[calc(var(--radius)*1.0833)] border border-line-strong bg-surface/90 text-fg disabled:pointer-events-none disabled:opacity-30"
+        className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-line-strong bg-surface/90 text-fg disabled:pointer-events-none disabled:opacity-30"
       >
         <LayoutGrid size={18} />
         {/* 人数の数字は右上に出さない(実機の報告 17-4)。人数は

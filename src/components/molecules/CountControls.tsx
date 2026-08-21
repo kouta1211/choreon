@@ -46,7 +46,7 @@ export function CountControls() {
         aria-checked={isEnabled}
         onClick={toggleMetronome}
         aria-label={t.music.click}
-        className={`flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[calc(var(--radius)*0.5)] border transition-colors ${
+        className={`flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-md border transition-colors ${
           isEnabled
             ? "border-accent bg-accent/16 text-accent-soft"
             : "border-line-strong text-fg-muted"

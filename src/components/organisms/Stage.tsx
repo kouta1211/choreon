@@ -323,7 +323,7 @@ export function EmptyStage({
           kind="primary"
           onClick={onCreateScene}
           disabled={isCreating}
-          className="relative flex h-10 items-center gap-1.5 rounded-[calc(var(--radius)*0.8333)] bg-accent px-4 text-label font-semibold whitespace-nowrap text-accent-fg disabled:opacity-50"
+          className="relative flex h-10 items-center gap-1.5 rounded-xl bg-accent px-4 text-label font-semibold whitespace-nowrap text-accent-fg disabled:opacity-50"
         >
           {t.editor.createFirstScene}
         </PressableButton>

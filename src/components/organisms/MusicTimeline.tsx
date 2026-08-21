@@ -284,7 +284,7 @@ export function MusicTimeline({ project, audioRef }: Props) {
             onClick={() => changeZoom(1 / ZOOM_BUTTON_FACTOR, viewport / 2)}
             disabled={pxPerSecond <= MIN_PX_PER_SECOND}
             aria-label={t.music.zoomOut}
-            className="flex h-7 w-7 items-center justify-center rounded-[calc(var(--radius)*0.5)] border border-line-strong text-fg-sub disabled:opacity-40"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-line-strong text-fg-sub disabled:opacity-40"
           >
             <Minus size={13} />
           </PressableButton>
@@ -293,7 +293,7 @@ export function MusicTimeline({ project, audioRef }: Props) {
             onClick={() => changeZoom(ZOOM_BUTTON_FACTOR, viewport / 2)}
             disabled={pxPerSecond >= MAX_PX_PER_SECOND}
             aria-label={t.music.zoomIn}
-            className="flex h-7 w-7 items-center justify-center rounded-[calc(var(--radius)*0.5)] border border-line-strong text-fg-sub disabled:opacity-40"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-line-strong text-fg-sub disabled:opacity-40"
           >
             <Plus size={13} />
           </PressableButton>

@@ -71,6 +71,25 @@ const eslintConfig = defineConfig([
             "JSXAttribute[name.name=/^(aria-label|title|placeholder|alt)$/] Literal[value=/[\u3040-\u30ff\u4e00-\u9fff]/]",
           message: JA_MESSAGE,
         },
+        /* 角丸の刻みを増やさない。
+           --radius からの比で書けばテーマには追従するが、名前のある段
+           (sm/md/lg/xl/2xl/3xl)の**間**を刻んだ一点物が増えると、
+           同じ板の中で角の丸みが3通りになる（2026-08-20 に16種類まで
+           増えていた）。段のどれかへ寄せる。
+           見るのは `rounded-` の直後に `[calc(` が続く形だけ。枠の内側の面
+           （`rounded-[max(0px,calc(...))]`）と、理由を書いた固定値
+           （囲んで選ぶ枠の 3px）は当たらない。 */
+        {
+          selector: "Literal[value=/rounded-.calc/]",
+          message:
+            "角丸は名前のある段（rounded-sm/md/lg/xl/2xl/3xl）へ寄せる。--radius からの比で段の間を刻まない(.claude/rules/frontend.md 6節)",
+        },
+        {
+          selector:
+            "TemplateElement[value.raw=/rounded-.calc/]",
+          message:
+            "角丸は名前のある段（rounded-sm/md/lg/xl/2xl/3xl）へ寄せる。--radius からの比で段の間を刻まない(.claude/rules/frontend.md 6節)",
+        },
       ],
     },
   },

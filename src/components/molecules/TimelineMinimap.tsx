@@ -131,7 +131,7 @@ export function TimelineMinimap({
       <motion.span
         aria-hidden
         style={{ x: frameX, width: windowWidth }}
-        className="absolute inset-y-0 left-0 block rounded-[calc(var(--radius)*0.25)] border border-accent-soft bg-accent/16"
+        className="absolute inset-y-0 left-0 block rounded-sm border border-accent-soft bg-accent/16"
       />
     </div>
   );

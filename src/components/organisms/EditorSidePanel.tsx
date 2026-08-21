@@ -56,7 +56,7 @@ export function EditorSidePanel({ project, showScenes }: Props) {
               type="button"
               aria-pressed={activeTab === item.value}
               onClick={() => setTab(item.value)}
-              className={`h-[34px] flex-1 rounded-[calc(var(--radius)*0.75)] text-xs font-medium ${
+              className={`h-[34px] flex-1 rounded-lg text-xs font-medium ${
                 activeTab === item.value
                   ? "bg-accent text-accent-fg"
                   : "text-fg-sub"

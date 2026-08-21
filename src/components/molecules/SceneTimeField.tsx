@@ -55,13 +55,13 @@ export function SceneTimeField({
   };
 
   return (
-    <div className="flex flex-col gap-2 rounded-[calc(var(--radius)*0.75)] border border-line bg-surface-sunken p-2.5">
+    <div className="flex flex-col gap-2 rounded-lg border border-line bg-surface-sunken p-2.5">
       <label htmlFor={inputId} className="flex items-center gap-2">
         <Clock size={13} className="shrink-0 text-fg-muted" />
         <span className="flex-1 text-label text-fg">
           {t.editor.scenes.timeInSong}
         </span>
-        <span className="flex shrink-0 items-center rounded-[calc(var(--radius)*0.5833)] border border-line-strong bg-surface-strong px-2 py-1 font-mono text-label text-fg focus-within:border-accent">
+        <span className="flex shrink-0 items-center rounded-md border border-line-strong bg-surface-strong px-2 py-1 font-mono text-label text-fg focus-within:border-accent">
           <input
             id={inputId}
             key={fieldKey + timeSeconds}

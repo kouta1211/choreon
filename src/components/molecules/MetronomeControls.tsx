@@ -36,7 +36,7 @@ export function MetronomeControls() {
           role="switch"
           aria-checked={isEnabled}
           onClick={toggleMetronome}
-          className={`flex h-9 shrink-0 items-center gap-1.5 rounded-[calc(var(--radius)*0.75)] border px-3 text-label font-medium transition-colors ${
+          className={`flex h-9 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-label font-medium transition-colors ${
             isEnabled
               ? "border-accent bg-accent/12 text-accent-soft"
               : "border-line-strong text-fg-sub"

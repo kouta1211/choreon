@@ -222,7 +222,7 @@ function PopoverPanel({
         maxWidth: PANEL_MAX_WIDTH,
         transform: placement.isAbove ? "translateY(-100%)" : undefined,
       }}
-      className="overlay-panel fixed z-[60] rounded-[calc(var(--radius)*1.1667)] px-[14px] py-[13px]"
+      className="overlay-panel fixed z-[60] rounded-2xl px-gutter py-3"
       onPointerDown={(event) => event.stopPropagation()}
     >
       {/* 指し先の三角。12px の正方形を45°回して、外側の2辺だけに枠線 */}
@@ -263,7 +263,7 @@ function PopoverPanel({
               action.onAction?.();
               onClose();
             }}
-            className="flex h-[30px] w-full items-center justify-center rounded-[calc(var(--radius)*0.6)] bg-accent text-label font-semibold text-accent-fg"
+            className="flex h-[30px] w-full items-center justify-center rounded-lg bg-accent text-label font-semibold text-accent-fg"
           >
             {action.label}
           </PressableButton>

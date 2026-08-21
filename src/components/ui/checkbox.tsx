@@ -23,7 +23,7 @@ export function Checkbox({
     <CheckboxPrimitive.Root
       className={cn(
         "flex h-[22px] w-[22px] shrink-0 items-center justify-center",
-        "rounded-[calc(var(--radius)*0.5)] border border-line-strong bg-surface-strong",
+        "rounded-md border border-line-strong bg-surface-strong",
         "transition-colors duration-[110ms]",
         "data-[state=checked]:border-accent data-[state=checked]:bg-accent",
         "focus-visible:ring-[3px] focus-visible:ring-accent/30 focus-visible:outline-none",

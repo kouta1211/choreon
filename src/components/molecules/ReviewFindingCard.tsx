@@ -50,7 +50,7 @@ export function ReviewFindingCard({
     <div
       data-testid="review-finding"
       data-tone={tone}
-      className="rounded-[calc(var(--radius)*0.8)] border border-line-strong bg-surface-sunken p-3"
+      className="rounded-lg border border-line-strong bg-surface-sunken p-3"
     >
       <div className="flex items-center justify-between gap-2">
         <p className="flex items-center gap-1.5 text-caption font-semibold text-fg-muted">
@@ -91,7 +91,7 @@ export function ReviewFindingCard({
           <PressableButton
             kind="primary"
             onClick={action.onAction}
-            className="mt-2.5 flex h-8 w-full items-center justify-center rounded-[calc(var(--radius)*0.6)] border border-accent bg-accent/12 text-label font-semibold text-accent-soft"
+            className="mt-2.5 flex h-8 w-full items-center justify-center rounded-lg border border-accent bg-accent/12 text-label font-semibold text-accent-soft"
           >
             {action.label}
           </PressableButton>

@@ -220,7 +220,7 @@ function RowAction({
     <PressableButton
       onClick={onClick}
       disabled={disabled}
-      className={`flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[calc(var(--radius)*0.75)] border bg-surface text-xs font-medium whitespace-nowrap disabled:opacity-50 ${
+      className={`flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border bg-surface text-xs font-medium whitespace-nowrap disabled:opacity-50 ${
         tone === "danger"
           ? "border-red-950 text-red-400"
           : "border-line-strong text-fg"

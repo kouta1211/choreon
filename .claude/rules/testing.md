@@ -38,7 +38,11 @@ npm run verify     # check:docs → lint → test:run → build
   日本語で見ている限り、画面を見ても気づけない。
   拾うのは JSX のテキスト・式の中の文字列とテンプレート・
   `aria-label` などの4つの形。直し方は
-  `src/features/i18n/messages/` の ja / en / ko へそろえて足し、`useT()` から読む
+  `src/features/i18n/messages/` の ja / en / ko へそろえて足し、`useT()` から読む。
+
+  **同じルールで、角丸の一点物も塞いである**
+  （`rounded-[calc(var(--radius)*…)]`）。理由は
+  [frontend.md](frontend.md) の2節・6項
 
 ## 2. テストはコードの隣に置く
 

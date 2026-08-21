@@ -187,7 +187,7 @@ export function Toast() {
             }}
             // 横スワイプで消す判定は板の側にある。ボタンから始めても
             // 同じように払えるよう、ここでイベントを止めない
-            className="flex h-[30px] shrink-0 items-center rounded-[calc(var(--radius)*0.6)] border border-line-strong px-[11px] text-label font-medium text-fg-strong"
+            className="flex h-[30px] shrink-0 items-center rounded-lg border border-line-strong px-3 text-label font-medium text-fg-strong"
           >
             {toast.action.label}
           </PressableButton>

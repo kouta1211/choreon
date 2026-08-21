@@ -114,7 +114,7 @@ export function SettingsApplySurface({ children }: { children: ReactNode }) {
             kind="primary"
             onClick={applyAll}
             disabled={count === 0 || hasInvalid}
-            className="flex h-11 w-full items-center justify-center rounded-[calc(var(--radius)*0.6)] border border-accent bg-accent/12 text-label font-semibold text-accent-soft disabled:border-line-strong disabled:bg-transparent disabled:text-fg-muted"
+            className="flex h-11 w-full items-center justify-center rounded-lg border border-accent bg-accent/12 text-label font-semibold text-accent-soft disabled:border-line-strong disabled:bg-transparent disabled:text-fg-muted"
           >
             {hasInvalid
               ? t.common.numberField.fixRange

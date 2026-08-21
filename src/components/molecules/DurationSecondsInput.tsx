@@ -80,7 +80,10 @@ export function DurationSecondsInput({
 
   return (
     <label
-      className={`inline-flex w-fit items-center gap-1 rounded-[calc(var(--radius)*0.5833)] border px-2 py-[3px] font-mono text-caption font-medium focus-within:border-accent ${
+      /* 上下の 3px は固定。ここはドックの中に埋まる小さなチップで、
+         名前のある段（py-0.5 = 2px / py-1 = 4px）だと**行の高さが変わって
+         ドックの高さごと動く**。ステージの大きさはドックの高さで決まる */
+      className={`inline-flex w-fit items-center gap-1 rounded-md border px-2 py-[3px] font-mono text-caption font-medium focus-within:border-accent ${
         tone === "dancer"
           ? "border-line-strong bg-surface text-red-300"
           : "border-line-strong bg-surface-strong text-fg"
