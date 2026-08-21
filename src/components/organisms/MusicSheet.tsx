@@ -118,6 +118,9 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
     }
   };
 
+  /* 曲が無くても、値が入っていれば出す（理由は下のコメント） */
+  const showOffset = Boolean(fileName) || storedOffset > 0;
+
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title={t.music.title}>
       <div className="flex flex-col gap-gutter-lg px-gutter py-gutter">
@@ -174,28 +177,116 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
                   <X size={15} />
                 </PressableButton>
               </div>
+              {/* 「この端末に控える」と「相手には付いていかない」は、同じ
+                  1つの約束の裏表。2行に割ると同じ話を2回読ませることになる。
+                  **曲が入っていないときは出さない** — まだ誰の話でもない */}
               <p className="text-caption leading-snug text-fg-muted">
-                {t.music.keptOnDevice}
+                {t.music.notShared}
               </p>
             </div>
           )}
-
-          <p className="mt-2 text-caption leading-snug text-fg-muted">
-            {t.music.notShared}
-
-          </p>
         </div>
 
-        {/* 曲が無いときだけ拍を出す。曲があるときは、そちらが時間の物差しに
-            なるので、2つの拍が同時に鳴ると合わせる先が分からなくなる */}
-        {!fileName && (
-          <div className="flex flex-col gap-2 border-t border-line pt-3.5">
-            <p className="text-label text-fg">{t.music.metronomeTitle}</p>
-            <MetronomeControls />
-            <p className="text-caption leading-snug text-fg-muted">
-              {t.music.metronomeNote}
-
+        {/* 曲があるときだけ出す。**ただし値が入っていれば、曲が無くても
+            出す** — 頭出しはクラウドに残る作品の一部で、別の端末で開くと
+            音源だけが無い。ここで隠すと「なぜ途中から鳴るのか」を
+            確かめる手段が消える（入口を塞ぐと、奥にある物が黙って死ぬ） */}
+        {showOffset && (
+          <div>
+            <label className="flex items-center gap-2.5">
+              <span className="flex-1 text-label text-fg">
+                {t.music.offset}
+              </span>
+              <span className="flex shrink-0 items-center gap-1 rounded-lg border border-line-strong bg-surface-strong px-2 py-1 font-mono text-label text-fg focus-within:border-accent">
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min={MIN_MUSIC_OFFSET}
+                  max={MAX_MUSIC_OFFSET}
+                  step={0.1}
+                  value={offsetField.draft}
+                  onChange={(event) => offsetField.setDraft(event.target.value)}
+                  /* 離れた時点では変えない（設定の数値欄と同じ作法）。
+                     下の「更新」を押すまで待つ */
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      offsetField.commit();
+                    }
+                  }}
+                  className="w-14 bg-transparent text-center outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+                <span aria-hidden className="text-fg-muted">
+                  {t.music.seconds}
+                </span>
+              </span>
+            </label>
+            {/* 範囲と、直したときの理由。設定の数値欄と同じ作法
+                (useNumberDraft)。**黙って前の値へ戻さない** — 戻すだけだと
+                「打った数が消えた」ようにしか見えない */}
+            <p
+              className={`mt-1.5 text-caption leading-snug ${
+                offsetReason ? "text-[var(--dancer-2)]" : "text-fg-muted"
+              }`}
+            >
+              {t.music.offsetNote}{" "}
+              <span className="font-mono">
+                {MIN_MUSIC_OFFSET}–{MAX_MUSIC_OFFSET}
+                {t.music.seconds}
+              </span>
+              {offsetReason &&
+                ` · ${numberCorrectionMessage(t, offsetReason, MIN_MUSIC_OFFSET, MAX_MUSIC_OFFSET)}`}
+              {!offsetReason &&
+                offsetField.isDirty &&
+                ` · ${t.common.numberField.notApplied}`}
+              {!offsetReason && !offsetField.isDirty && offsetField.justApplied
+                ? ` · ${t.common.numberField.applied}`
+                : ""}
             </p>
+
+            {/* 打ち替えている間だけ出す。**範囲の外や数でないものを打っている
+                間は押せない**（設定の「適用」と同じ決まり／実機報告 12-9） */}
+            {offsetField.isDirty && (
+              <PressableButton
+                kind="primary"
+                onClick={offsetField.commit}
+                disabled={Boolean(offsetField.invalid)}
+                className="mt-2 flex h-9 w-full items-center justify-center rounded-lg border border-accent bg-accent/12 text-label font-semibold text-accent-soft disabled:border-line-strong disabled:bg-transparent disabled:text-fg-muted"
+              >
+                {offsetField.invalid
+                  ? t.common.numberField.fixRange
+                  : t.common.numberField.apply}
+              </PressableButton>
+            )}
+
+            {/* 数字を打つだけでは**効いているかを確かめられない**（実機報告 12-3）。
+                その位置から数秒だけ鳴らす。曲が入っていないときは出さない —
+                押しても無音のボタンは、壊れているのと区別が付かない */}
+            {preview.canPreview && (
+              <>
+                <PressableButton
+                  kind="secondary"
+                  onClick={() =>
+                    preview.isPlaying
+                      ? preview.stop()
+                      : preview.play(Number(offsetField.draft) || 0)
+                  }
+                  className="mt-2 flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-line-strong text-label text-fg-sub"
+                >
+                  {preview.isPlaying ? (
+                    <>
+                      <Square size={13} />
+                      {t.music.offsetPreviewStop}
+                    </>
+                  ) : (
+                    <>
+                      <Play size={13} />
+                      {t.music.offsetPreview(PREVIEW_SECONDS)}
+                    </>
+                  )}
+                </PressableButton>
+              </>
+            )}
           </div>
         )}
 
@@ -214,105 +305,14 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
           </p>
         </div>
 
-        <div>
-          <label className="flex items-center gap-2.5">
-            <span className="flex-1 text-label text-fg">
-              {t.music.offset}
-            </span>
-            <span className="flex shrink-0 items-center gap-1 rounded-lg border border-line-strong bg-surface-strong px-2 py-1 font-mono text-label text-fg focus-within:border-accent">
-              <input
-                type="number"
-                inputMode="decimal"
-                min={MIN_MUSIC_OFFSET}
-                max={MAX_MUSIC_OFFSET}
-                step={0.1}
-                value={offsetField.draft}
-                onChange={(event) => offsetField.setDraft(event.target.value)}
-                /* 離れた時点では変えない（設定の数値欄と同じ作法）。
-                   下の「更新」を押すまで待つ */
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault();
-                    offsetField.commit();
-                  }
-                }}
-                className="w-14 bg-transparent text-center outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-              />
-              <span aria-hidden className="text-fg-muted">
-                {t.music.seconds}
-              </span>
-            </span>
-          </label>
-          {/* 範囲と、直したときの理由。設定の数値欄と同じ作法
-              (useNumberDraft)。**黙って前の値へ戻さない** — 戻すだけだと
-              「打った数が消えた」ようにしか見えない */}
-          <p
-            className={`mt-1.5 text-caption leading-snug ${
-              offsetReason ? "text-[var(--dancer-2)]" : "text-fg-muted"
-            }`}
-          >
-            {t.music.offsetNote}{" "}
-            <span className="font-mono">
-              {MIN_MUSIC_OFFSET}–{MAX_MUSIC_OFFSET}
-              {t.music.seconds}
-            </span>
-            {offsetReason &&
-              ` · ${numberCorrectionMessage(t, offsetReason, MIN_MUSIC_OFFSET, MAX_MUSIC_OFFSET)}`}
-            {!offsetReason &&
-              offsetField.isDirty &&
-              ` · ${t.common.numberField.notApplied}`}
-            {!offsetReason && !offsetField.isDirty && offsetField.justApplied
-              ? ` · ${t.common.numberField.applied}`
-              : ""}
-          </p>
-
-          {/* 打ち替えている間だけ出す。**範囲の外や数でないものを打っている
-              間は押せない**（設定の「適用」と同じ決まり／実機報告 12-9） */}
-          {offsetField.isDirty && (
-            <PressableButton
-              kind="primary"
-              onClick={offsetField.commit}
-              disabled={Boolean(offsetField.invalid)}
-              className="mt-2 flex h-9 w-full items-center justify-center rounded-lg border border-accent bg-accent/12 text-label font-semibold text-accent-soft disabled:border-line-strong disabled:bg-transparent disabled:text-fg-muted"
-            >
-              {offsetField.invalid
-                ? t.common.numberField.fixRange
-                : t.common.numberField.apply}
-            </PressableButton>
-          )}
-
-          {/* 数字を打つだけでは**効いているかを確かめられない**（実機報告 12-3）。
-              その位置から数秒だけ鳴らす。曲が入っていないときは出さない —
-              押しても無音のボタンは、壊れているのと区別が付かない */}
-          {preview.canPreview && (
-            <>
-              <PressableButton
-                kind="secondary"
-                onClick={() =>
-                  preview.isPlaying
-                    ? preview.stop()
-                    : preview.play(Number(offsetField.draft) || 0)
-                }
-                className="mt-2 flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-line-strong text-label text-fg-sub"
-              >
-                {preview.isPlaying ? (
-                  <>
-                    <Square size={13} />
-                    {t.music.offsetPreviewStop}
-                  </>
-                ) : (
-                  <>
-                    <Play size={13} />
-                    {t.music.offsetPreview(PREVIEW_SECONDS)}
-                  </>
-                )}
-              </PressableButton>
-              <p className="mt-1 text-caption leading-snug text-fg-muted">
-                {t.music.offsetPreviewNote}
-              </p>
-            </>
-          )}
-        </div>
+        {/* 曲を用意する前の、仮の物差し。曲があるときは出さない —
+            2つの拍が同時に鳴ると、合わせる先が分からなくなる */}
+        {!fileName && (
+          <div className="flex flex-col gap-2">
+            <p className="text-label text-fg">{t.music.metronomeTitle}</p>
+            <MetronomeControls />
+          </div>
+        )}
 
         <div className="rounded-xl border border-line px-3 py-2.5">
           <p className="font-mono text-caption text-fg-muted">

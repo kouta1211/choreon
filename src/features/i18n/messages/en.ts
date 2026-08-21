@@ -746,27 +746,21 @@ export const en = {
     file: "Music file",
     remove: "Remove the track",
     titleFailed: "Could not save the track name",
-    keptOnDevice: "Kept on this device. It is still here when you come back.",
     notShared:
-      "The audio never leaves this device. Sharing a piece does not carry the track, so ask the other person to pick the same one (the start position is shared).",
+      "Kept on this device, so it plays when you come back — but it does not travel to the people you share with (only the start position does).",
     metronomeTitle: "A beat when there is no music",
-    metronomeNote:
-      "Hear the tempo of the choreography before you have a track. It only sounds while playback is running.",
     metronome: "Metronome",
     click: "Sound the click",
     clickWithMusic: "No click while a track is loaded (the track keeps time)",
     bpm: "Tempo (BPM)",
     beatsPerBar: "Time signature",
     beatsPerBarNote:
-      "It does not change the eight-count you count in. It only changes which beat the metronome accents, and which lines are drawn thick on the timeline.",
+      "Only changes which beat the metronome accents and which timeline lines are thick (the eight-count is unaffected).",
     offset: "Start position in the track",
     seconds: "s",
     offsetPreview: (seconds: number) => `Play ${seconds}s from here`,
     offsetPreviewStop: "Stop",
-    offsetPreviewNote:
-      "The number alone does not tell you where in the song that is. Have a listen.",
-    offsetNote:
-      "Use this when the choreography starts partway into the track. If the intro is 12.5 seconds, enter 12.5 and playback starts there.",
+    offsetNote: "For skipping the intro and starting partway in.",
     offsetFailed: "Could not save the start position",
     span: (total: number, from: string, to: string) =>
       `${total}s end to end · ${from} – ${to}`,
