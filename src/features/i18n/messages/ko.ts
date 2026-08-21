@@ -454,6 +454,13 @@ export const ko = {
     skip: "skip",
   },
 
+  notFound: {
+    title: "찾을 수 없음 — Choreon",
+    heading: "이 페이지를 찾을 수 없습니다",
+    body: "주소가 다르거나, 공유 링크가 다시 만들어져 열리지 않습니다. 링크를 보낸 사람에게 새 링크를 받아 주세요.",
+    toProjects: "작품 목록으로",
+  },
+
   offline: {
     title: "오프라인 — Choreon",
     heading: "지금 연결이 되지 않습니다",

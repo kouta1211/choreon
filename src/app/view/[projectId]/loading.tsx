@@ -51,7 +51,7 @@ export default function ViewerLoading() {
 
         <div className="shrink-0 px-3.5 pt-2">
           {/* 道順の1行 */}
-          <SkeletonBox className="h-14 w-full rounded-[calc(var(--radius)*1.0833)]" />
+          <SkeletonBox className="h-14 w-full rounded-xl" />
           <SkeletonBox className="mt-2 h-14 w-full" />
           <div className="mt-1 flex items-center gap-2">
             <SkeletonBox className="h-9 w-9 shrink-0 rounded-full" />

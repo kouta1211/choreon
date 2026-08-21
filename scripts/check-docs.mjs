@@ -154,11 +154,42 @@ for (const f of docs) {
   }
 }
 
+/* 5. 動作確認の台本で、同じキーを2回書いていないか。
+   台本の項目は JS のオブジェクトなので、`ng` を2つ書くと
+   **後ろが勝って、前の1行は誰にも読まれないまま消える**。
+   壊れて見えないので、書いた本人も気づけない(2026-08-21 に3件見つかった)。
+   ここは .md ではないので、上の4つとは別に見る。 */
+const CHECKLIST = "docs/qa-checklist.html";
+if (fs.existsSync(CHECKLIST)) {
+  const lines = fs.readFileSync(CHECKLIST, "utf8").split("\n");
+  const KEY = /^\s*(n|do|ok|ng|only|title|note):/;
+  let seen = null;
+  for (const [index, line] of lines.entries()) {
+    const matched = line.match(KEY);
+    if (!matched) continue;
+    const key = matched[1];
+    // 1項目は do（章は title）で始まる
+    if (key === "do" || key === "title") seen = new Map();
+    if (!seen) continue;
+    counts.checklistKeys = (counts.checklistKeys ?? 0) + 1;
+    if (seen.has(key)) {
+      fail(
+        "duplicateKey",
+        `${CHECKLIST}:${index + 1}`,
+        `${key}:`,
+        `同じ項目に ${key} が2つある(${seen.get(key)}行目と重複)。後ろが勝って前が消える`,
+      );
+    }
+    seen.set(key, index + 1);
+  }
+}
+
 const summary = [
   `リンク       ${counts.links ?? 0} 件`,
   `パス参照     ${counts.paths ?? 0} 件`,
   `識別子       ${counts.symbols ?? 0} 件`,
   `コマンド行   ${counts.commands ?? 0} 件`,
+  `台本のキー   ${counts.checklistKeys ?? 0} 件`,
   `検査ファイル ${docs.length} 件`,
 ].join(" / ");
 

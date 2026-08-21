@@ -456,6 +456,13 @@ export const en = {
     skip: "Skip",
   },
 
+  notFound: {
+    title: "Not found — Choreon",
+    heading: "This page could not be found",
+    body: "Either the address is wrong, or the share link was re-issued and no longer opens. Ask whoever sent it for a new one.",
+    toProjects: "Go to your pieces",
+  },
+
   offline: {
     title: "Offline — Choreon",
     heading: "There is no connection right now",

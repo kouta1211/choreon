@@ -19,10 +19,10 @@ export default function HomeLoading() {
       <div className="flex flex-1 flex-col px-4 py-8">
         <div className="mx-auto w-full max-w-md space-y-4 md:max-w-3xl">
           <div className="flex items-center gap-3">
-            <SkeletonBox className="h-11 w-11 rounded-[calc(var(--radius)*1.0833)]" />
+            <SkeletonBox className="h-11 w-11 rounded-xl" />
             <SkeletonBox className="h-6 w-32" />
             <span className="flex-1" />
-            <SkeletonBox className="h-11 w-11 rounded-[calc(var(--radius)*1.0833)]" />
+            <SkeletonBox className="h-11 w-11 rounded-xl" />
           </div>
 
           <div className="flex items-center gap-3">
