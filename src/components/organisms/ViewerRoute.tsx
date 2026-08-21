@@ -121,7 +121,7 @@ export function ViewerRoute() {
                 <span className="text-fg-sub"> {current.turn}</span>
               )}
               <span className="text-fg-muted">
-                （{current.seconds.toFixed(1)}秒かけて）
+                {t.viewer.route.travelSecondsAside(current.seconds.toFixed(1))}
               </span>
             </>
           ) : (
@@ -200,7 +200,7 @@ export function ViewerRoute() {
                     </span>
                     <span className="mt-0.5 block font-mono text-caption text-fg-muted">
                       {formatClock(step.timeSeconds)} ·{" "}
-                      {step.seconds.toFixed(1)}秒かけて
+                      {t.viewer.route.travelSeconds(step.seconds.toFixed(1))}
                       {isHere && t.viewer.route.hereNow}
                     </span>
                   </span>

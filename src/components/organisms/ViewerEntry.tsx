@@ -63,8 +63,11 @@ export function ViewerEntry() {
           {project.title}
         </h1>
         <p className="mt-1 font-mono text-caption text-fg-muted">
-          {scenes.length} シーン · {dancers.length} 人 ·{" "}
-          {formatMinutes(totalSeconds)}
+          {t.viewer.entry.counts(
+            scenes.length,
+            dancers.length,
+            formatMinutes(totalSeconds),
+          )}
         </p>
       </div>
 

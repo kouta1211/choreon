@@ -83,6 +83,7 @@
 | `any` 禁止 | ESLint `no-explicit-any` が error。`src/` の使用箇所は 0 |
 | 型の厳格さ | `tsconfig.json` の `strict: true` |
 | **保存し忘れ**（`await` の付け忘れ） | ESLint `no-floating-promises` が error（`src/` の本番コードのみ）。意図して投げっぱなしにするものは `void` を付ける |
+| **文言の直書き**（3言語をすり抜ける） | ESLint `no-restricted-syntax` が error（`src/**/*.tsx`）。JSX の中の日本語を捕まえる。読むのは `useT()` |
 | 全体 | `npm run verify`（lint → test → build）。**落ちたまま次へ進まない** |
 
 ### 2. 検索したら、どちらのアプリか確かめる

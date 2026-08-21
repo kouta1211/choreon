@@ -169,7 +169,7 @@ export function DisplayModeMenu({
         <DropdownMenuLabel>
           {t.editor.view.title}
           <span className="font-mono text-mono-s font-normal tracking-normal">
-            {dancerCount}人 · {sceneCount}シーン
+            {t.editor.view.counts(dancerCount, sceneCount)}
           </span>
         </DropdownMenuLabel>
 

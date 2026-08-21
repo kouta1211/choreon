@@ -424,6 +424,7 @@ export const en = {
 
   confirm: {
     cannotUndo: "Deleting cannot be undone.",
+    undoableNote: "(Moves and turns can be taken back with Undo.)",
     cancel: "Cancel",
     deleting: "Deleting…",
     delete: "Delete",
@@ -539,6 +540,8 @@ export const en = {
       stepsNote: "Steps are an estimate: 60 cm a step, 90 cm a square.",
       sidesNote: "Left and right are as the audience sees them.",
       fast: " — quick",
+      travelSeconds: (seconds: string) => `over ${seconds}s`,
+      travelSecondsAside: (seconds: string) => `(over ${seconds}s)`,
       hereNow: " · you are here",
       tooFast: "Too fast to walk",
       reselect: "Pick a different position",
@@ -555,6 +558,8 @@ export const en = {
       question: "Which one are you?",
       note: "Once you pick, the view focuses on you.",
       position: (name: string) => `${name}'s position`,
+      counts: (scenes: number, dancers: number, total: string) =>
+        `${scenes} scenes · ${dancers} dancers · ${total}`,
       pick: "Pick yourself",
       pickNamed: (name: string) => `Watch as ${name}`,
       skip: "Skip and watch everyone",
@@ -719,6 +724,7 @@ export const en = {
     running: (seconds: number) =>
       `Recording… ${seconds}s left. Please keep this screen open.`,
     cancel: "Stop",
+    start: (seconds: number) => `Make a ${seconds}s video`,
     note: "Recording takes as long as the piece itself, because it is played through as it records.",
     contains:
       "In the video: the stage, the grid, the dancers (with their facing triangle), the upstage/downstage labels, and the clock.",
@@ -793,6 +799,7 @@ export const en = {
     },
     list: {
       title: "Dancers",
+      count: (n: number) => `${n}`,
       empty: "Nobody is in this scene yet.",
       sortLabel: "Sort",
       sorts: { added: "Added", name: "Name" },

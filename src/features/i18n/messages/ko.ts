@@ -422,6 +422,7 @@ export const ko = {
 
   confirm: {
     cannotUndo: "삭제는 되돌릴 수 없습니다.",
+    undoableNote: "(이동과 방향 변경은 「실행 취소」로 되돌릴 수 있습니다)",
     cancel: "취소",
     deleting: "삭제 중...",
     delete: "삭제하기",
@@ -533,6 +534,8 @@ export const ko = {
       stepsNote: "걸음 수는 한 걸음 60cm·한 칸 90cm로 계산한 어림값입니다.",
       sidesNote: "상수／하수는 객석에서 본 방향입니다.",
       fast: " — 빠름",
+      travelSeconds: (seconds: string) => `${seconds}초에 걸쳐`,
+      travelSecondsAside: (seconds: string) => `(${seconds}초에 걸쳐)`,
       hereNow: " · 지금 여기",
       tooFast: "걸어서는 갈 수 없는 속도입니다",
       reselect: "포지션 다시 고르기",
@@ -549,6 +552,8 @@ export const ko = {
       question: "본인은 누구인가요?",
       note: "선택하면 그 사람에게 초점을 맞춥니다.",
       position: (name: string) => `${name}의 위치`,
+      counts: (scenes: number, dancers: number, total: string) =>
+        `${scenes} 장면 · ${dancers} 명 · ${total}`,
       pick: "본인을 골라 주세요",
       pickNamed: (name: string) => `'${name}'(으)로 보기`,
       skip: "고르지 않고 전체 보기",
@@ -708,6 +713,7 @@ export const ko = {
     running: (seconds: number) =>
       `내보내는 중… ${seconds}초 남았습니다. 이 화면을 닫지 말고 기다려 주세요.`,
     cancel: "중단",
+    start: (seconds: number) => `${seconds}초 영상 만들기`,
     note: "내보내기는 작품과 같은 시간이 걸립니다(실제로 재생하면서 녹화하기 때문입니다).",
     contains: "들어가는 것: 무대·격자·댄서(방향 삼각형 포함)·위아래 표시·시각.",
     omits:
@@ -780,6 +786,7 @@ export const ko = {
     },
     list: {
       title: "댄서",
+      count: (n: number) => `${n}명`,
       empty: "이 장면에는 아직 아무도 없습니다.",
       sortLabel: "정렬",
       sorts: { added: "추가순", name: "이름순" },

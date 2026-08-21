@@ -461,6 +461,8 @@ export const ja = {
 
   confirm: {
     cannotUndo: "削除は元に戻せません。",
+    /** 履歴で戻せるものとの違い。ここが無いと「元に戻す」で戻せると思われる */
+    undoableNote: "（移動や向きの変更は「元に戻す」で戻せます）",
     cancel: "キャンセル",
     deleting: "削除中...",
     delete: "削除する",
@@ -574,6 +576,9 @@ export const ja = {
       stepsNote: "歩数は 1歩 60cm・1マス 90cm で計算した目安です。",
       sidesNote: "上手／下手は客席から見た向きです。",
       fast: " — 速め",
+      travelSeconds: (seconds: string) => `${seconds}秒かけて`,
+      /** 道順の1行の後ろに添える形。括弧の形は言語で変わる */
+      travelSecondsAside: (seconds: string) => `（${seconds}秒かけて）`,
       hereNow: " · 現時点",
       tooFast: "歩いて間に合わない速さです",
       reselect: "ポジションを選び直す",
@@ -592,6 +597,9 @@ export const ja = {
       question: "あなたはどれですか",
       note: "選択後、あなたにフォーカスします。",
       position: (name: string) => `${name} の立ち位置`,
+      /** 作品の見出しに添える規模。見る人が最初に読む1行 */
+      counts: (scenes: number, dancers: number, total: string) =>
+        `${scenes} シーン · ${dancers} 人 · ${total}`,
       pick: "自分を選んでください",
       pickNamed: (name: string) => `「${name}」で見る`,
       skip: "選ばずに全員を見る",
@@ -763,6 +771,7 @@ export const ja = {
     running: (seconds: number) =>
       `書き出し中… 残り ${seconds}秒。この画面を閉じずにお待ちください。`,
     cancel: "中止する",
+    start: (seconds: number) => `${seconds}秒の動画を作る`,
     note: "書き出しには作品と同じだけ時間がかかります(実際に動かしながら録っているため)。",
     contains:
       "入るのは、ステージ・格子・ダンサー(向きの三角つき)・上下の札・時刻です。",
@@ -838,6 +847,7 @@ export const ja = {
     },
     list: {
       title: "ダンサー",
+      count: (n: number) => `${n}人`,
       empty: "このシーンにはまだ誰もいません。",
       sortLabel: "並べ替え",
       sorts: { added: "追加順", name: "名前順" },

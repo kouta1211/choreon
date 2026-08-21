@@ -57,7 +57,7 @@ export function DancerList() {
           {t.dancer.list.title}
         </span>
         <span className="shrink-0 font-mono text-caption text-fg-muted">
-          {rows.length}人
+          {t.dancer.list.count(rows.length)}
         </span>
       </div>
 

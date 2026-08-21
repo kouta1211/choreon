@@ -2,6 +2,10 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 
+/** 直書きを見つけたときに出す言葉。4つの形で同じことを言う */
+const JA_MESSAGE =
+  "画面に出す文字列を直書きしない。src/features/i18n/messages/ の ja / en / ko へそろえて足し、useT() から読む(直書きは型検査をすり抜け、日本語以外で開いた人にだけ日本語が出る)";
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -30,6 +34,44 @@ const eslintConfig = defineConfig([
     rules: {
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/await-thenable": "error",
+    },
+  },
+  // 画面に出す文字列の直書きを、機械で捕まえる。
+  //
+  // 文言は ja / en / ko の3つそろえる決まりで、型はそこを見張っている。
+  // だが **JSX に直に書いた日本語は、その型検査をすり抜ける** —
+  // 英語や韓国語で開いた人にだけ日本語が出る、という壊れ方をする。
+  // 画面を見ても、日本語で見ている限り気づけない。
+  //
+  // 2026-08-20 に共有シート、2026-08-21 に動画の書き出しで見つけたので、
+  // 3度目を待たずに仕掛けへ上げた。直し方は
+  // src/features/i18n/messages/ へ3言語そろえて足し、useT() から読む。
+  {
+    files: ["src/**/*.tsx"],
+    ignores: ["src/**/*.test.tsx", "src/features/i18n/**"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "JSXText[value=/[\u3040-\u30ff\u4e00-\u9fff]/]",
+          message: JA_MESSAGE,
+        },
+        {
+          selector:
+            "JSXExpressionContainer Literal[value=/[\u3040-\u30ff\u4e00-\u9fff]/]",
+          message: JA_MESSAGE,
+        },
+        {
+          selector:
+            "JSXExpressionContainer TemplateElement[value.raw=/[\u3040-\u30ff\u4e00-\u9fff]/]",
+          message: JA_MESSAGE,
+        },
+        {
+          selector:
+            "JSXAttribute[name.name=/^(aria-label|title|placeholder|alt)$/] Literal[value=/[\u3040-\u30ff\u4e00-\u9fff]/]",
+          message: JA_MESSAGE,
+        },
+      ],
     },
   },
   // Override default ignores of eslint-config-next.

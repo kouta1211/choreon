@@ -135,7 +135,7 @@ export function ConfirmDialog() {
           {isDestructive && (
             <p className="text-caption text-fg-muted">
               <span className="text-fg-sub">{t.confirm.cannotUndo}</span>
-              （移動や向きの変更は「元に戻す」で戻せます）
+              {t.confirm.undoableNote}
             </p>
           )}
         </div>
