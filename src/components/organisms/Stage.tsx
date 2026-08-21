@@ -45,20 +45,12 @@ type Props = {
    * 読み取れるためのための参照(React 19からforwardRef不要でrefを
    * 通常のpropsとして受け取れる) */
   ref?: Ref<HTMLDivElement>;
-  /** ステージを横に払って前後のシーンへ移るジェスチャの受け口。
-   * 渡された場合だけ、ブラウザに横スワイプを奪われないようにする */
-  scrubHandlers?: {
+  /** ステージの何も無いところのドラッグ＝囲んで選ぶ、の受け口 */
+  stagePointerHandlers?: {
     onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void;
     onPointerMove: (event: ReactPointerEvent<HTMLDivElement>) => void;
     onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => void;
   };
-  /** 払ってシーンを送る操作が有効か。有効なときだけ、横スワイプを
-   * ブラウザに奪われないようにする(切っているのに touch-action を
-   * 潰すと、ページの操作を理由なく制限することになる) */
-  isSwipeEnabled?: boolean;
-  /** スクラブの進み具合。トラックと一緒に動いてしまわないよう、
-   * 切り落とす層の外側に重ねる */
-  scrubIndicator?: ReactNode;
 };
 
 /**
@@ -79,9 +71,7 @@ export function Stage({
   belowStageLeft,
   belowStageRight,
   ref,
-  scrubHandlers,
-  isSwipeEnabled = false,
-  scrubIndicator,
+  stagePointerHandlers,
 }: Props) {
   const t = useT();
   const gridMode = useUIStore((state) => state.gridMode);
@@ -113,10 +103,8 @@ export function Stage({
     >
       <div
         data-tour="stage"
-        className={`relative flex min-h-0 w-full flex-1 items-center justify-center [container-type:size] ${
-          isSwipeEnabled ? "touch-none" : ""
-        }`}
-        {...scrubHandlers}
+        className="relative flex min-h-0 w-full flex-1 items-center justify-center [container-type:size]"
+        {...stagePointerHandlers}
       >
         <div
           ref={ref}
@@ -272,7 +260,6 @@ export function Stage({
             </span>
           )}
         </div>
-        {scrubIndicator}
       </div>
     </div>
   );

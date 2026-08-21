@@ -17,7 +17,6 @@ import { EditorTour } from "@/components/organisms/EditorTour";
 import { UnsavedChangesGuard } from "@/components/organisms/UnsavedChangesGuard";
 import { useGuestDraftAutosave } from "@/features/project/hooks/useGuestDraftAutosave";
 import { useSceneThumbnails } from "@/features/scene/hooks/useSceneThumbnails";
-import { SceneScrubProvider } from "@/features/canvas/hooks/useSceneScrub";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
@@ -135,7 +134,6 @@ export function EditorLayout({
   }, [setSettingsScope, loadViewPreference, isGuest, project.id]);
 
   return (
-    <SceneScrubProvider>
       <div className="flex h-dvh flex-col overflow-clip pb-[max(24px,env(safe-area-inset-bottom))]">
         <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col overflow-clip md:max-[1199px]:max-w-3xl min-[1200px]:max-w-[1400px]">
           <EditorHeader project={live} />
@@ -196,6 +194,5 @@ export function EditorLayout({
           <EditorTour />
         </div>
       </div>
-    </SceneScrubProvider>
   );
 }

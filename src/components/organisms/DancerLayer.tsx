@@ -14,7 +14,6 @@ import {
 import { getSceneStep } from "@/features/canvas/lib/sceneStep";
 import { useGroupDrag } from "@/features/canvas/hooks/useGroupDrag";
 import { movingWith } from "@/features/canvas/lib/groupMove";
-import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
 import { useSceneWarnings } from "@/features/canvas/hooks/useSceneWarnings";
 import {
   EMPTY_POSITIONS,
@@ -128,14 +127,6 @@ export function DancerLayer({
       state.positionsBySceneId[previousSceneId ?? ""] ?? EMPTY_POSITIONS,
   );
 
-  // ステージを横にドラッグしている最中の移動先。掴んでいない間はnull
-  const scrub = useSceneScrub();
-  const scrubTargetSceneId = scrub?.targetSceneId ?? null;
-  const scrubTargetPositions = useProjectStore(
-    (state) =>
-      state.positionsBySceneId[scrubTargetSceneId ?? ""] ?? EMPTY_POSITIONS,
-  );
-
   // 今通っている区間の情報がどちらのシーン側にあるか。戻るときだけ
   // 「さっきまでいたシーン」側に入っている
   const segmentPositions = isBackwardStep ? previousPositions : positions;
@@ -188,18 +179,10 @@ export function DancerLayer({
   const movingSeconds =
     durations[scenes.findIndex((scene) => scene.id === segmentScene?.id)] ?? 0;
 
-  // 描くダンサー。通常は選択中シーンに座標を持つ人だけだが、スクラブ中は
-  // 移動先にしか居ない人も描き始める(そうしないと、指で half まで引いた時点で
-  // 「これから出てくる人」が画面に居らず、確定した瞬間に唐突に現れる)
-  const renderedDancerIds = useMemo(() => {
-    const ids = Object.keys(positions);
-    if (!scrubTargetSceneId) return ids;
-    const seen = new Set(ids);
-    for (const id of Object.keys(scrubTargetPositions)) {
-      if (!seen.has(id)) ids.push(id);
-    }
-    return ids;
-  }, [positions, scrubTargetSceneId, scrubTargetPositions]);
+  // 描くのは、選択中シーンに座標を持つ人だけ。
+  // 以前はここに「払っている間の移動先にだけ居る人」も足していたが、
+  // 払って送る操作ごと畳んだので落とした(2026-08-21)
+  const renderedDancerIds = useMemo(() => Object.keys(positions), [positions]);
 
   return (
     <>
@@ -270,11 +253,7 @@ export function DancerLayer({
         const dancer = dancers[dancerId];
         if (!dancer) return null;
 
-        const position = positions[dancerId];
-        const scrubTarget = scrubTargetPositions[dancerId];
-        // 選択中シーンに居ない = スクラブの移動先にだけ居る人。
-        // 足場が無いので、移動先の座標にそのまま置いて濃さで出入りさせる
-        const anchor = position ?? scrubTarget;
+        const anchor = positions[dancerId];
         if (!anchor) return null;
 
         // この区間ぶんの設定(曲線の制御点・ダンサー個別の遷移時間)が入った行。
@@ -307,10 +286,6 @@ export function DancerLayer({
             collisionWithName={
               dancers[collisions.get(dancer.id)?.withDancerId ?? ""]?.name ?? ""
             }
-            scrubFromX={position?.xCoordinate ?? null}
-            scrubFromY={position?.yCoordinate ?? null}
-            scrubToX={scrubTarget?.xCoordinate ?? null}
-            scrubToY={scrubTarget?.yCoordinate ?? null}
           />
         );
       })}

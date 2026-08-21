@@ -23,7 +23,6 @@ import { HistoryControls } from "@/components/organisms/HistoryControls";
 import { TemplateButton } from "@/components/organisms/TemplateButton";
 import { DancerLayer } from "@/components/organisms/DancerLayer";
 import { StageContextMenu } from "@/components/organisms/StageContextMenu";
-import { ScrubProgressBar } from "@/components/molecules/ScrubProgressBar";
 import {
   positionAt,
   useProjectStore,
@@ -47,8 +46,6 @@ import { usePositionCommit } from "@/features/scene/hooks/usePositionCommit";
 import { useDropCommit } from "@/features/scene/hooks/useDropCommit";
 import { groupMoveChanges } from "@/features/canvas/lib/groupMove";
 import { useHydrateProject } from "@/features/project/hooks/useHydrateProject";
-import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
-import { useStageScrubGesture } from "@/features/canvas/hooks/useStageScrubGesture";
 import { GroupDragProvider } from "@/features/canvas/hooks/useGroupDrag";
 import { useMarqueeSelection } from "@/features/canvas/hooks/useMarqueeSelection";
 import type { Project } from "@/features/project/types";
@@ -201,23 +198,12 @@ export function CanvasBoard({
     return modifiers.length > 0 ? modifiers : undefined;
   }, [isSnapEnabled, gridSnapModifier, groupBoundsModifier]);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
-  const selectScene = useUIStore((state) => state.selectScene);
   const selectDancer = useUIStore((state) => state.selectDancer);
   const setDragSnapLine = useUIStore((state) => state.setDragSnapLine);
   const commitPositions = usePositionCommit();
   /* 掴んで置いたときの確定。重なりの手当てまで含めてここが持つ */
   const commitDrop = useDropCommit();
 
-  // ステージを払って前後のシーンへ移るジェスチャ。ダンサーのドラッグ
-  // (dnd-kit)とは掴む対象で住み分けており、ダンサーとボタンの上から
-  // 始まった指はこちらでは拾わない(useStageScrubGesture参照)。
-  //
-  // 払う向きは**シーンが並んでいる向きに合わせる**。スマホはステージの下に
-  // 横並びの帯、PCは左右のペインに縦並びなので、そのまま横/縦が入れ替わる。
-  // 「PCでは横に払っても、その方向にシーンが無い」という指摘への答え
-  const scenes = useProjectStore((state) => state.scenes);
-  const scrub = useSceneScrub();
-  const sceneIds = useMemo(() => scenes.map((scene) => scene.id), [scenes]);
   /* 囲んで選ぶ枠。**style を直に書き換える**ので、動かしても React は
      描き直さない（ダンサーの丸が全部描き直されると重い） */
   const marqueeRef = useRef<HTMLDivElement>(null);
@@ -231,17 +217,19 @@ export function CanvasBoard({
   });
 
   /**
-   * ステージの何も無いところのドラッグを、**入力機器で振り分ける**。
+   * ステージの何も無いところのドラッグ＝**囲んで選ぶ**。
    *
-   * マウス＝囲んで選ぶ、指＝これまで通りシーンを送る。同じ場所の同じ
-   * ドラッグに2つの意味を持たせられないので、どちらか一方を捨てるのでは
-   * なく機器で分けた（2026-08-18、PC 特化）。PC でシーンを送る道は
-   * ← → キー・下の帯のコマ・ドックに残っている。
+   * 以前はここで入力機器を見て、マウスなら囲む・指ならシーンを送る、と
+   * 振り分けていた。**払って送る操作は幅の方針転換で入口ごと消えた**ので
+   * (2026-08-20)、振り分ける相手が居ない。指で払っても何も起きない —
+   * 作る画面は 768px 以上でしか開けず、そこはマウスの土俵という前提
+   * (README フェーズ6)。PC でシーンを送る道は ← → キー・下の帯のコマ・
+   * ドックにある。
    *
    * 始めた側が最後まで持つ（途中で入れ替わると、離した時の後片付けが
-   * どちらでも走らない）。
+   * 走らない）。
    */
-  const activeGesture = useRef<"marquee" | "scrub" | null>(null);
+  const isMarqueeActive = useRef(false);
 
   /* いま掴まれている人。選択中の他の人を一緒に動かすために要る
      (2026-08-18、報告 18-2)。移動量そのものは MotionValue で配るので、
@@ -251,56 +239,24 @@ export function CanvasBoard({
   const groupOffsetX = useMotionValue(0);
   const groupOffsetY = useMotionValue(0);
 
-  /* 作る画面では、払ってのシーン送りは受け付けない。
-
-     もともとスマホ幅だけの操作だったが(2026-08-18、報告 18-11)、
-     **その幅では作る画面に入れなくなった**ので、切り替える相手が居ない
-     (2026-08-20)。設定とメニューからも項目を落としてある。
-     ここを true にすると、横の払いが【囲んで選ぶ】と場所を取り合う。
-     閲覧画面(スマホ)の横払いは別の作りで、そのまま残っている */
-  const isSwipeEnabled = false;
-
-  const scrubHandlers = useStageScrubGesture({
-    stageRef,
-    sceneIds,
-    selectedSceneId,
-    selectScene,
-    selectDancer,
-    isSwipeEnabled,
-    axis: "x",
-    scrub,
-  });
-
-  /* マウスなら囲む、指ならこれまで通り送る。**始めた側が最後まで持つ** */
+  /* 囲むのはマウスのときだけ。**指では何も起きない**（上のコメント）。
+     始めた側が最後まで持つので、離すまで ref で覚えておく */
   const stagePointerHandlers = useMemo(
     () => ({
       onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => {
-        activeGesture.current =
-          event.pointerType === "mouse" ? "marquee" : "scrub";
-        if (activeGesture.current === "marquee") {
-          marqueeHandlers.onPointerDown(event);
-        } else {
-          scrubHandlers.onPointerDown(event);
-        }
+        isMarqueeActive.current = event.pointerType === "mouse";
+        if (isMarqueeActive.current) marqueeHandlers.onPointerDown(event);
       },
       onPointerMove: (event: ReactPointerEvent<HTMLDivElement>) => {
-        if (activeGesture.current === "marquee") {
-          marqueeHandlers.onPointerMove(event);
-        } else if (activeGesture.current === "scrub") {
-          scrubHandlers.onPointerMove(event);
-        }
+        if (isMarqueeActive.current) marqueeHandlers.onPointerMove(event);
       },
       onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => {
-        const owner = activeGesture.current;
-        activeGesture.current = null;
-        if (owner === "marquee") {
-          marqueeHandlers.onPointerUp(event);
-        } else if (owner === "scrub") {
-          scrubHandlers.onPointerUp(event);
-        }
+        const wasActive = isMarqueeActive.current;
+        isMarqueeActive.current = false;
+        if (wasActive) marqueeHandlers.onPointerUp(event);
       },
     }),
-    [marqueeHandlers, scrubHandlers],
+    [marqueeHandlers],
   );
 
   useHydrateProject({
@@ -619,9 +575,7 @@ export function CanvasBoard({
         <StageContextMenu>
           <Stage
             ref={stageRef}
-            scrubHandlers={stagePointerHandlers}
-            isSwipeEnabled={isSwipeEnabled}
-            scrubIndicator={<ScrubProgressBar />}
+            stagePointerHandlers={stagePointerHandlers}
             widthUnits={project.stageWidth}
             heightUnits={project.stageHeight}
             belowStageLeft={<TemplateButton />}

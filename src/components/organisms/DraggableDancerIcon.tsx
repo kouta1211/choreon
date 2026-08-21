@@ -55,15 +55,6 @@ type Props = {
   collision?: Collision | null;
   /** ぶつかる相手の名前(警告文で使う) */
   collisionWithName?: string;
-  /** ステージを横にドラッグしている間の、区間の両端でのこのダンサーの位置
-   * (ステージ座標系)。ダンサーは追加したシーンにしか座標を持たないため
-   * (AddDancerSheet参照)、途中から出てくる・途中で捌ける人は片側がnullになる。
-   * オブジェクトではなくスカラーで渡しているのは、このコンポーネントがmemo化
-   * されているため。毎レンダー新しいオブジェクトを作ると比較が必ず外れる */
-  scrubFromX?: number | null;
-  scrubFromY?: number | null;
-  scrubToX?: number | null;
-  scrubToY?: number | null;
 };
 
 /**
@@ -115,14 +106,10 @@ function DraggableDancerIconImpl({
   isBlocked = false,
   collision = null,
   collisionWithName = "",
-  scrubFromX = null,
-  scrubFromY: stageScrubFromY = null,
-  scrubToX = null,
-  scrubToY: stageScrubToY = null,
 }: Props) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   // 客席を上にして描くか。ここから下は【画面の向き】で考える。
-  // 受け取ったYを1回だけ写し、以降(位置・曲線・スクラブ・掴む・向き)は
+  // 受け取ったYを1回だけ写し、以降(位置・曲線・掴む・向き)は
   // すべて写した値で通す。ステージ座標へ戻すのは、置いた位置を確定する
   // ときだけ(CanvasBoard の handleDragEnd / handleNudge)
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
@@ -132,8 +119,6 @@ function DraggableDancerIconImpl({
   const y = flipY(stageY);
   const curveControlY =
     stageCurveControlY == null ? stageCurveControlY : flipY(stageCurveControlY);
-  const scrubFromY = stageScrubFromY == null ? null : flipY(stageScrubFromY);
-  const scrubToY = stageScrubToY == null ? null : flipY(stageScrubToY);
   // dataは格子スナップ用のModifier(gridSnapModifier)がactive.data.current経由で
   // 読み取る。ドラッグ開始時点の座標とステージサイズが分からないと、px単位の
   // transformをステージ座標系に変換できないため
@@ -248,16 +233,6 @@ function DraggableDancerIconImpl({
   // 制御点もステージ座標系から%へ直しておく(x/yと同じ土俵に乗せる)。
   // 片方だけ設定されている状態は曲線として意味を成さないので直線扱いにする
   const hasCurve = curveControlX != null && curveControlY != null;
-  const toPoint = (
-    pointX: number | null,
-    pointY: number | null,
-  ): { x: number; y: number } | null =>
-    pointX == null || pointY == null
-      ? null
-      : {
-          x: (pointX / stageWidthUnits) * 100,
-          y: (pointY / stageHeightUnits) * 100,
-        };
 
   const { left, top, opacity } = useDancerMotion({
     leftPercent,
@@ -270,8 +245,6 @@ function DraggableDancerIconImpl({
       : null,
     isDragging,
     transitionDurationSeconds,
-    scrubFrom: toPoint(scrubFromX, scrubFromY),
-    scrubTo: toPoint(scrubToX, scrubToY),
     dimmedOpacity: isDimmed ? 0.3 : 1,
   });
 

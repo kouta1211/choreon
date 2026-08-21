@@ -3,8 +3,6 @@
 import { useEffect, useRef } from "react";
 import { animate, useMotionValue, useTransform } from "motion/react";
 import { quadraticBezierAt } from "@/features/canvas/lib/curvePath";
-import { interpolateDancerPoint } from "@/features/canvas/lib/sceneScrub";
-import { useSceneScrub } from "@/features/canvas/hooks/useSceneScrub";
 import {
   resolveTransitionDuration,
   SCENE_TRANSITION_EASE,
@@ -20,9 +18,6 @@ type Args = {
   /** dnd-kit で掴まれている間。left/top は動かさない */
   isDragging: boolean;
   transitionDurationSeconds: number;
-  /** 払っている間の区間の両端(%)。片側にしか居ない人は null */
-  scrubFrom: { x: number; y: number } | null;
-  scrubTo: { x: number; y: number } | null;
   /** 誰かにフォーカスが当たっている間、自分以外を薄くするための濃さ */
   dimmedOpacity: number;
 };
@@ -37,11 +32,13 @@ type Args = {
  * 保持は数値・出力は文字列と役割を分けている。
  *
  * ■ 動かし手が取り合わないようにする
- * (1) シーン切り替えの補間、(2) 曲線に沿った移動、(3) 払っている間の補間、
- * (4) 濃さ。宣言的な animate prop と MotionValue を混ぜると、どれが勝つかが
- * レンダーの順番に左右される。すべて MotionValue へ寄せて、順番を
- * 「掴んでいる間は何もしない → 払っている間はそちらが決める → それ以外は
- * 時間で補間」と一列に並べてある。
+ * (1) シーン切り替えの補間、(2) 曲線に沿った移動、(3) 濃さ。宣言的な
+ * animate prop と MotionValue を混ぜると、どれが勝つかがレンダーの順番に
+ * 左右される。すべて MotionValue へ寄せて、順番を「掴んでいる間は何も
+ * しない → それ以外は時間で補間」と一列に並べてある。
+ *
+ * 以前はここに【払っている間の補間】もあった。ステージを払って前後の
+ * シーンへ移る操作ごと畳んだので落としてある(2026-08-21)。
  */
 export function useDancerMotion({
   leftPercent,
@@ -50,8 +47,6 @@ export function useDancerMotion({
   controlTopPercent,
   isDragging,
   transitionDurationSeconds,
-  scrubFrom,
-  scrubTo,
   dimmedOpacity,
 }: Args) {
   const leftPct = useMotionValue(leftPercent);
@@ -60,15 +55,6 @@ export function useDancerMotion({
   const top = useTransform(topPct, (value) => `${value}%`);
   const opacity = useMotionValue(dimmedOpacity);
   const wasDraggingRef = useRef(isDragging);
-
-  const scrub = useSceneScrub();
-  const scrubProgressValue = scrub?.progress;
-  const isScrubbing = scrub?.targetSceneId != null;
-
-  const scrubFromX = scrubFrom?.x ?? null;
-  const scrubFromY = scrubFrom?.y ?? null;
-  const scrubToX = scrubTo?.x ?? null;
-  const scrubToY = scrubTo?.y ?? null;
 
   useEffect(() => {
     const justFinishedDragging = wasDraggingRef.current && !isDragging;
@@ -91,11 +77,6 @@ export function useDancerMotion({
       }
       return;
     }
-    // スクラブ中は下のuseEffectが指の位置から毎フレームleft/topを決めている。
-    // ここで時間ベースのアニメーションを走らせると、両者が同じ値を取り合う。
-    // 指を離してこのフラグが下りた時に、改めてこの効果が走り、
-    // 「途中まで動かした位置」から本来の位置へ戻る/進むアニメーションになる
-    if (isScrubbing) return;
     // 「自分をドラッグしていた→終わった」瞬間だけは、アニメーションさせずに
     // 即座に確定値へ合わせる。ドラッグ中は dnd-kit の transform(px)だけで
     // 見た目を動かしていて left/top はドラッグ前の値のまま止まっているので、
@@ -160,7 +141,6 @@ export function useDancerMotion({
     };
   }, [
     isDragging,
-    isScrubbing,
     leftPercent,
     topPercent,
     leftPct,
@@ -170,57 +150,15 @@ export function useDancerMotion({
     controlTopPercent,
   ]);
 
-  // スクラブ中の位置。指の進捗(0〜1)を購読して、今のシーンの位置と
-  // 移動先の位置のあいだを線形に結ぶ。ここでは曲線(制御点)を使わない:
-  // 曲線は「何秒でどう動くか」という時間の話で、指で前後に往復できる
-  // スクラブでは行きと帰りで違う道を通ってしまうため
+  // 濃さ。以前はmotion.divのanimate propで宣言的に書いていたぶんを、
+  // MotionValueへ移して同じ秒数で再現している
   useEffect(() => {
-    if (!isScrubbing || !scrubProgressValue) return;
-    if (isDragging) return;
-
-    const from =
-      scrubFromX == null || scrubFromY == null
-        ? null
-        : { x: scrubFromX, y: scrubFromY };
-    const to =
-      scrubToX == null || scrubToY == null
-        ? null
-        : { x: scrubToX, y: scrubToY };
-
-    const apply = (progress: number) => {
-      const point = interpolateDancerPoint(from, to, progress);
-      if (!point) return;
-      leftPct.set(point.x);
-      topPct.set(point.y);
-      opacity.set(point.opacity * dimmedOpacity);
-    };
-
-    apply(scrubProgressValue.get());
-    return scrubProgressValue.on("change", apply);
-  }, [
-    isScrubbing,
-    isDragging,
-    scrubProgressValue,
-    scrubFromX,
-    scrubFromY,
-    scrubToX,
-    scrubToY,
-    leftPct,
-    topPct,
-    opacity,
-    dimmedOpacity,
-  ]);
-
-  // スクラブしていない間の濃さ。以前はmotion.divのanimate propで
-  // 宣言的に書いていたぶんを、MotionValueへ移して同じ秒数で再現している
-  useEffect(() => {
-    if (isScrubbing) return;
     const animation = animate(opacity, dimmedOpacity, {
       duration: 0.3,
       ease: "easeOut",
     });
     return () => animation.stop();
-  }, [isScrubbing, opacity, dimmedOpacity]);
+  }, [opacity, dimmedOpacity]);
 
   return { left, top, opacity };
 }
