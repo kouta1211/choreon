@@ -2,14 +2,15 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
-import type { EventData, Step } from "react-joyride";
+import type { EventData } from "react-joyride";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import {
   hasSeenTutorial,
   markTutorialSeen,
 } from "@/features/tutorial/lib/tutorialPreference";
+import { useOrderOnlyTimeline } from "@/features/scene/hooks/useOrderOnlyTimeline";
+import { tourSteps } from "@/features/tutorial/lib/tourSteps";
 import { useT } from "@/features/i18n/LocaleProvider";
-import type { Messages } from "@/features/i18n/messages";
 
 /**
  * ライブラリごと遅延させる。案内は初回の1度しか使わないので、
@@ -32,47 +33,23 @@ const Joyride = dynamic(
  * クラス名を目印にすると、見た目を整える過程で消える。案内が指すために
  * 存在する属性を別に付けて、消してよいものと区別する。
  *
+ * ■ 案内は、いま目の前にあるものを言う
+ * 下の帯は、曲もメトロノームも無いと【順番だけ】になる。初めて開く人は
+ * 必ずそちらなので、時刻の話をすると**初回に必ず食い違う**。物差しを見て
+ * 言い分けている（判断は features/scene/lib/timelineMode.ts の1本）。
+ *
  * ■ いつでも飛ばせる
  * 使い方が分かっている人に読ませない。飛ばしても「見た」として扱い、
  * 二度と自動では出さない(もう一度見る道は表示メニューに置く)。
  */
-function steps(t: Messages): Step[] {
-  return [
-  {
-    target: '[data-tour="stage"]',
-    title: t.tour.stageTitle,
-    content:
-      t.tour.stageBody,
-    placement: "bottom",
-  },
-  {
-    target: '[data-tour="timeline"]',
-    title: t.tour.timelineTitle,
-    content:
-      t.tour.timelineBody,
-    placement: "top",
-  },
-  {
-    target: '[data-tour="add-scene"]',
-    title: t.tour.addTitle,
-    content:
-      t.tour.addBody,
-    placement: "top",
-  },
-  {
-    target: '[data-tour="display-menu"]',
-    title: t.tour.viewTitle,
-    content:
-      t.tour.viewBody,
-    placement: "bottom",
-    },
-  ];
-}
-
 export function EditorTour() {
   const t = useT();
-  // 言語が変わったら作り直す。案内の中身は辞書が持つ
-  const tourSteps = useMemo(() => steps(t), [t]);
+  /* 曲もメトロノームも無いときは、下の帯が【順番だけ】になる。
+     **初めて開く人は必ずそちら**（作りたての作品に曲は入っていない）
+     なので、時刻の話をすると、案内の1つが目の前のものと合わない */
+  const isOrderOnly = useOrderOnlyTimeline();
+  // 言語と物差しが変わったら作り直す。案内の中身は辞書が持つ
+  const steps = useMemo(() => tourSteps(t, isOrderOnly), [t, isOrderOnly]);
   // 初回だけ自動で出す。読み込み直後は指す先がまだ描かれていないので、
   // 少し待ってから始める
   const [isAutoStarted, setAutoStarted] = useState(false);
@@ -119,7 +96,7 @@ export function EditorTour() {
 
   return (
     <Joyride
-      steps={tourSteps}
+      steps={steps}
       run
       continuous
       onEvent={handleEvent}

@@ -433,16 +433,21 @@ export const en = {
   tour: {
     stageTitle: "This is the stage",
     stageBody:
-      "Upstage at the top, the audience at the bottom. The circles are dancers — pick one up and move it. The numbers along the bottom are the distance from centre.",
+      "Labels along the top and bottom of the stage mark upstage and the audience side. The circles are dancers — pick one up and move it. The numbers are the distance from centre.",
+    timelineOrderTitle: "Across is the order of the formations",
+    timelineOrderBody:
+      "Frames line up from the left. The number is how long it takes to move into that frame. Add a track and the positions become times in the music.",
     timelineTitle: "Across is time in the music",
     timelineBody:
       "Each frame sits at the second of the track it belongs to. Drag a frame sideways to change that time, and the gap between frames is the time the move gets.",
     addTitle: "Add a formation",
+    addOrderBody:
+      "Makes a new formation next to the selected one, copied from the current one. Make it, then move people — that is the usual order.",
     addBody:
       "Makes a new formation at the position you are listening to, copied from the current one. Make it, then move people — that is the usual order.",
-    viewTitle: "Change what you see",
+    viewTitle: "Menu",
     viewBody:
-      "Paths, the grid, the blocked-view warning and the look of the app are all here. So is this walkthrough, if you want it again.",
+      "The grid, paths and the blocked-view warning are switched here, along with the way in to music, video and settings. So is this walkthrough, if you want it again.",
     back: "Back",
     close: "Close",
     last: "Start",
