@@ -748,7 +748,7 @@ export const ko = {
     seconds: "초",
     offsetPreview: (seconds: number) => `여기서부터 ${seconds}초 듣기`,
     offsetPreviewStop: "멈추기",
-    offsetNote: "인트로를 건너뛰고 곡 중간부터 시작할 때.",
+    offsetNote: "인트로를 건너뛰고 곡 중간부터 시작할 때",
     offsetFailed: "곡의 시작 위치를 저장하지 못했습니다",
     span: (total: number, from: string, to: string) =>
       `전체 ${total}초 · ${from} ~ ${to}`,

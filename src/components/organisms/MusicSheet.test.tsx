@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MusicSheet } from "./MusicSheet";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
@@ -22,7 +23,9 @@ vi.mock("@/lib/supabase/client", () => ({
  * 消える。**入口を塞ぐ変更は、奥にある物を黙って殺す**(2026-08-20 の教訓)。
  */
 function open(project: Project, music: { fileName: string | null }) {
-  useProjectStore.setState({ isGuest: false, project });
+  // ゲストなら persist が何もせずに返る(保存の成否ではなく、画面の
+  // 振る舞いだけを見たいのでこちらにする)
+  useProjectStore.setState({ isGuest: true, project });
   useMusicStore.setState({
     fileName: music.fileName,
     objectUrl: null,
@@ -60,6 +63,33 @@ describe("MusicSheet", () => {
     open(makeProject(), { fileName: "song.mp3" });
 
     expect(screen.queryByText("曲がないときの拍")).not.toBeInTheDocument();
+  });
+
+  it("打っただけでは変わらない。「適用」を押して初めて効く", async () => {
+    const user = userEvent.setup();
+    open(makeProject({ musicOffsetSeconds: 0 }), { fileName: "song.mp3" });
+
+    await user.clear(offsetField()!);
+    await user.type(offsetField()!, "12.5");
+    await user.tab();
+
+    expect(useProjectStore.getState().project?.musicOffsetSeconds).toBe(0);
+    expect(screen.getByText(/適用を押すまで変わりません/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /適用/ }));
+
+    expect(useProjectStore.getState().project?.musicOffsetSeconds).toBe(12.5);
+  });
+
+  it("入れられる範囲の外を打っている間は押せない", async () => {
+    const user = userEvent.setup();
+    open(makeProject({ musicOffsetSeconds: 0 }), { fileName: "song.mp3" });
+
+    await user.clear(offsetField()!);
+    await user.type(offsetField()!, "-3");
+
+    expect(screen.getByRole("button", { name: /適用|範囲/ })).toBeDisabled();
+    expect(screen.getByText(/0 より小さくはできません/)).toBeInTheDocument();
   });
 
   it("同じ約束を2度言わない（曲の控えの説明は1行だけ）", () => {

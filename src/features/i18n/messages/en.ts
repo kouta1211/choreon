@@ -760,7 +760,7 @@ export const en = {
     seconds: "s",
     offsetPreview: (seconds: number) => `Play ${seconds}s from here`,
     offsetPreviewStop: "Stop",
-    offsetNote: "For skipping the intro and starting partway in.",
+    offsetNote: "For skipping the intro and starting partway in",
     offsetFailed: "Could not save the start position",
     span: (total: number, from: string, to: string) =>
       `${total}s end to end · ${from} – ${to}`,

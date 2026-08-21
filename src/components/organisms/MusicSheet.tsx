@@ -21,8 +21,7 @@ import { MetronomeControls } from "@/components/molecules/MetronomeControls";
 import { BeatsPerBarSegment } from "@/components/molecules/BeatsPerBarSegment";
 import type { Project } from "@/features/project/types";
 import { PressableButton } from "@/components/atoms/PressableButton";
-import { useNumberDraft } from "@/components/hooks/useNumberDraft";
-import { numberCorrectionMessage } from "@/components/molecules/SettingsRow";
+import { NumberField } from "@/components/molecules/NumberField";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
@@ -90,16 +89,6 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
   };
 
   const preview = useOffsetPreview();
-  const offsetField = useNumberDraft({
-    value: storedOffset,
-    min: MIN_MUSIC_OFFSET,
-    max: MAX_MUSIC_OFFSET,
-    onChange: (next) => void commitOffset(next),
-  });
-
-  /* 打っている最中の理由と、押した後に直した理由は同じ場所に出す
-     （設定の行と同じ扱い） */
-  const offsetReason = offsetField.invalid ?? offsetField.correction;
 
   const commitOffset = async (value: number) => {
     const previous = storedOffset;
@@ -192,100 +181,42 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
             音源だけが無い。ここで隠すと「なぜ途中から鳴るのか」を
             確かめる手段が消える（入口を塞ぐと、奥にある物が黙って死ぬ） */}
         {showOffset && (
-          <div>
-            <label className="flex items-center gap-2.5">
-              <span className="flex-1 text-label text-fg">
-                {t.music.offset}
-              </span>
-              <span className="flex shrink-0 items-center gap-1 rounded-lg border border-line-strong bg-surface-strong px-2 py-1 font-mono text-label text-fg focus-within:border-accent">
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  min={MIN_MUSIC_OFFSET}
-                  max={MAX_MUSIC_OFFSET}
-                  step={0.1}
-                  value={offsetField.draft}
-                  onChange={(event) => offsetField.setDraft(event.target.value)}
-                  /* 離れた時点では変えない（設定の数値欄と同じ作法）。
-                     下の「更新」を押すまで待つ */
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      offsetField.commit();
-                    }
-                  }}
-                  className="w-14 bg-transparent text-center outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                />
-                <span aria-hidden className="text-fg-muted">
-                  {t.music.seconds}
-                </span>
-              </span>
-            </label>
-            {/* 範囲と、直したときの理由。設定の数値欄と同じ作法
-                (useNumberDraft)。**黙って前の値へ戻さない** — 戻すだけだと
-                「打った数が消えた」ようにしか見えない */}
-            <p
-              className={`mt-1.5 text-caption leading-snug ${
-                offsetReason ? "text-[var(--dancer-2)]" : "text-fg-muted"
-              }`}
-            >
-              {t.music.offsetNote}{" "}
-              <span className="font-mono">
-                {MIN_MUSIC_OFFSET}–{MAX_MUSIC_OFFSET}
-                {t.music.seconds}
-              </span>
-              {offsetReason &&
-                ` · ${numberCorrectionMessage(t, offsetReason, MIN_MUSIC_OFFSET, MAX_MUSIC_OFFSET)}`}
-              {!offsetReason &&
-                offsetField.isDirty &&
-                ` · ${t.common.numberField.notApplied}`}
-              {!offsetReason && !offsetField.isDirty && offsetField.justApplied
-                ? ` · ${t.common.numberField.applied}`
-                : ""}
-            </p>
-
-            {/* 打ち替えている間だけ出す。**範囲の外や数でないものを打っている
-                間は押せない**（設定の「適用」と同じ決まり／実機報告 12-9） */}
-            {offsetField.isDirty && (
-              <PressableButton
-                kind="primary"
-                onClick={offsetField.commit}
-                disabled={Boolean(offsetField.invalid)}
-                className="mt-2 flex h-9 w-full items-center justify-center rounded-lg border border-accent bg-accent/12 text-label font-semibold text-accent-soft disabled:border-line-strong disabled:bg-transparent disabled:text-fg-muted"
-              >
-                {offsetField.invalid
-                  ? t.common.numberField.fixRange
-                  : t.common.numberField.apply}
-              </PressableButton>
-            )}
+          <div className="flex flex-col gap-unit">
+            <NumberField
+              size="sheet"
+              label={t.music.offset}
+              description={t.music.offsetNote}
+              value={storedOffset}
+              min={MIN_MUSIC_OFFSET}
+              max={MAX_MUSIC_OFFSET}
+              step={0.1}
+              unit={t.music.seconds}
+              onChange={(next) => void commitOffset(next)}
+            />
 
             {/* 数字を打つだけでは**効いているかを確かめられない**（実機報告 12-3）。
                 その位置から数秒だけ鳴らす。曲が入っていないときは出さない —
                 押しても無音のボタンは、壊れているのと区別が付かない */}
             {preview.canPreview && (
-              <>
-                <PressableButton
-                  kind="secondary"
-                  onClick={() =>
-                    preview.isPlaying
-                      ? preview.stop()
-                      : preview.play(Number(offsetField.draft) || 0)
-                  }
-                  className="mt-2 flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-line-strong text-label text-fg-sub"
-                >
-                  {preview.isPlaying ? (
-                    <>
-                      <Square size={13} />
-                      {t.music.offsetPreviewStop}
-                    </>
-                  ) : (
-                    <>
-                      <Play size={13} />
-                      {t.music.offsetPreview(PREVIEW_SECONDS)}
-                    </>
-                  )}
-                </PressableButton>
-              </>
+              <PressableButton
+                kind="secondary"
+                onClick={() =>
+                  preview.isPlaying ? preview.stop() : preview.play(storedOffset)
+                }
+                className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-line-strong text-label text-fg-sub"
+              >
+                {preview.isPlaying ? (
+                  <>
+                    <Square size={13} />
+                    {t.music.offsetPreviewStop}
+                  </>
+                ) : (
+                  <>
+                    <Play size={13} />
+                    {t.music.offsetPreview(PREVIEW_SECONDS)}
+                  </>
+                )}
+              </PressableButton>
             )}
           </div>
         )}

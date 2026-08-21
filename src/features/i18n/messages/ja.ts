@@ -805,7 +805,7 @@ export const ja = {
     /** 頭出しが効いているかを、耳で確かめる（実機報告 12-3） */
     offsetPreview: (seconds: number) => `ここから${seconds}秒聴く`,
     offsetPreviewStop: "止める",
-    offsetNote: "イントロを飛ばして、曲の途中から始めるときに。",
+    offsetNote: "イントロを飛ばして、曲の途中から始めるとき",
     offsetFailed: "曲の開始位置の保存に失敗しました",
     span: (total: number, from: string, to: string) =>
       `通しで ${total}秒 · ${from} 〜 ${to}`,

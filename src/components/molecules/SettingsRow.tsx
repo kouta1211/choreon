@@ -7,24 +7,7 @@ import { PressableButton } from "@/components/atoms/PressableButton";
 import { SegmentedControl } from "@/components/atoms/SegmentedControl";
 import { SwitchTrack } from "@/components/atoms/Switch";
 import { usePressable } from "@/components/hooks/usePressable";
-import {
-  useNumberDraft,
-  type NumberCorrection,
-} from "@/components/hooks/useNumberDraft";
-import { useSettingsApply } from "@/components/molecules/SettingsApplyBar";
-import { useT } from "@/features/i18n/LocaleProvider";
-
-/** 直した理由を、その場の言葉にする。範囲は既に隣に出ているので短くてよい */
-export function numberCorrectionMessage(
-  t: ReturnType<typeof useT>,
-  correction: NonNullable<NumberCorrection>,
-  min: number,
-  max: number,
-): string {
-  if (correction === "notANumber") return t.common.numberField.notANumber;
-  if (correction === "tooSmall") return t.common.numberField.tooSmall(min);
-  return t.common.numberField.tooLarge(max);
-}
+import { NumberField } from "@/components/molecules/NumberField";
 
 /**
  * 設定の1行と、その束ね。
@@ -193,84 +176,18 @@ export function SettingsNumberRow({
   /** 受け取らなかったときは false を返す(useNumberDraft が欄を元へ戻す) */
   onChange: (value: number) => void | boolean;
 }) {
-  const t = useT();
-  // 打っている間の預かりと、確定したときの丸め方は曲の頭出しと共通
-  const { draft, setDraft, commit, correction, invalid, isDirty, justApplied } =
-    useNumberDraft({
-      value,
-      min,
-      max,
-      onChange,
-    });
-  /* 打っている最中の理由(invalid)と、押した後に直した理由(correction)は
-     同じ場所に同じ色で出す。読む側にとっては同じ「なぜ入らないか」 */
-  const reason = invalid ?? correction;
-  // 束の下の「適用」へ預ける。預け先があれば、この行はボタンを出さない
-  const hasApplyBar = useSettingsApply(isDirty, Boolean(invalid), commit);
-
   return (
     <div className="flex min-h-target flex-col gap-unit px-gutter py-unit">
-      <label className="flex items-center gap-gutter">
-        <span className="min-w-0 flex-1 text-body text-fg-strong">{label}</span>
-        <span className="flex shrink-0 items-center gap-base rounded-lg bg-surface-raised px-3 py-1.5 font-mono text-mono-m text-fg focus-within:ring-1 focus-within:ring-accent">
-          <input
-            type="number"
-            inputMode="decimal"
-            min={min}
-            max={max}
-            step={step}
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            /* **離れた時点では変えない。** 以前はここで確定していたが、
-               効いたのかどうかが分からないという報告が2回来た。
-               下書きは残るので、見えないところで消えることはない */
-            onKeyDown={(event) => {
-              // Enter は「更新」を押したのと同じ扱い
-              if (event.key === "Enter") {
-                event.preventDefault();
-                commit();
-              }
-            }}
-            className="w-14 bg-transparent text-right outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-          />
-          <span aria-hidden className="text-fg-muted">
-            {unit}
-          </span>
-        </span>
-      </label>
-
-      {/* 預け先が無いときだけ、この行が自分で出す */}
-      {!hasApplyBar && isDirty && (
-        <PressableButton
-          kind="primary"
-          onClick={commit}
-          disabled={Boolean(invalid)}
-          className="flex h-9 w-full items-center justify-center rounded-[calc(var(--radius)*0.6)] border border-accent bg-accent/12 text-label font-semibold text-accent-soft disabled:border-line-strong disabled:bg-transparent disabled:text-fg-muted"
-        >
-          {t.common.numberField.apply}
-        </PressableButton>
-      )}
-      {/* 入れられる範囲を必ず出す。以前は書いていなかったので、下限より
-          小さい数を打った人には「打った数が消えた」ようにしか見えず、
-          「キーボードで入力できない」という報告になって返ってきた。
-          直したときは、その理由をここへ足す(黙って戻さない) */}
-      <p
-        className={`text-caption leading-snug ${
-          reason ? "text-[var(--dancer-2)]" : "text-fg-muted"
-        }`}
-      >
-        {description ? `${description} · ` : ""}
-        <span className="font-mono">
-          {min}–{max}
-          {unit}
-        </span>
-        {reason && ` · ${numberCorrectionMessage(t, reason, min, max)}`}
-        {/* 押すまで変わらないことと、押して変わったことを、同じ行で伝える */}
-        {!reason && isDirty && ` · ${t.common.numberField.notApplied}`}
-        {!reason && !isDirty && justApplied
-          ? ` · ${t.common.numberField.applied}`
-          : ""}
-      </p>
+      <NumberField
+        label={label}
+        description={description}
+        value={value}
+        min={min}
+        max={max}
+        step={step}
+        unit={unit}
+        onChange={onChange}
+      />
     </div>
   );
 }
