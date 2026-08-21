@@ -18,6 +18,7 @@ import { DurationSecondsInput } from "@/components/molecules/DurationSecondsInpu
 import { InlineEditableText } from "@/components/molecules/InlineEditableText";
 import { Tooltip } from "@/components/atoms/Tooltip";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
+import { useHardToSeeColor } from "@/features/dancer/hooks/useHardToSeeColor";
 import { DancerColorPicker } from "@/components/molecules/DancerColorPicker";
 import { sceneDurations } from "@/features/scene/lib/sceneTiming";
 import { PressableButton } from "@/components/atoms/PressableButton";
@@ -84,6 +85,10 @@ export function DancerInspector({ variant = "floating" }: Props) {
      右クリックのメニューの削除と**同じ道**を通る（前は同じ形が2箇所にあった）。
      フックなので、dancer が居ないときの早期 return より前で呼ぶ */
   const deleteDancers = useDeleteDancers();
+
+  /* フックは早期 return より前に呼ぶ。選んでいないときは空文字を渡す
+     （読めない色なので isHardToSee は false を返す＝黙る） */
+  const isHardToSee = useHardToSeeColor(dancer?.color ?? "");
 
   if (!dancer) return null;
 
@@ -293,6 +298,15 @@ export function DancerInspector({ variant = "floating" }: Props) {
             </span>
           )}
         </div>
+
+        {/* 地と同化する色を**選べなくはしない**（2026-08-21）。衣装に
+            合わせて決める人がいるし、沈ませたい場面もある。知らせるだけ。
+            言えるのは【いま見ているテーマ】のことだけなので、そう書く */}
+        {isHardToSee && (
+          <p className="mt-1.5 text-caption leading-snug text-[var(--dancer-4)]">
+            {t.dancer.inspector.colorHardToSee}
+          </p>
+        )}
       </div>
     </div>
   );

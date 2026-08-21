@@ -880,7 +880,10 @@ export const ja = {
       deselect: "選択を解除",
       changeColor: (color: string) => `色を${color}に変更`,
       customColor: "自由に色を選ぶ",
-      customColorNote: "自由に選んだ色は、テーマを変えてもそのまま出ます",
+      /** 塞がずに知らせるだけ。決めるのは user（2026-08-21） */
+    colorHardToSee:
+      "いまのテーマでは、舞台の地と見分けにくい色です。このまま使えます。",
+    customColorNote: "自由に選んだ色は、テーマを変えてもそのまま出ます",
       rotate: "向きを変更",
       curve: (name: string) => `${name}の曲線の形を調整`,
       deleteTitle: (name: string) => `「${name}」を削除しますか?`,

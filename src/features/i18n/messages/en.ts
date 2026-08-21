@@ -822,7 +822,9 @@ export const en = {
       deselect: "Deselect",
       changeColor: (color: string) => `Change the colour to ${color}`,
       customColor: "Pick any colour",
-      customColorNote: "A colour you pick stays as it is when you change themes",
+      colorHardToSee:
+      "In this theme, that colour is hard to tell from the stage. You can still use it.",
+    customColorNote: "A colour you pick stays as it is when you change themes",
       rotate: "Change the facing",
       curve: (name: string) => `Adjust the curve for ${name}`,
       deleteTitle: (name: string) => `Delete “${name}”?`,

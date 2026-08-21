@@ -811,7 +811,9 @@ export const ko = {
       deselect: "선택 해제",
       changeColor: (color: string) => `색을 ${color}(으)로 바꾸기`,
       customColor: "색을 직접 고르기",
-      customColorNote: "직접 고른 색은 테마를 바꿔도 그대로 나옵니다",
+      colorHardToSee:
+      "지금 테마에서는 무대 바닥과 구분하기 어려운 색입니다. 그대로 사용할 수 있습니다.",
+    customColorNote: "직접 고른 색은 테마를 바꿔도 그대로 나옵니다",
       rotate: "방향 바꾸기",
       curve: (name: string) => `${name}의 곡선 모양 조정`,
       deleteTitle: (name: string) => `'${name}'을(를) 삭제할까요?`,
