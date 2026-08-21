@@ -54,6 +54,35 @@ describe("findBlockedDancerIds", () => {
     expect(blocked.has("front")).toBe(false);
   });
 
+  /* 境目そのものを押さえる（2026-08-21）。
+     「赤くならないことがある」という報告が未解決のまま残っているので、
+     **しきい値と不等号が動いていないこと**だけは機械で見張っておく。
+     横は 肩0.45 + 顔0.09 = 0.54 未満で隠れ、奥行きは 0.5 を**超えて**
+     初めて前後と見なす。 */
+  it("横の境目 — 0.54 ちょうどは隠れない、その内側は隠れる", () => {
+    expect([...findBlockedDancerIds({ back: at(7, 2), front: at(7.54, 6) })])
+      .toEqual([]);
+    expect([...findBlockedDancerIds({ back: at(7, 2), front: at(7.53, 6) })])
+      .toEqual(["back"]);
+  });
+
+  it("奥行きの境目 — 0.5 ちょうどは同じ列、その先は前後", () => {
+    expect([...findBlockedDancerIds({ back: at(7, 2), front: at(7, 2.5) })])
+      .toEqual([]);
+    expect([...findBlockedDancerIds({ back: at(7, 2), front: at(7, 2.51) })])
+      .toEqual(["back"]);
+  });
+
+  /* 格子に吸着させると座標は整数になる（1マス = 1ユニット）。
+     **境目のどちらにも寄らない**ので、吸着しているだけで印が消えることは
+     無い、を確かめておく（消える原因の候補から外すため） */
+  it("格子に吸着した位置（整数）は、境目に落ちない", () => {
+    expect([...findBlockedDancerIds({ back: at(7, 2), front: at(7, 3) })])
+      .toEqual(["back"]);
+    expect([...findBlockedDancerIds({ back: at(7, 2), front: at(8, 3) })])
+      .toEqual([]);
+  });
+
   it("誰も居なければ空", () => {
     expect(findBlockedDancerIds({}).size).toBe(0);
   });
