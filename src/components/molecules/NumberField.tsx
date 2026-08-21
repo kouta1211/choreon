@@ -8,8 +8,10 @@ import {
 import { useSettingsApply } from "@/components/molecules/SettingsApplyBar";
 import { useT } from "@/features/i18n/LocaleProvider";
 
-/** 直した理由を、その場の言葉にする。範囲は既に隣に出ているので短くてよい */
-export function numberCorrectionMessage(
+/* 直した理由を、その場の言葉にする。範囲は既に隣に出ているので短くてよい。
+   **外へ出さない** — 以前は曲の板が自前で欄を組んでいて借りにいっていたが、
+   その欄ごとこの部品へ寄せたので、読む相手はここだけになった(2026-08-21) */
+function numberCorrectionMessage(
   t: ReturnType<typeof useT>,
   correction: NonNullable<NumberCorrection>,
   min: number,
