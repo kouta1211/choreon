@@ -6,9 +6,10 @@ import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { makeProject, makeScene } from "@/test/factories";
 
 /** 既定は【曲があった作品】。無い作品は order-only になり、時刻を出さない */
-function hydrate(scenes = 3, musicTitle: string | null = "song.mp3") {
+function hydrate(scenes = 3, hasMusic = true) {
   useViewerStore.setState({
-    project: makeProject({ musicTitle }),
+    project: makeProject(),
+    hasMusic,
     scenes: Array.from({ length: scenes }, (_, index) =>
       makeScene({
         id: `scene-${index + 1}`,
@@ -37,7 +38,7 @@ describe("ViewerSceneList", () => {
 
   it("順番だけで組まれた作品では、時刻を出さない", async () => {
     const user = userEvent.setup();
-    hydrate(3, null);
+    hydrate(3, false);
     render(<ViewerSceneList />);
 
     await user.click(screen.getByLabelText("シーン一覧を開く"));

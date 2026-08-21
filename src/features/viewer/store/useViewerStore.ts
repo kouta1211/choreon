@@ -33,8 +33,17 @@ type ViewerState = {
    */
   isPlaying: boolean;
 
+  /**
+   * 曲に合わせて組まれた作品か。**この端末に音源があるかではない**
+   * （共有リンクに曲は付いていかない）。時刻を出すかどうかの判断に使う。
+   * 渡されなければ、作品に残った曲の名前から決める（持ち主が自分で開く経路）
+   */
+  hasMusic: boolean;
+
   hydrate: (input: {
     project: Project;
+    /** 共有リンクで来たときだけ渡る。名前は渡らないので有無だけ */
+    hasMusic?: boolean;
     dancers: Dancer[];
     scenes: Scene[];
     positions: Position[];
@@ -77,12 +86,20 @@ export const useViewerStore = create<ViewerState>((set, get) => ({
   scenes: [],
   positionsBySceneId: {},
   focusedDancerId: null,
+  hasMusic: false,
   hasChosen: false,
   currentSeconds: 0,
   isPathVisible: true,
   isPlaying: false,
 
-  hydrate: ({ project, dancers, scenes, positions, requestedDancerId }) => {
+  hydrate: ({
+    project,
+    hasMusic,
+    dancers,
+    scenes,
+    positions,
+    requestedDancerId,
+  }) => {
     const positionsBySceneId: PositionsBySceneId = {};
     for (const position of positions) {
       positionsBySceneId[position.sceneId] ??= {};
@@ -102,6 +119,7 @@ export const useViewerStore = create<ViewerState>((set, get) => ({
 
     set({
       project,
+      hasMusic: hasMusic ?? project.musicTitle !== null,
       dancers,
       scenes,
       positionsBySceneId,

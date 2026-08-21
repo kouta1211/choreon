@@ -30,7 +30,10 @@ type SharedPayload = {
     stage_width: number;
     stage_height: number;
     music_offset_seconds: number;
-    music_title: string | null;
+    /** 新しい関数はこちらを返す（曲の名前そのものは返さない） */
+    has_music?: boolean;
+    /** 関数を入れ替える前の環境から来る形。名前は使わず、有無だけ見る */
+    music_title?: string | null;
     bpm?: number;
     beats_per_bar?: number;
     is_metronome_enabled?: boolean;
@@ -66,6 +69,8 @@ type SharedPayload = {
 
 export type SharedProject = {
   project: Project;
+  /** 曲に合わせて組まれた作品か。**曲の名前は渡らない**（上のコメント） */
+  hasMusic: boolean;
   dancers: Dancer[];
   scenes: Scene[];
   positions: Position[];
@@ -108,7 +113,8 @@ export async function getSharedProject(
       stageWidth: payload.project.stage_width,
       stageHeight: payload.project.stage_height,
       musicOffsetSeconds: payload.project.music_offset_seconds ?? 0,
-      musicTitle: payload.project.music_title ?? null,
+      /* 見る側は曲の名前を受け取らない。有無だけを hasMusic で持つ */
+      musicTitle: null,
       bpm: payload.project.bpm ?? DEFAULT_BPM,
       beatsPerBar: payload.project.beats_per_bar ?? 4,
       isMetronomeEnabled: payload.project.is_metronome_enabled ?? false,
@@ -119,6 +125,11 @@ export async function getSharedProject(
       createdAt: payload.project.created_at,
       updatedAt: payload.project.updated_at,
     },
+    /* 曲に合わせて組まれた作品か。**名前は見ない。**
+       関数を入れ替える前の環境では has_music が来ないので、
+       そのときだけ古い形（music_title）から読む */
+    hasMusic:
+      payload.project.has_music ?? payload.project.music_title != null,
     dancers: (payload.dancers ?? []).map((dancer) => ({
       id: dancer.id,
       projectId: dancer.project_id,

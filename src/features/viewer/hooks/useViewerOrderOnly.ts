@@ -11,8 +11,9 @@ import { isOrderOnlyTimeline } from "@/features/scene/lib/timelineMode";
  * 曲は付いていかない**ので、見る側ではどの作品も「曲が無い」になり、
  * 曲に合わせて組んだ作品まで順番だけ扱いになってしまう。
  *
- * 見る側で使える手がかりは、作品に残った**曲の名前**（`music_title`）。
- * 中身は使わず、**あるか無いか**だけを読む。
+ * 見る側へ渡るのは**曲があるか無いか**だけ（`has_music`）。
+ * 名前そのものは共有の payload に載せていない — ファイル名には個人名や
+ * 公演名が入るため（`supabase/schema.sql` の `shared_project`）。
  *
  * ■ 判断そのものは1箇所から借りる
  * 条件（曲もメトロノームも無いこと）は `lib/timelineMode` が持っている。
@@ -25,10 +26,11 @@ import { isOrderOnlyTimeline } from "@/features/scene/lib/timelineMode";
  */
 export function useViewerOrderOnly(): boolean {
   const project = useViewerStore((state) => state.project);
+  const hasMusic = useViewerStore((state) => state.hasMusic);
   if (!project) return false;
 
   return isOrderOnlyTimeline({
-    hasMusic: project.musicTitle !== null,
+    hasMusic,
     isMetronomeEnabled: project.isMetronomeEnabled,
   });
 }

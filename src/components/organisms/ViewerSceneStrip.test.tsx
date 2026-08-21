@@ -6,9 +6,10 @@ import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { makeProject, makeScene } from "@/test/factories";
 
 /** 時刻がうんと近いシーンを混ぜる。前はここでコマが重なっていた */
-function hydrate(musicTitle: string | null = "song.mp3") {
+function hydrate(hasMusic = true) {
   useViewerStore.setState({
-    project: makeProject({ stageWidth: 8, stageHeight: 8, musicTitle }),
+    project: makeProject({ stageWidth: 8, stageHeight: 8 }),
+    hasMusic,
     scenes: [
       makeScene({
         id: "scene-1",
@@ -75,7 +76,7 @@ describe("ViewerSceneStrip", () => {
   });
 
   it("順番だけで組まれた作品では、時刻を出さない", () => {
-    hydrate(null);
+    hydrate(false);
     render(<ViewerSceneStrip />);
 
     expect(screen.queryByText("0:30")).toBeNull();

@@ -82,6 +82,7 @@ export default async function ViewerPage(props: PageProps<"/view/[projectId]">) 
     return (
       <ViewerLayout
         project={shared.project}
+        hasMusic={shared.hasMusic}
         dancers={shared.dancers}
         scenes={shared.scenes}
         positions={shared.positions}

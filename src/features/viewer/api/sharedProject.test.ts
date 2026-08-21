@@ -84,6 +84,46 @@ describe("getSharedProject", () => {
     expect(shared?.project.userId).toBe("");
   });
 
+  /* 曲の【名前】は見る側へ渡さない。ファイル名には個人名や公演名が入る
+     （2026-08-21）。要るのは「曲に合わせて組まれた作品か」だけなので、
+     真偽値に畳んである */
+  it("曲の名前は持って帰らない。あるか無いかだけ持つ", async () => {
+    const { client } = fakeClient({
+      data: { ...PAYLOAD, project: { ...PAYLOAD.project, has_music: true } },
+      error: null,
+    });
+
+    const shared = await getSharedProject(client, TOKEN);
+
+    expect(shared?.hasMusic).toBe(true);
+    expect(shared?.project.musicTitle).toBeNull();
+  });
+
+  /* 関数を入れ替える前の環境では has_music が来ない。そのときだけ
+     古い形（music_title）の**有無**から読む。名前は使わない */
+  it("古い形（曲名が来る）でも、有無だけを読む", async () => {
+    const { client } = fakeClient({
+      data: {
+        ...PAYLOAD,
+        project: { ...PAYLOAD.project, music_title: "山田_発表会.mp3" },
+      },
+      error: null,
+    });
+
+    const shared = await getSharedProject(client, TOKEN);
+
+    expect(shared?.hasMusic).toBe(true);
+    expect(shared?.project.musicTitle).toBeNull();
+  });
+
+  it("どちらも無ければ、曲は無い作品として扱う", async () => {
+    const { client } = fakeClient({ data: PAYLOAD, error: null });
+
+    const shared = await getSharedProject(client, TOKEN);
+
+    expect(shared?.hasMusic).toBe(false);
+  });
+
   // uuidでない文字列を関数へ渡すと、Postgres側の型変換で例外になる。
   // 問い合わせる前に落とす
   it("トークンの形をしていなければ、問い合わせない", async () => {

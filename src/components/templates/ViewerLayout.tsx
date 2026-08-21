@@ -23,6 +23,8 @@ import { DEFAULT_BPM } from "@/features/music/lib/metronomePreference";
 
 type Props = {
   project: Project;
+  /** 共有リンクで来たときだけ渡る。持ち主が自分で開く経路では作品から決まる */
+  hasMusic?: boolean;
   dancers: Dancer[];
   scenes: Scene[];
   positions: Position[];
@@ -49,6 +51,7 @@ type Props = {
  */
 export function ViewerLayout({
   project,
+  hasMusic,
   dancers,
   scenes,
   positions,
@@ -69,8 +72,23 @@ export function ViewerLayout({
   const setIsPlaying = useViewerStore((state) => state.setIsPlaying);
 
   useEffect(() => {
-    hydrate({ project, dancers, scenes, positions, requestedDancerId });
-  }, [hydrate, project, dancers, scenes, positions, requestedDancerId]);
+    hydrate({
+      project,
+      hasMusic,
+      dancers,
+      scenes,
+      positions,
+      requestedDancerId,
+    });
+  }, [
+    hydrate,
+    project,
+    hasMusic,
+    dancers,
+    scenes,
+    positions,
+    requestedDancerId,
+  ]);
 
   const lastSeconds =
     scenes.length > 0 ? scenes[scenes.length - 1].timeSeconds : 0;

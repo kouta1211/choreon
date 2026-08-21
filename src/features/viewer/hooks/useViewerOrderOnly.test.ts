@@ -11,25 +11,25 @@ import { makeProject } from "@/test/factories";
  */
 import type { Project } from "@/features/project/types";
 
-function set(project: Project | null) {
-  useViewerStore.setState({ project });
+function set(project: Project | null, hasMusic = false) {
+  useViewerStore.setState({ project, hasMusic });
 }
 
 describe("useViewerOrderOnly", () => {
-  it("曲の名前が残っていれば、順番だけではない（音源が手元に無くても）", () => {
-    set(makeProject({ musicTitle: "song.mp3" }));
+  it("曲があった作品なら、順番だけではない（音源が手元に無くても）", () => {
+    set(makeProject(), true);
 
     expect(renderHook(() => useViewerOrderOnly()).result.current).toBe(false);
   });
 
   it("曲もメトロノームも無ければ、順番だけ", () => {
-    set(makeProject({ musicTitle: null, isMetronomeEnabled: false }));
+    set(makeProject({ isMetronomeEnabled: false }), false);
 
     expect(renderHook(() => useViewerOrderOnly()).result.current).toBe(true);
   });
 
   it("曲が無くてもメトロノームがあれば、順番だけではない", () => {
-    set(makeProject({ musicTitle: null, isMetronomeEnabled: true }));
+    set(makeProject({ isMetronomeEnabled: true }), false);
 
     expect(renderHook(() => useViewerOrderOnly()).result.current).toBe(false);
   });

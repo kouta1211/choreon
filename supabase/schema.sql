@@ -256,8 +256,14 @@ set search_path = public
 stable
 as $$
   select jsonb_build_object(
-    -- 合鍵そのもの(share_token)と、持ち主が誰か(user_id)は返さない
-    'project', to_jsonb(p) - 'share_token' - 'user_id',
+    -- 合鍵そのもの(share_token)と、持ち主が誰か(user_id)は返さない。
+    -- 曲の【名前】も返さない(music_title) — 画面には出していなかったが、
+    -- リンクを開いた人へファイル名が渡っていた。ファイル名には
+    -- 個人名や公演名が入る。見る側が要るのは「曲に合わせて組まれた作品か」
+    -- だけなので、真偽値に畳んで渡す(has_music)。
+    -- 見る側の使い道は features/viewer/hooks/useViewerOrderOnly
+    'project', (to_jsonb(p) - 'share_token' - 'user_id' - 'music_title')
+      || jsonb_build_object('has_music', p.music_title is not null),
     'dancers', coalesce(
       (
         select jsonb_agg(to_jsonb(d) order by d.created_at)
