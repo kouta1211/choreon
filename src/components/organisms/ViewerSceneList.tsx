@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
-import { formatMinutes } from "@/components/molecules/PlayheadClock";
+import { formatMinutes } from "@/features/scene/lib/clock";
 import { useViewerOrderOnly } from "@/features/viewer/hooks/useViewerOrderOnly";
 import { useT } from "@/features/i18n/LocaleProvider";
 

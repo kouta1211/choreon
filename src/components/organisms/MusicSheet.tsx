@@ -22,6 +22,7 @@ import { BeatsPerBarSegment } from "@/components/molecules/BeatsPerBarSegment";
 import type { Project } from "@/features/project/types";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { NumberField } from "@/components/molecules/NumberField";
+import { formatMinutes } from "@/features/scene/lib/clock";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
@@ -151,7 +152,7 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
                 </span>
                 {durationSeconds !== null && (
                   <span className="shrink-0 font-mono text-caption text-fg-muted">
-                    {formatClock(durationSeconds)}
+                    {formatMinutes(durationSeconds)}
                   </span>
                 )}
                 <PressableButton
@@ -249,8 +250,8 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
           <p className="font-mono text-caption text-fg-muted">
             {t.music.span(
               totalTransitionSeconds(scenes),
-              formatClock(storedOffset),
-              formatClock(storedOffset + totalTransitionSeconds(scenes)),
+              formatMinutes(storedOffset),
+              formatMinutes(storedOffset + totalTransitionSeconds(scenes)),
             )}
 
 
@@ -259,11 +260,4 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
       </div>
     </BottomSheet>
   );
-}
-
-/** 秒を 0:45 の形にする。曲の中の位置は分秒で見た方が探しやすい */
-function formatClock(seconds: number): string {
-  const whole = Math.floor(seconds);
-  const minutes = Math.floor(whole / 60);
-  return `${minutes}:${String(whole % 60).padStart(2, "0")}`;
 }

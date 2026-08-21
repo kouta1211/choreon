@@ -6,10 +6,8 @@ import { CSS } from "@dnd-kit/utilities";
 import { Copy, Trash2 } from "lucide-react";
 import { SceneThumbnail } from "@/components/molecules/SceneThumbnail";
 import { InlineEditableText } from "@/components/molecules/InlineEditableText";
-import {
-  formatClock,
-  SceneTimeField,
-} from "@/components/molecules/SceneTimeField";
+import { SceneTimeField } from "@/components/molecules/SceneTimeField";
+import { formatClock } from "@/features/scene/lib/clock";
 import { useOrderOnlyTimeline } from "@/features/scene/hooks/useOrderOnlyTimeline";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { isRowSelectClick } from "@/features/scene/lib/sceneRowSensors";

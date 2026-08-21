@@ -12,6 +12,7 @@ import {
 } from "@/features/viewer/lib/interpolate";
 import { buildPaths, buildStageMarks } from "@/features/export/lib/exportOverlays";
 import { findBlockedDancerIds } from "@/features/canvas/lib/blindSpot";
+import { formatElapsed } from "@/features/scene/lib/clock";
 import { seekFreshAudio } from "@/features/music/lib/seekAudio";
 import type { Scene } from "@/features/scene/types";
 
@@ -217,7 +218,7 @@ export async function recordFormationVideo({
       dancers,
       colors,
       showNames,
-      clock: formatClock(seconds - fromSeconds),
+      clock: formatElapsed(seconds - fromSeconds),
       overlays,
     });
   };
@@ -289,10 +290,4 @@ export async function recordFormationVideo({
   }
 
   return finished;
-}
-
-/** 0:12 の形。動画の隅に出す */
-function formatClock(seconds: number): string {
-  const whole = Math.max(0, Math.floor(seconds));
-  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
 }

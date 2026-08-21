@@ -1,5 +1,7 @@
 "use client";
 
+import { formatClock, formatMinutes } from "@/features/scene/lib/clock";
+
 import { useEffect, useState } from "react";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { countAt, formatCount } from "@/features/music/lib/counts";
@@ -67,19 +69,4 @@ export function PlayheadClock({ totalSeconds, counts }: Props) {
       )}
     </>
   );
-}
-
-/** 0:12.4 の形。曲の中の位置は分秒で見た方が探しやすい */
-export function formatClock(seconds: number): string {
-  const safe = Math.max(0, seconds);
-  const minutes = Math.floor(safe / 60);
-  const rest = safe - minutes * 60;
-  return `${minutes}:${rest.toFixed(1).padStart(4, "0")}`;
-}
-
-/** 3:24 の形。全体の長さは 0.1秒まで要らない */
-export function formatMinutes(seconds: number): string {
-  const safe = Math.max(0, Math.round(seconds));
-  const minutes = Math.floor(safe / 60);
-  return `${minutes}:${String(safe - minutes * 60).padStart(2, "0")}`;
 }

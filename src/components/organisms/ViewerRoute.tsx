@@ -4,10 +4,7 @@ import { useMemo, useState } from "react";
 import { ArrowRight, TriangleAlert } from "lucide-react";
 import { BottomSheet } from "@/components/molecules/BottomSheet";
 import { PressableButton } from "@/components/atoms/PressableButton";
-import {
-  formatClock,
-  formatMinutes,
-} from "@/components/molecules/PlayheadClock";
+import { formatClock, formatMinutes } from "@/features/scene/lib/clock";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { describeMove } from "@/features/viewer/lib/describeMove";
 import { sceneSpanAt } from "@/features/viewer/lib/interpolate";

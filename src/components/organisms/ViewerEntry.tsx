@@ -5,7 +5,7 @@ import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { DancerMarker } from "@/components/molecules/DancerIcon";
-import { formatMinutes } from "@/components/molecules/PlayheadClock";
+import { formatMinutes } from "@/features/scene/lib/clock";
 import { useViewerOrderOnly } from "@/features/viewer/hooks/useViewerOrderOnly";
 import { useT } from "@/features/i18n/LocaleProvider";
 import { Phrase } from "@/components/atoms/Phrase";

@@ -1,5 +1,7 @@
 "use client";
 
+import { formatClock } from "@/features/scene/lib/clock";
+
 import { useId, useState, type FocusEvent } from "react";
 import { Clock, MoveRight } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -106,13 +108,6 @@ export function SceneTimeField({
       </label>
     </div>
   );
-}
-
-/** 秒を 0:12.4 の形にする */
-export function formatClock(seconds: number): string {
-  const minutes = Math.floor(seconds / 60);
-  const rest = seconds - minutes * 60;
-  return `${minutes}:${rest.toFixed(1).padStart(4, "0")}`;
 }
 
 /**

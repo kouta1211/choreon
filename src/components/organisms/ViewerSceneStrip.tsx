@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { PressableButton } from "@/components/atoms/PressableButton";
-import { formatMinutes } from "@/components/molecules/PlayheadClock";
+import { formatMinutes } from "@/features/scene/lib/clock";
 import { useViewerOrderOnly } from "@/features/viewer/hooks/useViewerOrderOnly";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";

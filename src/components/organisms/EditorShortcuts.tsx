@@ -1,21 +1,13 @@
 "use client";
 
+import { isTextEntryElement } from "@/features/canvas/lib/textEntry";
+
 import { useEffect } from "react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { dancerIdsInScene } from "@/features/canvas/lib/selection";
 
 /** 入力中はショートカットを効かせない要素。Spaceで空白を打てないと困る */
-function isTextEntryElement(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false;
-  const tagName = target.tagName;
-  return (
-    tagName === "INPUT" ||
-    tagName === "TEXTAREA" ||
-    tagName === "SELECT" ||
-    target.isContentEditable
-  );
-}
 
 /**
  * 画面ぜんたいのキーボード操作。描画は持たない。

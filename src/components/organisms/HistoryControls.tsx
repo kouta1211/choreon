@@ -1,5 +1,7 @@
 "use client";
 
+import { isTextEntryElement } from "@/features/canvas/lib/textEntry";
+
 import { useEffect } from "react";
 import { Redo2, Undo2 } from "lucide-react";
 import { useHistoryStore } from "@/features/canvas/store/useHistoryStore";
@@ -12,16 +14,6 @@ import { useBrowserBackUndo } from "@/features/canvas/hooks/useBrowserBackUndo";
 
 /** キーボードショートカットを無視する要素。テキスト入力中のCtrl+Zは
  * ブラウザ標準の「入力の取り消し」であってほしいため */
-function isTextEntryElement(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false;
-  const tagName = target.tagName;
-  return (
-    tagName === "INPUT" ||
-    tagName === "TEXTAREA" ||
-    tagName === "SELECT" ||
-    target.isContentEditable
-  );
-}
 
 /**
  * ステージ上の編集(移動・微調整・回転・曲線)を元に戻す/やり直すボタン。
