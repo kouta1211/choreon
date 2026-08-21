@@ -187,38 +187,33 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
               checked={showNames}
               onChange={() => setShowNames((value) => !value)}
               label={t.exportVideo.showNames}
-              description={t.exportVideo.showNamesNote}
               fullWidth
             />
 
-            {/* 「入れるもの」を1つの束にする。大きさ・名前と混ぜて並べると
-                22行の設定画面と同じことになり、何を決めているのか読めない */}
+            {/* 「入れるもの」を1つの束にする。**説明は付けない** —
+                6個のスイッチに6行ぶら下げると、決めることより読むことの
+                方が多くなる。既定が入れないことは、全部オフで並んでいる
+                こと自体が言っている */}
             <div className="flex flex-col gap-1.5 border-t border-line pt-3.5">
               <p className="text-label text-fg">{t.exportVideo.includeTitle}</p>
               <Switch
                 checked={showPaths}
                 onChange={() => setShowPaths((value) => !value)}
                 label={t.editor.view.path.label}
-                description={t.exportVideo.includePathsNote}
                 fullWidth
               />
               <Switch
                 checked={showStageMarks}
                 onChange={() => setShowStageMarks((value) => !value)}
                 label={t.editor.view.stageMarks.label}
-                description={t.editor.view.stageMarks.description}
                 fullWidth
               />
               <Switch
                 checked={showBlindSpots}
                 onChange={() => setShowBlindSpots((value) => !value)}
                 label={t.editor.view.blindSpot.label}
-                description={t.editor.view.blindSpot.description}
                 fullWidth
               />
-              <p className="text-caption leading-snug text-fg-muted">
-                {t.exportVideo.includeNote}
-              </p>
             </div>
 
             {/* 音は重ね物ではないので、別の区切りにする。
@@ -244,6 +239,18 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
                 )}
               </div>
             )}
+
+            {/* 何が入って何が入らないかを、**押す前に**読ませる。
+                「メトロノームや曲の音が出るのか、導線モードにした際に
+                導線が出るのか」が分からない、という指摘への答え。
+                書き出しには作品と同じだけ時間がかかるので、
+                **録り終えてから違うと分かる**のがいちばん高くつく。
+                だから**ボタンより先に置く**（以前はボタンの下にあった） */}
+            <div className="flex flex-col gap-base text-caption leading-snug text-fg-muted">
+              <p>{t.exportVideo.note}</p>
+              <p>{t.exportVideo.contains}</p>
+              <p>{t.exportVideo.omits}</p>
+            </div>
 
             {isRunning ? (
               <div className="flex flex-col gap-2">
@@ -284,17 +291,6 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
                 {t.exportVideo.start(Math.ceil(durationSeconds))}
               </PressableButton>
             )}
-
-            {/* 何が入って何が入らないかを、押す前に書く。
-                「メトロノームや曲の音が出るのか、導線モードにした際に
-                導線が出るのか」が分からない、という指摘への答え。
-                書き出しには作品と同じだけ時間がかかるので、
-                **録り終えてから違うと分かる**のがいちばん高くつく */}
-            <div className="flex flex-col gap-base text-caption leading-snug text-fg-muted">
-              <p>{t.exportVideo.note}</p>
-              <p>{t.exportVideo.contains}</p>
-              <p>{t.exportVideo.omits}</p>
-            </div>
           </>
         )}
       </div>

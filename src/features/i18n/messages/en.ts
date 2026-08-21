@@ -719,8 +719,6 @@ export const en = {
       "With two or more scenes, the movement between them can be recorded.",
     size: "Size",
     showNames: "Show names",
-    showNamesNote:
-      "With a large cast, turning this off keeps the formation readable",
     running: (seconds: number) =>
       `Recording… ${seconds}s left. Please keep this screen open.`,
     cancel: "Stop",
@@ -728,8 +726,7 @@ export const en = {
     note: "Recording takes as long as the piece itself, because it is played through as it records.",
     contains:
       "In the video: the stage, the grid, the dancers (with their facing triangle), the upstage/downstage labels, and the clock.",
-    omits:
-      'The track is included if you turn on "Sound" (off by default). Metronome clicks are never included. Share links still never carry the track.',
+    omits: "Metronome clicks are never included.",
     includeTitle: "Also draw",
     includeAudioTitle: "Sound",
     includeAudio: "Include the track",
@@ -737,10 +734,6 @@ export const en = {
       "It starts from the offset you set and runs for the length of the video. Nothing plays while exporting.",
     includeAudioWarning:
       "This video will contain the track. Be careful who you hand it to (share links still never carry the track).",
-    includePathsNote:
-      "Paths you bent by hand come out the same shape as on screen",
-    includeNote:
-      "All off by default. Only what you pick here goes into the video, regardless of what is on screen.",
     saved: "Video saved",
     failed: "Could not record the video",
   },
