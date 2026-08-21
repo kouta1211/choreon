@@ -6,6 +6,7 @@ import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { DancerMarker } from "@/components/molecules/DancerIcon";
 import { formatMinutes } from "@/components/molecules/PlayheadClock";
+import { useViewerOrderOnly } from "@/features/viewer/hooks/useViewerOrderOnly";
 import { useT } from "@/features/i18n/LocaleProvider";
 import { Phrase } from "@/components/atoms/Phrase";
 
@@ -34,6 +35,7 @@ export function ViewerEntry() {
   );
   const focusedDancerId = useViewerStore((state) => state.focusedDancerId);
   const focusDancer = useViewerStore((state) => state.focusDancer);
+  const isOrderOnly = useViewerOrderOnly();
 
   /* **選ぶのと、決めるのを分ける**(2026-08-18、実機の報告 02-1)。
      以前は丸や名前を押した時点で focusDancer を呼んでいたので、
@@ -51,7 +53,7 @@ export function ViewerEntry() {
   const selected = dancers.find((dancer) => dancer.id === pendingId);
 
   return (
-    <div className="mx-auto flex h-dvh w-full max-w-md flex-col gap-4 overflow-y-auto px-5 pt-6 pb-[max(24px,env(safe-area-inset-bottom))]">
+    <div className="mx-auto flex h-dvh w-full max-w-md flex-col gap-gutter overflow-y-auto px-gutter pt-gutter-lg pb-[max(var(--spacing-gutter-lg),env(safe-area-inset-bottom))]">
       <div>
         {/* サービス名の表記は Choreon で統一する。「見るだけ」は外した
             — 見る人にとっては、それが唯一の画面なので断る必要が無い
@@ -59,15 +61,17 @@ export function ViewerEntry() {
         <p className="font-mono text-caption tracking-wide text-fg-muted">
           Choreon
         </p>
-        <h1 className="mt-1 text-title leading-tight font-semibold text-fg-strong">
+        <h1 className="mt-base text-title leading-tight font-semibold text-fg-strong">
           {project.title}
         </h1>
-        <p className="mt-1 font-mono text-caption text-fg-muted">
-          {t.viewer.entry.counts(
-            scenes.length,
-            dancers.length,
-            formatMinutes(totalSeconds),
-          )}
+        <p className="mt-base font-mono text-caption text-fg-muted">
+          {isOrderOnly
+            ? t.viewer.entry.countsNoTime(scenes.length, dancers.length)
+            : t.viewer.entry.counts(
+                scenes.length,
+                dancers.length,
+                formatMinutes(totalSeconds),
+              )}
         </p>
       </div>
 
@@ -75,14 +79,14 @@ export function ViewerEntry() {
         <h2 className="text-body font-semibold text-fg-strong">
           {t.viewer.entry.question}
         </h2>
-        <p className="mt-1 text-label leading-[1.6] text-fg-sub">
+        <p className="mt-base text-label leading-relaxed text-fg-sub">
           <Phrase>{t.viewer.entry.note}</Phrase>
         </p>
       </div>
 
       {/* 1シーン目の立ち位置。丸をそのまま押して選べる */}
       <div
-        className="relative w-full overflow-hidden rounded-[calc(var(--radius)*1.2)] border border-line-strong bg-stage"
+        className="relative w-full overflow-hidden rounded-2xl border border-line-strong bg-stage"
         style={{
           aspectRatio: `${project.stageWidth} / ${project.stageHeight}`,
         }}
@@ -140,7 +144,7 @@ export function ViewerEntry() {
       </div>
 
       {/* 名前からも選べる。立ち位置で分からない人のため */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-unit">
         {dancers.map((dancer) => {
           const color = themedDancerColor(dancer.color);
           const isSelected = dancer.id === pendingId;
@@ -158,7 +162,7 @@ export function ViewerEntry() {
                     }
                   : undefined
               }
-              className={`flex h-10 items-center gap-2 rounded-[calc(var(--radius)*0.9167)] border px-[13px] text-label ${
+              className={`flex h-target items-center gap-unit rounded-xl border px-3 text-label ${
                 isSelected
                   ? "font-semibold text-fg-strong"
                   : "border-line-strong text-fg-sub"
@@ -167,7 +171,7 @@ export function ViewerEntry() {
               <span
                 aria-hidden
                 style={{ background: color }}
-                className="block h-[11px] w-[11px] shrink-0 rounded-full"
+                className="block h-3 w-3 shrink-0 rounded-full"
               />
               {dancer.name}
             </PressableButton>
@@ -175,12 +179,12 @@ export function ViewerEntry() {
         })}
       </div>
 
-      <div className="mt-auto flex flex-col gap-2 pt-4">
+      <div className="mt-auto flex flex-col gap-unit pt-gutter">
         <PressableButton
           kind="primary"
           disabled={!selected}
           onClick={() => selected && focusDancer(selected.id)}
-          className="flex h-[50px] items-center justify-center rounded-[calc(var(--radius)*1.05)] bg-accent text-body font-semibold text-accent-fg shadow-[inset_0_1px_0_rgb(255_255_255/.22)] disabled:opacity-40"
+          className="flex h-target-lg items-center justify-center rounded-xl bg-accent text-body font-semibold text-accent-fg shadow-[inset_0_1px_0_rgb(255_255_255/.22)] disabled:opacity-40"
         >
           {selected
             ? t.viewer.entry.pickNamed(selected.name)
@@ -188,7 +192,7 @@ export function ViewerEntry() {
         </PressableButton>
         <PressableButton
           onClick={() => focusDancer(null)}
-          className="flex h-11 items-center justify-center rounded-[calc(var(--radius)*0.9)] border border-line-strong text-label text-fg-sub"
+          className="flex h-target items-center justify-center rounded-xl border border-line-strong text-label text-fg-sub"
         >
           {t.viewer.entry.skip}
         </PressableButton>

@@ -547,6 +547,7 @@ export const en = {
       all: "All",
       summary: (scenes: number, total: string) =>
         `${scenes} scenes · ${total} end to end`,
+      summaryNoTime: (scenes: number) => `${scenes} scenes`,
       lastFormation: "This is the last formation",
       startHere: "You start here",
       stepsNote: "Steps are an estimate: 60 cm a step, 90 cm a square.",
@@ -572,6 +573,8 @@ export const en = {
       position: (name: string) => `${name}'s position`,
       counts: (scenes: number, dancers: number, total: string) =>
         `${scenes} scenes · ${dancers} dancers · ${total}`,
+      countsNoTime: (scenes: number, dancers: number) =>
+        `${scenes} scenes · ${dancers} dancers`,
       pick: "Pick yourself",
       pickNamed: (name: string) => `Watch as ${name}`,
       skip: "Skip and watch everyone",

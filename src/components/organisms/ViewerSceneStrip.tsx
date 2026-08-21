@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { formatMinutes } from "@/components/molecules/PlayheadClock";
+import { useViewerOrderOnly } from "@/features/viewer/hooks/useViewerOrderOnly";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
@@ -33,6 +34,7 @@ const CARD_WIDTH = 56;
  */
 export function ViewerSceneStrip() {
   const project = useViewerStore((state) => state.project);
+  const isOrderOnly = useViewerOrderOnly();
   const scenes = useViewerStore((state) => state.scenes);
   const dancers = useViewerStore((state) => state.dancers);
   const positionsBySceneId = useViewerStore(
@@ -91,7 +93,7 @@ export function ViewerSceneStrip() {
                     (CARD_WIDTH * project.stageHeight) / project.stageWidth,
                   ),
                 }}
-                className={`relative block w-full overflow-hidden rounded-[calc(var(--radius)*0.3333)] bg-stage ${
+                className={`relative block w-full overflow-hidden rounded-sm bg-stage ${
                   isCurrent
                     ? "border-2 border-accent"
                     : "border border-line-strong"
@@ -129,7 +131,8 @@ export function ViewerSceneStrip() {
                 })}
               </span>
 
-              {/* 何番目かと、何秒か。秒差は長さではなく数字で伝える */}
+              {/* 何番目かと、（曲があれば）何秒か。秒差は長さではなく
+                  数字で伝える。順番だけの作品では時刻を出さない */}
               <span
                 className={`font-mono text-mono-s ${
                   isCurrent ? "text-fg-strong" : "text-fg-muted"
@@ -137,9 +140,11 @@ export function ViewerSceneStrip() {
               >
                 {index + 1}
               </span>
-              <span className="font-mono text-caption text-fg-muted">
-                {formatMinutes(scene.timeSeconds)}
-              </span>
+              {!isOrderOnly && (
+                <span className="font-mono text-caption text-fg-muted">
+                  {formatMinutes(scene.timeSeconds)}
+                </span>
+              )}
             </PressableButton>
           </li>
         );

@@ -5,9 +5,10 @@ import { ViewerSceneList } from "./ViewerSceneList";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { makeProject, makeScene } from "@/test/factories";
 
-function hydrate(scenes = 3) {
+/** 既定は【曲があった作品】。無い作品は order-only になり、時刻を出さない */
+function hydrate(scenes = 3, musicTitle: string | null = "song.mp3") {
   useViewerStore.setState({
-    project: makeProject(),
+    project: makeProject({ musicTitle }),
     scenes: Array.from({ length: scenes }, (_, index) =>
       makeScene({
         id: `scene-${index + 1}`,
@@ -32,6 +33,18 @@ describe("ViewerSceneList", () => {
     expect(screen.getByText("シーン3")).toBeInTheDocument();
     // 3番目は 16秒 = 0:16
     expect(screen.getByText("0:16")).toBeInTheDocument();
+  });
+
+  it("順番だけで組まれた作品では、時刻を出さない", async () => {
+    const user = userEvent.setup();
+    hydrate(3, null);
+    render(<ViewerSceneList />);
+
+    await user.click(screen.getByLabelText("シーン一覧を開く"));
+
+    expect(screen.getByText("シーン3")).toBeInTheDocument();
+    // 合わせる相手が居ないので「0:16」は何の意味も持たない
+    expect(screen.queryByText("0:16")).toBeNull();
   });
 
   it("押すとそのシーンの時刻へ飛び、板が閉じる", async () => {

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { formatMinutes } from "@/components/molecules/PlayheadClock";
+import { useViewerOrderOnly } from "@/features/viewer/hooks/useViewerOrderOnly";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
@@ -25,7 +26,7 @@ import { useT } from "@/features/i18n/LocaleProvider";
  * 並ぶ数は作品のシーン数で決まる。収めようとすると1行が潰れて読めなくなる
  * ので、**この板の中だけ縦に流す**（user の指定）。
  *
- * ■ 出すのは番号・名前・時刻
+ * ■ 出すのは番号・名前・（曲があれば）時刻
  * ミニチュアの図は出さない。描く分だけ重くなるうえ、探すのに使うのは
  * 「何番目か」と「何秒か」で、図はステージを見れば分かる。
  */
@@ -33,6 +34,7 @@ export function ViewerSceneList() {
   const t = useT();
   const [isOpen, setOpen] = useState(false);
   const scenes = useViewerStore((state) => state.scenes);
+  const isOrderOnly = useViewerOrderOnly();
   const currentSeconds = useViewerStore((state) => state.currentSeconds);
   /* 飛ぶときは再生を止める（帯と同じ作法） */
   const jumpToSeconds = useViewerStore((state) => state.jumpToSeconds);
@@ -85,9 +87,11 @@ export function ViewerSceneList() {
                   <span className="min-w-0 flex-1 truncate text-label">
                     {scene.name}
                   </span>
-                  <span className="shrink-0 font-mono text-mono-s text-fg-muted">
-                    {formatMinutes(scene.timeSeconds)}
-                  </span>
+                  {!isOrderOnly && (
+                    <span className="shrink-0 font-mono text-mono-s text-fg-muted">
+                      {formatMinutes(scene.timeSeconds)}
+                    </span>
+                  )}
                 </PressableButton>
               </li>
             );

@@ -12,6 +12,7 @@ import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { describeMove } from "@/features/viewer/lib/describeMove";
 import { sceneSpanAt } from "@/features/viewer/lib/interpolate";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
+import { useViewerOrderOnly } from "@/features/viewer/hooks/useViewerOrderOnly";
 import { useT } from "@/features/i18n/LocaleProvider";
 import { moveText } from "@/features/i18n/lib/moveText";
 
@@ -46,6 +47,7 @@ export function ViewerRoute() {
   /* 一覧から飛ぶときも再生を止める。帯・シーン一覧と同じ作法にする
      — 3つのうち1つだけ止まらないと、止まらない方を不具合と読む */
   const jumpToSeconds = useViewerStore((state) => state.jumpToSeconds);
+  const isOrderOnly = useViewerOrderOnly();
   const [isSheetOpen, setSheetOpen] = useState(false);
 
   const steps = useMemo<Step[]>(() => {
@@ -142,23 +144,24 @@ export function ViewerRoute() {
         isOpen={isSheetOpen}
         onClose={() => setSheetOpen(false)}
         title={t.viewer.route.title(dancer?.name ?? t.viewer.route.me)}
-        titleRight={t.viewer.route.summary(
-          scenes.length,
-          formatMinutes(totalSeconds),
-        )}
+        titleRight={
+          isOrderOnly
+            ? t.viewer.route.summaryNoTime(scenes.length)
+            : t.viewer.route.summary(scenes.length, formatMinutes(totalSeconds))
+        }
         isTall
       >
         {/* 注記は1度だけ。行ごとに書くと、肝心の道順が埋もれる */}
         {/* 2つは別の話なので行を分ける（実機の報告）。続けて書くと、
             「目安です。上手／下手は…」と1行に混ざって読みにくい */}
-        <div className="border-b border-line px-[18px] py-3 text-caption leading-[1.6] text-fg-muted">
+        <div className="border-b border-line px-gutter py-unit text-caption leading-relaxed text-fg-muted">
           <p>{t.viewer.route.stepsNote}</p>
           <p className="font-semibold text-fg-sub">
             {t.viewer.route.sidesNote}
           </p>
         </div>
 
-        <ul className="px-[18px] py-2">
+        <ul className="px-gutter py-unit">
           {steps.map((step) => {
             /* 印は【いま居るシーン】に付ける（実機の報告 06-15）。
                行は「そのシーンへ移動する」を表しているので、向かっている先
@@ -179,7 +182,7 @@ export function ViewerRoute() {
                         }
                       : undefined
                   }
-                  className={`flex w-full items-start gap-2.5 rounded-[calc(var(--radius)*0.7)] border-l-2 py-2.5 pr-2 pl-2.5 text-left ${
+                  className={`flex w-full items-start gap-2.5 rounded-lg border-l-2 py-2.5 pr-2 pl-2.5 text-left ${
                     isHere ? "bg-accent/12" : "border-transparent"
                   }`}
                 >
@@ -198,8 +201,11 @@ export function ViewerRoute() {
                         </span>
                       )}
                     </span>
+                    {/* 順番だけで組まれた作品では、時刻を出さない。
+                        合わせる相手が居ないので「0:12」は何の意味も
+                        持たない（作る側の一覧と同じ扱い／規約 state.md 6節）*/}
                     <span className="mt-0.5 block font-mono text-caption text-fg-muted">
-                      {formatClock(step.timeSeconds)} ·{" "}
+                      {!isOrderOnly && `${formatClock(step.timeSeconds)} · `}
                       {t.viewer.route.travelSeconds(step.seconds.toFixed(1))}
                       {isHere && t.viewer.route.hereNow}
                     </span>

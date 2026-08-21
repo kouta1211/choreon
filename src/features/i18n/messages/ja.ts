@@ -589,6 +589,7 @@ export const ja = {
       all: "全て",
       summary: (scenes: number, total: string) =>
         `${scenes} シーン · 通し ${total}`,
+      summaryNoTime: (scenes: number) => `${scenes} シーン`,
       lastFormation: "ここが最後の隊形です",
       /** 道順の一覧の1行目。最初のシーンには「移動」が無い */
       startHere: "ここから始まります",
@@ -619,6 +620,9 @@ export const ja = {
       /** 作品の見出しに添える規模。見る人が最初に読む1行 */
       counts: (scenes: number, dancers: number, total: string) =>
         `${scenes} シーン · ${dancers} 人 · ${total}`,
+      /** 順番だけで組まれた作品。通しの時刻は意味を持たないので出さない */
+      countsNoTime: (scenes: number, dancers: number) =>
+        `${scenes} シーン · ${dancers} 人`,
       pick: "自分を選んでください",
       pickNamed: (name: string) => `「${name}」で見る`,
       skip: "選ばずに全員を見る",

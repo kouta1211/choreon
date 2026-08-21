@@ -541,6 +541,7 @@ export const ko = {
       all: "전부",
       summary: (scenes: number, total: string) =>
         `${scenes}장면 · 전체 ${total}`,
+      summaryNoTime: (scenes: number) => `${scenes} 장면`,
       lastFormation: "여기가 마지막 대형입니다",
       startHere: "여기에서 시작합니다",
       stepsNote: "걸음 수는 한 걸음 60cm·한 칸 90cm로 계산한 어림값입니다.",
@@ -566,6 +567,8 @@ export const ko = {
       position: (name: string) => `${name}의 위치`,
       counts: (scenes: number, dancers: number, total: string) =>
         `${scenes} 장면 · ${dancers} 명 · ${total}`,
+      countsNoTime: (scenes: number, dancers: number) =>
+        `${scenes} 장면 · ${dancers} 명`,
       pick: "본인을 골라 주세요",
       pickNamed: (name: string) => `'${name}'(으)로 보기`,
       skip: "고르지 않고 전체 보기",
