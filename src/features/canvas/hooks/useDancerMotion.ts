@@ -17,6 +17,13 @@ type Args = {
   controlTopPercent: number | null;
   /** dnd-kit で掴まれている間。left/top は動かさない */
   isDragging: boolean;
+  /**
+   * **自分は掴まれていないが、掴んだ人と一緒に動いている間。**
+   *
+   * 見た目は x/y（配られた移動量）で動かしているので、こちらも
+   * left/top を触らない。掴まれているのと同じ扱いにする。
+   */
+  isFollowingGroup: boolean;
   transitionDurationSeconds: number;
   /** 誰かにフォーカスが当たっている間、自分以外を薄くするための濃さ */
   dimmedOpacity: number;
@@ -46,6 +53,7 @@ export function useDancerMotion({
   controlLeftPercent,
   controlTopPercent,
   isDragging,
+  isFollowingGroup,
   transitionDurationSeconds,
   dimmedOpacity,
 }: Args) {
@@ -54,14 +62,26 @@ export function useDancerMotion({
   const left = useTransform(leftPct, (value) => `${value}%`);
   const top = useTransform(topPct, (value) => `${value}%`);
   const opacity = useMotionValue(dimmedOpacity);
-  const wasDraggingRef = useRef(isDragging);
+
+  /* 【手で動かされている間】は、掴んでいる本人も、一緒に動いている人も
+     同じ扱いにする。どちらも見た目は transform / x-y で動いていて、
+     left/top は止まったまま待っている。
+
+     **一緒に動いている人を分けていたのが不具合の元だった**
+     （実機の報告 2026-08-22:「複数選択して移動させたあとに、一人だけ
+     ダンサーを移動させたりするとついてこなかった」）。離した瞬間、
+     配っていた移動量は 0 に戻るのに、確定値へ飛ぶ印は掴んだ本人にしか
+     立たない。追随していた人だけが**元の場所へ戻ってから、移動時間を
+     かけて滑る**ことになり、4秒の作品なら4秒ついてこなかった */
+  const isHeld = isDragging || isFollowingGroup;
+  const wasHeldRef = useRef(isHeld);
 
   useEffect(() => {
-    const justFinishedDragging = wasDraggingRef.current && !isDragging;
-    const justStartedDragging = !wasDraggingRef.current && isDragging;
-    wasDraggingRef.current = isDragging;
-    // ドラッグ中はleft/topを動かさない(dnd-kitのtransformだけで見た目を動かす)
-    if (isDragging) {
+    const justFinishedDragging = wasHeldRef.current && !isHeld;
+    const justStartedDragging = !wasHeldRef.current && isHeld;
+    wasHeldRef.current = isHeld;
+    // 手で動かされている間はleft/topを動かさない
+    if (isHeld) {
       /* 掴んだ瞬間に、走っていた移動を【打ち切って】そのシーンの位置へ
          合わせる(2026-08-19、実機の報告)。
          この効果の後片付けでアニメーション自体は既に止まるが、止めただけだと
@@ -140,7 +160,7 @@ export function useDancerMotion({
       topAnimation.stop();
     };
   }, [
-    isDragging,
+    isHeld,
     leftPercent,
     topPercent,
     leftPct,

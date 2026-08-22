@@ -244,6 +244,9 @@ function DraggableDancerIconImpl({
   const { left, top, opacity } = useDancerMotion({
     leftPercent,
     topPercent,
+    /* 一緒に動いている間も、掴まれているのと同じ扱いにする。
+       離した瞬間に確定値へ飛ぶ印が、こちらにも立つ */
+    isFollowingGroup,
     controlLeftPercent: hasCurve
       ? (curveControlX / stageWidthUnits) * 100
       : null,

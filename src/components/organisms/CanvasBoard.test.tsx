@@ -550,3 +550,115 @@ describe("CanvasBoard が描き直される条件", () => {
   });
 });
 
+
+/**
+ * 実機の報告（2026-08-22）:「複数選択して移動させたあとに、一人だけ
+ * ダンサーを移動させたりするとついてこなかった」。
+ *
+ * まとめて動かした【あと】の状態が、次の1人の操作に持ち越されていないかを見る。
+ */
+describe("まとめて動かしたあと、1人だけ動かす", () => {
+  it("選択に入っている1人を続けて動かせる", () => {
+    renderDragBoard();
+    act(() => {
+      useUIStore.getState().selectDancers(["dancer-1", "dancer-2"]);
+    });
+
+    drag("dancer-1", 40);
+    expect(xOf("dancer-1")).toBeCloseTo(2.5);
+    expect(xOf("dancer-2")).toBeCloseTo(6.5);
+
+    // そのまま、もう一度まとめて動かす
+    drag("dancer-1", 40);
+    expect(xOf("dancer-1")).toBeCloseTo(3);
+    expect(xOf("dancer-2")).toBeCloseTo(7);
+  });
+
+  it("選択の外の1人を動かすと、その人だけが動く", () => {
+    renderDragBoard();
+    act(() => {
+      useUIStore.getState().selectDancers(["dancer-1", "dancer-2"]);
+    });
+
+    drag("dancer-1", 40);
+    expect(xOf("dancer-2")).toBeCloseTo(6.5);
+
+    // まとめて動かしたあと、選択の外に居る dancer-2 …ではなく
+    // いったん選択を dancer-1 だけにしてから dancer-2 を掴む
+    act(() => {
+      useUIStore.getState().selectDancer("dancer-1");
+    });
+    drag("dancer-2", 40);
+
+    expect(xOf("dancer-2")).toBeCloseTo(7);
+    // 掴まなかった dancer-1 は動かない
+    expect(xOf("dancer-1")).toBeCloseTo(2.5);
+  });
+});
+
+/**
+ * 実機の報告（2026-08-22）:「複数選択して移動させたあとに、一人だけ
+ * ダンサーを移動させたりするとついてこなかった」。
+ *
+ * 置かれる座標は正しかった（上の describe）。**ついてこないのは
+ * 描画の方**なので、指を離す前の style を見る。
+ */
+describe("掴んでいる最中に、画面の上で動いているか", () => {
+  /** 掴んで動かし、離す前に止める。後始末は呼んだ側 */
+  function grabAndMove(dancerId: string, dx: number) {
+    const pointer = { pointerId: 1, isPrimary: true, button: 0 };
+    const to = { ...pointer, clientX: 100 + dx, clientY: 100 };
+    fireEvent.pointerDown(dancerNode(dancerId), {
+      ...pointer,
+      clientX: 100,
+      clientY: 100,
+    });
+    fireEvent.pointerMove(document, to);
+    fireEvent.pointerMove(document, to);
+    return () => fireEvent.pointerUp(document, to);
+  }
+
+  /** 画面の上で、横に動いている量(px)。動いていなければ 0 */
+  function shiftX(node: HTMLElement): number {
+    const match = /translate(?:3d)?\(([-0-9.]+)px/.exec(node.style.transform);
+    return match ? Number(match[1]) : 0;
+  }
+
+  it("1人を掴んだら、その人が動く", () => {
+    renderDragBoard();
+    const release = grabAndMove("dancer-1", 40);
+
+    expect(shiftX(dancerNode("dancer-1"))).toBeGreaterThan(0);
+    release();
+  });
+
+  /* ここが報告の場面 */
+  it("まとめて動かしたあとでも、掴んだ人が動く", () => {
+    renderDragBoard();
+    act(() => {
+      useUIStore.getState().selectDancers(["dancer-1", "dancer-2"]);
+    });
+    drag("dancer-1", 40);
+
+    const release = grabAndMove("dancer-1", 40);
+
+    expect(shiftX(dancerNode("dancer-1"))).toBeGreaterThan(0);
+    release();
+  });
+
+  it("まとめて動かしたあと、選択を1人に絞っても掴んだ人が動く", () => {
+    renderDragBoard();
+    act(() => {
+      useUIStore.getState().selectDancers(["dancer-1", "dancer-2"]);
+    });
+    drag("dancer-1", 40);
+    act(() => {
+      useUIStore.getState().selectDancer("dancer-2");
+    });
+
+    const release = grabAndMove("dancer-2", 40);
+
+    expect(shiftX(dancerNode("dancer-2"))).toBeGreaterThan(0);
+    release();
+  });
+});
