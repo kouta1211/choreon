@@ -34,13 +34,13 @@ describe("parseSettings", () => {
       JSON.stringify({
         dancerNameDisplay: "ときどき",
         countIn: 3,
-        isSnapEnabled: "はい",
+        isCenterLineVisible: "はい",
       }),
     );
 
     expect(parsed.dancerNameDisplay).toBe(DEFAULT_SETTINGS.dancerNameDisplay);
     expect(parsed.countIn).toBe(DEFAULT_SETTINGS.countIn);
-    expect(parsed.isSnapEnabled).toBe(DEFAULT_SETTINGS.isSnapEnabled);
+    expect(parsed.isCenterLineVisible).toBe(DEFAULT_SETTINGS.isCenterLineVisible);
   });
 
   it("数は範囲に収める", () => {

@@ -33,31 +33,31 @@ describe("useSettingsStore の効く範囲", () => {
   it("ホームで変えると土台が動き、どの作品でもその値になる", () => {
     const { update, setScope } = useSettingsStore.getState();
 
-    update("isSnapEnabled", false);
-    expect(useSettingsStore.getState().isSnapEnabled).toBe(false);
+    update("isCenterLineVisible", false);
+    expect(useSettingsStore.getState().isCenterLineVisible).toBe(false);
 
     setScope("project-1");
-    expect(useSettingsStore.getState().isSnapEnabled).toBe(false);
+    expect(useSettingsStore.getState().isCenterLineVisible).toBe(false);
     setScope("project-2");
-    expect(useSettingsStore.getState().isSnapEnabled).toBe(false);
+    expect(useSettingsStore.getState().isCenterLineVisible).toBe(false);
   });
 
   it("作品を開いて変えると、その作品だけが変わる", () => {
     const { setScope, update } = useSettingsStore.getState();
 
     setScope("project-1");
-    update("isSnapEnabled", false);
-    expect(useSettingsStore.getState().isSnapEnabled).toBe(false);
+    update("isCenterLineVisible", false);
+    expect(useSettingsStore.getState().isCenterLineVisible).toBe(false);
 
     // 別の作品と、ホームは土台のまま
     setScope("project-2");
-    expect(useSettingsStore.getState().isSnapEnabled).toBe(true);
+    expect(useSettingsStore.getState().isCenterLineVisible).toBe(true);
     setScope(null);
-    expect(useSettingsStore.getState().isSnapEnabled).toBe(true);
+    expect(useSettingsStore.getState().isCenterLineVisible).toBe(true);
 
     // 戻れば、その作品の値が返ってくる
     setScope("project-1");
-    expect(useSettingsStore.getState().isSnapEnabled).toBe(false);
+    expect(useSettingsStore.getState().isCenterLineVisible).toBe(false);
   });
 
   /**
@@ -68,14 +68,14 @@ describe("useSettingsStore の効く範囲", () => {
     const store = useSettingsStore.getState();
 
     store.setScope("project-1");
-    store.update("isSnapEnabled", false);
+    store.update("isCenterLineVisible", false);
 
     store.setScope(null);
     store.update("isCenterLineVisible", false);
 
     store.setScope("project-1");
     const state = useSettingsStore.getState();
-    expect(state.isSnapEnabled).toBe(false); // その作品の値
+    expect(state.isCenterLineVisible).toBe(false); // その作品の値
     expect(state.isCenterLineVisible).toBe(false); // 土台から届く
   });
 
@@ -126,14 +126,14 @@ describe("useSettingsStore の効く範囲", () => {
     const store = useSettingsStore.getState();
 
     store.setScope("project-1");
-    store.update("isSnapEnabled", false);
+    store.update("isCenterLineVisible", false);
     store.update("countIn", 8);
     expect(useSettingsStore.getState().hasOverride("countIn")).toBe(true);
 
     useSettingsStore.getState().clearOverrides();
 
     const state = useSettingsStore.getState();
-    expect(state.isSnapEnabled).toBe(true);
+    expect(state.isCenterLineVisible).toBe(true);
     expect(state.countIn).toBe(0);
     expect(state.byProject["project-1"]).toBeUndefined();
     expect(state.hasOverride("countIn")).toBe(false);
@@ -144,13 +144,13 @@ describe("useSettingsStore の効く範囲", () => {
     store.setScope("project-1");
     store.update("countIn", 8);
     store.setScope(null);
-    store.update("isSnapEnabled", false);
+    store.update("isCenterLineVisible", false);
 
     // 別のタブで開き直したのと同じ状態にする
     const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
     const stored = parseStoredSettings(raw);
 
-    expect(stored.base.isSnapEnabled).toBe(false);
+    expect(stored.base.isCenterLineVisible).toBe(false);
     expect(stored.byProject["project-1"]).toEqual({ countIn: 8 });
   });
 

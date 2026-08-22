@@ -895,12 +895,7 @@ export const ko = {
 
     grid: {
       title: "눈금",
-      summary: "격자 흡착 · 센터 라인",
-      snap: {
-        label: "격자에 붙이기",
-        description:
-          "선 위와 선 사이에만 놓입니다. 끄면 어디에나 놓을 수 있습니다.",
-      },
+      summary: "센터 라인",
       centerLine: {
         label: "센터 라인 강조",
         description: "가운데(0번 줄)를 눈에 띄게 합니다.",

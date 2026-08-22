@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   boundedGroupDelta,
   clamp,
-  snappedGridValue,
   pixelDeltaToUnitDelta,
   snapToGrid,
   snapRotation,
@@ -81,26 +80,6 @@ describe("snapToGrid", () => {
   it("負の側・0 の縁でも同じ刻み", () => {
     expect(snapToGrid(0.04)).toBe(0);
     expect(snapToGrid(-0.45)).toBe(-0.5);
-  });
-});
-
-describe("snappedGridValue", () => {
-  it("格子線の上なら、その座標を返す", () => {
-    expect(snappedGridValue(5)).toBe(5);
-  });
-
-  it("線と線のあいだでも、その座標を返す", () => {
-    expect(snappedGridValue(5.5)).toBe(5.5);
-  });
-
-  it("誤差の範囲内なら、寄せた先の座標を返す", () => {
-    expect(snappedGridValue(4.999999999)).toBe(5);
-    expect(snappedGridValue(5.500000001)).toBe(5.5);
-  });
-
-  it("刻みから離れていれば null（線を光らせない）", () => {
-    expect(snappedGridValue(4.9)).toBeNull();
-    expect(snappedGridValue(5.25)).toBeNull();
   });
 });
 

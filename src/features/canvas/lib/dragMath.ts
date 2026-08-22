@@ -49,27 +49,13 @@ export const GRID_SNAP_STEP = 0.5;
  * **刻みに乗っていない中途半端な位置にも置けた**。揃えたつもりで
  * 揃っていない、が起きる。
  *
- * 使うかどうかは設定（`isSnapEnabled`）。**切ればどこにでも置ける**ので、
- * 細かく詰めたい人の逃げ道はそちらが持つ。
+ * ■ **掴んでいる間は通さない**（仕様。2026-08-22）
+ * 指にはそのまま付いてきて、乗るのは**置いた瞬間だけ**。
+ * 掴んでいる間から吸い付くと、運んでいる手つきが跳ねて読めない。
+ * 切り替える設定は置かない — **これがこのアプリの置き方**。
  */
 export function snapToGrid(value: number): number {
   return Math.round(value / GRID_SNAP_STEP) * GRID_SNAP_STEP;
-}
-
-/**
- * 吸着が実際に効いた位置。効いていなければ null。
- *
- * 吸着の計算をもう一度なぞるのではなく、**結果の値だけ**から判定する
- * （連続的なポインタ移動が偶然ぴったり刻みに乗ることは実質無いため、
- * 「刻みに極めて近い」=「吸着した」とみなせる）。
- * 返すのは寄った先の座標そのもので、光らせる線の位置に使う。
- */
-export function snappedGridValue(
-  value: number,
-  epsilon = 0.01,
-): number | null {
-  const nearest = snapToGrid(value);
-  return Math.abs(value - nearest) < epsilon ? nearest : null;
 }
 
 /** 向きを吸着させる刻み(度)。0/45/90…の8方向。上下左右と斜めは、

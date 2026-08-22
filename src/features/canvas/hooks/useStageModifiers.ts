@@ -7,7 +7,6 @@ import {
   useSensors,
   type Modifier,
 } from "@dnd-kit/core";
-import { createGridSnapModifier } from "@/features/canvas/lib/gridSnapModifier";
 import { createGroupBoundsModifier } from "@/features/canvas/lib/groupBoundsModifier";
 import { toScreenY } from "@/features/canvas/lib/stageFlip";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
@@ -15,26 +14,21 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 
 /**
- * 掴んで動かしている**最中**の見た目を決める道具立て
- * （dnd-kit の sensor と modifier）。
+ * 掴んで動かしている**最中**の道具立て（dnd-kit の sensor と modifier）。
  *
- * ■ ⚠️ 並べる順は、確定側と同じでなければならない
- * ここは【格子スナップ → 全員の丸め】の順。**確定側（`CanvasBoard` の
- * `handleDragEnd` → `groupMoveChanges`）も同じ順で計算している**ので、
- * 「ドラッグ中に見えている位置」と「ドロップで確定する位置」が一致する。
- * **片方だけ順番を変えると、離した瞬間に人が飛ぶ。**
- * 吸着を切っていても、丸めの方は必ず通す。
+ * ■ **掴んでいる間は、格子へ吸着させない**（仕様。2026-08-22 に user が決定）
+ * 指の位置にそのまま付いてくる。刻みへ乗せるのは**置いた瞬間だけ**
+ * （`CanvasBoard` の handleDragEnd と handleNudge）。
+ * 掴んでいる間から吸い付くと、**狙った所へ運ぶ手つきが跳ねて読めない**。
+ * どこへ着くかは、光る格子線が先に知らせる（`useGroupDragHandlers`）。
  *
- * ■ modifier が返した transform は確定側にもそのまま届く
- * ドラッグ中の見た目にも `onDragEnd` / `onDragMove` の `event.delta` にも
- * 使われるので、確定側で改めてスナップし直す必要はない。
+ * ■ 残っている modifier は「全員が収まる所まで縮める」1つだけ
+ * 掴んでいる間も、選択中の誰かが壁に着いたらそこで止める。無いと、
+ * 本人だけ進んで離した瞬間に全員が戻る（実機の報告 2026-08-19）。
  *
  * ■ modifier は一度だけ作る
- * どちらも `stageRef`（ref オブジェクトそのもの。`.current` ではない）を
- * 受け取って、掴んでいる最中にその場で読む作りなので、作り直す必要が無い。
- * `useState` の遅延初期化で1回だけ作る。**`useMemo` ではなく `useState`**
- * なのは、`useMemo` は React が値を捨てて作り直すことを許しているのに対し、
- * ここは「同じ modifier であり続ける」ことが要るため。
+ * `stageRef`（ref オブジェクトそのもの。`.current` ではない）を受け取って、
+ * 掴んでいる最中にその場で読む作りなので、作り直す必要が無い。
  */
 export function useStageModifiers(stageRef: RefObject<HTMLDivElement | null>) {
   /* 指が数px動いただけでドラッグ扱いになると、ダンサーをタップして選ぶ操作
@@ -46,10 +40,6 @@ export function useStageModifiers(stageRef: RefObject<HTMLDivElement | null>) {
      だけ」では何も起きずに画面がスクロールしてしまうため */
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-  );
-
-  const [gridSnapModifier] = useState<Modifier>(() =>
-    createGridSnapModifier(stageRef),
   );
 
   /* 掴んでいる間も、全員が収まる所まで移動量を縮める。無いと、選択中の
@@ -86,15 +76,9 @@ export function useStageModifiers(stageRef: RefObject<HTMLDivElement | null>) {
     }),
   );
 
-  // 格子への吸着を使うか(設定)。切ると、どこにでも置ける
-  const isSnapEnabled = useSettingsStore((state) => state.isSnapEnabled);
-
   const modifiers = useMemo(
-    () =>
-      isSnapEnabled
-        ? [gridSnapModifier, groupBoundsModifier]
-        : [groupBoundsModifier],
-    [isSnapEnabled, gridSnapModifier, groupBoundsModifier],
+    () => [groupBoundsModifier],
+    [groupBoundsModifier],
   );
 
   return { sensors, modifiers };

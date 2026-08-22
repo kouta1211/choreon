@@ -76,7 +76,6 @@ export function Stage({
   const t = useT();
   const gridMode = useUIStore((state) => state.gridMode);
   const focusedDancerId = useUIStore((state) => state.focusedDancerId);
-  const dragSnapLine = useUIStore((state) => state.dragSnapLine);
   const isCenterLineVisible = useSettingsStore(
     (state) => state.isCenterLineVisible,
   );
@@ -214,24 +213,6 @@ export function Stage({
                     heightUnits={heightUnits}
                   />
                 </div>
-              )}
-              {/* 格子スナップが効いている間、吸着先の格子線をハイライトする。
-                縦横どちらも出ていれば交差点への吸着だと分かる */}
-              {dragSnapLine.x !== null && (
-                <div
-                  data-testid="stage-snap-line-x"
-                  aria-hidden
-                  className="pointer-events-none absolute inset-y-0 w-0.5 -translate-x-1/2 bg-accent-soft shadow-[0_0_6px_1px_color-mix(in_oklab,var(--accent-soft)_90%,transparent)]"
-                  style={{ left: `${(dragSnapLine.x / widthUnits) * 100}%` }}
-                />
-              )}
-              {dragSnapLine.y !== null && (
-                <div
-                  data-testid="stage-snap-line-y"
-                  aria-hidden
-                  className="pointer-events-none absolute inset-x-0 h-0.5 -translate-y-1/2 bg-accent-soft shadow-[0_0_6px_1px_color-mix(in_oklab,var(--accent-soft)_90%,transparent)]"
-                  style={{ top: `${(dragSnapLine.y / heightUnits) * 100}%` }}
-                />
               )}
               {focusedDancerId && (
                 <div

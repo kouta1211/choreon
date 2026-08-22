@@ -51,7 +51,6 @@ export type Settings = {
   isAudienceOnTop: boolean;
   /** 新しい作品のステージの広さ(1マス=90cm) */
   /** ドラッグを格子へ吸着させるか */
-  isSnapEnabled: boolean;
   /** センターライン(0の列)を強調するか */
   isCenterLineVisible: boolean;
 
@@ -84,7 +83,6 @@ export type Settings = {
 
 export const DEFAULT_SETTINGS: Settings = {
   isAudienceOnTop: false,
-  isSnapEnabled: true,
   isCenterLineVisible: true,
   countIn: 0,
   defaultBpm: 120,
@@ -155,10 +153,6 @@ export function parseSettings(raw: string | null): Settings {
       record.isAudienceOnTop,
       DEFAULT_SETTINGS.isAudienceOnTop,
     ),
-    isSnapEnabled: boolean(
-      record.isSnapEnabled,
-      DEFAULT_SETTINGS.isSnapEnabled,
-    ),
     isCenterLineVisible: boolean(
       record.isCenterLineVisible,
       DEFAULT_SETTINGS.isCenterLineVisible,
@@ -204,7 +198,6 @@ export function parseSettings(raw: string | null): Settings {
  */
 export const PROJECT_SCOPED_KEYS = [
   "isAudienceOnTop",
-  "isSnapEnabled",
   "isCenterLineVisible",
   "countIn",
   "defaultSegmentSeconds",

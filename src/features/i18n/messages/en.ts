@@ -905,12 +905,7 @@ export const en = {
 
     grid: {
       title: "Grid",
-      summary: "Snapping, centre line",
-      snap: {
-        label: "Snap to the grid",
-        description:
-          "Dancers land on the lines and halfway between them. Turn it off to place anyone anywhere.",
-      },
+      summary: "Centre line",
       centerLine: {
         label: "Emphasise the centre line",
         description: "Makes the centre (column 0) stand out.",

@@ -18,13 +18,6 @@ type Toast = {
   action?: { label: string; onAction: () => void };
 };
 
-/** ドラッグ中、格子スナップが効いている格子線の位置(ステージ座標系の整数)。
- * 効いていない軸はnull。両方non-nullなら交差点にスナップしていることを表す */
-type DragSnapLine = {
-  x: number | null;
-  y: number | null;
-};
-
 /** 取り消せない操作の前に出す確認ダイアログの中身。
  * window.confirm()の置き換えで、ブラウザ標準では書けなかった
  * 「一緒に何が消えるのか」を具体的に示せるようにしている */
@@ -88,9 +81,6 @@ type UIState = {
   isBlindSpotCheckVisible: boolean;
   /** 下端の時間軸を出すか。畳むとステージがそのぶん広くなる */
   isTimelineVisible: boolean;
-  /** ドラッグ中の格子スナップ状態(CanvasBoardのonDragMoveが更新し、Stageが
-   * 該当する格子線をハイライト表示するために読む) */
-  dragSnapLine: DragSnapLine;
   /** シーンのタイムライン再生中かどうか(SceneTimelineの再生シーケンサーが
    * 読み書きする)。手動でシーンを選ぶと止まる */
   isPlaying: boolean;
@@ -178,7 +168,6 @@ type UIState = {
   toggleStageMarks: () => void;
   toggleBlindSpotCheck: () => void;
   toggleTimelineVisible: () => void;
-  setDragSnapLine: (line: DragSnapLine) => void;
   setIsPlaying: (isPlaying: boolean) => void;
   /** 再生ボタンを押したのと同じことを頼む(カウントインを含む) */
   requestTogglePlay: () => void;
@@ -286,7 +275,6 @@ export const useUIStore = create<UIState>((set, get) => ({
   isBlindSpotCheckVisible: DEFAULT_VIEW_PREFERENCE.isBlindSpotCheckVisible,
   isTimelineVisible: DEFAULT_VIEW_PREFERENCE.isTimelineVisible,
   viewScopeProjectId: null,
-  dragSnapLine: { x: null, y: null },
   isPlaying: false,
   playToggleRequestedAt: null,
   playbackStartSceneId: null,
@@ -406,17 +394,6 @@ export const useUIStore = create<UIState>((set, get) => ({
     }
     set({ ...preference, viewScopeProjectId: scope });
   },
-  // 中身が前回と同じなら何も書き換えない(空オブジェクトを返す=状態は不変)。
-  // これはドラッグ中に毎pointermoveごとに呼ばれるため、素直に
-  // set({ dragSnapLine: line })にすると、スナップしていない間も毎回
-  // 新しい{x: null, y: null}オブジェクトが入り、参照が変わるせいで
-  // これを購読しているStageが指を動かすたびに再レンダーされてしまう
-  setDragSnapLine: (line) =>
-    set((state) =>
-      state.dragSnapLine.x === line.x && state.dragSnapLine.y === line.y
-        ? {}
-        : { dragSnapLine: line },
-    ),
   setIsPlaying: (isPlaying) => set({ isPlaying }),
   requestTogglePlay: () => set({ playToggleRequestedAt: Date.now() }),
   setPlaybackStartScene: (sceneId) => set({ playbackStartSceneId: sceneId }),

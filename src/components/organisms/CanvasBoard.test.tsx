@@ -391,8 +391,12 @@ describe("まとめて動かしているときの、壁での止まり方", () =
     fireEvent.pointerMove(document, to);
     fireEvent.pointerMove(document, to);
 
-    // 縮まっていれば あいり は 3 の線の上。縮んでいなければ 6 まで行く
-    expect(useUIStore.getState().dragSnapLine.x).toBe(3);
+    /* 8マスを 800px で描いているので 1ユニット = 100px。
+       右端の ゆい は 7 から 1ユニットしか動けないので、掴んでいる
+       あいり の見た目も 100px で止まる（縮まなければ 400px 動く）*/
+    expect(dancerNode("dancer-1").style.transform).toContain(
+      "translate3d(100px",
+    );
 
     fireEvent.pointerUp(document, to);
   });

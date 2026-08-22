@@ -97,11 +97,9 @@ export function CanvasBoard({
      groupMove も同じ順で計算している。片方だけ変えると、離した瞬間に人が飛ぶ */
   const { sensors, modifiers } = useStageModifiers(stageRef);
   // 格子への吸着を使うか(設定)。着地点の丸め(handleNudge)で見る
-  const isSnapEnabled = useSettingsStore((state) => state.isSnapEnabled);
   // ステージ面を上下の鏡にして描いているか。指の動きの向きだけを揃える
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
-  const setDragSnapLine = useUIStore((state) => state.setDragSnapLine);
   const commitPositions = usePositionCommit();
   /* 掴んで置いたときの確定。重なりの手当てまで含めてここが持つ */
   const commitDrop = useDropCommit();
@@ -126,14 +124,7 @@ export function CanvasBoard({
     handleDragStart,
     handleDragMove,
     handleDragCancel,
-  } = useGroupDragHandlers({
-    stageRef,
-    stageWidthUnits: project.stageWidth,
-    stageHeightUnits: project.stageHeight,
-    selectedSceneId,
-    isSnapEnabled,
-    isAudienceOnTop,
-  });
+  } = useGroupDragHandlers();
 
   useHydrateProject({
     project,
@@ -176,7 +167,6 @@ export function CanvasBoard({
 
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
-      setDragSnapLine({ x: null, y: null });
       resetGroupDrag();
       if (!selectedSceneId) return;
 
@@ -196,10 +186,24 @@ export function CanvasBoard({
         stageYSign(isAudienceOnTop) *
         pixelDeltaToUnitDelta(event.delta.y, height, project.stageHeight);
 
-      /* 吸着は掴んだ本人の位置で既に効いている(gridSnapModifier)ので、
-         その差分をそのまま全員へ配る。各自で丸め直すと、揃えて置いた
-         間隔の方が崩れる */
-      const changes = groupMove(selectedSceneId, dancerId, deltaX, deltaY);
+      /* **刻みへ乗せるのは、ここ（置いた瞬間）だけ**（仕様。2026-08-22）。
+         掴んでいる間は指にそのまま付いてくる。
+
+         着地点は**掴んだ本人**で決めて、その差分を全員へ配る。
+         各自で丸め直すと、揃えて置いた間隔の方が崩れる */
+      const appliedDx =
+        snapToGrid(clamp(before.xCoordinate + deltaX, 0, project.stageWidth)) -
+        before.xCoordinate;
+      const appliedDy =
+        snapToGrid(clamp(before.yCoordinate + deltaY, 0, project.stageHeight)) -
+        before.yCoordinate;
+
+      const changes = groupMove(
+        selectedSceneId,
+        dancerId,
+        appliedDx,
+        appliedDy,
+      );
       if (!changes) return;
 
       /* 確定は【重なりの手当てまで含めた道】を通す。掴み分けられないほど
@@ -216,7 +220,6 @@ export function CanvasBoard({
       selectedSceneId,
       project.stageWidth,
       project.stageHeight,
-      setDragSnapLine,
       groupMove,
       resetGroupDrag,
       isAudienceOnTop,
@@ -259,16 +262,14 @@ export function CanvasBoard({
       const before = positionAt(selectedSceneId, dancerId);
       if (!before) return;
 
-      const snap = (value: number) =>
-        isSnapEnabled ? snapToGrid(value) : value;
-
       /* 着地点は**押した本人**で決めて、その差分を全員へ配る。
-         各自で丸めると、揃えて置いた間隔が崩れる */
+         各自で丸めると、揃えて置いた間隔が崩れる。
+         掴んで置いたとき（handleDragEnd）と同じ形にしてある */
       const appliedDx =
-        snap(clamp(before.xCoordinate + dx, 0, project.stageWidth)) -
+        snapToGrid(clamp(before.xCoordinate + dx, 0, project.stageWidth)) -
         before.xCoordinate;
       const appliedDy =
-        snap(clamp(before.yCoordinate + dy, 0, project.stageHeight)) -
+        snapToGrid(clamp(before.yCoordinate + dy, 0, project.stageHeight)) -
         before.yCoordinate;
 
       const changes = groupMove(
@@ -294,7 +295,6 @@ export function CanvasBoard({
       project.stageHeight,
       commitPositions,
       groupMove,
-      isSnapEnabled,
       t,
     ],
   );

@@ -977,11 +977,7 @@ export const ja = {
 
     grid: {
       title: "目盛り",
-      summary: "格子への吸着・センターライン",
-      snap: {
-        label: "格子に吸着させる",
-        description: "線の上と、線と線のあいだにだけ置けます。切ると、どこにでも置けます",
-      },
+      summary: "センターライン",
       centerLine: {
         label: "センターラインを強調",
         description: "中央(0の列)を目立たせます",

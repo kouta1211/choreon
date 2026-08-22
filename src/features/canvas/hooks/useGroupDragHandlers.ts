@@ -1,29 +1,19 @@
 "use client";
 
-import { useCallback, useState, type RefObject } from "react";
+import { useCallback, useState } from "react";
 import type { DragMoveEvent, DragStartEvent } from "@dnd-kit/core";
 import { useMotionValue } from "motion/react";
-import {
-  clamp,
-  snappedGridValue,
-  pixelDeltaToUnitDelta,
-} from "@/features/canvas/lib/dragMath";
-import { toScreenY } from "@/features/canvas/lib/stageFlip";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
-import { positionAt } from "@/features/project/store/useProjectStore";
-
-type Args = {
-  stageRef: RefObject<HTMLDivElement | null>;
-  stageWidthUnits: number;
-  stageHeightUnits: number;
-  selectedSceneId: string | null;
-  isSnapEnabled: boolean;
-  isAudienceOnTop: boolean;
-};
 
 /**
- * 掴んでいる**最中**の受け持ち — 選択中の他の人へ移動量を配ることと、
- * 吸着している格子線を光らせること。
+ * 掴んでいる**最中**の受け持ち — 選択中の他の人へ、掴んだ人と同じ
+ * 移動量を配る。**それだけ。**
+ *
+ * ■ 掴んでいる間は、刻みに関係なく指へ付いてくる（仕様。2026-08-22）
+ * 格子へ乗せるのは**置いた瞬間だけ**（`CanvasBoard` の handleDragEnd と
+ * handleNudge）。掴んでいる間から吸い付くと、狙った所へ運ぶ手つきが
+ * 跳ねて読めない。着く先を先読みして光らせる案内も**置かない**
+ * （user の指示。線が光る演出は要らない）。
  *
  * ■ 確定（離した瞬間）はここに無い
  * `handleDragEnd` は `CanvasBoard` に残してある。あちらは `groupMove` と
@@ -34,27 +24,8 @@ type Args = {
  * state で配ると、1px 動くたびにダンサーの丸が全部描き直される。
  * 掴んでいる本人は dnd-kit が動かすので、ここで配るのは
  * **掴んでいない側**のぶん（2026-08-18、報告 18-2）。
- * 格子スナップが効いたあとの値が来るので、本人と同じ動きになる。
- *
- * ■ 格子線を光らせるだけで、吸着そのものはしない
- * 見た目の吸着は `gridSnapModifier` が transform（≒ `event.delta`）側で
- * 既に済ませている。ここは**その結果が整数ユニットに近いか**を見るだけで、
- * しきい値の判定を二重に持たずに済む。
- *
- * ■ ⚠️ 上下の向きの扱いが、確定側と逆になる
- * **吸着線は【画面】に引くもの**なので、ここは画面の向きのまま数える
- * （`toScreenY` を通す）。確定側（`handleDragEnd`）は逆に、画面の向きから
- * **ステージの向きへ戻す**（`stageYSign`）。同じ `isAudienceOnTop` を
- * 別の意味で使っているので、片方を写してもう片方へ当てない。
  */
-export function useGroupDragHandlers({
-  stageRef,
-  stageWidthUnits,
-  stageHeightUnits,
-  selectedSceneId,
-  isSnapEnabled,
-  isAudienceOnTop,
-}: Args) {
+export function useGroupDragHandlers() {
   /* いま掴まれている人。選択中の他の人を一緒に動かすために要る
      (2026-08-18、報告 18-2)。移動量そのものは MotionValue で配るので、
      ここが変わるのは掴み始めと離した時の2回だけ */
@@ -64,7 +35,6 @@ export function useGroupDragHandlers({
   const offsetY = useMotionValue(0);
 
   const selectDancer = useUIStore((state) => state.selectDancer);
-  const setDragSnapLine = useUIStore((state) => state.setDragSnapLine);
 
   /** 掴み始め・離した後に呼ぶ。配った移動量を0へ戻さないと、
    *  次に掴んだとき前回のぶんだけずれた場所から始まる */
@@ -96,58 +66,18 @@ export function useGroupDragHandlers({
     [offsetX, offsetY, selectDancer],
   );
 
+  /** 掴んだ人が動いた量を、選択中の他の人へ配る。**それだけ**。
+   *  掴んでいる間は刻みに関係なく、指にそのまま付いてくる（仕様） */
   const handleDragMove = useCallback(
     (event: DragMoveEvent) => {
       offsetX.set(event.delta.x);
       offsetY.set(event.delta.y);
-
-      if (!selectedSceneId) return;
-      const dancerId = String(event.active.id);
-      const before = positionAt(selectedSceneId, dancerId);
-      const stageEl = stageRef.current;
-      if (!before || !stageEl) return;
-
-      const { width, height } = stageEl.getBoundingClientRect();
-      const liveX = clamp(
-        before.xCoordinate +
-          pixelDeltaToUnitDelta(event.delta.x, width, stageWidthUnits),
-        0,
-        stageWidthUnits,
-      );
-      // 吸着線は【画面】に引くものなので、画面の向きのまま数える
-      const liveY = clamp(
-        toScreenY(before.yCoordinate, stageHeightUnits, isAudienceOnTop) +
-          pixelDeltaToUnitDelta(event.delta.y, height, stageHeightUnits),
-        0,
-        stageHeightUnits,
-      );
-
-      /* 吸着を切っているときは格子線を光らせない。吸わないのに光ると、
-         「そこへ着く」という嘘の予告になる。
-         寄る先は 0.5 刻みなので、**線と線のあいだにも光る**（線が引いて
-         ない所だが、光る位置そのものが「ここへ着く」を伝える） */
-      setDragSnapLine({
-        x: isSnapEnabled ? snappedGridValue(liveX) : null,
-        y: isSnapEnabled ? snappedGridValue(liveY) : null,
-      });
     },
-    [
-      stageRef,
-      selectedSceneId,
-      stageWidthUnits,
-      stageHeightUnits,
-      setDragSnapLine,
-      isSnapEnabled,
-      isAudienceOnTop,
-      offsetX,
-      offsetY,
-    ],
+    [offsetX, offsetY],
   );
 
-  const handleDragCancel = useCallback(() => {
-    setDragSnapLine({ x: null, y: null });
-    resetGroupDrag();
-  }, [setDragSnapLine, resetGroupDrag]);
+  /* 取り消したときも、後片付けは離した時と同じ */
+  const handleDragCancel = resetGroupDrag;
 
   return {
     activeDancerId,
