@@ -67,7 +67,7 @@ export function SceneThumbnail({
         {/* 選択中は縁の色だけでなく、一回り持ち上げて手前に出す。
           コマが小さく密に並ぶので、色の差だけでは横目で追えない */}
         <div
-          className={`relative w-full overflow-hidden rounded-md bg-surface-sunken transition-[transform,box-shadow,border-color] duration-200 ease-[cubic-bezier(.2,.7,.2,1)] ${
+          className={`card-surface-sunken relative w-full overflow-hidden rounded-md transition-[transform,box-shadow,border-color] duration-200 ease-[cubic-bezier(.2,.7,.2,1)] ${
             isSelected
               ? "border-2 border-accent shadow-[0_14px_34px_-18px_color-mix(in_oklab,var(--accent)_80%,transparent)] scale-105"
               : "border border-line-strong"

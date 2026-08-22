@@ -23,16 +23,20 @@ export function SceneSidebar({ project }: Props) {
   const sceneSummary = useSceneSummary();
 
   return (
-    <aside className="flex w-[268px] shrink-0 flex-col overflow-hidden rounded-xl border border-line bg-surface/60">
-      <div className="flex shrink-0 items-baseline justify-between gap-2 border-b border-line px-3.5 py-3">
-        <span className="text-sm font-semibold text-fg-strong">
+    /* 面は `.card-surface`(globals.css)。右のダンサーのパネル
+       (EditorSidePanel) と同じ材質にする。**以前は `bg-surface/60` という
+       半透明の生トークン**で、地の質感が透けて中の文字が沈んでいた
+       （実機の報告 2026-08-22）。規約は frontend.md 2節の3項 */
+    <aside className="card-surface flex w-[268px] shrink-0 flex-col overflow-hidden rounded-xl border border-line">
+      <div className="flex shrink-0 items-baseline justify-between gap-2 border-b border-line px-gutter py-3">
+        <span className="text-label text-fg-strong">
           {t.editor.scenes.title}
         </span>
         <span className="shrink-0 font-mono text-caption text-fg-muted">
           {sceneSummary}
         </span>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+      <div className="min-h-0 flex-1 overflow-y-auto px-gutter py-3">
         <SceneList project={project} thumbnailSizePx={64} />
       </div>
     </aside>
