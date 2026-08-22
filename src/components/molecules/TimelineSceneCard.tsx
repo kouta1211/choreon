@@ -2,6 +2,7 @@
 
 import { useRef, useState, type PointerEvent } from "react";
 import { capturePointer, releasePointer } from "@/lib/pointerCapture";
+import { TAP_PATTERN, vibrate } from "@/lib/haptics";
 import {
   CARD_NAME_BAR_HEIGHT,
   maxCardHeight,
@@ -11,8 +12,18 @@ import type { Scene } from "@/features/scene/types";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { useT } from "@/features/i18n/LocaleProvider";
 
-/** これ以上動いたらドラッグ(時刻を動かす)、それ未満はタップ(選択) */
+/** これ以上動いたらドラッグ、それ未満はタップ(選択) */
 const DRAG_THRESHOLD_PX = 4;
+
+/**
+ * 押したままこれだけ待つと、コマを掴む(時刻を動かせる)。
+ *
+ * **待たずに引いたら、帯の方が動く**（user の指示 2026-08-22）。
+ * コマの帯は 64px あって帯全体の大半を占めるので、コマの上から
+ * 始めた操作を全部こちらが取ると、波形を引ける場所がほとんど残らない。
+ * 時間軸の「押しっぱなしで自由に置く」と同じ長さにそろえてある。
+ */
+const GRAB_HOLD_MS = 450;
 
 const MIN_CARD_HEIGHT = 24;
 
@@ -99,6 +110,10 @@ export function TimelineSceneCard({
   const [isPressed, setIsPressed] = useState(false);
   const startXRef = useRef<number | null>(null);
   const movedRef = useRef(false);
+  /** 押したまま待って、コマを掴んだか。掴むまでは帯に譲る */
+  const isGrabbedRef = useRef(false);
+  const [isGrabbed, setIsGrabbed] = useState(false);
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const width = isSelected ? layout.selectedCardWidth : layout.cardWidth;
   const height = cardHeight(
@@ -109,13 +124,32 @@ export function TimelineSceneCard({
   );
 
 
+  /**
+   * 押した。**ここでは帯を止めない**（user の指示 2026-08-22:
+   * 「コマの上を横へ引いたときは、帯を動かす。コマの移動は別の手で」）。
+   *
+   * 以前は押した瞬間に `stopPropagation` していたので、**コマの上から
+   * 始めた操作では波形を引けなかった**。コマの帯は 64px あり、帯全体
+   * （96px）の大半を占めるので、「引けないときがある」の正体になっていた。
+   *
+   * 代わりに、**押したまま待つとコマを掴む**（一覧の並び替えと同じ作法）。
+   * 待っている間に動いたら、それは帯を引く操作なので手を出さない。
+   */
   const handlePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
-    // 帯側のスクロールやシークに持って行かれないようにする
-    event.stopPropagation();
     startXRef.current = event.clientX;
     movedRef.current = false;
+    isGrabbedRef.current = false;
     setIsPressed(true);
-    capturePointer(event.currentTarget, event.pointerId);
+
+    if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+    holdTimerRef.current = setTimeout(() => {
+      // 待っている間に動いていたら、帯を引いている。掴まない
+      if (movedRef.current) return;
+      isGrabbedRef.current = true;
+      setIsGrabbed(true);
+      capturePointer(event.currentTarget, event.pointerId);
+      vibrate(TAP_PATTERN);
+    }, GRAB_HOLD_MS);
   };
 
   const handlePointerMove = (event: PointerEvent<HTMLButtonElement>) => {
@@ -123,7 +157,13 @@ export function TimelineSceneCard({
     if (startX === null) return;
 
     const delta = event.clientX - startX;
-    if (!movedRef.current && Math.abs(delta) < DRAG_THRESHOLD_PX) return;
+    if (Math.abs(delta) < DRAG_THRESHOLD_PX) return;
+
+    // 掴む前に動いたら、それは帯を引く操作。こちらは何もしない
+    if (!isGrabbedRef.current) {
+      movedRef.current = true;
+      return;
+    }
     movedRef.current = true;
     dragPxRef.current = delta;
     setDragPx(delta);
@@ -133,8 +173,21 @@ export function TimelineSceneCard({
     const startX = startXRef.current;
     startXRef.current = null;
     setIsPressed(false);
+    if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
     if (startX === null) return;
-    releasePointer(event.currentTarget, event.pointerId);
+
+    const wasGrabbed = isGrabbedRef.current;
+    isGrabbedRef.current = false;
+    setIsGrabbed(false);
+    if (wasGrabbed) releasePointer(event.currentTarget, event.pointerId);
+
+    /* 掴まないまま動いたのなら、帯を引いていた。こちらは何もしない
+       （シークもしない — 帯の側が自分で始末する） */
+    if (!wasGrabbed && movedRef.current) {
+      dragPxRef.current = 0;
+      setDragPx(0);
+      return;
+    }
 
     // 離した位置までを勘定に入れる。最後の pointermove から少し動いた
     // ぶんが切り捨てられると、置いた場所と保存される時刻がずれる
@@ -155,6 +208,9 @@ export function TimelineSceneCard({
   const handlePointerCancel = () => {
     startXRef.current = null;
     setIsPressed(false);
+    if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+    isGrabbedRef.current = false;
+    setIsGrabbed(false);
     dragPxRef.current = 0;
     setDragPx(0);
   };
@@ -176,7 +232,7 @@ export function TimelineSceneCard({
         marginLeft: -width / 2,
         // 掴んで動かすものなので、押しても沈めずに持ち上げる
         // (オーバーレイ仕様 §1-4。ダンサーのマーカーと同じ扱い)
-        transform: `translateX(${dragPx}px) scale(${isPressed ? 1.08 : 1})`,
+        transform: `translateX(${dragPx}px) scale(${isGrabbed ? 1.12 : isPressed ? 1.08 : 1})`,
       }}
       className={`absolute top-1/2 -translate-y-1/2 touch-none overflow-hidden bg-stage ${
         dragPx === 0
@@ -186,7 +242,16 @@ export function TimelineSceneCard({
         isSelected
           ? "z-20 rounded-md border-2 border-accent shadow-[0_2px_12px_color-mix(in_oklab,var(--scrim)_80%,transparent)]"
           : "z-10 rounded-md border border-line-strong"
-      } ${isPressed ? "z-30 shadow-[0_4px_12px_-4px_color-mix(in_oklab,var(--scrim)_60%,transparent)]" : ""}`}
+      } ${
+        /* 掴めたら、押しただけのときより一段持ち上げる。
+           待った甲斐があったことを形で返さないと、いつ掴めたのか
+           分からないまま引くことになる */
+        isGrabbed
+          ? "z-30 ring-2 ring-accent shadow-[0_6px_16px_-4px_color-mix(in_oklab,var(--scrim)_70%,transparent)]"
+          : isPressed
+            ? "z-30 shadow-[0_4px_12px_-4px_color-mix(in_oklab,var(--scrim)_60%,transparent)]"
+            : ""
+      }`}
     >
       <span aria-hidden className="absolute inset-0 block overflow-hidden">
         {/* 格子。ステージの升目と同じ数だけ引く。何列目に居るかが

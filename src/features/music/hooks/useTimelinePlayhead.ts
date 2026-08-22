@@ -39,6 +39,15 @@ export function useTimelinePlayhead({
   const playheadSeconds = useMotionValue(0);
   const isTouchingRef = useRef(false);
   const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** 手で軸を引いたか。**引いたら、その再生の間は追いかけない**
+   *  （実機の報告 2026-08-22:「波形をドラッグして移動させられないときがある」） */
+  const tookOverRef = useRef(false);
+
+  /* 押し直したら、また追いかける。**この効果は下の追従より先に置く** —
+     同じ描画で走るので、順番が逆だと1回ぶん古い値で判断してしまう */
+  useEffect(() => {
+    if (isPlaying) tookOverRef.current = false;
+  }, [isPlaying]);
 
   // 時計は1つ(useMusicPlayback / useSilentClock が currentTime へ書く)。
   // ここではその値を購読してMotionValueへ流すだけで、Reactの再描画は起こさない
@@ -54,7 +63,8 @@ export function useTimelinePlayhead({
     if (!isPlaying || viewport <= 0) return;
 
     const follow = (seconds: number) => {
-      if (isTouchingRef.current) return;
+      // 触っている間と、手で引いたあとは追いかけない
+      if (isTouchingRef.current || tookOverRef.current) return;
       scrollX.set(scrollForSeconds(seconds, pxPerSecond, viewport, contentPx));
     };
     follow(playheadSeconds.get());
@@ -90,8 +100,23 @@ export function useTimelinePlayhead({
     if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
   };
 
-  const releaseFollow = () => {
+  /**
+   * 指を離した。
+   *
+   * **引いたのなら、そのまま渡す**（2026-08-22）。以前はどんな操作でも
+   * 1.2秒後に追従が戻り、**動かした軸が再生ヘッドの所へ跳ねて戻って**
+   * いた。曲を鳴らしながら別の場所を見る、ができない。
+   *
+   * 押しただけ（シーク）なら今までどおり戻す — 再生ヘッドそのものを
+   * 動かした操作なので、追いかける先が変わっただけ。
+   */
+  const releaseFollow = (didPan = false) => {
     if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    if (didPan) {
+      tookOverRef.current = true;
+      isTouchingRef.current = false;
+      return;
+    }
     resumeTimerRef.current = setTimeout(() => {
       isTouchingRef.current = false;
     }, FOLLOW_RESUME_MS);

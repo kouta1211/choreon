@@ -30,7 +30,8 @@ type Args = {
   bpm: number;
   offsetSeconds: number;
   holdFollow: () => void;
-  releaseFollow: () => void;
+  /** 引いたかどうかを渡す。引いたなら、その再生の間は追従を戻さない */
+  releaseFollow: (didPan: boolean) => void;
 };
 
 /**
@@ -230,14 +231,14 @@ export function useTimelineGestures({
       vibrate(TAP_PATTERN);
     }
     setSnapPreviewSeconds(null);
-    if (pointers.size === 0) releaseFollow();
+    if (pointers.size === 0) releaseFollow(panRef.current.moved);
   };
 
   const onPointerCancel = (event: PointerEvent<HTMLDivElement>) => {
     if (!pointersRef.current.delete(event.pointerId)) return;
     if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
     setSnapPreviewSeconds(null);
-    if (pointersRef.current.size === 0) releaseFollow();
+    if (pointersRef.current.size === 0) releaseFollow(panRef.current.moved);
   };
 
   return {

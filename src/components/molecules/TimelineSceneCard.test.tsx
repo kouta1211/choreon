@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import {
   cardHeight,
   TimelineSceneCard,
@@ -36,12 +36,34 @@ function renderCard(
   return { card: screen.getByRole("button", { name: "2. サビ" }), onSelect, onMoveSeconds };
 }
 
-/** 指を押して、動かして、離すまでを一度に流す */
+/**
+ * **押したまま待ってから**、動かして、離す。
+ *
+ * 待たずに引くと帯の方が動く（user の指示 2026-08-22:「コマの上を横へ
+ * 引いたときは帯を動かす。コマの移動は別の手で」）。コマの帯は帯全体の
+ * 大半を占めるので、コマの上から始めた操作を全部こちらが取ると、
+ * 波形を引ける場所がほとんど残らない。
+ */
 function drag(card: HTMLElement, deltaX: number) {
+  vi.useFakeTimers();
+  fireEvent.pointerDown(card, { pointerId: 1, clientX: 100 });
+  act(() => {
+    vi.advanceTimersByTime(GRAB_HOLD_MS);
+  });
+  vi.useRealTimers();
+  fireEvent.pointerMove(card, { pointerId: 1, clientX: 100 + deltaX });
+  fireEvent.pointerUp(card, { pointerId: 1, clientX: 100 + deltaX });
+}
+
+/** 待たずに引く（帯を動かす操作） */
+function dragWithoutHold(card: HTMLElement, deltaX: number) {
   fireEvent.pointerDown(card, { pointerId: 1, clientX: 100 });
   fireEvent.pointerMove(card, { pointerId: 1, clientX: 100 + deltaX });
   fireEvent.pointerUp(card, { pointerId: 1, clientX: 100 + deltaX });
 }
+
+/** コマを掴むまでの待ち時間。実装（TimelineSceneCard）と同じ値 */
+const GRAB_HOLD_MS = 450;
 
 describe("TimelineSceneCard", () => {
   it("軽く押しただけなら選ぶ", () => {
@@ -95,7 +117,12 @@ describe("TimelineSceneCard", () => {
   // 離した位置までを勘定に入れる(最後のpointermoveで切り捨てない)
   it("最後に動かした位置ではなく、離した位置で決まる", () => {
     const { card, onMoveSeconds } = renderCard();
+    vi.useFakeTimers();
     fireEvent.pointerDown(card, { pointerId: 1, clientX: 100 });
+    act(() => {
+      vi.advanceTimersByTime(GRAB_HOLD_MS);
+    });
+    vi.useRealTimers();
     fireEvent.pointerMove(card, { pointerId: 1, clientX: 110 });
     fireEvent.pointerUp(card, { pointerId: 1, clientX: 152 });
 
@@ -112,7 +139,12 @@ describe("TimelineSceneCard", () => {
     expect(onMoveSeconds).not.toHaveBeenCalled();
   });
 
-  it("帯の操作(スクロール・シーク)へは渡さない", () => {
+  /**
+   * **押した時点では帯へ渡す**（user の指示 2026-08-22）。
+   * 以前はここで止めていたので、コマの上から始めた操作では波形を
+   * 引けなかった。コマを掴むのは、押したまま待ったときだけ。
+   */
+  it("押した時点では、帯の操作を止めない", () => {
     const onBandPointerDown = vi.fn();
     render(
       <div onPointerDown={onBandPointerDown}>
@@ -136,7 +168,7 @@ describe("TimelineSceneCard", () => {
       pointerId: 1,
       clientX: 30,
     });
-    expect(onBandPointerDown).not.toHaveBeenCalled();
+    expect(onBandPointerDown).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -181,5 +213,40 @@ describe("TimelineSceneCluster", () => {
         name: "シーン3〜6が重なっています。押すと広げて、1つずつ選びます",
       }),
     ).toBeInTheDocument();
+  });
+});
+
+/**
+ * コマの上から始めても、待たずに引けば**帯を動かす操作**。
+ *
+ * 実機の報告（2026-08-22）:「波形をドラッグして移動させられないときが
+ * ある」。コマの帯は帯全体の大半を占めるので、コマの上から始めた操作を
+ * 全部こちらが取ると、波形を引ける場所がほとんど残らなかった。
+ */
+describe("TimelineSceneCard（待たずに引いたとき）", () => {
+  it("シーンの時刻は動かさない", () => {
+    const { card, onMoveSeconds } = renderCard();
+
+    dragWithoutHold(card, 60);
+
+    expect(onMoveSeconds).not.toHaveBeenCalled();
+  });
+
+  /* 帯の側が自分でシークを始末する。ここで選ぶと、引いた拍子に
+     関係ないシーンが選ばれる */
+  it("選びもしない（引く操作なので）", () => {
+    const { card, onSelect } = renderCard();
+
+    dragWithoutHold(card, 60);
+
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it("待ってから引けば、今までどおり時刻が動く", () => {
+    const { card, onMoveSeconds } = renderCard();
+
+    drag(card, 52);
+
+    expect(onMoveSeconds).toHaveBeenCalledWith(2);
   });
 });
