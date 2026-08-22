@@ -11,6 +11,7 @@ import type { Project } from "@/features/project/types";
 import { randomId } from "@/lib/randomId";
 import {
   duplicateTimeSeconds,
+  insertTimeSeconds,
   uniformTimes,
 } from "@/features/scene/lib/sceneTiming";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
@@ -88,17 +89,28 @@ export function useAddScene(project: Project) {
     /* シーンがまだ1つも無いときは曲の頭から始める（最初の隊形は
        「曲のこの秒から」ではなく「はじまり」なので）。
 
-       それ以外は**必ず、いま見ているシーンの次**へ入れる
-       （user の指示 2026-08-22）。以前は曲があるときだけ
-       【押した瞬間の再生位置】へ置いていたが、置き場所が曲の有無で
-       変わるので、**同じ操作の結果が読めなかった**。
-       曲に合わせたい位置は、置いてから時間軸で動かせる */
+       ■ 置き場所の決まり（2026-08-22 に user が決めた形）
+       - **曲を鳴らしている最中** … 押した瞬間の再生位置。聴きながら
+         「ここ」と思った所に置ける
+       - **それ以外** … いま見ているシーンの次
+
+       曲の有無ではなく【いま鳴っているか】で分けている。止まっている
+       ときの「いま」は誰にも見えないので、そこを再生位置にすると
+       押すまで結果が読めない（それが一度戻した理由）。鳴っている間は
+       「いま」がはっきりしていて、聴いている位置がそのまま意図になる */
+    const isPlayingNow = useUIStore.getState().isPlaying;
     const timeSeconds =
       scenes.length === 0
         ? 0
         : restacked
           ? (restacked.get(newSceneId) ?? 0)
-          : duplicateTimeSeconds(scenes, source, segmentSeconds);
+          : hasMusic && isPlayingNow
+            ? insertTimeSeconds(
+                scenes,
+                useMusicStore.getState().currentTime,
+                segmentSeconds,
+              )
+            : duplicateTimeSeconds(scenes, source, segmentSeconds);
 
     const scene = {
       id: newSceneId,

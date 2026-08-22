@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  insertTimeSeconds,
   uniformTimes,
   DEFAULT_SEGMENT_SECONDS,
   duplicateTimeSeconds,
@@ -161,6 +162,35 @@ describe("retimeForOrder", () => {
     SCENES.forEach((scene) => {
       expect(times.get(scene.id)).toBe(scene.timeSeconds);
     });
+  });
+});
+
+/**
+ * **曲を鳴らしている最中に押したときだけ**通る道
+ * （止まっているときは duplicateTimeSeconds が正）。
+ */
+describe("insertTimeSeconds", () => {
+  it("押した瞬間の再生位置に置く", () => {
+    expect(insertTimeSeconds(SCENES, 3.4)).toBe(3.4);
+  });
+
+  // 負の秒はまず曲の頭へ寄り、そこに先頭シーンが居るので割り込む
+  it("負の秒は曲の頭に寄せる", () => {
+    expect(insertTimeSeconds(SCENES, -2)).toBe(1);
+    expect(insertTimeSeconds([], -2)).toBe(0);
+  });
+
+  // そこに既に居るなら、次のシーンとの中間へ割り込む
+  it("既にシーンがある位置なら中間へ割り込む", () => {
+    expect(insertTimeSeconds(SCENES, 2)).toBe(3.5);
+  });
+
+  it("最後のシーンに重なったら後ろへ足す", () => {
+    expect(insertTimeSeconds(SCENES, 7)).toBe(7 + DEFAULT_SEGMENT_SECONDS);
+  });
+
+  it("シーンが無ければその時刻のまま", () => {
+    expect(insertTimeSeconds([], 12)).toBe(12);
   });
 });
 

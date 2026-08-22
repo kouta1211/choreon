@@ -258,6 +258,46 @@ export function sortScenes<T extends TimedScene & { orderIndex: number }>(
 }
 
 /**
+ * 新しいシーンを置く時刻。**押した瞬間の再生位置**に作る。
+ *
+ * ■ いつ通るか（2026-08-22 に user が決めた形）
+ * **曲を鳴らしている最中に押したときだけ。** 止まっているときは
+ * 「いま見ているシーンの次」（`duplicateTimeSeconds`）が正で、
+ * そちらが既定の道になっている。
+ *
+ * 鳴らしている間は「いま」がはっきりしている — 聴きながら「ここ」と
+ * 思った所に置ける、というのがこの関数の要点。止まっているときには
+ * その「いま」が無いので、同じ道を通すと押すまで結果が読めなくなる。
+ *
+ * そこに既に居る場合は、次のシーンとの中間へ割り込む。
+ */
+export function insertTimeSeconds(
+  scenes: TimedScene[],
+  atSeconds: number,
+  /** 空きが無いときに空ける秒数。設定から渡す(既定は1つの8カウント) */
+  segmentSeconds: number = DEFAULT_SEGMENT_SECONDS,
+): number {
+  const target = roundSeconds(Math.max(0, atSeconds));
+  const sorted = [...scenes].sort((a, b) => a.timeSeconds - b.timeSeconds);
+
+  const collision = sorted.find(
+    (scene) => Math.abs(scene.timeSeconds - target) < MIN_SEGMENT_SECONDS,
+  );
+  if (!collision) return target;
+
+  const next = sorted.find(
+    (scene) => scene.timeSeconds > collision.timeSeconds,
+  );
+  if (!next) return roundSeconds(collision.timeSeconds + segmentSeconds);
+  return roundSeconds(
+    Math.max(
+      collision.timeSeconds + MIN_SEGMENT_SECONDS,
+      (collision.timeSeconds + next.timeSeconds) / 2,
+    ),
+  );
+}
+
+/**
  * あるシーンの【すぐ後ろ】へ差し込む時刻。元のシーンと、その次のシーンの
  * 中間。次が無ければ既定の移動時間ぶん後ろへ置く。
  *

@@ -22,9 +22,11 @@ const SCENES = [
 function setup({
   isMetronomeEnabled,
   hasMusic = false,
+  isPlaying = false,
 }: {
   isMetronomeEnabled: boolean;
   hasMusic?: boolean;
+  isPlaying?: boolean;
 }) {
   const project = makeProject({ isMetronomeEnabled });
   useProjectStore.setState({ project, scenes: SCENES, positionsBySceneId: {} });
@@ -34,7 +36,7 @@ function setup({
     currentTime: hasMusic ? 5 : 0,
   });
   // 先頭を選んだ状態で足す＝「間に割り込む」場面
-  useUIStore.setState({ selectedSceneId: "a" });
+  useUIStore.setState({ selectedSceneId: "a", isPlaying });
 
   return renderHook(() => useAddScene(project), {
     wrapper: ({ children }: { children: ReactNode }) => (
@@ -82,8 +84,8 @@ describe("useAddScene の割り込み方", () => {
    * 以前は曲があるときだけ【押した瞬間の再生位置】へ置いていた。
    * 置き場所が曲の有無で変わるので、同じ操作の結果が読めなかった。
    */
-  it("曲があっても、聞いている位置ではなく選んでいるシーンの次へ入る", async () => {
-    // 先頭(0秒)を選んだまま、曲の5秒目を聞いている
+  it("曲があっても、止まっていれば選んでいるシーンの次へ入る", async () => {
+    // 先頭(0秒)を選んだまま、曲の5秒目で止まっている
     const { result } = setup({ isMetronomeEnabled: false, hasMusic: true });
 
     await act(async () => {
@@ -92,6 +94,30 @@ describe("useAddScene の割り込み方", () => {
 
     // 5秒の所ではなく、0秒と4秒のあいだ(2秒)へ入る
     await waitFor(() => expect(times()).toEqual([0, 2, 4, 6]));
+  });
+
+  /**
+   * **鳴らしている最中は、押した瞬間の位置**（user の指示 2026-08-22:
+   * 「再生している曲のシーン追加ボタンを押した際の曲のタイミングで、
+   * シーンが登録されてほしい」）。
+   *
+   * 止まっているときと分けているのは、止まっている「いま」は誰にも
+   * 見えないから。鳴っている間は聴いている位置がそのまま意図になる。
+   */
+  it("鳴らしている最中は、押した瞬間の再生位置へ入る", async () => {
+    // 先頭(0秒)を選んだまま、曲の5秒目を鳴らしている
+    const { result } = setup({
+      isMetronomeEnabled: false,
+      hasMusic: true,
+      isPlaying: true,
+    });
+
+    await act(async () => {
+      await result.current.addScene();
+    });
+
+    // 選んでいるシーンの次(2秒)ではなく、聴いている 5秒 に入る
+    await waitFor(() => expect(times()).toEqual([0, 4, 5, 6]));
   });
 
   /* 拍があるときは、触っていないシーンを動かさないのが正しい
