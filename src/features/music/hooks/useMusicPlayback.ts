@@ -52,8 +52,11 @@ export function useMusicPlayback() {
        シーンを選んだときも同じ道で頭出しされているので、
        「選んだシーンから鳴る」もそのまま保たれる。
 
-       鳴り終わったまま押されたときだけ、進める先が無いので頭出しし直す */
-    if (audio.ended) audio.currentTime = songSecondsForSelectedScene();
+       **鳴り終わったまま押されたときは、曲の頭から**（user の指示
+       2026-08-22:「曲が終了した際は、再生を止め、その状態で、再生ボタンを
+       押すと、曲の最初から流れるようにして」）。
+       進める先が無いので、そこから続けても何も起きない */
+    if (audio.ended) audio.currentTime = 0;
     // play()はPromiseを返す約束だが、返さない実装もある(jsdomなど)。
     // Promise.resolveで包んでおけば、どちらでも同じ書き方で拾える
     void Promise.resolve(audio.play()).catch(() => {
@@ -125,24 +128,6 @@ function songSecondsForSelectedScene(): number {
  */
 export function seekToSelectedScene(audio: HTMLAudioElement | null) {
   if (!audio) return;
-
-  /* **最後のシーンより後ろに居るときは動かさない**（2026-08-22）。
-     曲は最後まで流せるようになったので、そこで止めると
-     この関数が「選んでいるシーン＝最後のシーン」の位置へ引き戻し、
-     押した所から何十秒も戻されていた。
-     戻す相手が居ない（後ろにシーンが無い）ときは、そのまま置いておく */
-  const { scenes, project } = useProjectStore.getState();
-  const { selectedSceneId } = useUIStore.getState();
-  const index = scenes.findIndex((scene) => scene.id === selectedSceneId);
-  const elapsed = audio.currentTime - (project?.musicOffsetSeconds ?? 0);
-  const starts = sceneStartSeconds(scenes);
-  if (
-    index >= 0 &&
-    index === scenes.length - 1 &&
-    elapsed > (starts[index] ?? 0)
-  ) {
-    return;
-  }
 
   audio.currentTime = songSecondsForSelectedScene();
 }

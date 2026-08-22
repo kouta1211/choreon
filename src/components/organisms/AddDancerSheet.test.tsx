@@ -9,7 +9,11 @@ import * as positionsApi from "@/features/scene/api/positions";
 import type { Dancer } from "@/features/dancer/types";
 import { DANCER_COLOR_PALETTE } from "@/features/dancer/constants";
 
-import { makeDancer as makeBaseDancer, makeProject } from "@/test/factories";
+import {
+  makeDancer as makeBaseDancer,
+  makeProject,
+  makeScene,
+} from "@/test/factories";
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({}),
@@ -21,6 +25,9 @@ function makeDancer(overrides: Partial<Dancer> = {}): Dancer {
 }
 
 function openSheet() {
+  /* 立ち位置を作るには、その置き先（シーン）が要る。
+     選んでいる id だけでは足りない */
+  useProjectStore.setState({ scenes: [makeScene()] });
   useUIStore.setState({
     isAddDancerSheetOpen: true,
     selectedSceneId: "scene-1",
@@ -261,12 +268,27 @@ describe("AddDancerSheet", () => {
     );
   });
 
-  it("シーンが1つも無ければ追加できない", () => {
+  /**
+   * **シーンが1つも無くても足せる**（user の指示 2026-08-22）。
+   * ダンサーは作品に属するもので、シーンに属していない。
+   * 立ち位置は最初のシーンを作ったときに配られる（useAddScene）。
+   */
+  it("シーンが1つも無くても足せる（立ち位置はまだ作らない）", async () => {
+    useProjectStore.setState({ scenes: [], positionsBySceneId: {} });
     useUIStore.setState({ isAddDancerSheetOpen: true, selectedSceneId: null });
+    mockApis();
+    const user = userEvent.setup();
     render(<AddDancerSheet project={makeProject()} />);
 
-    expect(
-      screen.getByRole("button", { name: "1人を追加する" }),
-    ).toBeDisabled();
+    const submit = screen.getByRole("button", { name: "1人を追加する" });
+    expect(submit).toBeEnabled();
+    await user.click(submit);
+
+    // 人は増える
+    await waitFor(() =>
+      expect(Object.keys(useProjectStore.getState().dancers)).toHaveLength(1),
+    );
+    // 置き先が無いので、立ち位置はまだ作らない
+    expect(useProjectStore.getState().positionsBySceneId).toEqual({});
   });
 });

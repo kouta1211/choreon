@@ -4,10 +4,10 @@ import { cardMinGapPx, maxCardHeight, TIMELINE_LAYOUT } from "./timelineLayout";
 describe("maxCardHeight", () => {
   it("幕の高さより4px大きい", () => {
     expect(maxCardHeight(TIMELINE_LAYOUT.phone)).toBe(
-      TIMELINE_LAYOUT.phone.scrimHeight + 4,
+      TIMELINE_LAYOUT.phone.cardLaneHeight + 4,
     );
     expect(maxCardHeight(TIMELINE_LAYOUT.desktop)).toBe(
-      TIMELINE_LAYOUT.desktop.scrimHeight + 4,
+      TIMELINE_LAYOUT.desktop.cardLaneHeight + 4,
     );
   });
 });

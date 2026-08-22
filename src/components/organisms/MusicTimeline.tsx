@@ -183,7 +183,6 @@ export function MusicTimeline({ project, audioRef }: Props) {
   const placeAt = (seconds: number) =>
     hasMusic ? snapSeconds(seconds) : snapToBeat(seconds, bpm, offsetSeconds);
 
-  const scrim = `color-mix(in oklab, var(--scrim) ${hasMusic ? 72 : 50}%, transparent)`;
 
   const layerX = useTransform(scrollX, (value) => -value);
   // 破線の行き先。軸と一緒に流れるので、スクロール量を引く
@@ -221,19 +220,13 @@ export function MusicTimeline({ project, audioRef }: Props) {
           className="absolute inset-0"
         />
 
-        {/* 中央の幕。波形を割らずに、コマの周りだけ読めるようにする。
-            割ると波形を2回描くことになり、振幅も上下21pxずつに減る */}
-        <span
-          aria-hidden
-          style={{
-            top: (layout.bandHeight - layout.scrimHeight) / 2,
-            height: layout.scrimHeight,
-            // 曲なしのときは薄くする。縞と拍線がコマの下で切れると、
-            // 「どこまで動いたか」の手がかりが途切れて見える
-            background: `linear-gradient(to bottom, transparent, ${scrim} 28%, ${scrim} 72%, transparent)`,
-          }}
-          className="pointer-events-none absolute inset-x-0 block"
-        />
+        {/* **中央の幕は置かない**（user の指示 2026-08-22:「波形の真ん中が
+            黒くなっていますが、普通に戻してほしい。シーンを追加した際は、
+            単純に波形の上に載せる感じにしたい」）。
+
+            以前はコマの周りを読みやすくするために、帯の中央へ暗い幕を
+            敷いていた。だが**波形そのものが読めなくなる**方が損で、
+            コマは波形の上にそのまま載せれば足りる */}
 
         <TimelineSceneLayer
           scenes={scenes}

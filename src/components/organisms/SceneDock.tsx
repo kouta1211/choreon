@@ -135,7 +135,7 @@ export function SceneDock({ project }: Props) {
     toggle: handleTogglePlay,
     isCountingIn,
     remainingBeats,
-  } = usePlaybackToggle({ scenes, bpm, hasMusic, audioRef });
+  } = usePlaybackToggle({ scenes, bpm, hasMusic });
   useMetronome({
     // 予備拍の間は曲の有無に関わらず鳴らす。音の出ないカウントインは
     // ただの遅れで、構えるための合図にならない
@@ -163,10 +163,21 @@ export function SceneDock({ project }: Props) {
   // トーストはドックの直上に出す(高さを測ってCSS変数へ流す)
   useToastOffset(dockRef);
 
-  // 手でシーンを選んだら曲もその位置へ飛ばす。再生中は曲の側が
-  // シーンを決めているので、止まっているときだけ動かす
+  /* 手でシーンを選んだら曲もその位置へ飛ばす。再生中は曲の側が
+     シーンを決めているので、止まっているときは動かさない。
+
+     **選び直したときだけ**動かす（2026-08-22）。以前は「止めた」だけでも
+     ここが走り、選んでいるシーンの位置へ引き戻していた。そのせいで
+     途中で止めて押し直すと最初から鳴り始めていた（user の報告）。
+     再生中も控えを更新しておくので、止めた瞬間に走ることはない */
+  const seekedSceneIdRef = useRef(selectedSceneId);
   useEffect(() => {
-    if (isPlaying) return;
+    if (isPlaying) {
+      seekedSceneIdRef.current = selectedSceneId;
+      return;
+    }
+    if (seekedSceneIdRef.current === selectedSceneId) return;
+    seekedSceneIdRef.current = selectedSceneId;
     seekToSelectedScene(audioRef.current);
   }, [isPlaying, selectedSceneId, audioRef]);
 

@@ -544,3 +544,73 @@ describe("SceneDock（曲があるとき、どこから鳴るか）", () => {
     expect(audio.currentTime).toBe(12);
   });
 });
+
+/**
+ * 止めた所から続ける。
+ *
+ * user の指示（2026-08-22）:「曲を途中で止め、再生するときに、最初から
+ * 再生されるようになってるので…直前で止めたところ（現在の縦線の場所）から
+ * 再生するようにして。ただ、曲が終了した際は、再生を止め、その状態で、
+ * 再生ボタンを押すと、曲の最初から流れるようにして」。
+ */
+describe("SceneDock（曲があるときの、止めて押し直す）", () => {
+  function setupPlaying() {
+    useProjectStore.setState({
+      project: makeProject(),
+      scenes: [
+        makeScene({ timeSeconds: 0 }),
+        makeScene({ id: "scene-2", orderIndex: 1, timeSeconds: 8 }),
+      ],
+    });
+    useUIStore.setState({ selectedSceneId: "scene-1", isPlaying: true });
+    useMusicStore.setState({ objectUrl: "blob:song", fileName: "song.mp3" });
+    render(<SceneDock project={makeProject()} />);
+    const audio = document.querySelector("audio");
+    if (!audio) throw new Error("audio が無い");
+    return audio;
+  }
+
+  it("途中で止めても、曲はその場に留まる", async () => {
+    const audio = setupPlaying();
+    Object.defineProperty(audio, "currentTime", { value: 3, writable: true });
+    Object.defineProperty(audio, "ended", { value: false, writable: true });
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("button", { name: "再生を停止" }));
+
+    expect(useUIStore.getState().isPlaying).toBe(false);
+    // いちばん近いシーン(0秒)へ寄せない
+    expect(audio.currentTime).toBe(3);
+  });
+
+  it("押し直すと、止めた所から続く", async () => {
+    const audio = setupPlaying();
+    Object.defineProperty(audio, "currentTime", { value: 3, writable: true });
+    Object.defineProperty(audio, "ended", { value: false, writable: true });
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("button", { name: "再生を停止" }));
+    await user.click(
+      screen.getByRole("button", { name: "最後のシーンまで再生" }),
+    );
+
+    await waitFor(() => expect(useUIStore.getState().isPlaying).toBe(true));
+    expect(audio.currentTime).toBe(3);
+  });
+
+  it("鳴り終わったあとに押すと、曲の頭から流れる", async () => {
+    const audio = setupPlaying();
+    Object.defineProperty(audio, "currentTime", { value: 200, writable: true });
+    Object.defineProperty(audio, "ended", { value: true, writable: true });
+    const user = userEvent.setup();
+
+    // 鳴り終わりで自分から止まる
+    await waitFor(() => expect(useUIStore.getState().isPlaying).toBe(false));
+
+    await user.click(
+      screen.getByRole("button", { name: "最後のシーンまで再生" }),
+    );
+
+    await waitFor(() => expect(audio.currentTime).toBe(0));
+  });
+});

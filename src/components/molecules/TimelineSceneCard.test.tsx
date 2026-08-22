@@ -141,12 +141,12 @@ describe("TimelineSceneCard", () => {
 });
 
 describe("cardHeight", () => {
-  const scrimHeight = maxCardHeight(PHONE);
+  const cardLaneHeight = maxCardHeight(PHONE);
 
   it("ステージの縦横比に合わせる", () => {
     // 8:6 のステージなら仕様どおり 46×34 / 56×42
-    expect(cardHeight(46, 8, 6, scrimHeight)).toBe(35);
-    expect(cardHeight(56, 8, 6, scrimHeight)).toBe(42);
+    expect(cardHeight(46, 8, 6, cardLaneHeight)).toBe(35);
+    expect(cardHeight(56, 8, 6, cardLaneHeight)).toBe(42);
   });
 
   // PC はコマも幕も大きいので、同じ比でそのまま伸びる
@@ -157,11 +157,11 @@ describe("cardHeight", () => {
   });
 
   it("縦長のステージでも幕からはみ出さない", () => {
-    expect(cardHeight(46, 6, 12, scrimHeight)).toBe(scrimHeight);
+    expect(cardHeight(46, 6, 12, cardLaneHeight)).toBe(cardLaneHeight);
   });
 
   it("横長すぎても潰れない", () => {
-    expect(cardHeight(46, 40, 2, scrimHeight)).toBe(24);
+    expect(cardHeight(46, 40, 2, cardLaneHeight)).toBe(24);
   });
 });
 

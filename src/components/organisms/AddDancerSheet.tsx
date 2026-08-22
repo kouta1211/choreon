@@ -106,10 +106,15 @@ export function AddDancerSheet({ project }: Props) {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!selectedSceneId) return;
 
+    /* **シーンが1つも無くても足せる**（user の指示 2026-08-22:
+       「シーンがない状態でも、ダンサーの登録、追加ができるようにしてほしい」）。
+       ダンサーは作品に属するもので、シーンに属していない。
+       立ち位置は最初のシーンを作ったときに配られる（useAddScene） */
     setIsSubmitting(true);
-    const occupied = Object.values(positionsBySceneId[selectedSceneId] ?? {});
+    const occupied = Object.values(
+      positionsBySceneId[selectedSceneId ?? ""] ?? {},
+    );
     const spots = findFreePositions(
       occupied,
       count,
@@ -133,8 +138,9 @@ export function AddDancerSheet({ project }: Props) {
     //
     // 立ち位置は全シーンで同じにする。「まだ動かしていない人」として
     // 同じ場所に立っている状態から始まり、動かしたシーンだけが変わっていく
-    const targetScenes = scenes.length > 0 ? scenes : [{ id: selectedSceneId }];
-    const positions = targetScenes.flatMap((scene) =>
+    /* シーンが無ければ立ち位置も作らない（置く先が無い）。
+       最初のシーンを作った時点で、空いているマスへ配られる */
+    const positions = scenes.flatMap((scene) =>
       created.map((dancer, index) => ({
         sceneId: scene.id,
         dancerId: dancer.id,
@@ -298,7 +304,7 @@ export function AddDancerSheet({ project }: Props) {
           </PressableButton>
           <PressableButton
             type="submit"
-            disabled={!selectedSceneId || isSubmitting}
+            disabled={isSubmitting}
             className="h-12 flex-[2] rounded-xl bg-accent text-body font-semibold text-accent-fg disabled:opacity-50"
           >
             {t.dancer.add.submit(count)}

@@ -16,7 +16,7 @@ export type TimelineLayout = {
   /** 帯の高さ */
   bandHeight: number;
   /** 中央の幕(コマの通り道)の高さ */
-  scrimHeight: number;
+  cardLaneHeight: number;
   /** コマの幅 */
   cardWidth: number;
   /** 選択中のコマの幅 */
@@ -51,7 +51,7 @@ export const TIMELINE_LAYOUT: Record<ScreenKind, TimelineLayout> = {
     // 帯を厚くしたぶんは、コマの上下に出る波形に回る。曲のどこを見ているかが
     // 読めるようになる(以前は帯80のうち40が幕で、波形がほとんど見えなかった)
     bandHeight: 128,
-    scrimHeight: 60,
+    cardLaneHeight: 60,
     // コマの大きさは【幅】で決まる。高さは幅×ステージの比なので、
     // 幕を高くしてもコマは大きくならない。PCと同じ大きさまで広げる。
     // 広げすぎると縮退(コマ→点)が早まる — 76 なら 80px/3.33秒 で、
@@ -65,7 +65,7 @@ export const TIMELINE_LAYOUT: Record<ScreenKind, TimelineLayout> = {
   },
   tablet: {
     bandHeight: 84,
-    scrimHeight: 56,
+    cardLaneHeight: 56,
     cardWidth: 58,
     selectedCardWidth: 70,
     showCardName: false,
@@ -74,7 +74,7 @@ export const TIMELINE_LAYOUT: Record<ScreenKind, TimelineLayout> = {
   },
   desktop: {
     bandHeight: 96,
-    scrimHeight: 64,
+    cardLaneHeight: 64,
     cardWidth: 72,
     selectedCardWidth: 84,
     showCardName: true,
@@ -96,12 +96,15 @@ export const CARD_NAME_BAR_HEIGHT = 16;
 /**
  * コマの高さの上限。
  *
- * 幕(コマの通り道)より 4px だけ大きい。仕様の確定寸法である
- * スマホの選択中 56×42 は、40px の幕に対して上下 1px ずつはみ出す。
- * 幕でぴったり切ると、その 42 が作れない。
+ * コマの通り道より 4px だけ大きい。仕様の確定寸法であるスマホの選択中
+ * 56×42 は、40px の通り道に対して上下 1px ずつはみ出す。
+ * 通り道でぴったり切ると、その 42 が作れない。
+ *
+ * （2026-08-22 まで、この通り道には暗い幕を敷いていた。波形が読めなく
+ * なるので外した — 名前だけ `scrimHeight` から変えてある）
  */
 export function maxCardHeight(layout: TimelineLayout): number {
-  return layout.scrimHeight + 4;
+  return layout.cardLaneHeight + 4;
 }
 
 /**

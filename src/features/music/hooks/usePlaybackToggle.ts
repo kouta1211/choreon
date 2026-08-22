@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
@@ -17,8 +16,6 @@ type Args = {
   scenes: Scene[];
   bpm: number;
   hasMusic: boolean;
-  /** 曲の実体。曲があるときの時刻の正はこちら */
-  audioRef: { current: HTMLAudioElement | null };
 };
 
 /**
@@ -39,7 +36,7 @@ type Args = {
  * ここへ通しておかないと、予備拍を設定している人のスペースキーだけが
  * 数えずに始まる。
  */
-export function usePlaybackToggle({ scenes, bpm, hasMusic, audioRef }: Args) {
+export function usePlaybackToggle({ scenes, bpm, hasMusic }: Args) {
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const selectScene = useUIStore((state) => state.selectScene);
   const isPlaying = useUIStore((state) => state.isPlaying);
@@ -62,16 +59,22 @@ export function usePlaybackToggle({ scenes, bpm, hasMusic, audioRef }: Args) {
     }
 
     if (!isPlaying) {
-      /* シーンがまだ1つも無いときは、**曲だけ流す**（実機の報告
-         2026-08-22:「曲を導入した際、シーンがないと再生できない」）。
-         曲に合わせて作る人は、まず聞いて置き所を決める。動かす相手が
-         居ないだけで、鳴らせない理由は無い。
-         曲も無ければ、流すものが本当に何も無いので押しても始まらない */
-      if (scenes.length === 0) {
-        if (!hasMusic) return;
+      /* **曲があるときは、いま縦線が立っている所から**（user の指示
+         2026-08-22:「曲を途中で止め、再生するときに…直前で止めたところ
+         （現在の縦線の場所）から再生するようにして」）。
+
+         シーンを選び直したり、曲を頭出ししたりしない — どちらも
+         「止めた所から続ける」を壊す。シーンの有無も見ない
+         （シーンが1つも無くても曲だけ流せる）。
+         曲が鳴り終わっていたときだけ、曲の頭へ戻す（useMusicPlayback） */
+      if (hasMusic) {
         start(countIn, () => setIsPlaying(true));
         return;
       }
+
+      /* ここから下は曲が無いとき。時計を持っているのはシーンの並びだけ
+         なので、どのシーンから流すかを決める */
+      if (scenes.length === 0) return;
 
       const from = playbackStartIndex(
         scenes,
@@ -85,40 +88,25 @@ export function usePlaybackToggle({ scenes, bpm, hasMusic, audioRef }: Args) {
       // (useMusicPlayback)。先に選び直しておけば曲も付いてくる
       if (scenes[from].id !== selectedSceneId) selectScene(scenes[from].id);
       setPlaybackStartScene(scenes[from].id);
-
-      if (!hasMusic) {
-        setCurrentTime(sceneStartSeconds(scenes)[from] ?? 0);
-      }
+      setCurrentTime(sceneStartSeconds(scenes)[from] ?? 0);
       // 予備拍を数えてから動き出す(設定が0なら、その場で始まる)
       start(countIn, () => setIsPlaying(true));
       return;
     }
 
-    if (scenes.length > 0) {
-      const audio = audioRef.current;
-      const offset =
-        useProjectStore.getState().project?.musicOffsetSeconds ?? 0;
-      const elapsed = hasMusic
-        ? (audio?.currentTime ?? 0) - offset
-        : useMusicStore.getState().currentTime;
+    /* **曲があるときは、止めた所にそのまま置く**（2026-08-22）。
+       次に押したらそこから続くので、動かしてはいけない。
 
+       曲が無いときだけ、いちばん近いシーンへ寄せてから止める。
+       あちらの時計はシーンの並びしか持たないので、区間の途中で
+       止まると「隊形として存在しない状態」で取り残される */
+    if (!hasMusic && scenes.length > 0) {
+      const elapsed = useMusicStore.getState().currentTime;
       const index = nearestSceneIndexAtSeconds(scenes, elapsed);
       const scene = scenes[index];
       if (scene) {
         selectScene(scene.id);
-        const startSeconds = sceneStartSeconds(scenes)[index];
-        /* **最後のシーンより後ろでは、曲を巻き戻さない**（2026-08-22）。
-           曲は最後まで流せるようになったので、そこで止めると
-           「押した所」から何十秒も戻されることになる。
-           寄せるのは【シーンとシーンのあいだ】で止めたとき — そこは
-           隊形として存在しない状態なので、近い方へ寄せる意味がある */
-        const isPastLastScene =
-          index === scenes.length - 1 && elapsed >= startSeconds;
-        if (hasMusic && audio) {
-          if (!isPastLastScene) audio.currentTime = offset + startSeconds;
-        } else {
-          setCurrentTime(startSeconds);
-        }
+        setCurrentTime(sceneStartSeconds(scenes)[index]);
       }
     }
     setIsPlaying(false);
