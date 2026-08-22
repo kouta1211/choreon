@@ -19,6 +19,7 @@ import type { Project } from "@/features/project/types";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { randomId } from "@/lib/randomId";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { DancerColorPicker } from "@/components/molecules/DancerColorPicker";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
@@ -30,12 +31,16 @@ type Props = {
 const MAX_COUNT = 20;
 
 /**
- * ダンサーを追加するシート。聞くのは【人数だけ】。
+ * ダンサーを追加するシート。まず聞くのは【人数】。
  *
- * 名前は通し番号を自動で振り、色も自動で決める。どちらも後から
- * インスペクターで直せるうえ、追加の時点では「何人いるか」しか
- * 決まっていないことが多いため。1人ずつ名前を打たせると、人数ぶん
- * シートを開き直すことになる。
+ * 名前は通し番号を自動で振り、色も自動で決める。**そのまま押せば
+ * それで作られる**ので、人数ぶん名前を打たされることはない。
+ *
+ * ただし**その場で直せる**（実機の報告 2026-08-22）。名前の欄は
+ * 空のままにしてあって、自動で決めた名前は**薄い字（placeholder）**で
+ * 出す。打った人だけが入れ替わるので、「まず消してから打つ」が要らない。
+ * 色は丸を押すと、その人のぶんだけ選ぶ列が開く（20人ぶん常に出すと、
+ * 丸が140個並ぶ）。
  *
  * 立ち位置は空いているマスを探して配る。以前は全員ステージ中央に
  * 置いていたので、続けて追加すると同じ場所に重なり、上の1人しか
@@ -45,6 +50,13 @@ export function AddDancerSheet({ project }: Props) {
   const t = useT();
   const [count, setCount] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  /* 打ち替えた分だけを【並びの位置】で覚える。人数を増やし減らししても
+     1人目は1人目のまま。触っていない人は入っていない */
+  const [overrides, setOverrides] = useState<
+    Record<number, { name?: string; color?: string }>
+  >({});
+  /** 色の列を開いている人。閉じているときは null（一度に1人だけ） */
+  const [openColorIndex, setOpenColorIndex] = useState<number | null>(null);
   const isOpen = useUIStore((state) => state.isAddDancerSheetOpen);
   const setAddDancerSheetOpen = useUIStore(
     (state) => state.setAddDancerSheetOpen,
@@ -75,8 +87,22 @@ export function AddDancerSheet({ project }: Props) {
 
   const close = () => {
     setCount(1);
+    setOverrides({});
+    setOpenColorIndex(null);
     setAddDancerSheetOpen(false);
   };
+
+  /** その人ぶんの打ち替えを1つ差し替える */
+  const setOverride = (
+    index: number,
+    patch: { name?: string; color?: string },
+  ) =>
+    setOverrides((prev) => ({ ...prev, [index]: { ...prev[index], ...patch } }));
+
+  /** 実際に作る名前と色。打ち替えが無ければ自動で決めた方 */
+  const nameAt = (index: number) =>
+    overrides[index]?.name?.trim() || names[index];
+  const colorAt = (index: number) => overrides[index]?.color ?? colors[index];
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -91,11 +117,11 @@ export function AddDancerSheet({ project }: Props) {
       project.stageHeight,
     );
 
-    const created = names.map((name, index) => ({
+    const created = names.map((_autoName, index) => ({
       id: randomId(),
       projectId: project.id,
-      name,
-      color: colors[index],
+      name: nameAt(index),
+      color: colorAt(index),
       initialDirection: 0,
       createdAt: new Date().toISOString(),
     }));
@@ -198,28 +224,64 @@ export function AddDancerSheet({ project }: Props) {
           </div>
         </div>
 
-        {/* 何が作られるかを、追加する前に見せる */}
+        {/* 何が作られるかを見せる。**そのまま直せる** */}
         <div className="flex flex-col gap-2 rounded-xl border border-line bg-surface-raised p-3">
           <span className="text-caption font-medium text-fg-muted">
             {t.dancer.add.autoNote}
           </span>
-          <div className="flex flex-wrap gap-1.5">
-            {names.map((name, index) => (
-              <span
-                key={name}
-                className="flex items-center gap-1.5 rounded-full border border-line-strong bg-surface py-1 pr-2.5 pl-1.5"
-              >
-                <span
-                  aria-hidden
-                  className="block h-3.5 w-3.5 rounded-full"
-                  style={{ backgroundColor: themedDancerColor(colors[index]) }}
-                />
-                <span className="font-mono text-caption font-semibold text-fg">
-                  {name}
-                </span>
-              </span>
+          <ul className="flex flex-col gap-1.5">
+            {names.map((autoName, index) => (
+              /* 並びの位置がその人の身元。名前は打ち替えで変わるので鍵に
+                 使えない（同じ名前を2人に付けられる） */
+              <li key={index} className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                  <PressableButton
+                    kind="icon"
+                    aria-label={t.dancer.add.colorLabel(nameAt(index))}
+                    aria-expanded={openColorIndex === index}
+                    onClick={() =>
+                      setOpenColorIndex(
+                        openColorIndex === index ? null : index,
+                      )
+                    }
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-line-strong"
+                  >
+                    <span
+                      aria-hidden
+                      className="block h-4 w-4 rounded-full"
+                      style={{
+                        backgroundColor: themedDancerColor(colorAt(index)),
+                      }}
+                    />
+                  </PressableButton>
+                  {/* 自動で決めた名前は薄い字で出す。打った人だけが
+                      入れ替わるので、「まず消す」が要らない */}
+                  <input
+                    type="text"
+                    aria-label={t.dancer.add.nameLabel(index + 1)}
+                    value={overrides[index]?.name ?? ""}
+                    placeholder={autoName}
+                    onChange={(event) =>
+                      setOverride(index, { name: event.target.value })
+                    }
+                    className="h-9 min-w-0 flex-1 rounded-lg border border-line-strong bg-surface px-2.5 text-body text-fg-strong placeholder:font-mono placeholder:text-fg-muted focus:border-accent focus:outline-none"
+                  />
+                </div>
+
+                {openColorIndex === index && (
+                  <div className="flex flex-wrap items-center gap-2 rounded-lg bg-surface-strong px-2.5 py-2">
+                    <DancerColorPicker
+                      value={colorAt(index)}
+                      onCommit={(color) => {
+                        setOverride(index, { color });
+                        setOpenColorIndex(null);
+                      }}
+                    />
+                  </div>
+                )}
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
 
         <p className="text-xs leading-relaxed text-fg-muted">

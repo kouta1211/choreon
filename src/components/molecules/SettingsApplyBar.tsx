@@ -133,11 +133,15 @@ export function SettingsApplySurface({ children }: { children: ReactNode }) {
  *
  * 戻り値は**預け先があったか**。無ければ（設定の外で使われたら）
  * 行が自分でボタンを出す。
+ *
+ * `enabled` が false の行は**預けない**（欄から離れた時点で入る行）。
+ * 預けてしまうと、確定させる相手が居ないのに束の下へボタンが生える。
  */
 export function useSettingsApply(
   isDirty: boolean,
   isInvalid: boolean,
   commit: () => void,
+  enabled = true,
 ) {
   const registry = useContext(ApplyRegistry);
   const id = useId();
@@ -149,20 +153,20 @@ export function useSettingsApply(
   });
 
   useEffect(() => {
-    if (!registry) return;
+    if (!registry || !enabled) return;
     registry.register(id, latest);
     return () => registry.unregister(id);
-  }, [registry, id]);
+  }, [registry, id, enabled]);
 
   // 件数が動くのは打ち始めと確定のときだけ。1文字ごとには動かない
   useEffect(() => {
-    registry?.setDirty(id, isDirty);
-  }, [registry, id, isDirty]);
+    if (enabled) registry?.setDirty(id, isDirty);
+  }, [registry, id, isDirty, enabled]);
 
   // 受け取れる/受け取れないが入れ替わったときだけ動く
   useEffect(() => {
-    registry?.setInvalid(id, isInvalid);
-  }, [registry, id, isInvalid]);
+    if (enabled) registry?.setInvalid(id, isInvalid);
+  }, [registry, id, isInvalid, enabled]);
 
-  return registry !== null;
+  return enabled && registry !== null;
 }

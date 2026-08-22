@@ -165,6 +165,7 @@ export function SettingsNumberRow({
   step = 1,
   unit,
   onChange,
+  commitOn,
 }: {
   label: string;
   description?: string;
@@ -175,6 +176,8 @@ export function SettingsNumberRow({
   unit: string;
   /** 受け取らなかったときは false を返す(useNumberDraft が欄を元へ戻す) */
   onChange: (value: number) => void | boolean;
+  /** 値が入る合図。既定は「適用」を押すまで変えない(NumberField) */
+  commitOn?: "apply" | "blur";
 }) {
   return (
     <div className="flex min-h-target flex-col gap-unit px-gutter py-unit">
@@ -187,6 +190,7 @@ export function SettingsNumberRow({
         step={step}
         unit={unit}
         onChange={onChange}
+        commitOn={commitOn}
       />
     </div>
   );

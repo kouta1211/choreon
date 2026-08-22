@@ -276,7 +276,37 @@ export function SceneDock({ project }: Props) {
               </span>
             </div>
           </>
+        ) : hasMusic ? (
+          /* シーンがまだ無くても、**曲があるなら流せる**（実機の報告
+             2026-08-22）。曲に合わせて作る人は、まず聞いて置き所を決める。
+             進む先が無いだけで、鳴らせない理由は無い */
+          <>
+            <PressableButton
+              kind="round"
+              onClick={handleTogglePlay}
+              /* **「最後のシーンまで再生」ではない。** 進む先が無いので、
+                 そう読み上げると嘘になる（流すのは曲だけ） */
+              aria-label={
+                isCountingIn
+                  ? t.editor.dock.cancelCountIn
+                  : isPlaying
+                    ? t.editor.dock.pause
+                    : t.editor.dock.playMusicOnly
+              }
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-accent-fg"
+            >
+              {isPlaying || isCountingIn ? (
+                <Pause size={20} fill="currentColor" />
+              ) : (
+                <Play size={20} fill="currentColor" />
+              )}
+            </PressableButton>
+            <span className="min-w-0 flex-1 text-label text-fg-muted">
+              {isPlaying ? t.editor.musicOnly : t.editor.noScenes}
+            </span>
+          </>
         ) : (
+          /* 曲も無ければ、流すものが本当に無い */
           <span className="min-w-0 flex-1 text-label text-fg-muted">
             {t.editor.noScenes}
           </span>

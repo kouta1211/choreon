@@ -27,6 +27,7 @@ type Args = {
  * ■ どこから流すか
  * ふだんは選択中のシーン。最後まで流し終えた状態で押されたときだけ、
  * 前回始めた場所へ戻る(playbackStart.ts)。
+ * **シーンが1つも無いときは、曲だけを頭から流す**（2026-08-22）。
  *
  * ■ 止めるときは、いちばん近いシーンへ寄せてから止める
  * 押した瞬間の時刻は区間の途中であることが多く、そこで止めると
@@ -61,6 +62,17 @@ export function usePlaybackToggle({ scenes, bpm, hasMusic, audioRef }: Args) {
     }
 
     if (!isPlaying) {
+      /* シーンがまだ1つも無いときは、**曲だけ流す**（実機の報告
+         2026-08-22:「曲を導入した際、シーンがないと再生できない」）。
+         曲に合わせて作る人は、まず聞いて置き所を決める。動かす相手が
+         居ないだけで、鳴らせない理由は無い。
+         曲も無ければ、流すものが本当に何も無いので押しても始まらない */
+      if (scenes.length === 0) {
+        if (!hasMusic) return;
+        start(countIn, () => setIsPlaying(true));
+        return;
+      }
+
       const from = playbackStartIndex(
         scenes,
         selectedSceneId,

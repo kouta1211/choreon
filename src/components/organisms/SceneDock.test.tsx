@@ -366,3 +366,66 @@ describe("SceneDock（曲もメトロノームも無いとき）", () => {
     expect(screen.queryByText(/0:0/)).toBeNull();
   });
 });
+
+/**
+ * シーンがまだ1つも無いとき。
+ *
+ * **曲があるなら流せる**（実機の報告 2026-08-22:「曲を導入した際、
+ * シーンがないと再生できない」）。曲に合わせて作る人は、まず聞いて
+ * 置き所を決めるので、進む先が無いことと鳴らせないことは別。
+ *
+ * なお**最初のシーンは必ず0秒**に置かれる（`useAddScene`。最初の隊形は
+ * 「曲のこの秒から」ではなく「はじまり」）。ここは変えていない。
+ */
+describe("SceneDock（シーンがまだ無いとき）", () => {
+  beforeEach(() => {
+    useProjectStore.setState({ project: makeProject(), scenes: [] });
+    useUIStore.setState({ selectedSceneId: null, isPlaying: false });
+  });
+
+  it("曲があれば、再生のボタンが出る", () => {
+    useMusicStore.setState({ objectUrl: "blob:song", fileName: "song.mp3" });
+    render(<SceneDock project={makeProject()} />);
+
+    expect(screen.getByRole("button", { name: "曲を流す" })).toBeInTheDocument();
+  });
+
+  it("曲が無ければ、再生のボタンは出ない", () => {
+    render(<SceneDock project={makeProject()} />);
+
+    expect(screen.queryByRole("button", { name: "曲を流す" })).toBeNull();
+    expect(screen.getByText("シーンがありません")).toBeInTheDocument();
+  });
+
+  it("押すと、曲だけが流れ始める", async () => {
+    useMusicStore.setState({ objectUrl: "blob:song", fileName: "song.mp3" });
+    const user = userEvent.setup();
+    render(<SceneDock project={makeProject()} />);
+
+    await user.click(screen.getByRole("button", { name: "曲を流す" }));
+
+    await waitFor(() => expect(useUIStore.getState().isPlaying).toBe(true));
+    expect(screen.getByText("曲だけ流しています")).toBeInTheDocument();
+  });
+
+  it("流している間に押すと止まる", async () => {
+    useMusicStore.setState({ objectUrl: "blob:song", fileName: "song.mp3" });
+    useUIStore.setState({ isPlaying: true });
+    const user = userEvent.setup();
+    render(<SceneDock project={makeProject()} />);
+
+    await user.click(screen.getByRole("button", { name: "再生を停止" }));
+
+    expect(useUIStore.getState().isPlaying).toBe(false);
+  });
+
+  /* シーンを作る道は塞がない。曲を聞いてから ＋ を押す、が普通の手順 */
+  it("＋ は今までどおり押せる", () => {
+    useMusicStore.setState({ objectUrl: "blob:song", fileName: "song.mp3" });
+    render(<SceneDock project={makeProject()} />);
+
+    expect(
+      screen.getByRole("button", { name: "シーンを追加" }),
+    ).toBeEnabled();
+  });
+});

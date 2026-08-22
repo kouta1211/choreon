@@ -135,6 +135,8 @@ export const en = {
     houseRight: "House right",
     downstage: "Downstage",
     noScenes: "No scenes yet",
+    /** シーンがまだ無いまま曲だけ流しているとき（2026-08-22） */
+    musicOnly: "Playing the music only",
     noScenesYet: "No scenes yet",
     createFirstScene: "Make the first scene",
     copyCurrent: "Copy this formation into a new scene",
@@ -219,6 +221,8 @@ export const en = {
       cancelCountIn: "Cancel the count-in",
       pause: "Stop",
       play: "Play to the last scene",
+      /** シーンがまだ無いとき。進む先が無いので「最後のシーンまで」は嘘になる */
+      playMusicOnly: "Play the music",
       sceneSettings: (name: string) => `Open the settings for “${name}”`,
       moveSeconds: (seconds: number) => ` · ${seconds}s to get there`,
       scenePosition: (index: number, total: number) =>
@@ -790,8 +794,10 @@ export const en = {
       plus: "One more",
       count: "How many to add",
       people: "dancers",
-      autoNote:
-        "Names and colours are picked for you (you can change them later)",
+      autoNote: "Names and colours are ready. Change them here if you like",
+      /** 名前の欄。打たなければ、下に薄く出ている名前で作る */
+      nameLabel: (nth: number) => `Name of dancer ${nth}`,
+      colorLabel: (name: string) => `Choose the colour for ${name}`,
       spotsNote:
         "They go into the free squares in the scene you are looking at, filling outwards from the centre. Nobody overlaps, so you can drag them straight away.",
       submit: (n: number) => (n === 1 ? "Add 1 dancer" : `Add ${n} dancers`),

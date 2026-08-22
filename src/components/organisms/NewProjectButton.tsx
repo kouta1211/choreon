@@ -123,7 +123,13 @@ export function NewProjectButton({ userId }: Props) {
           />
 
           {/* 広さは【この作品のもの】。ここで決めた値がそのまま入り、
-              設定の初期値は次に作るときの出発点として残る */}
+              設定の初期値は次に作るときの出発点として残る。
+
+              **ここだけ「適用」を出さない**（commitOn="blur"、実機の報告
+              2026-08-22）。設定 → 舞台で押させているのは、幅を縮めると
+              **すでに置いてある人が端へ寄る**からで、ここにはまだ誰も
+              居ない。確定は下の「プロジェクトを作成」が担っているので、
+              行ごとの適用は押す意味が無いまま手数だけ増やしていた */}
           <div className="flex flex-col rounded-xl border border-line">
             <SettingsNumberRow
               label={t.settings.stage.width}
@@ -132,6 +138,7 @@ export function NewProjectButton({ userId }: Props) {
               max={MAX_STAGE_UNITS}
               unit={t.settings.stage.unit}
               onChange={setStageWidth}
+              commitOn="blur"
             />
             <SettingsNumberRow
               label={t.settings.stage.depth}
@@ -141,6 +148,7 @@ export function NewProjectButton({ userId }: Props) {
               max={MAX_STAGE_UNITS}
               unit={t.settings.stage.unit}
               onChange={setStageHeight}
+              commitOn="blur"
             />
           </div>
 

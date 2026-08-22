@@ -148,6 +148,8 @@ export const ja = {
     houseRight: "上手",
     downstage: "客席側",
     noScenes: "シーンがありません",
+    /** シーンがまだ無いまま曲だけ流しているとき（2026-08-22） */
+    musicOnly: "曲だけ流しています",
     noScenesYet: "まだシーンがありません",
     createFirstScene: "最初のシーンを作る",
     copyCurrent: "いまの配置をコピーして追加",
@@ -242,6 +244,8 @@ export const ja = {
       cancelCountIn: "カウントインを取り消す",
       pause: "再生を停止",
       play: "最後のシーンまで再生",
+      /** シーンがまだ無いとき。進む先が無いので「最後のシーンまで」は嘘になる */
+      playMusicOnly: "曲を流す",
       sceneSettings: (name: string) => `「${name}」の設定を開く`,
       moveSeconds: (seconds: number) => ` · ${seconds}秒で移動`,
       /** 順番だけで作っているとき。時計の代わりに「何番目か」を出す */
@@ -850,7 +854,10 @@ export const ja = {
       plus: "1人増やす",
       count: "追加する人数",
       people: "人",
-      autoNote: "名前と色は自動で決まります（あとで変更できます）",
+      autoNote: "名前と色は決めてあります。ここで直せます",
+      /** 名前の欄。打たなければ、下に薄く出ている名前で作る */
+      nameLabel: (nth: number) => `${nth}人目の名前`,
+      colorLabel: (name: string) => `${name} の色を選ぶ`,
       spotsNote:
         "いま見ているシーンの空いているマスに、中央から順に並びます。重ならないので、そのままドラッグで動かせます。",
       submit: (n: number) => `${n}人を追加する`,

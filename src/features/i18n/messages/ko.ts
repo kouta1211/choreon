@@ -135,6 +135,8 @@ export const ko = {
     houseRight: "객석 오른쪽",
     downstage: "객석 쪽",
     noScenes: "장면이 없습니다",
+    /** シーンがまだ無いまま曲だけ流しているとき（2026-08-22） */
+    musicOnly: "음악만 재생 중입니다",
     noScenesYet: "아직 장면이 없습니다",
     createFirstScene: "첫 장면 만들기",
     copyCurrent: "지금 배치를 복사해서 추가",
@@ -219,6 +221,8 @@ export const ko = {
       cancelCountIn: "카운트인 취소",
       pause: "정지",
       play: "마지막 장면까지 재생",
+      /** シーンがまだ無いとき。進む先が無いので「最後のシーンまで」は嘘になる */
+      playMusicOnly: "음악 재생",
       sceneSettings: (name: string) => `'${name}' 설정 열기`,
       moveSeconds: (seconds: number) => ` · ${seconds}초 동안 이동`,
       scenePosition: (index: number, total: number) =>
@@ -780,7 +784,10 @@ export const ko = {
       plus: "한 명 늘리기",
       count: "추가할 인원",
       people: "명",
-      autoNote: "이름과 색은 자동으로 정해집니다(나중에 바꿀 수 있습니다)",
+      autoNote: "이름과 색은 정해져 있습니다. 여기서 바꿀 수 있습니다",
+      /** 名前の欄。打たなければ、下に薄く出ている名前で作る */
+      nameLabel: (nth: number) => `${nth}번째 사람의 이름`,
+      colorLabel: (name: string) => `${name}의 색 선택`,
       spotsNote:
         "지금 보고 있는 장면의 빈 칸에 가운데부터 차례로 놓입니다. 겹치지 않으니 바로 끌어서 옮길 수 있습니다.",
       submit: (n: number) => `${n}명 추가하기`,

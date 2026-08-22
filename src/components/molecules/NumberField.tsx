@@ -36,6 +36,20 @@ type Props = {
   onChange: (value: number) => void | boolean;
   /** 名前の文字の段。row は設定の一覧の行、sheet は板の中の1項目 */
   size?: "row" | "sheet";
+  /**
+   * 値が入る合図。
+   *
+   * - `"apply"`（既定） … **押すまで変えない。** すでに置いてあるものが
+   *   動く画面はこちら（設定 → 舞台は、幅を縮めると人が端へ寄る）。
+   *   「効いたのか分からない」への答え（実機報告 12-2 / 12-10）
+   * - `"blur"` … **欄から離れた時点で入る。** まだ何も無い画面でだけ
+   *   使える。新規作成の板がこれで、動かす相手がまだ居らず、確定は下の
+   *   「作成」が担っている。そこへ行ごとの「適用」を出すと、押す意味が
+   *   無いまま手数だけ増える（実機の報告 2026-08-22）
+   *
+   * **迷ったら `"apply"`。** 取り消せない/驚く変化がある側が既定。
+   */
+  commitOn?: "apply" | "blur";
 };
 
 /**
@@ -72,6 +86,7 @@ export function NumberField({
   unit,
   onChange,
   size = "row",
+  commitOn = "apply",
 }: Props) {
   const t = useT();
   const { draft, setDraft, commit, correction, invalid, isDirty, justApplied } =
@@ -79,7 +94,14 @@ export function NumberField({
   /* 打っている最中の理由(invalid)と、押した後に直した理由(correction)は
      同じ場所に同じ色で出す。読む側にとっては同じ「なぜ入らないか」 */
   const reason = invalid ?? correction;
-  const hasApplyBar = useSettingsApply(isDirty, Boolean(invalid), commit);
+  /* 離れた時点で入る欄は、確定のボタンを持たない（束の下へも預けない） */
+  const commitsOnBlur = commitOn === "blur";
+  const hasApplyBar = useSettingsApply(
+    isDirty,
+    Boolean(invalid),
+    commit,
+    !commitsOnBlur,
+  );
 
   return (
     <>
@@ -100,6 +122,8 @@ export function NumberField({
             step={step}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
+            /* 離れた時点で入れる形のときだけ。既定は押すまで変えない */
+            onBlur={commitsOnBlur ? commit : undefined}
             onKeyDown={(event) => {
               // Enter は「適用」を押したのと同じ扱い
               if (event.key === "Enter") {
@@ -130,15 +154,20 @@ export function NumberField({
           {unit}
         </span>
         {reason && ` · ${numberCorrectionMessage(t, reason, min, max)}`}
-        {/* 押すまで変わらないことと、押して変わったことを、同じ行で伝える */}
-        {!reason && isDirty && ` · ${t.common.numberField.notApplied}`}
-        {!reason && !isDirty && justApplied
+        {/* 押すまで変わらないことと、押して変わったことを、同じ行で伝える。
+            離れた時点で入る形では、どちらも言うことが無い */}
+        {!commitsOnBlur &&
+          !reason &&
+          isDirty &&
+          ` · ${t.common.numberField.notApplied}`}
+        {!commitsOnBlur && !reason && !isDirty && justApplied
           ? ` · ${t.common.numberField.applied}`
           : ""}
       </p>
 
-      {/* 預け先が無いときだけ、この欄が自分で出す */}
-      {!hasApplyBar && isDirty && (
+      {/* 預け先が無いときだけ、この欄が自分で出す。
+          離れた時点で入る形では、そもそも押す相手が無い */}
+      {!commitsOnBlur && !hasApplyBar && isDirty && (
         <PressableButton
           kind="primary"
           onClick={commit}

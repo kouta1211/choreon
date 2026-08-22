@@ -66,7 +66,15 @@ export function useMusicPlayback() {
       useMusicStore.getState().setCurrentTime(elapsed);
 
       const index = sceneIndexAtSeconds(scenes, elapsed);
-      if (index === -1) return;
+      if (index === -1) {
+        /* シーンがまだ無い（曲だけ流している）。**終わりをシーンから
+           引けない**ので、曲が鳴り終わったことで止める。
+           これが無いと、鳴り終わっても再生中の見た目のまま止まらない */
+        if (scenes.length === 0 && audio.ended) {
+          useUIStore.getState().setIsPlaying(false);
+        }
+        return;
+      }
 
       const ui = useUIStore.getState();
       const scene = scenes[index];
