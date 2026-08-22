@@ -1,23 +1,7 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type PointerEvent as ReactPointerEvent,
-} from "react";
-import {
-  DndContext,
-  type DragStartEvent,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragMoveEvent,
-  type Modifier,
-} from "@dnd-kit/core";
+import { useCallback, useMemo, useRef } from "react";
+import { DndContext, type DragEndEvent } from "@dnd-kit/core";
 import { EmptyStage, Stage } from "@/components/organisms/Stage";
 import { HistoryControls } from "@/components/organisms/HistoryControls";
 import { TemplateButton } from "@/components/organisms/TemplateButton";
@@ -30,30 +14,26 @@ import {
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import {
   clamp,
-  isCloseToInteger,
   pixelDeltaToUnitDelta,
   snapToGrid,
 } from "@/features/canvas/lib/dragMath";
-import {
-  createGridSnapModifier,
-  GRID_SNAP_TOLERANCE,
-} from "@/features/canvas/lib/gridSnapModifier";
-import { createGroupBoundsModifier } from "@/features/canvas/lib/groupBoundsModifier";
+import { GRID_SNAP_TOLERANCE } from "@/features/canvas/lib/gridSnapModifier";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
-import { stageYSign, toScreenY } from "@/features/canvas/lib/stageFlip";
+import { stageYSign } from "@/features/canvas/lib/stageFlip";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
 import { usePositionCommit } from "@/features/scene/hooks/usePositionCommit";
 import { useDropCommit } from "@/features/scene/hooks/useDropCommit";
 import { groupMoveChanges } from "@/features/canvas/lib/groupMove";
 import { useHydrateProject } from "@/features/project/hooks/useHydrateProject";
 import { GroupDragProvider } from "@/features/canvas/hooks/useGroupDrag";
-import { useMarqueeSelection } from "@/features/canvas/hooks/useMarqueeSelection";
+import { useStageModifiers } from "@/features/canvas/hooks/useStageModifiers";
+import { useStageMarquee } from "@/features/canvas/hooks/useStageMarquee";
+import { useGroupDragHandlers } from "@/features/canvas/hooks/useGroupDragHandlers";
 import type { Project } from "@/features/project/types";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position, Scene } from "@/features/scene/types";
 import { useT } from "@/features/i18n/LocaleProvider";
-import type { Messages } from "@/features/i18n/messages";
-import { useMotionValue } from "motion/react";
+import { dndAccessibility } from "@/features/canvas/lib/dndAccessibility";
 
 type Props = {
   project: Project;
@@ -64,53 +44,43 @@ type Props = {
   isGuest?: boolean;
 };
 
-/** dnd-kitのデフォルトのスクリーンリーダー向け説明・通知は英語かつ
- * 「スペースで掴む/離す」という、このアプリでは使っていない2段階操作を
- * 前提にした文言になっているため、実際の挙動(ポインタでドラッグ、または
- * 選択して矢印キーで移動)に合わせた日本語の文言に差し替える。
- * コンポーネント外に置いているのは、レンダーのたびに新しいオブジェクトを
- * 作ってDndContextへ渡すと(useEffect等の依存配列越しに)無駄な再計算を
- * 招きかねないため(このオブジェクト自体は常に同じ内容なので問題ない) */
-function dndAccessibility(t: Messages) {
-  return {
-    screenReaderInstructions: { draggable: t.editor.a11y.dragHelp },
-    announcements: {
-      onDragStart: () => t.editor.a11y.dragStart,
-      // ドロップ可能な領域(droppable)は使っていないアプリなので、over絡みの
-      // 通知は常に無し(undefined)でよい
-      onDragOver: () => undefined,
-      onDragEnd: () => t.editor.a11y.dragEnd,
-      onDragCancel: () => t.editor.a11y.dragCancel,
-    },
-  };
-}
-
 /**
- * Stage + トグル行 + dnd-kitのDndContextをまとめたClient Component。
- * ステージ上に何を描画するか(導線・ダンサーアイコン・警告判定)は
- * DancerLayerに委譲し、ここではドラッグ/回転の確定処理に専念する。
+ * Stage + dnd-kit の DndContext をまとめた Client Component。
  *
- * 確定は4通り(掴んで置く・回す・矢印キー・曲線の制御点)あるが、
- * 「楽観的更新 → 保存 → 失敗したら戻す」の道は1つ(usePositionCommit)。
- * ここに書くのは【何がどう変わったか】だけになる。
+ * ステージへ何を描くか（導線・ダンサーアイコン・警告の判定）は
+ * `DancerLayer` が持つ。ここに残っているのは**確定（保存の道）**だけ。
  *
- * ドラッグ中はDraggableDancerIcon側がCSS transformだけで見た目を動かし、
- * ここではonDragEndで1回だけstoreにコミットする(キャンバス全体の再描画を
- * ドラッグ中に何度も発生させないため)。
+ * ■ 掴んでいる最中は、3つのフックへ出してある
+ * | 何 | どこ |
+ * | --- | --- |
+ * | sensor と modifier | `useStageModifiers` |
+ * | 囲んで選ぶ | `useStageMarquee` |
+ * | 移動量を配る・格子線を光らせる | `useGroupDragHandlers` |
  *
- * 格子スナップはgridSnapModifier(dnd-kitのmodifiers)に任せている。
- * modifierが返したtransformはドラッグ中の見た目にもonDragEnd/onDragMoveの
- * event.deltaにもそのまま使われるため、ここで改めてスナップし直す必要はなく、
- * 「ドラッグ中に見えている位置」と「ドロップで確定する位置」が自動的に一致する。
- * onDragMove(handleDragMove)は見た目を動かすためではなく、格子線が
- * ハイライト表示されるようdragSnapLineを更新するためだけに使っている。
+ * ■ 確定は4通り、道は1本
+ * 掴んで置く・回す・矢印キー・曲線の制御点。どれも
+ * 【楽観的更新 → 保存 → 失敗したら戻す】を `usePositionCommit` が持つので、
+ * ここに書くのは**何がどう変わったか**（`changes[]`）だけになる。
+ * 掴んで置くときだけ `useDropCommit`（重なりの手当てを挟む）を通る。
  *
- * dancers/positionsはあえて購読しない(DancerLayerが自分で読む)。
- * ここで購読すると、誰か1人がドラッグで動くたびにCanvasBoard自体が
- * 再レンダーされ、handleDragEnd/handleRotateEndが毎回新しい関数になって
- * DraggableDancerIconのmemoが効かなくなってしまうため。位置の読み取りは
- * ハンドラー内でuseProjectStore.getState()を使い、必要な瞬間だけ
- * 最新値を取得する(Reactの再レンダーをトリガーしない一回限りの読み取り)。
+ * ■ ⚠️ 見えている位置と、置かれる位置を一致させている仕組み
+ * 吸着は `useStageModifiers` の modifier が transform 側で済ませていて、
+ * その結果は `onDragEnd` の `event.delta` にもそのまま届く。だから
+ * **確定側でスナップし直さない**。並べる順（格子スナップ → 全員の丸め）が
+ * `groupMove` の計算順と同じであることに依存している。
+ * **片方だけ変えると、離した瞬間に人が飛ぶ。**
+ *
+ * ■ ⚠️ 上下の向きは、最中と確定で逆に使う
+ * `useGroupDragHandlers` は**画面の向きのまま**数える（吸着線は画面に
+ * 引くもの）。`handleDragEnd` は `stageYSign` で**ステージの向きへ戻す**。
+ * 同じ `isAudienceOnTop` を別の意味で使っているので、写して当てない。
+ *
+ * ■ dancers/positions はあえて購読しない
+ * 購読すると、誰か1人が動くたびにここが描き直され、`handleDragEnd` などが
+ * 毎回新しい関数になって `DraggableDancerIcon` の memo が効かなくなる。
+ * 位置はハンドラーの中で `useProjectStore.getState()` から読む
+ * （再レンダーを起こさない、その瞬間だけの読み取り）。
+ * **この約束は `CanvasBoard.test.tsx` が数えて見張っている。**
  */
 export function CanvasBoard({
   project,
@@ -123,141 +93,48 @@ export function CanvasBoard({
   const { addScene, isCreating: isCreatingScene } = useAddScene(project);
   const accessibility = useMemo(() => dndAccessibility(t), [t]);
   const stageRef = useRef<HTMLDivElement>(null);
-  // 指が数px動いただけでドラッグ扱いになると、ダンサーをタップして
-  // 選択する操作(DancerInspectorを開く)がしづらくなるため、
-  // 8px以上動いてから初めてドラッグとみなす
-  //
-  // キーボード操作はdnd-kitのKeyboardSensor(「スペースで掴む→矢印で動かす→
-  // スペースで離す」という2段階の操作)を使わず、DraggableDancerIcon側の
-  // 素のonKeyDownで直接実装している。理由: 2段階操作は分かりにくく、
-  // 実際に「クリックして矢印キーを押しただけ」では何も起きず画面がスクロール
-  // してしまう(スペースを押していないのでdnd-kitがまだ掴んでいない)。
-  // 選択したら矢印キーだけですぐ動く方が直感的なため、そちらに寄せている。
-  // (accessibility propで、その挙動に合わせたスクリーンリーダー向け説明に
-  // 差し替えている。dnd-kitのデフォルト説明は前者の2段階操作を前提にしており、
-  // このアプリの実際の挙動とは合わなくなるため)
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-  );
-  // createGridSnapModifierにref(stageRef)を渡す処理はuseEffect内で行う。
-  // レンダー中に直接呼ぶとref.currentを読むクロージャがレンダー中に作られたと
-  // react-hooks/refsに判定されてしまうため、副作用(マウント後1回)に逃がし、
-  // 結果をstateとして持つ(state自体はrefではないのでレンダー中に読んで問題ない)
-  const [gridSnapModifier, setGridSnapModifier] = useState<Modifier | null>(
-    null,
-  );
-  /* 掴んでいる間も、全員が収まる所まで移動量を縮める。無いと、選択中の
-     誰かが壁に着いたあとも本人だけ進んで、離した瞬間に全員が戻る
-     （実機の報告 2026-08-19）*/
-  const [groupBoundsModifier, setGroupBoundsModifier] =
-    useState<Modifier | null>(null);
-  useEffect(() => {
-    setGridSnapModifier(() => createGridSnapModifier(stageRef));
-    setGroupBoundsModifier(() =>
-      createGroupBoundsModifier(stageRef, (grabbedId) => {
-        const ui = useUIStore.getState();
-        const ids = ui.selectedDancerIds.includes(grabbedId)
-          ? ui.selectedDancerIds
-          : [grabbedId];
-        if (!ui.selectedSceneId) return [];
-
-        const project = useProjectStore.getState();
-        const positions = project.positionsBySceneId[ui.selectedSceneId] ?? {};
-        const heightUnits = project.project?.stageHeight ?? 0;
-        // 渡すのは【画面の向き】。modifier が受け取る移動量も画面の向き
-        const isMirrored = useSettingsStore.getState().isAudienceOnTop;
-        return ids.flatMap((dancerId) => {
-          const position = positions[dancerId];
-          return position
-            ? [
-                {
-                  xCoordinate: position.xCoordinate,
-                  yCoordinate: toScreenY(
-                    position.yCoordinate,
-                    heightUnits,
-                    isMirrored,
-                  ),
-                },
-              ]
-            : [];
-        });
-      }),
-    );
-  }, []);
-  // 格子への吸着を使うか(設定)。切ると、どこにでも置ける
+  /* 掴んでいる最中の道具立て（sensor と modifier）。
+     **並べる順は【格子スナップ → 全員の丸め】**で、下の handleDragEnd →
+     groupMove も同じ順で計算している。片方だけ変えると、離した瞬間に人が飛ぶ */
+  const { sensors, modifiers } = useStageModifiers(stageRef);
+  // 格子への吸着を使うか(設定)。着地点の丸め(handleNudge)で見る
   const isSnapEnabled = useSettingsStore((state) => state.isSnapEnabled);
   // ステージ面を上下の鏡にして描いているか。指の動きの向きだけを揃える
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
-  /* 並べる順は【格子スナップ → 全員の丸め】。確定側（handleDragEnd →
-     groupMove）も同じ順で計算しているので、見えている位置と置かれる位置が
-     ずれない。吸着を切っていても、丸めの方は必ず通す */
-  const dragModifiers = useMemo(() => {
-    const modifiers: Modifier[] = [];
-    if (isSnapEnabled && gridSnapModifier) modifiers.push(gridSnapModifier);
-    if (groupBoundsModifier) modifiers.push(groupBoundsModifier);
-    return modifiers.length > 0 ? modifiers : undefined;
-  }, [isSnapEnabled, gridSnapModifier, groupBoundsModifier]);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
-  const selectDancer = useUIStore((state) => state.selectDancer);
   const setDragSnapLine = useUIStore((state) => state.setDragSnapLine);
   const commitPositions = usePositionCommit();
   /* 掴んで置いたときの確定。重なりの手当てまで含めてここが持つ */
   const commitDrop = useDropCommit();
 
-  /* 囲んで選ぶ枠。**style を直に書き換える**ので、動かしても React は
-     描き直さない（ダンサーの丸が全部描き直されると重い） */
-  const marqueeRef = useRef<HTMLDivElement>(null);
-  const marqueeHandlers = useMarqueeSelection({
+  /* 囲んで選ぶ（マウスのときだけ）。枠は React では描き直さない */
+  const { marqueeRef, stagePointerHandlers } = useStageMarquee({
     stageRef,
-    boxRef: marqueeRef,
     stageWidthUnits: project.stageWidth,
     stageHeightUnits: project.stageHeight,
     isAudienceOnTop,
     selectedSceneId,
   });
 
-  /**
-   * ステージの何も無いところのドラッグ＝**囲んで選ぶ**。
-   *
-   * 以前はここで入力機器を見て、マウスなら囲む・指ならシーンを送る、と
-   * 振り分けていた。**払って送る操作は幅の方針転換で入口ごと消えた**ので
-   * (2026-08-20)、振り分ける相手が居ない。指で払っても何も起きない —
-   * 作る画面は 768px 以上でしか開けず、そこはマウスの土俵という前提
-   * (README フェーズ6)。PC でシーンを送る道は ← → キー・下の帯のコマ・
-   * ドックにある。
-   *
-   * 始めた側が最後まで持つ（途中で入れ替わると、離した時の後片付けが
-   * 走らない）。
-   */
-  const isMarqueeActive = useRef(false);
-
-  /* いま掴まれている人。選択中の他の人を一緒に動かすために要る
-     (2026-08-18、報告 18-2)。移動量そのものは MotionValue で配るので、
-     ここが変わるのは掴み始めと離した時の2回だけ */
-  const [activeDancerId, setActiveDancerId] = useState<string | null>(null);
-  /** 掴んだ人が動いた量(px)。描き直しを起こさないよう MotionValue で配る */
-  const groupOffsetX = useMotionValue(0);
-  const groupOffsetY = useMotionValue(0);
-
-  /* 囲むのはマウスのときだけ。**指では何も起きない**（上のコメント）。
-     始めた側が最後まで持つので、離すまで ref で覚えておく */
-  const stagePointerHandlers = useMemo(
-    () => ({
-      onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => {
-        isMarqueeActive.current = event.pointerType === "mouse";
-        if (isMarqueeActive.current) marqueeHandlers.onPointerDown(event);
-      },
-      onPointerMove: (event: ReactPointerEvent<HTMLDivElement>) => {
-        if (isMarqueeActive.current) marqueeHandlers.onPointerMove(event);
-      },
-      onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => {
-        const wasActive = isMarqueeActive.current;
-        isMarqueeActive.current = false;
-        if (wasActive) marqueeHandlers.onPointerUp(event);
-      },
-    }),
-    [marqueeHandlers],
-  );
+  /* 掴んでいる最中（移動量を配る・格子線を光らせる）。
+     **離した瞬間の確定は下の handleDragEnd に残してある** — あちらは
+     保存の道を通る。こちらは見た目だけ */
+  const {
+    activeDancerId,
+    offsetX: groupOffsetX,
+    offsetY: groupOffsetY,
+    resetGroupDrag,
+    handleDragStart,
+    handleDragMove,
+    handleDragCancel,
+  } = useGroupDragHandlers({
+    stageRef,
+    stageWidthUnits: project.stageWidth,
+    stageHeightUnits: project.stageHeight,
+    selectedSceneId,
+    isSnapEnabled,
+    isAudienceOnTop,
+  });
 
   useHydrateProject({
     project,
@@ -266,94 +143,6 @@ export function CanvasBoard({
     positions: initialPositions,
     isGuest,
   });
-
-  // ドラッグ中、格子線・交差点のごく近くまで来たらdragSnapLineを更新し、
-  // Stage側でその格子線をハイライト表示させる。見た目の吸着自体は
-  // gridSnapModifierがtransform(≒event.delta)側で既に行っているため、
-  // ここではその結果(event.delta)が整数ユニットに極めて近いかどうかを見るだけで、
-  // スナップ判定ロジック自体(tolerance)を重複して持たずに済む
-  const handleDragMove = useCallback(
-    (event: DragMoveEvent) => {
-      /* 選択中の他の人へ移動量を配る。掴んでいる本人は dnd-kit が動かすので、
-         ここで配るのは「掴んでいない側」のぶん(2026-08-18、報告 18-2)。
-         格子スナップが効いたあとの値が来るので、本人と同じ動きになる */
-      groupOffsetX.set(event.delta.x);
-      groupOffsetY.set(event.delta.y);
-
-      if (!selectedSceneId) return;
-      const dancerId = String(event.active.id);
-      const before = positionAt(selectedSceneId, dancerId);
-      const stageEl = stageRef.current;
-      if (!before || !stageEl) return;
-
-      const { width, height } = stageEl.getBoundingClientRect();
-      const liveX = clamp(
-        before.xCoordinate +
-          pixelDeltaToUnitDelta(event.delta.x, width, project.stageWidth),
-        0,
-        project.stageWidth,
-      );
-      // 吸着線は【画面】に引くものなので、画面の向きのまま数える
-      const liveY = clamp(
-        toScreenY(before.yCoordinate, project.stageHeight, isAudienceOnTop) +
-          pixelDeltaToUnitDelta(event.delta.y, height, project.stageHeight),
-        0,
-        project.stageHeight,
-      );
-
-      // 吸着を切っているときは格子線を光らせない。吸わないのに光ると、
-      // 「そこへ着く」という嘘の予告になる
-      setDragSnapLine({
-        x: isSnapEnabled && isCloseToInteger(liveX) ? Math.round(liveX) : null,
-        y: isSnapEnabled && isCloseToInteger(liveY) ? Math.round(liveY) : null,
-      });
-    },
-    [
-      selectedSceneId,
-      project.stageWidth,
-      project.stageHeight,
-      setDragSnapLine,
-      isSnapEnabled,
-      isAudienceOnTop,
-      groupOffsetX,
-      groupOffsetY,
-    ],
-  );
-
-  /** 掴み始め・離した後に呼ぶ。配った移動量を0へ戻さないと、
-   *  次に掴んだとき前回のぶんだけずれた場所から始まる */
-  const resetGroupDrag = useCallback(() => {
-    setActiveDancerId(null);
-    groupOffsetX.set(0);
-    groupOffsetY.set(0);
-  }, [groupOffsetX, groupOffsetY]);
-
-  const handleDragStart = useCallback(
-    (event: DragStartEvent) => {
-      groupOffsetX.set(0);
-      groupOffsetY.set(0);
-      const grabbedId = String(event.active.id);
-
-      /* 選択の付け替えは【掴んだ瞬間】にやる(2026-08-19、実機の報告)。
-         以前は離した瞬間にやっていたので、選択の外に居る人を掴むと
-         「選ばれている人たちは追随して動いて見えるのに、確定するのは
-         掴んだ本人だけ」になり、離した瞬間に他の人が元へ戻っていた
-         （追随の判定は「その人が選ばれているか」、確定の判定は
-         「掴んだ人が選択に入っているか」で、見ている物が違った）。
-         掴んだ時点で選択を1人へ寄せれば、追随する人がそもそも居なくなる */
-      if (!useUIStore.getState().selectedDancerIds.includes(grabbedId)) {
-        selectDancer(grabbedId);
-      }
-
-      setActiveDancerId(grabbedId);
-    },
-    [groupOffsetX, groupOffsetY, selectDancer],
-  );
-
-  const handleDragCancel = useCallback(() => {
-    setDragSnapLine({ x: null, y: null });
-    resetGroupDrag();
-  }, [setDragSnapLine, resetGroupDrag]);
 
   /**
    * まとめて動かす人たちと、実際に動かせる量を決める。
@@ -562,7 +351,7 @@ export function CanvasBoard({
     >
       <DndContext
         sensors={sensors}
-        modifiers={dragModifiers}
+        modifiers={modifiers}
         accessibility={accessibility}
         onDragStart={handleDragStart}
         onDragMove={handleDragMove}
