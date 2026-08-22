@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { CanvasBoard } from "./CanvasBoard";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
@@ -9,9 +9,35 @@ import type { Project } from "@/features/project/types";
 
 import {
   makeDancer,
+  makePosition,
   makeProject as makeBaseProject,
   makeScene,
 } from "@/test/factories";
+
+/**
+ * CanvasBoard が**自分自身を何回描いたか**を数える。
+ *
+ * `useMarqueeSelection` は CanvasBoard だけが、しかも早期 return より前で
+ * 呼ぶフックなので、呼ばれた回数＝CanvasBoard を描いた回数になる。
+ * 中身は本物をそのまま通すので、他のテストの挙動は変わらない。
+ */
+const boardRenders = vi.hoisted(() => ({ count: 0 }));
+
+vi.mock("@/features/canvas/hooks/useMarqueeSelection", async (importOriginal) => {
+  const actual =
+    await importOriginal<
+      typeof import("@/features/canvas/hooks/useMarqueeSelection")
+    >();
+  return {
+    ...actual,
+    useMarqueeSelection: (
+      args: Parameters<typeof actual.useMarqueeSelection>[0],
+    ) => {
+      boardRenders.count += 1;
+      return actual.useMarqueeSelection(args);
+    },
+  };
+});
 
 // このファイルは8×8のステージ前提で座標を数えている
 function makeProject(overrides: Partial<Project> = {}): Project {
@@ -482,5 +508,39 @@ describe("掴んでいる間の導線", () => {
 
     expect(pathLine().getAttribute("x1")).toBe(before);
     expect(xOf("dancer-1")).toBe(2);
+  });
+});
+
+/**
+ * 立ち位置を購読しない、という設計。
+ *
+ * ■ なぜテストで縛るのか
+ * これまで**コメントでしか守られていなかった**（CanvasBoard の
+ * 「dancers/positions はあえて購読しない」）。切り出したフックの中で
+ * うっかり `useProjectStore(state => state.positionsBySceneId)` と書くと、
+ * 誰かが1歩動くたびに CanvasBoard が描き直され、handleDragEnd などが
+ * 毎回新しい関数になって DraggableDancerIcon の memo が効かなくなる。
+ *
+ * **壊れても画面は正しく動いて見える**（重くなるだけ）ので、
+ * lint も型も人の目も気づけない。ここで機械に見張らせる。
+ */
+describe("CanvasBoard が描き直される条件", () => {
+  it("立ち位置が変わっても、CanvasBoard 自体は描き直さない", () => {
+    renderDragBoard();
+    const before = boardRenders.count;
+
+    act(() => {
+      useProjectStore
+        .getState()
+        .updateDancerPosition(
+          "scene-1",
+          "dancer-1",
+          makePosition({ dancerId: "dancer-1", xCoordinate: 5, yCoordinate: 5 }),
+        );
+    });
+
+    // 位置は本当に変わっている（変わっていなければ、この検査は何も見ていない）
+    expect(xOf("dancer-1")).toBe(5);
+    expect(boardRenders.count).toBe(before);
   });
 });
