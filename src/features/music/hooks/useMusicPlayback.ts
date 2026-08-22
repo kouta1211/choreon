@@ -65,28 +65,26 @@ export function useMusicPlayback() {
       // 曲が無いときの時計(useSilentClock)と同じ場所へ入れる
       useMusicStore.getState().setCurrentTime(elapsed);
 
-      const index = sceneIndexAtSeconds(scenes, elapsed);
-      if (index === -1) {
-        /* シーンがまだ無い（曲だけ流している）。**終わりをシーンから
-           引けない**ので、曲が鳴り終わったことで止める。
-           これが無いと、鳴り終わっても再生中の見た目のまま止まらない */
-        if (scenes.length === 0 && audio.ended) {
-          useUIStore.getState().setIsPlaying(false);
-        }
+      /* **曲があるときは、曲が鳴り終わるまで流す**（2026-08-22 に user が
+         決めた）。以前は最後のシーンへ着いた時点で止めていたが、
+         振付を作っている途中は「最後のシーンより後ろにも曲がある」のが
+         普通で、そこを聞けないと**残りに何秒あるのか**が分からなかった。
+         止める合図は曲そのもの（`ended`）に一本化する。
+         曲が無いときの時計（useSilentClock）は今までどおり最後のシーンで
+         止まる — あちらには終わりを教えてくれる相手が居ない */
+      if (audio.ended) {
+        useUIStore.getState().setIsPlaying(false);
         return;
       }
+
+      const index = sceneIndexAtSeconds(scenes, elapsed);
+      // まだ最初のシーンより前か、シーンが1つも無い。進める先が無いだけ
+      if (index === -1) return;
 
       const ui = useUIStore.getState();
       const scene = scenes[index];
       if (scene && scene.id !== ui.selectedSceneId) {
         ui.selectScene(scene.id);
-      }
-
-      // 最後のシーンへ着いたら止める。曲の方が長くても、振付が終わった
-      // あとまで鳴らし続ける意味は無い
-      const starts = sceneStartSeconds(scenes);
-      if (index === scenes.length - 1 && elapsed >= starts[index]) {
-        ui.setIsPlaying(false);
       }
     };
     frame = requestAnimationFrame(step);
@@ -117,5 +115,24 @@ function songSecondsForSelectedScene(): number {
  */
 export function seekToSelectedScene(audio: HTMLAudioElement | null) {
   if (!audio) return;
+
+  /* **最後のシーンより後ろに居るときは動かさない**（2026-08-22）。
+     曲は最後まで流せるようになったので、そこで止めると
+     この関数が「選んでいるシーン＝最後のシーン」の位置へ引き戻し、
+     押した所から何十秒も戻されていた。
+     戻す相手が居ない（後ろにシーンが無い）ときは、そのまま置いておく */
+  const { scenes, project } = useProjectStore.getState();
+  const { selectedSceneId } = useUIStore.getState();
+  const index = scenes.findIndex((scene) => scene.id === selectedSceneId);
+  const elapsed = audio.currentTime - (project?.musicOffsetSeconds ?? 0);
+  const starts = sceneStartSeconds(scenes);
+  if (
+    index >= 0 &&
+    index === scenes.length - 1 &&
+    elapsed > (starts[index] ?? 0)
+  ) {
+    return;
+  }
+
   audio.currentTime = songSecondsForSelectedScene();
 }

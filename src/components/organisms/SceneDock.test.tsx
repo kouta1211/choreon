@@ -429,3 +429,64 @@ describe("SceneDock（シーンがまだ無いとき）", () => {
     ).toBeEnabled();
   });
 });
+
+/**
+ * 曲があるときの、止まり方。
+ *
+ * **曲が鳴り終わるまで流す**（2026-08-22 に user が決めた）。以前は
+ * 最後のシーンへ着いた時点で止めていたが、作っている途中は「最後の
+ * シーンより後ろにも曲がある」のが普通で、そこを聞けないと残りに
+ * 何秒あるのかが分からなかった。
+ */
+describe("SceneDock（曲があるときは、曲の終わりまで流す）", () => {
+  beforeEach(() => {
+    useProjectStore.setState({
+      project: makeProject(),
+      scenes: [
+        makeScene({ timeSeconds: 0 }),
+        makeScene({ id: "scene-2", orderIndex: 1, timeSeconds: 2 }),
+      ],
+    });
+    useUIStore.setState({ selectedSceneId: "scene-1", isPlaying: true });
+    useMusicStore.setState({ objectUrl: "blob:song", fileName: "song.mp3" });
+  });
+
+  it("最後のシーンを過ぎても、曲が鳴っている間は止まらない", async () => {
+    render(<SceneDock project={makeProject()} />);
+    const audio = document.querySelector("audio");
+    if (!audio) throw new Error("audio が無い");
+    // 最後のシーン(2秒)より後ろ。曲はまだ鳴っている
+    Object.defineProperty(audio, "currentTime", { value: 30, writable: true });
+    Object.defineProperty(audio, "ended", { value: false, writable: true });
+
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+
+    expect(useUIStore.getState().isPlaying).toBe(true);
+  });
+
+  it("曲が鳴り終わったら止まる", async () => {
+    render(<SceneDock project={makeProject()} />);
+    const audio = document.querySelector("audio");
+    if (!audio) throw new Error("audio が無い");
+    Object.defineProperty(audio, "currentTime", { value: 200, writable: true });
+    Object.defineProperty(audio, "ended", { value: true, writable: true });
+
+    await waitFor(() => expect(useUIStore.getState().isPlaying).toBe(false));
+  });
+
+  /* 曲は最後まで流せるので、止めた所から何十秒も戻されると困る */
+  it("最後のシーンより後ろで止めても、曲は巻き戻らない", async () => {
+    const user = userEvent.setup();
+    render(<SceneDock project={makeProject()} />);
+    const audio = document.querySelector("audio");
+    if (!audio) throw new Error("audio が無い");
+    Object.defineProperty(audio, "currentTime", { value: 30, writable: true });
+    Object.defineProperty(audio, "ended", { value: false, writable: true });
+
+    await user.click(screen.getByRole("button", { name: "再生を停止" }));
+
+    expect(useUIStore.getState().isPlaying).toBe(false);
+    expect(audio.currentTime).toBe(30);
+  });
+});

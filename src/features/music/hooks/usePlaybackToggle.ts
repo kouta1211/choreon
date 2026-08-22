@@ -107,8 +107,18 @@ export function usePlaybackToggle({ scenes, bpm, hasMusic, audioRef }: Args) {
       if (scene) {
         selectScene(scene.id);
         const startSeconds = sceneStartSeconds(scenes)[index];
-        if (hasMusic && audio) audio.currentTime = offset + startSeconds;
-        else setCurrentTime(startSeconds);
+        /* **最後のシーンより後ろでは、曲を巻き戻さない**（2026-08-22）。
+           曲は最後まで流せるようになったので、そこで止めると
+           「押した所」から何十秒も戻されることになる。
+           寄せるのは【シーンとシーンのあいだ】で止めたとき — そこは
+           隊形として存在しない状態なので、近い方へ寄せる意味がある */
+        const isPastLastScene =
+          index === scenes.length - 1 && elapsed >= startSeconds;
+        if (hasMusic && audio) {
+          if (!isPastLastScene) audio.currentTime = offset + startSeconds;
+        } else {
+          setCurrentTime(startSeconds);
+        }
       }
     }
     setIsPlaying(false);
