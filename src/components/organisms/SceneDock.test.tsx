@@ -419,14 +419,29 @@ describe("SceneDock（シーンがまだ無いとき）", () => {
     expect(useUIStore.getState().isPlaying).toBe(false);
   });
 
-  /* シーンを作る道は塞がない。曲を聞いてから ＋ を押す、が普通の手順 */
-  it("＋ は今までどおり押せる", () => {
+  /* 曲があるときは**鳴らしている最中だけ**増やせる（canAddScene）。
+     止めたまま増やすと「なんとなくの秒数」に置かれ、あとから音へ
+     合わせ直す作業が生まれる（2026-08-22 に user が決めた仕様） */
+  it("止まっている間、＋ は押せない", () => {
     useMusicStore.setState({ objectUrl: "blob:song", fileName: "song.mp3" });
     render(<SceneDock project={makeProject()} />);
 
-    expect(
-      screen.getByRole("button", { name: "シーンを追加" }),
-    ).toBeEnabled();
+    expect(screen.getByRole("button", { name: "シーンを追加" })).toBeDisabled();
+  });
+
+  it("鳴らしている間は ＋ を押せる", () => {
+    useMusicStore.setState({ objectUrl: "blob:song", fileName: "song.mp3" });
+    useUIStore.setState({ isPlaying: true });
+    render(<SceneDock project={makeProject()} />);
+
+    expect(screen.getByRole("button", { name: "シーンを追加" })).toBeEnabled();
+  });
+
+  /* 曲が無ければ、合わせる相手が居ないので今までどおり */
+  it("曲が無ければ、止まっていても ＋ を押せる", () => {
+    render(<SceneDock project={makeProject()} />);
+
+    expect(screen.getByRole("button", { name: "シーンを追加" })).toBeEnabled();
   });
 });
 

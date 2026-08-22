@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
+import { canAddScene } from "@/features/scene/lib/canAddScene";
 import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { createScene, updateSceneTimes } from "@/features/scene/api/scenes";
@@ -44,6 +45,10 @@ import { useT } from "@/features/i18n/LocaleProvider";
  * 直前の配置から始めればシーン切り替えのなめらかな移動アニメーションも活きる。
  */
 export function useAddScene(project: Project) {
+  /* ここは【画面の出し分け】に使うので購読する。保存の道の中で読む
+     `getState()` とは役割が違う（あちらは押した瞬間の値が要る） */
+  const hasMusicNow = useMusicStore((state) => state.objectUrl) !== null;
+  const isPlaying = useUIStore((state) => state.isPlaying);
   const t = useT();
   const [isCreating, setIsCreating] = useState(false);
   const scenes = useProjectStore((state) => state.scenes);
@@ -98,19 +103,21 @@ export function useAddScene(project: Project) {
        ときの「いま」は誰にも見えないので、そこを再生位置にすると
        押すまで結果が読めない（それが一度戻した理由）。鳴っている間は
        「いま」がはっきりしていて、聴いている位置がそのまま意図になる */
-    const isPlayingNow = useUIStore.getState().isPlaying;
-    const timeSeconds =
-      scenes.length === 0
+    /* 曲があるときは**鳴らしている最中しか来ない**（canAddScene）ので、
+       ここは常に押した瞬間の位置。**最初の1つも同じ** — イントロが長い
+       曲なら、振付が始まるのは0秒ではない。
+       曲が無いときだけ、最初は0秒・以降は選んでいるシーンの次 */
+    const timeSeconds = hasMusic
+      ? insertTimeSeconds(
+          scenes,
+          useMusicStore.getState().currentTime,
+          segmentSeconds,
+        )
+      : scenes.length === 0
         ? 0
         : restacked
           ? (restacked.get(newSceneId) ?? 0)
-          : hasMusic && isPlayingNow
-            ? insertTimeSeconds(
-                scenes,
-                useMusicStore.getState().currentTime,
-                segmentSeconds,
-              )
-            : duplicateTimeSeconds(scenes, source, segmentSeconds);
+          : duplicateTimeSeconds(scenes, source, segmentSeconds);
 
     const scene = {
       id: newSceneId,
@@ -184,5 +191,10 @@ export function useAddScene(project: Project) {
     }
   };
 
-  return { addScene: handleAddScene, isCreating };
+  /* 押せるかどうかは**この1つの答え**を3つの入口が読む
+     （下のバーの＋ / 一覧の追加 / 空のステージ）。
+     各画面で条件を書くと、必ずどこかが取り残される */
+  const canAdd = canAddScene({ hasMusic: hasMusicNow, isPlaying });
+
+  return { addScene: handleAddScene, isCreating, canAdd };
 }

@@ -74,7 +74,11 @@ type Props = {
  */
 export function SceneDock({ project }: Props) {
   const t = useT();
-  const { addScene: handleAddScene, isCreating } = useAddScene(project);
+  const {
+    addScene: handleAddScene,
+    isCreating,
+    canAdd: canAddScene,
+  } = useAddScene(project);
   const scenes = useProjectStore((state) => state.scenes);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const isPlaying = useUIStore((state) => state.isPlaying);
@@ -318,9 +322,14 @@ export function SceneDock({ project }: Props) {
           <PressableButton
             kind="icon"
             onClick={handleAddScene}
-            disabled={isCreating}
+            disabled={isCreating || !canAddScene}
             data-tour="add-scene"
             aria-label={t.editor.dock.addScene}
+            /* 曲があるときは鳴らしている最中だけ。**押しても何も起きない**
+               を作らないよう、押せない見た目にして理由を添える */
+            title={
+              canAddScene ? undefined : t.editor.dock.addSceneNeedsPlayback
+            }
             className="flex h-10 w-10 items-center justify-center rounded-md text-fg-sub transition-colors hover:bg-surface-strong hover:text-fg disabled:opacity-50"
           >
             <Plus size={20} />

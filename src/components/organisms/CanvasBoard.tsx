@@ -89,7 +89,11 @@ export function CanvasBoard({
   isGuest = false,
 }: Props) {
   const t = useT();
-  const { addScene, isCreating: isCreatingScene } = useAddScene(project);
+  const {
+    addScene,
+    isCreating: isCreatingScene,
+    canAdd: canAddScene,
+  } = useAddScene(project);
   const accessibility = useMemo(() => dndAccessibility(t), [t]);
   const stageRef = useRef<HTMLDivElement>(null);
   /* 掴んでいる最中の道具立て（sensor と modifier）。
@@ -338,6 +342,7 @@ export function CanvasBoard({
         heightUnits={project.stageHeight}
         onCreateScene={addScene}
         isCreating={isCreatingScene}
+        canCreate={canAddScene}
       />
     );
   }

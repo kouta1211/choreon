@@ -251,6 +251,8 @@ type EmptyStageProps = {
   heightUnits: number;
   onCreateScene: () => void;
   isCreating: boolean;
+  /** 押せるか。曲があるときは鳴らしている最中だけ（canAddScene） */
+  canCreate: boolean;
 };
 
 /**
@@ -265,6 +267,7 @@ export function EmptyStage({
   heightUnits,
   onCreateScene,
   isCreating,
+  canCreate,
 }: EmptyStageProps) {
   const t = useT();
   return (
@@ -290,11 +293,18 @@ export function EmptyStage({
         <PressableButton
           kind="primary"
           onClick={onCreateScene}
-          disabled={isCreating}
+          disabled={isCreating || !canCreate}
           className="relative flex h-10 items-center gap-1.5 rounded-xl bg-accent px-4 text-label font-semibold whitespace-nowrap text-accent-fg disabled:opacity-50"
         >
           {t.editor.createFirstScene}
         </PressableButton>
+        {/* ここは**何も無い画面**なので、押せない理由は吹き出しではなく
+            その場に出す。探しに行かせない */}
+        {!canCreate && (
+          <p className="relative max-w-[22rem] px-gutter text-center text-caption leading-snug text-fg-muted">
+            {t.editor.dock.addSceneNeedsPlayback}
+          </p>
+        )}
       </div>
     </div>
   );

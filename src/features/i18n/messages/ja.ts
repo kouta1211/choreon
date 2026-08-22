@@ -252,6 +252,8 @@ export const ja = {
       scenePosition: (index: number, total: number) =>
         `シーン ${index} / ${total}`,
       addScene: "シーンを追加",
+      /** 曲があるときは鳴らしている最中しか増やせない（canAddScene） */
+      addSceneNeedsPlayback: "曲を流しながら押すと、その位置にコマができます",
       hideTimeline: "時間軸を畳む",
       showTimeline: "時間軸を出す",
       playFromHere: "いま見ているシーンから流す",

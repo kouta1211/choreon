@@ -228,6 +228,9 @@ export const ko = {
       scenePosition: (index: number, total: number) =>
         `장면 ${index} / ${total}`,
       addScene: "장면 추가",
+      /** 曲があるときは鳴らしている最中しか増やせない（canAddScene） */
+      addSceneNeedsPlayback:
+        "음악을 재생하면서 누르면 그 위치에 장면이 생깁니다",
       hideTimeline: "시간축 접기",
       showTimeline: "시간축 펼치기",
       playFromHere: "지금 보고 있는 장면부터 재생",

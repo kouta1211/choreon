@@ -50,7 +50,7 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
   const thumbnailBySceneId = useProjectStore(
     (state) => state.thumbnailBySceneId,
   );
-  const { addScene, isCreating } = useAddScene(project);
+  const { addScene, isCreating, canAdd } = useAddScene(project);
   const { duplicateScene, isDuplicating } = useDuplicateScene(project);
   const {
     renameSceneTo,
@@ -121,7 +121,8 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
 
       <PressableButton
         onClick={addScene}
-        disabled={isCreating}
+        disabled={isCreating || !canAdd}
+        title={canAdd ? undefined : t.editor.dock.addSceneNeedsPlayback}
         className="flex h-13 items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong text-label font-medium whitespace-nowrap text-fg-sub disabled:opacity-50"
       >
         <Plus size={15} className="shrink-0" />

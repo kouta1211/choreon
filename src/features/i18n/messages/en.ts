@@ -228,6 +228,9 @@ export const en = {
       scenePosition: (index: number, total: number) =>
         `Scene ${index} / ${total}`,
       addScene: "Add a scene",
+      /** 曲があるときは鳴らしている最中しか増やせない（canAddScene） */
+      addSceneNeedsPlayback:
+        "Play the music and press here to drop a scene at that moment",
       hideTimeline: "Collapse the timeline",
       showTimeline: "Show the timeline",
       playFromHere: "Play from the scene you are on",

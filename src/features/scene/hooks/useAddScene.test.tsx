@@ -84,16 +84,20 @@ describe("useAddScene の割り込み方", () => {
    * 以前は曲があるときだけ【押した瞬間の再生位置】へ置いていた。
    * 置き場所が曲の有無で変わるので、同じ操作の結果が読めなかった。
    */
-  it("曲があっても、止まっていれば選んでいるシーンの次へ入る", async () => {
-    // 先頭(0秒)を選んだまま、曲の5秒目で止まっている
+  /**
+   * 曲があるときは**鳴らしている最中しか押せない**（canAddScene）。
+   * 画面側の3つの入口が、この答えを読んでボタンを押せなくしている。
+   */
+  it("曲があって止まっている間は、増やせない状態になる", () => {
     const { result } = setup({ isMetronomeEnabled: false, hasMusic: true });
 
-    await act(async () => {
-      await result.current.addScene();
-    });
+    expect(result.current.canAdd).toBe(false);
+  });
 
-    // 5秒の所ではなく、0秒と4秒のあいだ(2秒)へ入る
-    await waitFor(() => expect(times()).toEqual([0, 2, 4, 6]));
+  it("曲が無ければ、止まっていても増やせる", () => {
+    const { result } = setup({ isMetronomeEnabled: false });
+
+    expect(result.current.canAdd).toBe(true);
   });
 
   /**
@@ -130,5 +134,54 @@ describe("useAddScene の割り込み方", () => {
     });
 
     await waitFor(() => expect(times()).toEqual([0, 2, 4, 6]));
+  });
+});
+
+/**
+ * 曲があるときの、最初の1つ。
+ *
+ * **0秒に固定しない**（2026-08-22 に user が決めた仕様）。イントロが
+ * 長い曲なら、振付が始まるのは0秒ではない。曲が無いときだけ、
+ * 最初の隊形は「はじまり」＝0秒でよい。
+ */
+describe("useAddScene の、最初の1つ", () => {
+  function setupEmpty({ hasMusic }: { hasMusic: boolean }) {
+    const project = makeProject({ isMetronomeEnabled: false });
+    useProjectStore.setState({
+      project,
+      scenes: [],
+      positionsBySceneId: {},
+    });
+    useMusicStore.setState({
+      objectUrl: hasMusic ? "blob:song" : null,
+      currentTime: hasMusic ? 8 : 0,
+    });
+    useUIStore.setState({ selectedSceneId: null, isPlaying: hasMusic });
+
+    return renderHook(() => useAddScene(project), {
+      wrapper: ({ children }: { children: ReactNode }) => (
+        <LocaleProvider locale="ja">{children}</LocaleProvider>
+      ),
+    });
+  }
+
+  it("曲があるときは、鳴らしながら押した所にできる", async () => {
+    const { result } = setupEmpty({ hasMusic: true });
+
+    await act(async () => {
+      await result.current.addScene();
+    });
+
+    await waitFor(() => expect(times()).toEqual([8]));
+  });
+
+  it("曲が無ければ、はじまり(0秒)にできる", async () => {
+    const { result } = setupEmpty({ hasMusic: false });
+
+    await act(async () => {
+      await result.current.addScene();
+    });
+
+    await waitFor(() => expect(times()).toEqual([0]));
   });
 });
