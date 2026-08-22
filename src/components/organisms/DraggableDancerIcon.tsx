@@ -170,14 +170,21 @@ function DraggableDancerIconImpl({
   /* **掴んでいる人と一緒に動く。**(2026-08-18、実機の報告 18-2)
      まとめて選んでも、離すまで動くのは掴んだ本人だけだった。
      選ばれていて、かつ自分が掴まれていないときだけ、本人と同じ量だけずらす。
-     移動量は MotionValue で来るので、動かしてもここは描き直らない */
+     移動量は MotionValue で来るので、動かしてもここは描き直らない。
+
+     ■ **誰が掴んでいるか(activeDancerId)は見ない**（2026-08-22、実機の
+     報告「ときどきドラッグ中についてこない」）。以前は
+     `activeDancerId !== null` を条件に入れていたが、あれは React の
+     state で、**掴み始めの数フレームはまだ null**。その間このダンサーは
+     追随しない側の style で描かれ、しかも
+     【x/y の MotionValue】と【transform の文字列】で**style の形自体が
+     入れ替わる**。motion は transform のキーが立っていると x/y を捨てる
+     ので、入れ替わる瞬間に噛み合わないと、そのまま動かなくなる。
+
+     移動量は掴んでいないとき 0 なので、**条件から外しても止まっている
+     ときの見た目は変わらない**。形が変わらなくなったぶん、確実に付いてくる */
   const groupDrag = useGroupDrag();
-  const isFollowingGroup =
-    isSelected &&
-    !isDragging &&
-    groupDrag !== null &&
-    groupDrag.activeDancerId !== null &&
-    groupDrag.activeDancerId !== dancer.id;
+  const isFollowingGroup = isSelected && !isDragging && groupDrag !== null;
 
   // dnd-kitのsetNodeRefと、回転中心の座標を読み取るための自前refを
   // 同じDOMノードに両方つなぐ

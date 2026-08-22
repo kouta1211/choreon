@@ -806,6 +806,8 @@ export const ko = {
     inspector: {
       name: "댄서 이름",
       ownDuration: "이 댄서만의 이동 시간(초)",
+      /** 目に見える見出し。読み上げ用(ownDuration)とは別に短く置く */
+      ownDurationShort: "이 사람만의 이동 시간",
       seconds: "초",
       focus: "마이 포커스",
       focusOn: "마이 포커스 중",
@@ -896,7 +898,8 @@ export const ko = {
       summary: "격자 흡착 · 센터 라인",
       snap: {
         label: "격자에 붙이기",
-        description: "끄면 어디에나 놓을 수 있습니다.",
+        description:
+          "선 위와 선 사이에만 놓입니다. 끄면 어디에나 놓을 수 있습니다.",
       },
       centerLine: {
         label: "센터 라인 강조",

@@ -202,7 +202,7 @@ export function DancerInspector({ variant = "floating" }: Props) {
             動かない** — 動くのは「名前のすぐ隣」に置いたときだけ。
             吹き出しは右揃え(align="right")で出して、パネルの縁から
             はみ出さないようにする */}
-        <div className="flex items-center gap-2">
+        <div data-testid="dancer-name-row" className="flex items-center gap-2">
           {/* keyにダンサーIDを渡して、別のダンサーを選び直したときに
               編集中の入力欄が持ち越されないようにする */}
           <InlineEditableText
@@ -212,23 +212,6 @@ export function DancerInspector({ variant = "floating" }: Props) {
             label={t.dancer.inspector.name}
             textClassName="text-label font-semibold"
           />
-
-          {/* この人だけ移動を速く/遅くする欄。**順番だけで作っている
-              ときは出さない** — 移動がどれも同じ秒数の作品で、1人ぶんの
-              秒数だけ置いても比べる相手が無い（実機の報告 17-3） */}
-          {selectedSceneId && position && !isOrderOnly && (
-            <DurationSecondsInput
-              key={`${dancer.id}-${selectedSceneId}`}
-              label={t.dancer.inspector.ownDuration}
-              value={position.dancerTransitionDurationSeconds ?? null}
-              onCommit={handleDurationOverrideCommit}
-              min={MIN_DURATION_SECONDS}
-              max={MAX_DURATION_SECONDS}
-              placeholder={String(selectedSegmentSeconds)}
-              suffix={t.dancer.inspector.seconds}
-              tone="dancer"
-            />
-          )}
 
           <div className="ml-auto flex shrink-0 items-center gap-1">
             {/* 吹き出しは【下】へ出す。この行はパネルのいちばん上なので、
@@ -298,6 +281,42 @@ export function DancerInspector({ variant = "floating" }: Props) {
             </span>
           )}
         </div>
+
+        {/* この人だけ移動を速く/遅くする欄。
+
+            ■ **名前の行から出した**（実機の報告 2026-08-22:
+            「名前を変更する際に、変な秒数の項目が表示されてる」）
+            以前は名前のすぐ横に並んでいて、しかもこの欄は**時計の絵と
+            数字だけ**（見出しは読み上げ用にしか付いていない）。名前を
+            直そうとすると、由来の分からない数字が隣にある状態だった。
+            見出しを目に見える形で添えて、色と同じ「下の段」へ移す。
+
+            ■ **順番だけで作っているときは出さない**（実機の報告 17-3）
+            移動がどれも同じ秒数の作品で、1人ぶんの秒数だけ置いても
+            比べる相手が無い */}
+        {selectedSceneId && position && !isOrderOnly && (
+          <div className="mt-2 flex items-center gap-2">
+            {/* 読み上げ用の名前は欄そのものが持っている（sr-only）。
+                ここは目で読むためだけなので、二重に読ませない */}
+            <span
+              aria-hidden
+              className="min-w-0 flex-1 text-caption text-fg-muted"
+            >
+              {t.dancer.inspector.ownDurationShort}
+            </span>
+            <DurationSecondsInput
+              key={`${dancer.id}-${selectedSceneId}`}
+              label={t.dancer.inspector.ownDuration}
+              value={position.dancerTransitionDurationSeconds ?? null}
+              onCommit={handleDurationOverrideCommit}
+              min={MIN_DURATION_SECONDS}
+              max={MAX_DURATION_SECONDS}
+              placeholder={String(selectedSegmentSeconds)}
+              suffix={t.dancer.inspector.seconds}
+              tone="dancer"
+            />
+          </div>
+        )}
 
         {/* 地と同化する色を**選べなくはしない**（2026-08-21）。衣装に
             合わせて決める人がいるし、沈ませたい場面もある。知らせるだけ。

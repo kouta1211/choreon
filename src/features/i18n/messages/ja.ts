@@ -876,6 +876,8 @@ export const ja = {
     inspector: {
       name: "ダンサー名",
       ownDuration: "このダンサーだけの遷移時間(秒)",
+      /** 目に見える見出し。読み上げ用(ownDuration)とは別に短く置く */
+      ownDurationShort: "この人だけの移動時間",
       seconds: "秒",
       focus: "マイ・フォーカス",
       focusOn: "マイ・フォーカス中",
@@ -978,7 +980,7 @@ export const ja = {
       summary: "格子への吸着・センターライン",
       snap: {
         label: "格子に吸着させる",
-        description: "切ると、どこにでも置けます",
+        description: "線の上と、線と線のあいだにだけ置けます。切ると、どこにでも置けます",
       },
       centerLine: {
         label: "センターラインを強調",

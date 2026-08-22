@@ -17,7 +17,6 @@ import {
   pixelDeltaToUnitDelta,
   snapToGrid,
 } from "@/features/canvas/lib/dragMath";
-import { GRID_SNAP_TOLERANCE } from "@/features/canvas/lib/gridSnapModifier";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { stageYSign } from "@/features/canvas/lib/stageFlip";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
@@ -261,7 +260,7 @@ export function CanvasBoard({
       if (!before) return;
 
       const snap = (value: number) =>
-        isSnapEnabled ? snapToGrid(value, GRID_SNAP_TOLERANCE) : value;
+        isSnapEnabled ? snapToGrid(value) : value;
 
       /* 着地点は**押した本人**で決めて、その差分を全員へ配る。
          各自で丸めると、揃えて置いた間隔が崩れる */

@@ -490,3 +490,42 @@ describe("SceneDock（曲があるときは、曲の終わりまで流す）", (
     expect(audio.currentTime).toBe(30);
   });
 });
+
+/**
+ * 時間軸の縦線を置いた所から鳴らす。
+ *
+ * 実機の報告（2026-08-22）:「曲の始めたい位置に縦線を置いて再生しても、
+ * 最初のシーンの場所から再生される」。押した瞬間に【選んでいるシーンの
+ * 位置】へ飛ばしていたのが原因。
+ */
+describe("SceneDock（曲があるとき、どこから鳴るか）", () => {
+  beforeEach(() => {
+    useProjectStore.setState({
+      project: makeProject(),
+      scenes: [
+        makeScene({ timeSeconds: 0 }),
+        makeScene({ id: "scene-2", orderIndex: 1, timeSeconds: 4 }),
+      ],
+    });
+    useUIStore.setState({ selectedSceneId: "scene-1", isPlaying: false });
+    useMusicStore.setState({ objectUrl: "blob:song", fileName: "song.mp3" });
+  });
+
+  it("縦線を置いた所から鳴る（先頭のシーンへ戻さない）", async () => {
+    const user = userEvent.setup();
+    render(<SceneDock project={makeProject()} />);
+    const audio = document.querySelector("audio");
+    if (!audio) throw new Error("audio が無い");
+    // 時間軸を触って、12秒の所へ縦線を置いた状態
+    Object.defineProperty(audio, "currentTime", { value: 12, writable: true });
+    Object.defineProperty(audio, "ended", { value: false, writable: true });
+
+    await user.click(
+      screen.getByRole("button", { name: "最後のシーンまで再生" }),
+    );
+
+    await waitFor(() => expect(useUIStore.getState().isPlaying).toBe(true));
+    // 先頭のシーン(0秒)へ戻されていない
+    expect(audio.currentTime).toBe(12);
+  });
+});

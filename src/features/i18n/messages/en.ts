@@ -816,6 +816,8 @@ export const en = {
     inspector: {
       name: "Dancer name",
       ownDuration: "Travel time for this dancer only (s)",
+      /** 目に見える見出し。読み上げ用(ownDuration)とは別に短く置く */
+      ownDurationShort: "Travel time for this dancer",
       seconds: "s",
       focus: "Focus on me",
       focusOn: "Focused",
@@ -906,7 +908,8 @@ export const en = {
       summary: "Snapping, centre line",
       snap: {
         label: "Snap to the grid",
-        description: "Turn it off to place anyone anywhere.",
+        description:
+          "Dancers land on the lines and halfway between them. Turn it off to place anyone anywhere.",
       },
       centerLine: {
         label: "Emphasise the centre line",

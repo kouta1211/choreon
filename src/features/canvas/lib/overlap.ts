@@ -48,6 +48,15 @@ function layoutAfter(
  *
  * 見るのは**動かした人だけ**。もともと重なっていた組（自分で重ねた、
  * 昔のデータ）にまで文句を言うと、触っていない所で止められることになる。
+ *
+ * ■ **動かす前から近かった組は、言わない**（2026-08-22、実機の報告
+ * 「複数のダンサーを選択して一斉移動させた場合、置いた際の挙動が変」）
+ * まとめて動かすと**間隔を保ったまま**平行移動する。近くに並べて選んだ
+ * 人たちは、動かす前も後も同じだけ近い。それを「重なった」と言うと、
+ * 動かすたびに板が出て、「ずらして置く」を押すと**組んだ隊形が崩される**。
+ *
+ * 判定は【前は離れていた → 後は近い】に変わった組だけ。上の「もともと
+ * 重なっていた組は言わない」を、動かした人どうしにも同じように当てる。
  */
 export function findOverlaps({
   changes,
@@ -60,6 +69,16 @@ export function findOverlaps({
 }): Overlap[] {
   const after = layoutAfter(positions, changes);
   const moved = new Set(changes.map((change) => change.dancerId));
+  /** 動かす前の立ち位置。動かした人は before の側を見る */
+  const beforeLayout: Record<string, Position> = { ...positions };
+  for (const change of changes) beforeLayout[change.dancerId] = change.before;
+
+  /** 動かす前から、その2人は既に近かったか */
+  const wasAlreadyClose = (a: string, b: string) => {
+    const one = beforeLayout[a];
+    const other = beforeLayout[b];
+    return one != null && other != null && distance(one, other) < threshold;
+  };
 
   return changes.flatMap((change) => {
     const placed = after[change.dancerId];
@@ -69,6 +88,8 @@ export function findOverlaps({
       ([dancerId, position]) =>
         dancerId !== change.dancerId &&
         distance(placed, position) < threshold &&
+        // 動かす前から近かった組は言わない（まとめて動かすと必ずそうなる）
+        !wasAlreadyClose(change.dancerId, dancerId) &&
         // 動かした人どうしの組は片側だけ出す（同じ組を2回聞かない）
         !(moved.has(dancerId) && dancerId < change.dancerId),
     );

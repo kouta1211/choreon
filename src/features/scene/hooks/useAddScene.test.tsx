@@ -19,10 +19,20 @@ const SCENES = [
   makeScene({ id: "c", orderIndex: 2, timeSeconds: 6 }),
 ];
 
-function setup({ isMetronomeEnabled }: { isMetronomeEnabled: boolean }) {
+function setup({
+  isMetronomeEnabled,
+  hasMusic = false,
+}: {
+  isMetronomeEnabled: boolean;
+  hasMusic?: boolean;
+}) {
   const project = makeProject({ isMetronomeEnabled });
   useProjectStore.setState({ project, scenes: SCENES, positionsBySceneId: {} });
-  useMusicStore.setState({ objectUrl: null });
+  useMusicStore.setState({
+    objectUrl: hasMusic ? "blob:song" : null,
+    // 曲の途中（6秒より後ろ）を聞いている状態
+    currentTime: hasMusic ? 5 : 0,
+  });
   // 先頭を選んだ状態で足す＝「間に割り込む」場面
   useUIStore.setState({ selectedSceneId: "a" });
 
@@ -62,6 +72,26 @@ describe("useAddScene の割り込み方", () => {
 
     // 選んでいた a の次へ入り、全部が既定の 4秒 間隔になる
     await waitFor(() => expect(times()).toEqual([0, 4, 8, 12]));
+  });
+
+  /**
+   * **曲があっても、いま見ているシーンの次へ入れる**
+   * （user の指示 2026-08-22:「シーンを追加する際は、必ず今表示している
+   * シーンの次になるようにする」）。
+   *
+   * 以前は曲があるときだけ【押した瞬間の再生位置】へ置いていた。
+   * 置き場所が曲の有無で変わるので、同じ操作の結果が読めなかった。
+   */
+  it("曲があっても、聞いている位置ではなく選んでいるシーンの次へ入る", async () => {
+    // 先頭(0秒)を選んだまま、曲の5秒目を聞いている
+    const { result } = setup({ isMetronomeEnabled: false, hasMusic: true });
+
+    await act(async () => {
+      await result.current.addScene();
+    });
+
+    // 5秒の所ではなく、0秒と4秒のあいだ(2秒)へ入る
+    await waitFor(() => expect(times()).toEqual([0, 2, 4, 6]));
   });
 
   /* 拍があるときは、触っていないシーンを動かさないのが正しい

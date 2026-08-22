@@ -192,6 +192,11 @@ function dancerNode(dancerId: string): HTMLElement {
  * その1回目は起動に使われ、移動量としては記録されない。1回しか動かさないと
  * 離した時の移動量が0のままになる（実際にこれで嵌まった）。
  */
+/**
+ * 800px / 8ユニットなので、40px = **0.4ユニット**。
+ * 吸着が入ると x=2 から 2.4 ではなく **2.5**（いちばん近い 0.5 刻み）へ乗る。
+ * **必ず乗る**のは 2026-08-22 の指示（線の上か、線と線の間にしか置けない）。
+ */
 function drag(dancerId: string, dx: number) {
   const pointer = { pointerId: 1, isPrimary: true, button: 0 };
   const to = { ...pointer, clientX: 100 + dx, clientY: 100 };
@@ -245,7 +250,7 @@ describe("CanvasBoard の掴んで動かす", () => {
 
     drag("dancer-1", 40);
 
-    expect(xOf("dancer-1")).toBeCloseTo(2.4);
+    expect(xOf("dancer-1")).toBeCloseTo(2.5);
     expect(xOf("dancer-2")).toBe(6);
   });
 
@@ -255,8 +260,8 @@ describe("CanvasBoard の掴んで動かす", () => {
 
     drag("dancer-1", 40);
 
-    expect(xOf("dancer-1")).toBeCloseTo(2.4);
-    expect(xOf("dancer-2")).toBeCloseTo(6.4);
+    expect(xOf("dancer-1")).toBeCloseTo(2.5);
+    expect(xOf("dancer-2")).toBeCloseTo(6.5);
   });
 
   /* 報告「ドラッグにダンサーが追ってこない」。以前は移動アニメの間ずっと
@@ -269,7 +274,7 @@ describe("CanvasBoard の掴んで動かす", () => {
 
     drag("dancer-1", 40);
 
-    expect(xOf("dancer-1")).toBeCloseTo(2.4);
+    expect(xOf("dancer-1")).toBeCloseTo(2.5);
   });
 });
 
@@ -544,3 +549,4 @@ describe("CanvasBoard が描き直される条件", () => {
     expect(boardRenders.count).toBe(before);
   });
 });
+

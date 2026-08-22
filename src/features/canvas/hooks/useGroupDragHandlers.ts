@@ -5,7 +5,7 @@ import type { DragMoveEvent, DragStartEvent } from "@dnd-kit/core";
 import { useMotionValue } from "motion/react";
 import {
   clamp,
-  isCloseToInteger,
+  snappedGridValue,
   pixelDeltaToUnitDelta,
 } from "@/features/canvas/lib/dragMath";
 import { toScreenY } from "@/features/canvas/lib/stageFlip";
@@ -122,11 +122,13 @@ export function useGroupDragHandlers({
         stageHeightUnits,
       );
 
-      // 吸着を切っているときは格子線を光らせない。吸わないのに光ると、
-      // 「そこへ着く」という嘘の予告になる
+      /* 吸着を切っているときは格子線を光らせない。吸わないのに光ると、
+         「そこへ着く」という嘘の予告になる。
+         寄る先は 0.5 刻みなので、**線と線のあいだにも光る**（線が引いて
+         ない所だが、光る位置そのものが「ここへ着く」を伝える） */
       setDragSnapLine({
-        x: isSnapEnabled && isCloseToInteger(liveX) ? Math.round(liveX) : null,
-        y: isSnapEnabled && isCloseToInteger(liveY) ? Math.round(liveY) : null,
+        x: isSnapEnabled ? snappedGridValue(liveX) : null,
+        y: isSnapEnabled ? snappedGridValue(liveY) : null,
       });
     },
     [

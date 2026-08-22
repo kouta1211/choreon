@@ -41,9 +41,19 @@ export function useMusicPlayback() {
       return;
     }
 
-    // 押した時点で選ばれているシーンから鳴らす。曲の頭からではないのは、
-    // 途中のシーンを見ている状態で押したときにそこから確認したいため
-    audio.currentTime = songSecondsForSelectedScene();
+    /* **いま縦線が立っている所から鳴らす**（実機の報告 2026-08-22:
+       「曲の始めたい位置に縦線を置いて再生しても、最初のシーンの場所から
+       再生される」）。
+
+       以前はここで【選んでいるシーンの位置】へ飛ばしていた。だが
+       時間軸を触って縦線を動かす操作は、その時点で既に曲を頭出しして
+       いる（`seekToSelectedScene` / MusicTimeline）ので、押した瞬間に
+       もう一度飛ばすと**縦線を置いた意味が消える**。
+       シーンを選んだときも同じ道で頭出しされているので、
+       「選んだシーンから鳴る」もそのまま保たれる。
+
+       鳴り終わったまま押されたときだけ、進める先が無いので頭出しし直す */
+    if (audio.ended) audio.currentTime = songSecondsForSelectedScene();
     // play()はPromiseを返す約束だが、返さない実装もある(jsdomなど)。
     // Promise.resolveで包んでおけば、どちらでも同じ書き方で拾える
     void Promise.resolve(audio.play()).catch(() => {

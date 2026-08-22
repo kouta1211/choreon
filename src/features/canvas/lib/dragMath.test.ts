@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   boundedGroupDelta,
   clamp,
-  isCloseToInteger,
+  snappedGridValue,
   pixelDeltaToUnitDelta,
   snapToGrid,
   snapRotation,
@@ -48,28 +48,59 @@ describe("unitDeltaToPixelDelta", () => {
   });
 });
 
+/**
+ * 寄る先は **0.5 刻み**（実機の要望 2026-08-22:「格子状の 0.5 にも補間が
+ * 効くようにしたい（線の間）」）。1ユニット = 約90cm なので約45cm。
+ */
+/**
+ * 寄る先は **0.5 刻み**（実機の要望 2026-08-22）。1ユニット = 約90cm。
+ *
+ * **「近ければ寄る」ではなく「必ず乗る」**（同日の指示:「格子状の線上、
+ * または線と線の間にしか置けないようにしたい」）。使うかどうかは設定
+ * （`isSnapEnabled`）が持つので、ここは常に乗せるだけでよい。
+ */
 describe("snapToGrid", () => {
-  it("最も近い格子線からtolerance以内ならぴったり吸着する", () => {
-    expect(snapToGrid(5.2, 0.3)).toBe(5);
-    expect(snapToGrid(4.8, 0.3)).toBe(5);
+  it("格子線の近くなら、線の上に乗る", () => {
+    expect(snapToGrid(5.05)).toBe(5);
+    expect(snapToGrid(4.95)).toBe(5);
   });
 
-  it("tolerance範囲外ならそのままの値を返す", () => {
-    expect(snapToGrid(5.5, 0.3)).toBe(5.5);
+  it("線と線のあいだ(0.5)にも乗る", () => {
+    expect(snapToGrid(5.45)).toBe(5.5);
+    expect(snapToGrid(5.55)).toBe(5.5);
+  });
+
+  /* 以前は刻みから 0.1 以上離れると、そのままの値が残っていた。
+     揃えたつもりで揃っていない位置を作らないため、必ず寄せる */
+  it("刻みから遠くても、いちばん近い刻みへ乗せる", () => {
+    expect(snapToGrid(5.25)).toBe(5.5);
+    expect(snapToGrid(5.2)).toBe(5);
+    expect(snapToGrid(5.3)).toBe(5.5);
+  });
+
+  it("負の側・0 の縁でも同じ刻み", () => {
+    expect(snapToGrid(0.04)).toBe(0);
+    expect(snapToGrid(-0.45)).toBe(-0.5);
   });
 });
 
-describe("isCloseToInteger", () => {
-  it("整数ぴったりならtrue", () => {
-    expect(isCloseToInteger(5)).toBe(true);
+describe("snappedGridValue", () => {
+  it("格子線の上なら、その座標を返す", () => {
+    expect(snappedGridValue(5)).toBe(5);
   });
 
-  it("誤差の範囲内ならtrue", () => {
-    expect(isCloseToInteger(4.999999999)).toBe(true);
+  it("線と線のあいだでも、その座標を返す", () => {
+    expect(snappedGridValue(5.5)).toBe(5.5);
   });
 
-  it("誤差の範囲を超えるとfalse", () => {
-    expect(isCloseToInteger(4.9)).toBe(false);
+  it("誤差の範囲内なら、寄せた先の座標を返す", () => {
+    expect(snappedGridValue(4.999999999)).toBe(5);
+    expect(snappedGridValue(5.500000001)).toBe(5.5);
+  });
+
+  it("刻みから離れていれば null（線を光らせない）", () => {
+    expect(snappedGridValue(4.9)).toBeNull();
+    expect(snappedGridValue(5.25)).toBeNull();
   });
 });
 

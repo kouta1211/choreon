@@ -7,11 +7,6 @@ import {
   unitDeltaToPixelDelta,
 } from "@/features/canvas/lib/dragMath";
 
-/** 格子線・交差点への磁石スナップが効き始める許容範囲(ステージ座標系のユニット)。
- * 1ユニットの1割程度、線のごく近くまで来て初めて効くくらいの狭さにしている
- * (広すぎるとまだ線から離れているのに吸着してしまい、狙った位置に置きにくくなるため) */
-export const GRID_SNAP_TOLERANCE = 0.1;
-
 type DancerDragData = {
   x: number;
   /** 【画面に描いている】Y。客席を上にしているときは上下が写った値が入る
@@ -77,8 +72,8 @@ export function createGridSnapModifier(
       data.stageHeightUnits,
     );
 
-    const snappedX = snapToGrid(rawX, GRID_SNAP_TOLERANCE);
-    const snappedY = snapToGrid(rawY, GRID_SNAP_TOLERANCE);
+    const snappedX = snapToGrid(rawX);
+    const snappedY = snapToGrid(rawY);
 
     return {
       ...transform,

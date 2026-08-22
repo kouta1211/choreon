@@ -373,3 +373,52 @@ describe("DancerInspector の操作ボタン", () => {
     expect(tips[0].className).not.toContain("bottom-full");
   });
 });
+
+/**
+ * 名前の行に、由来の分からない数字を置かない。
+ *
+ * 実機の報告（2026-08-22）:「ダンサーの名前を変更する際に、変な秒数の
+ * 項目が表示されてる」。この欄は【時計の絵と数字だけ】で、見出しは
+ * 読み上げ用にしか付いていなかった。それが名前のすぐ横に並んでいた。
+ */
+describe("この人だけの移動時間の置き場所", () => {
+  /** 拍があると、この欄が出る */
+  function setup() {
+    useProjectStore.setState({
+      project: makeProject({ isMetronomeEnabled: true }),
+      dancers: { "dancer-1": makeDancer() },
+      scenes: [makeScene()],
+      positionsBySceneId: { "scene-1": { "dancer-1": makePosition() } },
+    });
+    useUIStore.setState({
+      selectedDancerIds: ["dancer-1"],
+      selectedSceneId: "scene-1",
+    });
+    render(
+      <LocaleProvider locale="ja">
+        <DancerInspector />
+      </LocaleProvider>,
+    );
+  }
+
+  it("名前と同じ行には置かない", () => {
+    setup();
+
+    const duration = screen.getByLabelText(/このダンサーだけの遷移時間/);
+    const nameRow = screen.getByTestId("dancer-name-row");
+
+    // 名前を直す口（鉛筆）はこの行に居る
+    expect(nameRow.contains(screen.getByLabelText("ダンサー名を変更"))).toBe(
+      true,
+    );
+    // 秒数の欄は居ない
+    expect(nameRow.contains(duration)).toBe(false);
+  });
+
+  /* 時計の絵と数字だけでは、何の秒数なのか読めない */
+  it("目に見える見出しを添える（読み上げ用だけにしない）", () => {
+    setup();
+
+    expect(screen.getByText("この人だけの移動時間")).toBeInTheDocument();
+  });
+});

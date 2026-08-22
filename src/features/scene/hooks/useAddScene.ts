@@ -12,7 +12,6 @@ import { randomId } from "@/lib/randomId";
 import {
   duplicateTimeSeconds,
   uniformTimes,
-  insertTimeSeconds,
 } from "@/features/scene/lib/sceneTiming";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
@@ -86,22 +85,20 @@ export function useAddScene(project: Project) {
           )
         : null;
 
-    // シーンがまだ1つも無いときは曲の頭から始める(最初の隊形は
-    // 「曲のこの秒から」ではなく「はじまり」なので)
+    /* シーンがまだ1つも無いときは曲の頭から始める（最初の隊形は
+       「曲のこの秒から」ではなく「はじまり」なので）。
+
+       それ以外は**必ず、いま見ているシーンの次**へ入れる
+       （user の指示 2026-08-22）。以前は曲があるときだけ
+       【押した瞬間の再生位置】へ置いていたが、置き場所が曲の有無で
+       変わるので、**同じ操作の結果が読めなかった**。
+       曲に合わせたい位置は、置いてから時間軸で動かせる */
     const timeSeconds =
       scenes.length === 0
         ? 0
         : restacked
           ? (restacked.get(newSceneId) ?? 0)
-          : hasMusic
-            ? // 押した瞬間の再生位置。曲が止まっていればシークした位置になる
-              insertTimeSeconds(
-                scenes,
-                useMusicStore.getState().currentTime,
-                segmentSeconds,
-              )
-            : // 拍はあるが曲が無いとき。選択中のシーンの隣へ割り込む
-              duplicateTimeSeconds(scenes, source, segmentSeconds);
+          : duplicateTimeSeconds(scenes, source, segmentSeconds);
 
     const scene = {
       id: newSceneId,

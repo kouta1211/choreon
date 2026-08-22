@@ -247,38 +247,6 @@ export function uniformTimes(
   );
 }
 
-/**
- * 新しいシーンを置く時刻。押した瞬間の再生位置に作る。
- *
- * そこに既に居る場合は、次のシーンとの中間へ割り込む。曲を聴きながら
- * 「ここ」と思った場所に置けることが要点なので、末尾へ足す作りには戻さない。
- */
-export function insertTimeSeconds(
-  scenes: TimedScene[],
-  atSeconds: number,
-  /** 空きが無いときに空ける秒数。設定から渡す(既定は1つの8カウント) */
-  segmentSeconds: number = DEFAULT_SEGMENT_SECONDS,
-): number {
-  const target = roundSeconds(Math.max(0, atSeconds));
-  const sorted = [...scenes].sort((a, b) => a.timeSeconds - b.timeSeconds);
-
-  const collision = sorted.find(
-    (scene) => Math.abs(scene.timeSeconds - target) < MIN_SEGMENT_SECONDS,
-  );
-  if (!collision) return target;
-
-  const next = sorted.find(
-    (scene) => scene.timeSeconds > collision.timeSeconds,
-  );
-  if (!next) return roundSeconds(collision.timeSeconds + segmentSeconds);
-  return roundSeconds(
-    Math.max(
-      collision.timeSeconds + MIN_SEGMENT_SECONDS,
-      (collision.timeSeconds + next.timeSeconds) / 2,
-    ),
-  );
-}
-
 /** 時刻の昇順。同じ時刻なら元の並び(order_index)を保つ。
  * 並び順の正は時刻なので、読み込みも追加も編集もここを通す */
 export function sortScenes<T extends TimedScene & { orderIndex: number }>(

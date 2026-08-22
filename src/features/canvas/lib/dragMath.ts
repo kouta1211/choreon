@@ -30,20 +30,46 @@ export function unitDeltaToPixelDelta(
   return (deltaUnits / unitsTotal) * containerSizePx;
 }
 
-/** 値が最も近い整数(=格子線・交差点)からtolerance以内なら、その整数にぴったり
- * 吸着させる。ステージ座標系は1マス=1ユニットなので、整数座標は常に格子線上
- * (x, yどちらか一方が整数)または交差点(両方が整数)と一致する */
-export function snapToGrid(value: number, tolerance: number): number {
-  const nearest = Math.round(value);
-  return Math.abs(value - nearest) <= tolerance ? nearest : value;
+/**
+ * 吸着する刻み(ユニット)。**線の上だけでなく、線と線のあいだにも寄せる**
+ * （実機の要望 2026-08-22）。
+ *
+ * 1ユニット = 約90cm なので、0.5 は**約45cm**。並んで立つ人の間に
+ * もう1人を入れる、という置き方が格子のまま作れるようになる。
+ * ここを 0.25 のように細かくすると、刻みの意味（狙って揃う）が薄れる。
+ */
+export const GRID_SNAP_STEP = 0.5;
+
+/**
+ * 値をいちばん近い吸着先(0.5の倍数)へ乗せる。
+ *
+ * ■ **「近ければ寄る」ではなく「必ず乗る」**（user の指示 2026-08-22:
+ * 「格子状の線上、または線と線の間にしか置けないようにしたい」）
+ * 以前は刻みから 0.1 以内のときだけ寄せる磁石式で、そのぶん
+ * **刻みに乗っていない中途半端な位置にも置けた**。揃えたつもりで
+ * 揃っていない、が起きる。
+ *
+ * 使うかどうかは設定（`isSnapEnabled`）。**切ればどこにでも置ける**ので、
+ * 細かく詰めたい人の逃げ道はそちらが持つ。
+ */
+export function snapToGrid(value: number): number {
+  return Math.round(value / GRID_SNAP_STEP) * GRID_SNAP_STEP;
 }
 
-/** 値が(浮動小数点誤差を許容して)整数とみなせるかどうか。格子スナップが
- * 実際に効いたかどうかを、スナップ処理を再現せず結果の値だけから判定するために使う
- * (連続的なポインタ移動が偶然ぴったり整数になることは実質無いため、
- * 「整数に極めて近い」=「スナップされた」とみなせる) */
-export function isCloseToInteger(value: number, epsilon = 0.01): boolean {
-  return Math.abs(value - Math.round(value)) < epsilon;
+/**
+ * 吸着が実際に効いた位置。効いていなければ null。
+ *
+ * 吸着の計算をもう一度なぞるのではなく、**結果の値だけ**から判定する
+ * （連続的なポインタ移動が偶然ぴったり刻みに乗ることは実質無いため、
+ * 「刻みに極めて近い」=「吸着した」とみなせる）。
+ * 返すのは寄った先の座標そのもので、光らせる線の位置に使う。
+ */
+export function snappedGridValue(
+  value: number,
+  epsilon = 0.01,
+): number | null {
+  const nearest = snapToGrid(value);
+  return Math.abs(value - nearest) < epsilon ? nearest : null;
 }
 
 /** 向きを吸着させる刻み(度)。0/45/90…の8方向。上下左右と斜めは、
