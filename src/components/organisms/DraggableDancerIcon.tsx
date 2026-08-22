@@ -7,8 +7,9 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { useDraggable } from "@dnd-kit/core";
+import { useDndContext, useDraggable } from "@dnd-kit/core";
 import { useGroupDrag } from "@/features/canvas/hooks/useGroupDrag";
+import { isFollowingGroupDrag } from "@/features/canvas/lib/groupDragFollow";
 import { CSS } from "@dnd-kit/utilities";
 import { motion } from "motion/react";
 import { DancerMarker } from "@/components/molecules/DancerIcon";
@@ -184,7 +185,17 @@ function DraggableDancerIconImpl({
      移動量は掴んでいないとき 0 なので、**条件から外しても止まっている
      ときの見た目は変わらない**。形が変わらなくなったぶん、確実に付いてくる */
   const groupDrag = useGroupDrag();
-  const isFollowingGroup = isSelected && !isDragging && groupDrag !== null;
+  /* 「いま誰かが掴んでいるか」は **dnd-kit 自身**に聞く。React の state で
+     持つと掴み始めの数フレームはまだ立っておらず、その間だけ style の形が
+     入れ替わる（motion は transform のキーが立っていると x/y を捨てる） */
+  const { active } = useDndContext();
+  const isFollowingGroup =
+    groupDrag !== null &&
+    isFollowingGroupDrag({
+      isSelected,
+      isGrabbed: isDragging,
+      isAnyDragging: active !== null,
+    });
 
   // dnd-kitのsetNodeRefと、回転中心の座標を読み取るための自前refを
   // 同じDOMノードに両方つなぐ
