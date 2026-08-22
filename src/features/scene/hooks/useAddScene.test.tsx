@@ -8,7 +8,7 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import * as scenesApi from "@/features/scene/api/scenes";
 import * as positionsApi from "@/features/scene/api/positions";
-import { makeProject, makeScene } from "@/test/factories";
+import { makeDancer, makeProject, makeScene } from "@/test/factories";
 
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({}) }));
 
@@ -183,5 +183,51 @@ describe("useAddScene の、最初の1つ", () => {
     });
 
     await waitFor(() => expect(times()).toEqual([0]));
+  });
+});
+
+/**
+ * シーンを全部消しても、ダンサーは残る（作品に属するもので、シーンに
+ * 属していない）。そこから1つ作ったとき、立ち位置を作らないと
+ * **居るのに誰も描かれない**状態になっていた。
+ *
+ * user の指示（2026-08-22）:「シーン数を0にしてももともといたダンサーの
+ * 情報は消去しないでください。シーン数が0の状態で新しくシーン追加した際は、
+ * ダンサーは適当に配置された状態で大丈夫です」。
+ */
+describe("シーンが0の状態から作ったとき、ダンサーをどう置くか", () => {
+  it("写す元が無ければ、空いているマスへ配る", async () => {
+    const project = makeProject({ isMetronomeEnabled: false });
+    useProjectStore.setState({
+      project,
+      scenes: [],
+      positionsBySceneId: {},
+      dancers: {
+        "dancer-1": makeDancer({ id: "dancer-1" }),
+        "dancer-2": makeDancer({ id: "dancer-2" }),
+      },
+    });
+    useMusicStore.setState({ objectUrl: null });
+    useUIStore.setState({ selectedSceneId: null, isPlaying: false });
+
+    const { result } = renderHook(() => useAddScene(project), {
+      wrapper: ({ children }: { children: ReactNode }) => (
+        <LocaleProvider locale="ja">{children}</LocaleProvider>
+      ),
+    });
+
+    await act(async () => {
+      await result.current.addScene();
+    });
+
+    const sceneId = useProjectStore.getState().scenes[0].id;
+    const placed = Object.values(
+      useProjectStore.getState().positionsBySceneId[sceneId] ?? {},
+    );
+
+    // 2人とも立ち位置を持っていて、同じ場所に重なっていない
+    expect(placed).toHaveLength(2);
+    const spots = placed.map((p) => `${p.xCoordinate},${p.yCoordinate}`);
+    expect(new Set(spots).size).toBe(2);
   });
 });

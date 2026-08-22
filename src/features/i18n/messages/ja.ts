@@ -277,7 +277,6 @@ export const ja = {
       /** 等間隔の帯で、コマとコマの間に出す区間の秒数 */
       segment: (seconds: number) => `→ ${seconds}s`,
       moveSeconds: "前のシーンから何秒で動くか",
-      duplicate: "複製",
       delete: "削除",
     },
 

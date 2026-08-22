@@ -19,7 +19,6 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { reorderSceneIds } from "@/features/scene/lib/sceneReorder";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
-import { useDuplicateScene } from "@/features/scene/hooks/useDuplicateScene";
 import { useSceneActions } from "@/features/scene/hooks/useSceneActions";
 import type { Project } from "@/features/project/types";
 import { PressableButton } from "@/components/atoms/PressableButton";
@@ -51,7 +50,6 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
     (state) => state.thumbnailBySceneId,
   );
   const { addScene, isCreating, canAdd } = useAddScene(project);
-  const { duplicateScene, isDuplicating } = useDuplicateScene(project);
   const {
     renameSceneTo,
     reorderTo,
@@ -106,13 +104,11 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
               thumbnail={thumbnailBySceneId[scene.id]}
               thumbnailSizePx={thumbnailSizePx}
               segmentSeconds={durations[index]}
-              isDuplicating={isDuplicating}
               onSelect={() => selectSceneManually(scene.id)}
               onRename={(name) => renameSceneTo(scene, name)}
               onChangeTime={(seconds, ripple) =>
                 changeSceneTime(scene, seconds, ripple)
               }
-              onDuplicate={() => duplicateScene(scene)}
               onDelete={() => confirmDelete(scene)}
             />
           ))}

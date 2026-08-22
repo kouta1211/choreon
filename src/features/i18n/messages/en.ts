@@ -253,7 +253,6 @@ export const en = {
       moveIn: (seconds: number) => ` · ${seconds}s to get there`,
       segment: (seconds: number) => `→ ${seconds}s`,
       moveSeconds: "Seconds to get here",
-      duplicate: "Duplicate",
       delete: "Delete",
     },
 

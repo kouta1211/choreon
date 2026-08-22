@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { canAddScene } from "@/features/scene/lib/canAddScene";
+import { findFreePositions } from "@/features/dancer/lib/newDancers";
 import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { createScene, updateSceneTimes } from "@/features/scene/api/scenes";
@@ -130,11 +131,41 @@ export function useAddScene(project: Project) {
       orderIndex: scenes.length,
       timeSeconds,
     };
-    const copiedPositions = Object.values(
+    /* 隊形は**いま見ているシーンから写す**。だから「足す」は
+       「この隊形をもう一枚」でもある（複製という別の口は要らなかった） */
+    const sourcePositions = Object.values(
       useProjectStore.getState().positionsBySceneId[
         previousSelectedSceneId ?? ""
       ] ?? {},
-    ).map((position) => ({ ...position, sceneId: scene.id }));
+    );
+
+    /* **写す元が無いときは、空いているマスへ配る**（user の指示 2026-08-22:
+       「シーン数が0の状態で新しくシーン追加した際は、ダンサーは適当に
+       配置された状態で大丈夫です」）。
+
+       シーンを全部消してもダンサーは残る（作品に属するもので、シーンに
+       属していない）。そこから1つ作ったときに立ち位置を作らないと、
+       **居るのに誰も描かれない**状態になっていた。
+       配り方は、人を足すときと同じ `findFreePositions`（中央から外へ）*/
+    const dancers = Object.values(useProjectStore.getState().dancers);
+    const copiedPositions =
+      sourcePositions.length > 0
+        ? sourcePositions.map((position) => ({
+            ...position,
+            sceneId: scene.id,
+          }))
+        : findFreePositions(
+            [],
+            dancers.length,
+            project.stageWidth,
+            project.stageHeight,
+          ).map((spot, index) => ({
+            sceneId: scene.id,
+            dancerId: dancers[index].id,
+            xCoordinate: spot.x,
+            yCoordinate: spot.y,
+            rotationAngle: 0,
+          }));
 
     // 楽観的更新: 先にローカルへ反映し、保存に失敗したら取り消す
     const previousTimes = new Map(

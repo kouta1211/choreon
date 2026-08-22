@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Copy, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { SceneThumbnail } from "@/components/molecules/SceneThumbnail";
 import { InlineEditableText } from "@/components/molecules/InlineEditableText";
 import { SceneTimeField } from "@/components/molecules/SceneTimeField";
@@ -25,11 +25,9 @@ type Props = {
   thumbnailSizePx: number;
   /** このシーンへ入ってくるのにかかる秒数 */
   segmentSeconds: number;
-  isDuplicating: boolean;
   onSelect: () => void;
   onRename: (name: string) => void;
   onChangeTime: (seconds: number, ripple: boolean) => void;
-  onDuplicate: () => void;
   onDelete: () => void;
 };
 
@@ -51,11 +49,9 @@ export function SceneRow({
   thumbnail,
   thumbnailSizePx,
   segmentSeconds,
-  isDuplicating,
   onSelect,
   onRename,
   onChangeTime,
-  onDuplicate,
   onDelete,
 }: Props) {
   const t = useT();
@@ -182,12 +178,6 @@ export function SceneRow({
           )}
           <div className="flex gap-1.5">
             <RowAction
-              icon={Copy}
-              label={t.editor.scenes.duplicate}
-              disabled={isDuplicating}
-              onClick={onDuplicate}
-            />
-            <RowAction
               icon={Trash2}
               label={t.editor.scenes.delete}
               tone="danger"
@@ -208,7 +198,7 @@ function RowAction({
   disabled = false,
   tone = "default",
 }: {
-  icon: typeof Copy;
+  icon: typeof Trash2;
   label: string;
   onClick: () => void;
   disabled?: boolean;

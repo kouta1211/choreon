@@ -252,7 +252,6 @@ export const ko = {
       moveIn: (seconds: number) => ` · ${seconds}s 동안 이동`,
       segment: (seconds: number) => `→ ${seconds}s`,
       moveSeconds: "앞 장면에서 몇 초로 이동할지",
-      duplicate: "복제",
       delete: "삭제",
     },
 
