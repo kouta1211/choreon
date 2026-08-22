@@ -7,6 +7,7 @@ import { HistoryControls } from "@/components/organisms/HistoryControls";
 import { TemplateButton } from "@/components/organisms/TemplateButton";
 import { DancerLayer } from "@/components/organisms/DancerLayer";
 import { StageContextMenu } from "@/components/organisms/StageContextMenu";
+import { BeforeFirstSceneNotice } from "@/components/organisms/BeforeFirstSceneNotice";
 import {
   positionAt,
   useProjectStore,
@@ -387,6 +388,9 @@ export function CanvasBoard({
               style={{ display: "none" }}
               className="pointer-events-none absolute z-10 rounded-[3px] border border-accent bg-accent/12"
             />
+            {/* 音先の作品で、まだ最初のシーンへ着いていない間の板。
+                ダンサーの上に重ねるので、この並びで後ろに置く */}
+            <BeforeFirstSceneNotice />
             <DancerLayer
               stageWidthUnits={project.stageWidth}
               stageHeightUnits={project.stageHeight}

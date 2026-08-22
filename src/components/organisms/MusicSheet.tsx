@@ -222,20 +222,26 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
           </div>
         )}
 
-        {/* 拍子は曲の有無に関わらず出す。曲が入っていても、時間軸の拍線の
-            どれを太く引くかはこの値で決まる */}
-        <div>
-          <div className="flex items-center gap-2.5">
-            <span className="flex-1 text-label text-fg">
-              {t.music.beatsPerBar}
-            </span>
-            <BeatsPerBarSegment />
-          </div>
-          <p className="mt-1.5 text-caption leading-snug text-fg-muted">
-            {t.music.beatsPerBarNote}
+{/* 拍子は**曲が入っていないときだけ**（user の指示 2026-08-22:
+            「曲を導入している際の拍子の概念、機能は消してOK」）。
 
-          </p>
-        </div>
+            曲があるときに残っていたのは【時間軸の拍線のどれを太く引くか】
+            だけで、合わせる相手は曲そのもの。数え方（8カウント）も変わら
+            ないので、決める意味のある場面が無かった。
+            曲が無いときは、メトロノームの強い拍がこの値で決まる */}
+        {!fileName && (
+          <div>
+            <div className="flex items-center gap-2.5">
+              <span className="flex-1 text-label text-fg">
+                {t.music.beatsPerBar}
+              </span>
+              <BeatsPerBarSegment />
+            </div>
+            <p className="mt-1.5 text-caption leading-snug text-fg-muted">
+              {t.music.beatsPerBarNote}
+            </p>
+          </div>
+        )}
 
         {/* 曲を用意する前の、仮の物差し。曲があるときは出さない —
             2つの拍が同時に鳴ると、合わせる先が分からなくなる */}

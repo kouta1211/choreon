@@ -138,6 +138,8 @@ export const en = {
     /** シーンがまだ無いまま曲だけ流しているとき（2026-08-22） */
     musicOnly: "Playing the music only",
     noScenesYet: "No scenes yet",
+    /** 音先の作品で、曲は鳴っているがまだ最初のシーンへ着いていない間 */
+    beforeFirstScene: "No scene here yet",
     createFirstScene: "Make the first scene",
     copyCurrent: "Copy this formation into a new scene",
 

@@ -138,6 +138,8 @@ export const ko = {
     /** シーンがまだ無いまま曲だけ流しているとき（2026-08-22） */
     musicOnly: "음악만 재생 중입니다",
     noScenesYet: "아직 장면이 없습니다",
+    /** 音先の作品で、曲は鳴っているがまだ最初のシーンへ着いていない間 */
+    beforeFirstScene: "여기에는 아직 장면이 없습니다",
     createFirstScene: "첫 장면 만들기",
     copyCurrent: "지금 배치를 복사해서 추가",
 

@@ -34,7 +34,9 @@ type Props = {
   /** 何拍ごとに強拍(太い線)を引くか。作品の拍子。
    * 稽古場で数える単位は8カウントだが、それは拍子とは別の話で、
    * 線の太さを決めるのはこちら */
-  beatsPerBar?: number;
+  /** 何拍ごとに線を太くするか。**null なら太い線を引かない**
+   *  （曲があるときは拍子そのものを持たない。2026-08-22） */
+  beatsPerBar?: number | null;
   /** セット番号を出すか。ミニマップでは細かすぎて読めない */
   showSetNumbers?: boolean;
   /** 全体を薄くする。ミニマップで使う */
@@ -76,7 +78,7 @@ export function TimelineWaveform({
   playheadSeconds,
   bpm,
   originSeconds,
-  beatsPerBar = 4,
+  beatsPerBar = null,
   showSetNumbers = false,
   opacity = 1,
   className,
@@ -124,7 +126,9 @@ export function TimelineWaveform({
         toSeconds,
         originSeconds,
       )) {
-        const isBar = isDownbeat(beat, bpm, originSeconds, beatsPerBar);
+        const isBar =
+          beatsPerBar !== null &&
+          isDownbeat(beat, bpm, originSeconds, beatsPerBar);
         context.fillStyle = `rgba(${ink}, ${(isBar ? 0.13 : 0.05) * strength})`;
         context.fillRect(
           Math.round(x(beat)),

@@ -151,6 +151,8 @@ export const ja = {
     /** シーンがまだ無いまま曲だけ流しているとき（2026-08-22） */
     musicOnly: "曲だけ流しています",
     noScenesYet: "まだシーンがありません",
+    /** 音先の作品で、曲は鳴っているがまだ最初のシーンへ着いていない間 */
+    beforeFirstScene: "ここにはまだシーンがありません",
     createFirstScene: "最初のシーンを作る",
     copyCurrent: "いまの配置をコピーして追加",
 

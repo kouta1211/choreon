@@ -215,7 +215,8 @@ export function MusicTimeline({ project, audioRef }: Props) {
           playheadSeconds={playheadSeconds}
           bpm={bpm}
           originSeconds={offsetSeconds}
-          beatsPerBar={beatsPerBar}
+          /* 曲があるときは拍子を持たないので、太い線も引かない */
+          beatsPerBar={hasMusic ? null : beatsPerBar}
           showSetNumbers
           className="absolute inset-0"
         />
