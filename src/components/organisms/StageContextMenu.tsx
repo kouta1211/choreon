@@ -1,12 +1,11 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import {
   AlignHorizontalDistributeCenter,
   AlignHorizontalJustifyCenter,
   AlignVerticalDistributeCenter,
   AlignVerticalJustifyCenter,
-  ArrowDown,
   Trash2,
   UserPlus,
   Users,
@@ -16,34 +15,14 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuLabel,
-  ContextMenuRadioGroup,
-  ContextMenuRadioItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { useProjectStore } from "@/features/project/store/useProjectStore";
-import { useUIStore } from "@/features/canvas/store/useUIStore";
+import { FacingGrid } from "@/components/molecules/FacingGrid";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
-import { usePositionCommit } from "@/features/scene/hooks/usePositionCommit";
-import { useDeleteDancers } from "@/features/dancer/hooks/useDeleteDancers";
-import { EMPTY_POSITIONS } from "@/features/canvas/constants";
-import {
-  FACING_DIRECTIONS_IN_READING_ORDER,
-  facingChanges,
-  facingLabelKey,
-  sharedFacing,
-  toStageFacing,
-} from "@/features/canvas/lib/facing";
-import {
-  alignmentChanges,
-  type AlignAxis,
-  type AlignMode,
-} from "@/features/canvas/lib/alignment";
-import {
-  resolveContextMenuTarget,
-  type ContextMenuTarget,
-} from "@/features/canvas/lib/contextMenuTarget";
-import { dancerIdsInScene } from "@/features/canvas/lib/selection";
+import { useStageMenuActions } from "@/features/canvas/hooks/useStageMenuActions";
+import { useStageMenuOpen } from "@/features/canvas/hooks/useStageMenuOpen";
+import { type AlignAxis } from "@/features/canvas/lib/alignment";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
@@ -96,159 +75,28 @@ const ALIGN_ACTIONS = [
  * ここで1つだけ持ち、押された場所から DOM を遡って「誰の上か」を決める
  * (DraggableDancerIcon の data-dancer-id)。
  *
- * ■ 開くかどうかは自分で決める(open を握っている)
- * ステージの下のボタン列(テンプレート・元に戻す)の上で右クリックしても、
- * ダンサーのメニューが出ては困る。当たり判定で誰にも当たらなければ開かない。
- *
- * ■ 指の長押しでも開く
- * Radix は触る端末では長押しで開く。長押しは pointerdown から測り始めるので、
- * 当たり判定も pointerdown で採っておく(右クリックは contextmenu より先に
- * pointerdown が来るので、どちらの道でも同じ値になる)。キーボードの
- * メニューキーには pointerdown が無いため、contextmenu でも採る。
- *
- * ■ 選択の扱い
- * 選んでいない人を右クリックしたら、**その人だけを選び直してから**開く。
- * 既に選ばれている人なら、選択はそのまま(まとめて選んだ何人かへ当てるため)。
+ * ■ ここが持っているのは板の並びだけ
+ * 判断と実行は外に出してある。**ここへ条件を書き足さない。**
+ * - **開くかどうか / どちらの束を出すか** → `useStageMenuOpen`
+ * - **押されたときに何をするか** → `useStageMenuActions`
+ * - **向きの3×3の升** → `molecules/FacingGrid`
  */
 export function StageContextMenu({ children }: Props) {
   const t = useT();
-  const [isOpen, setIsOpen] = useState(false);
-  const [target, setTarget] = useState<ContextMenuTarget["kind"] | null>(null);
-  /* 押された場所。開くかどうかを決める瞬間には、もう state の更新を
-     待っていられないので ref で持つ */
-  const pressed = useRef<ContextMenuTarget | null>(null);
-
-  const selectedDancerIds = useUIStore((state) => state.selectedDancerIds);
-  const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
-  const positions = useProjectStore(
-    (state) =>
-      state.positionsBySceneId[selectedSceneId ?? ""] ?? EMPTY_POSITIONS,
-  );
-  const commitPositions = usePositionCommit();
-
-  /* 選んだ全員が同じ向きなら、その升に印が付く。ばらばらなら印は付かない */
-  const sharedStageAngle = useMemo(
-    () =>
-      sharedFacing(
-        selectedDancerIds
-          .map((dancerId) => positions[dancerId]?.rotationAngle)
-          .filter((angle): angle is number => angle !== undefined),
-      ),
-    [selectedDancerIds, positions],
-  );
-  /* 升は画面の向きで並んでいるので、印を付ける前に画面の向きへ写し戻す
-     (上下の鏡は逆写像も同じ関数) */
-  const checkedScreenAngle =
-    sharedStageAngle === null
-      ? ""
-      : String(toStageFacing(sharedStageAngle, isAudienceOnTop));
-
-  const hitTest = useCallback((eventTarget: EventTarget | null) => {
-    pressed.current = resolveContextMenuTarget(eventTarget);
-  }, []);
-
-  const handleOpenChange = useCallback((open: boolean) => {
-    if (!open) {
-      setIsOpen(false);
-      setTarget(null);
-      return;
-    }
-
-    const hit = pressed.current;
-    if (!hit) return;
-
-    if (hit.kind === "dancer") {
-      const ui = useUIStore.getState();
-      // 選んでいない人を右クリックしたら、その人だけに選び直す。
-      // 既に選ばれているなら、まとめて選んだ分をそのまま残す
-      if (!ui.selectedDancerIds.includes(hit.dancerId)) {
-        ui.selectDancer(hit.dancerId);
-      }
-    }
-
-    /* 何人か選んでいるなら、**地の上で押しても選んでいる人たちへの**
-       メニューを出す（実機の報告 17-21）。丸を狙って掴み直さなくても、
-       まとめた操作へ手が届く。
-       地のメニュー（全員を選ぶ / 人を足す）が要るときは、何も選んでいない
-       状態で押す。何も無いところを左クリックすれば選択は外れる */
-    const hasSelection = useUIStore.getState().selectedDancerIds.length > 0;
-    setTarget(hit.kind === "stage" && hasSelection ? "dancer" : hit.kind);
-    setIsOpen(true);
-  }, []);
-
-  /** 升を押したとき。押されたのは画面の向きなので、ステージの向きへ写して保存する */
-  const applyFacing = useCallback(
-    async (screenAngle: number) => {
-      if (!selectedSceneId) return;
-      await commitPositions({
-        changes: facingChanges({
-          sceneId: selectedSceneId,
-          dancerIds: useUIStore.getState().selectedDancerIds,
-          positions:
-            useProjectStore.getState().positionsBySceneId[selectedSceneId] ??
-            {},
-          rotationAngle: toStageFacing(screenAngle, isAudienceOnTop),
-        }),
-        kind: "rotate",
-        errorMessage: t.editor.errors.rotation,
-      });
-    },
-    [selectedSceneId, isAudienceOnTop, commitPositions, t],
-  );
-
-  /**
-   * 整列を当てる。行き先の決め方は lib/alignment.ts が持っている
-   * （重心へ揃える / 両端を残して等間隔に配る）。
-   */
-  const applyAlignment = useCallback(
-    async (axis: AlignAxis, mode: AlignMode) => {
-      if (!selectedSceneId) return;
-      await commitPositions({
-        changes: alignmentChanges({
-          sceneId: selectedSceneId,
-          dancerIds: useUIStore.getState().selectedDancerIds,
-          positions:
-            useProjectStore.getState().positionsBySceneId[selectedSceneId] ??
-            {},
-          axis,
-          mode,
-        }),
-        kind: "align",
-        errorMessage: t.editor.errors.position,
-      });
-    },
-    [selectedSceneId, commitPositions, t],
-  );
-  /* 確認から後片付けまでは features/dancer 側が持っている */
-  const deleteDancers = useDeleteDancers();
-  const handleDelete = useCallback(() => {
-    deleteDancers(useUIStore.getState().selectedDancerIds);
-  }, [deleteDancers]);
-
-  /* 選ぶのは**いまのシーンに立っている人**だけ。立ち位置を持たない人を
-     混ぜると、整列も向きも効かないのに選ばれている状態になる */
-  const handleSelectAll = useCallback(() => {
-    if (!selectedSceneId) return;
-    const project = useProjectStore.getState();
-    useUIStore
-      .getState()
-      .selectDancers(
-        dancerIdsInScene(
-          Object.keys(project.dancers),
-          project.positionsBySceneId[selectedSceneId] ?? {},
-        ),
-      );
-  }, [selectedSceneId]);
-
-  const handleAddDancer = useCallback(() => {
-    useUIStore.getState().setAddDancerSheetOpen(true);
-  }, []);
-
-  const selectedCount = selectedDancerIds.length;
+  const { isOpen, target, hitTest, onOpenChange } = useStageMenuOpen();
+  const {
+    selectedCount,
+    checkedScreenAngle,
+    applyFacing,
+    applyAlignment,
+    deleteSelected,
+    selectAllInScene,
+    openAddDancer,
+  } = useStageMenuActions();
 
   return (
-    <ContextMenu open={isOpen} onOpenChange={handleOpenChange}>
+    <ContextMenu open={isOpen} onOpenChange={onOpenChange}>
       <ContextMenuTrigger
         className="flex min-h-0 flex-1 flex-col"
         onPointerDown={(event) => hitTest(event.target)}
@@ -267,46 +115,11 @@ export function StageContextMenu({ children }: Props) {
                 {t.editor.contextMenu.facing.note}
               </span>
             </ContextMenuLabel>
-            <ContextMenuRadioGroup
+            <FacingGrid
               value={checkedScreenAngle}
-              onValueChange={(value) => void applyFacing(Number(value))}
-              className="mx-auto grid w-fit grid-cols-3 grid-rows-3 gap-0.5 p-0.5"
-            >
-              {FACING_DIRECTIONS_IN_READING_ORDER.map((direction) => {
-                const labelKey = facingLabelKey(
-                  toStageFacing(direction.screenAngle, isAudienceOnTop),
-                );
-                const label = labelKey
-                  ? t.editor.contextMenu.facing[labelKey]
-                  : "";
-                return (
-                  <ContextMenuRadioItem
-                    key={direction.screenAngle}
-                    value={String(direction.screenAngle)}
-                    aria-label={t.editor.contextMenu.facing.turn(label)}
-                    className="h-9 w-9"
-                    style={{
-                      gridRow: direction.cell.row,
-                      gridColumn: direction.cell.column,
-                    }}
-                  >
-                    {/* 0度は画面の下なので、下向きの矢印をそのまま回す */}
-                    <ArrowDown
-                      size={16}
-                      aria-hidden
-                      style={{
-                        transform: `rotate(${direction.screenAngle}deg)`,
-                      }}
-                    />
-                  </ContextMenuRadioItem>
-                );
-              })}
-              {/* 真ん中は本人の居る升。押せるものではないので印だけ置く */}
-              <span
-                aria-hidden
-                className="col-start-2 row-start-2 m-auto h-2 w-2 rounded-full bg-fg-muted"
-              />
-            </ContextMenuRadioGroup>
+              isAudienceOnTop={isAudienceOnTop}
+              onChange={(screenAngle) => void applyFacing(screenAngle)}
+            />
 
             {/* 整列は2人以上いないと意味が無い。1人のときは束ごと出さない
                 （押せない項目を並べるより、無い方が読む量が減る） */}
@@ -346,7 +159,7 @@ export function StageContextMenu({ children }: Props) {
             {/* 赤は意味を運ぶ色(取り返しがつかない操作)なのでトークンの外。
                 DancerInspector の削除ボタンと同じ組み合わせに揃えてある */}
             <ContextMenuItem
-              onSelect={handleDelete}
+              onSelect={deleteSelected}
               className="data-[highlighted]:bg-red-950 data-[highlighted]:text-red-400"
             >
               <Trash2 size={16} aria-hidden className="shrink-0" />
@@ -361,11 +174,11 @@ export function StageContextMenu({ children }: Props) {
 
         {target === "stage" && (
           <>
-            <ContextMenuItem onSelect={handleSelectAll}>
+            <ContextMenuItem onSelect={selectAllInScene}>
               <Users size={16} aria-hidden className="shrink-0" />
               <span>{t.editor.contextMenu.selectAll}</span>
             </ContextMenuItem>
-            <ContextMenuItem onSelect={handleAddDancer}>
+            <ContextMenuItem onSelect={openAddDancer}>
               <UserPlus size={16} aria-hidden className="shrink-0" />
               <span>{t.editor.contextMenu.addDancer}</span>
             </ContextMenuItem>
