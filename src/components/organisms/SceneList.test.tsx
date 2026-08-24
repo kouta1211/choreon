@@ -475,14 +475,16 @@ describe("区間の移動時間", () => {
         }),
       ],
     });
-    useUIStore.setState({ selectedSceneId: "scene-2", sceneSelection: null });
+    /* 欄が出るのは**出ていく側**なので、開くのは先頭。
+       書き換わるのは scene-2 の列（区間は行き先が持っている） */
+    useUIStore.setState({ selectedSceneId: "scene-1", sceneSelection: null });
   });
 
-  /* 欄は2つ出るが、**保存しているのは移動の側だけ**。キープは
+  /* 欄は2つ出るが、**保存しているのは移動の側だけ**。滞在は
      区間から引いて出している（lib/segmentSplit） */
   const holdInput = () =>
     screen.getByLabelText(/この隊形のまま止まっている秒数/);
-  const moveInput = () => screen.getByLabelText(/この区間で、動くのに使う秒数/);
+  const moveInput = () => screen.getByLabelText(/次のシーンへ動くのに使う秒数/);
 
   it("決めていなければ、区間まるごとを使う（キープは0秒）", () => {
     render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
@@ -503,28 +505,36 @@ describe("区間の移動時間", () => {
     expect(moveInput()).toHaveValue(1);
   });
 
-  it("先頭のシーンには出さない（入ってくる区間が無い）", () => {
-    useUIStore.setState({ selectedSceneId: "scene-1" });
+  /* ここが 2026-08-24 に入れ替えた向き。**先頭に出て、最後に出ない**。
+     逆を書くと、滞在の秒数と画面に見えている隊形が食い違う */
+  it("先頭のシーンにも出す（次のシーンへ出ていく区間があるため）", () => {
+    render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
+    expect(holdInput()).toBeInTheDocument();
+  });
+
+  it("最後のシーンには出さない（出ていく先が無い）", () => {
+    useUIStore.setState({ selectedSceneId: "scene-2" });
     render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
     expect(
       screen.queryByLabelText(/この隊形のまま止まっている秒数/),
     ).not.toBeInTheDocument();
   });
 
-  it("欄に打つと、その秒数が保存される", async () => {
+  /* **書き込む先は次のシーン**。開いているシーンの列を書き換えると、
+     1つ手前の区間が動いてしまう（純粋関数のテストからは見えない） */
+  it("欄に打つと、その秒数が【次のシーン】へ保存される", async () => {
     const spy = vi
       .spyOn(scenesApi, "updateSceneMoveSeconds")
       .mockResolvedValue(undefined);
     const user = userEvent.setup();
     render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
 
-    /* label の中に単位の「秒」も入るので、textContent は
-       「…秒数秒」になる。完全一致では外れる */
     const input = moveInput();
     await user.clear(input);
     await user.type(input, "1.5");
     await user.tab();
 
+    // 開いているのは scene-1 だが、書き換わるのは scene-2
     await waitFor(() => {
       expect(spy).toHaveBeenCalledWith(expect.anything(), "scene-2", 1.5);
     });

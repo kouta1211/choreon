@@ -9,20 +9,19 @@ import {
   moveSecondsForHold,
   splitSegment,
 } from "@/features/scene/lib/segmentSplit";
+import type { OutgoingSegment } from "@/features/scene/lib/outgoingSegment";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
   /** このシーンが曲の何秒目か */
   timeSeconds: number;
-  /** ここへ入ってくるのにかかる秒数(時刻の差から出したもの) */
-  segmentSeconds: number;
-  /** 先頭のシーンか。先頭は「入ってくる元」が無い */
-  isFirst: boolean;
   /** 時刻を変える。動くのはこのシーンだけ（隣を追い越せば順番も入れ替わる） */
   onCommit: (timeSeconds: number) => void;
-  /** 区間のうち、動くのに使う秒数。null なら区間まるごと */
-  moveSeconds: number | null;
-  /** 移動時間を変える。null で区間まるごとへ戻す */
+  /** **次のシーンへ出ていく区間**。最後のシーンは null（行き先が無い）。
+   * 引くのは `lib/outgoingSegment`。ここへ条件を書き足さない */
+  outgoing: OutgoingSegment | null;
+  /** 出ていく区間の移動時間を変える。null で区間まるごとへ戻す。
+   * **書き込む先は次のシーン**（呼び出し側が targetSceneId で結ぶ） */
   onCommitMoveSeconds: (moveSeconds: number | null) => void;
   /** 入力欄を作り直す目印(シーンを切り替えたときに前の入力を残さない) */
   fieldKey: string;
@@ -45,18 +44,17 @@ type Props = {
  */
 export function SceneTimeField({
   timeSeconds,
-  segmentSeconds,
-  isFirst,
   onCommit,
-  moveSeconds,
+  outgoing,
   onCommitMoveSeconds,
   fieldKey,
 }: Props) {
   const t = useT();
   const inputId = useId();
+  const segmentSeconds = outgoing?.segmentSeconds ?? 0;
   /* 滞在は持たない。区間から移動を引いて出す — 2つ持たせると、
      足して区間にならない状態を作れてしまう（lib/segmentSplit） */
-  const split = splitSegment(segmentSeconds, moveSeconds);
+  const split = splitSegment(segmentSeconds, outgoing?.moveSeconds ?? null);
 
   const commit = (event: FocusEvent<HTMLInputElement>) => {
     const parsed = parseClock(event.target.value);
@@ -97,7 +95,7 @@ export function SceneTimeField({
           ■ **区間の中の割り方**は、ここで決める（2026-08-24）。
              移動時間を短くすると、余りは**前**のキープになる。
              時刻は1ミリも動かないので、上の競合には当たらない。 */}
-      {!isFirst && (
+      {outgoing !== null && (
         <div className="flex flex-col gap-1.5">
           {/* **どちらにも打てる。** 足すと必ず区間になるので、片方を
               打てばもう片方が動く。保存しているのは移動の側1つだけ
@@ -110,6 +108,11 @@ export function SceneTimeField({
 
               ■ 区間の長さは**ここには出さない**。滞在と移動を足せば
               区間なので、3つ目の数字は同じことを言い直しているだけ。
+
+              ■ 出ているのは**次のシーンへ出ていく**区間（2026-08-24）。
+              滞在しているあいだ踊り手は**このシーンの隊形**に立って
+              いるので、書いてある場所と見えている隊形がここで一致する。
+              **最後のシーンには出ない**（行き先が無い）。
 
               label で囲まない — DurationSecondsInput が自前の label を
               持っていて、入れ子になると読み上げの結び付きが壊れる */}

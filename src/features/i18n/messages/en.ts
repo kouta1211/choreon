@@ -257,7 +257,7 @@ export const en = {
       hold: "Hold",
       holdLabel: "Seconds this formation stays still",
       move: "Move",
-      moveSecondsLabel: "Seconds spent moving in this gap",
+      moveSecondsLabel: "Seconds spent moving to the next scene",
       delete: "Delete",
       /** The "select" mode for deleting several at once (top of the list) */
       select: "Select",

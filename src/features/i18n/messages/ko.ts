@@ -256,7 +256,7 @@ export const ko = {
       hold: "유지",
       holdLabel: "이 대형 그대로 멈춰 있는 초",
       move: "이동",
-      moveSecondsLabel: "이 구간에서 이동에 쓰는 초",
+      moveSecondsLabel: "다음 장면으로 이동하는 데 쓰는 초",
       delete: "삭제",
       /** 한꺼번에 지우기 위한 "선택" 모드(목록 머리글 오른쪽) */
       select: "선택",

@@ -13,6 +13,7 @@ import {
 import { CheckSquare, Plus, Trash2, X } from "lucide-react";
 import { SceneRow } from "@/components/molecules/SceneRow";
 import { sceneDurations } from "@/features/scene/lib/sceneTiming";
+import { outgoingSegment } from "@/features/scene/lib/outgoingSegment";
 import {
   ROW_DRAG_DELAY_MS,
   ROW_DRAG_DISTANCE_PX,
@@ -152,7 +153,14 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
           items={scenes.map((scene) => scene.id)}
           strategy={verticalListSortingStrategy}
         >
-          {scenes.map((scene, index) => (
+          {scenes.map((scene, index) => {
+            /* 滞在と移動は【次のシーンへ出ていく区間】の話。
+               書き込む先も次のシーンで、このシーンではない。
+               その取り違えを1箇所へ閉じ込めてある（lib/outgoingSegment）ので、
+               ここで index を足し引きしない */
+            const outgoing = outgoingSegment(scenes, durations, index);
+            const moveTarget = scenes[index + 1];
+            return (
             <SceneRow
               key={scene.id}
               scene={scene}
@@ -164,6 +172,7 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
               thumbnail={thumbnailBySceneId[scene.id]}
               thumbnailSizePx={thumbnailSizePx}
               segmentSeconds={durations[index]}
+              outgoing={outgoing}
               onSelect={() =>
                 isSelecting
                   ? toggleSceneChecked(scene.id)
@@ -171,12 +180,13 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
               }
               onRename={(name) => renameSceneTo(scene, name)}
               onChangeTime={(seconds) => changeSceneTime(scene, seconds)}
-              onChangeMoveSeconds={(moveSeconds) =>
-                void changeMoveSeconds(scene, moveSeconds)
-              }
+              onChangeMoveSeconds={(moveSeconds) => {
+                if (moveTarget) void changeMoveSeconds(moveTarget, moveSeconds);
+              }}
               onDelete={() => confirmDelete(scene)}
             />
-          ))}
+            );
+          })}
         </SortableContext>
       </DndContext>
 

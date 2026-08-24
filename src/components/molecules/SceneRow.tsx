@@ -15,6 +15,7 @@ import type { Project } from "@/features/project/types";
 import type { Scene } from "@/features/scene/types";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useT } from "@/features/i18n/LocaleProvider";
+import type { OutgoingSegment } from "@/features/scene/lib/outgoingSegment";
 
 type Props = {
   scene: Scene;
@@ -27,12 +28,16 @@ type Props = {
   project: Project;
   thumbnail: string | undefined;
   thumbnailSizePx: number;
-  /** このシーンへ入ってくるのにかかる秒数 */
+  /** このシーンへ**入ってくる**のにかかる秒数。行の見出しの札に出すだけ */
   segmentSeconds: number;
+  /** このシーンから**次のシーンへ出ていく**区間。最後のシーンは null。
+   * 引くのは `lib/outgoingSegment` — ここへ条件を書き足さない */
+  outgoing: OutgoingSegment | null;
   onSelect: () => void;
   onRename: (name: string) => void;
   onChangeTime: (seconds: number) => void;
-  /** 区間のうち、動くのに使う秒数を変える。null で区間まるごとへ戻す */
+  /** 出ていく区間の移動時間を変える。null で区間まるごとへ戻す。
+   * **書き込む先は次のシーン**（結ぶのは SceneList） */
   onChangeMoveSeconds: (moveSeconds: number | null) => void;
   onDelete: () => void;
 };
@@ -57,6 +62,7 @@ export function SceneRow({
   thumbnail,
   thumbnailSizePx,
   segmentSeconds,
+  outgoing,
   onSelect,
   onRename,
   onChangeTime,
@@ -212,10 +218,8 @@ export function SceneRow({
             <SceneTimeField
               fieldKey={scene.id}
               timeSeconds={scene.timeSeconds}
-              segmentSeconds={segmentSeconds}
-              isFirst={index === 0}
               onCommit={onChangeTime}
-              moveSeconds={scene.moveSeconds ?? null}
+              outgoing={outgoing}
               onCommitMoveSeconds={onChangeMoveSeconds}
             />
           )}

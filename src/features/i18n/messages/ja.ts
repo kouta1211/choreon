@@ -281,7 +281,7 @@ export const ja = {
       hold: "滞在",
       holdLabel: "この隊形のまま止まっている秒数",
       move: "移動",
-      moveSecondsLabel: "この区間で、動くのに使う秒数",
+      moveSecondsLabel: "次のシーンへ動くのに使う秒数",
       delete: "削除",
       /** まとめて消すための「選ぶ」モード（一覧の見出しの右） */
       select: "選ぶ",
