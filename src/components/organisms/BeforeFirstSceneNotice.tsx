@@ -33,11 +33,28 @@ export function BeforeFirstSceneNotice() {
 
   return (
     <div
-      /* 幕は他の「隠す」場面と同じ材質（フォーカス中の veil）。
-         押す邪魔をしない — 掴んで動かす操作は生きたままにする */
-      className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-[max(0px,calc(var(--radius)-2px))] bg-[var(--veil)]"
+      /* 押す邪魔をしない — 掴んで動かす操作は生きたままにする */
+      className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-[max(0px,calc(var(--radius)-2px))]"
     >
-      <p className="overlay-panel rounded-xl px-gutter py-2 text-label text-fg">
+      {/* ■ 1枚目：**舞台の地の色を塗り戻す**（user の指摘 2026-08-24:
+             「アイコンをもっと薄くし、ステージも暗くして、もっと
+             わかりやすくして」）。
+             以前は幕（`--veil` ＝ 黒20%）を1枚だけだったので、
+             **まだ誰も立っていないはずの隊形がうっすら見えていた**。
+             ここを地の色で塗ると、人も方眼もまとめて沈む。
+             生の黒ではなく**その舞台の地**を使うので、紙や黒板の
+             テーマでも「暗くなる」ではなく「何も無い面になる」*/}
+      <div
+        aria-hidden
+        className="absolute inset-0 rounded-[max(0px,calc(var(--radius)-2px))] bg-stage/92"
+      />
+      {/* ■ 2枚目：他の「隠す」場面と同じ幕。地よりもう一段沈ませて、
+             **いま操作する面ではない**ことを出す */}
+      <div
+        aria-hidden
+        className="absolute inset-0 rounded-[max(0px,calc(var(--radius)-2px))] bg-[var(--veil)]"
+      />
+      <p className="overlay-panel relative rounded-xl px-gutter py-2 text-label text-fg">
         {t.editor.beforeFirstScene}
       </p>
     </div>
