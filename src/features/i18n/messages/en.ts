@@ -364,8 +364,6 @@ export const en = {
     undoFailed: "Could not undo",
     redoFailed: "Could not redo",
     undoTargetGone: "Could not undo — what it applied to has been deleted",
-    travelFromPrevious: (seconds: string) =>
-      `${seconds}s from the previous scene`,
   },
 
   app: {

@@ -400,8 +400,6 @@ export const ja = {
     undoFailed: "元に戻す操作に失敗しました",
     redoFailed: "やり直す操作に失敗しました",
     undoTargetGone: "対象が削除されているため元に戻せませんでした",
-    travelFromPrevious: (seconds: string) =>
-      `前のシーンから ${seconds}秒かけて移動`,
   },
 
   app: {

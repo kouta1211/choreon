@@ -3,7 +3,7 @@
 import { formatClock } from "@/features/scene/lib/clock";
 
 import { useId, type FocusEvent } from "react";
-import { Clock, MoveRight } from "lucide-react";
+import { Clock } from "lucide-react";
 import { DurationSecondsInput } from "@/components/molecules/DurationSecondsInput";
 import {
   moveSecondsForHold,
@@ -99,17 +99,22 @@ export function SceneTimeField({
              時刻は1ミリも動かないので、上の競合には当たらない。 */}
       {!isFirst && (
         <div className="flex flex-col gap-1.5">
-          <p className="flex items-center gap-1.5 text-caption text-fg-muted">
-            <MoveRight size={12} className="shrink-0" />
-            {t.common.travelFromPrevious(String(segmentSeconds))}
-          </p>
           {/* **どちらにも打てる。** 足すと必ず区間になるので、片方を
               打てばもう片方が動く。保存しているのは移動の側1つだけ
               （2つ保存すると、足して区間にならない状態を作れてしまう）。
+
+              ■ **縦に積む。** 横に並べてはいけない（2026-08-24 に実機で
+              踏んだ）。左のパネルは 288px で、この欄の中身に使えるのは
+              189px しかない。ラベル+欄を2つ横に並べると 257px 要って、
+              2つ目がカードの外へはみ出す。
+
+              ■ 区間の長さは**ここには出さない**。滞在と移動を足せば
+              区間なので、3つ目の数字は同じことを言い直しているだけ。
+
               label で囲まない — DurationSecondsInput が自前の label を
               持っていて、入れ子になると読み上げの結び付きが壊れる */}
-          <div className="flex items-center gap-2">
-            <span className="shrink-0 text-caption text-fg-muted">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-caption text-fg-muted">
               {t.editor.scenes.hold}
             </span>
             <DurationSecondsInput
@@ -123,8 +128,9 @@ export function SceneTimeField({
               max={segmentSeconds}
               suffix={t.editor.scenes.seconds}
             />
-            <MoveRight size={12} className="shrink-0 text-fg-muted" />
-            <span className="shrink-0 text-caption text-fg-muted">
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-caption text-fg-muted">
               {t.editor.scenes.move}
             </span>
             <DurationSecondsInput

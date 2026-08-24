@@ -363,8 +363,6 @@ export const ko = {
     undoFailed: "실행 취소하지 못했습니다",
     redoFailed: "다시 실행하지 못했습니다",
     undoTargetGone: "대상이 삭제되어 실행 취소할 수 없었습니다",
-    travelFromPrevious: (seconds: string) =>
-      `앞 장면에서 ${seconds}초 동안 이동`,
   },
 
   app: {
