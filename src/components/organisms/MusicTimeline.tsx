@@ -238,7 +238,16 @@ export function MusicTimeline({ project, audioRef }: Props) {
           stageHeightUnits={project.stageHeight}
           layerX={layerX}
           contentPx={contentPx}
-          onSelect={(scene) => selectSceneManually(scene.id)}
+          /* 選んでから、**そのシーンの時刻ちょうど**へ再生位置を寄せる。
+             以前は帯が「押した位置」へシークしていたが、コマは時刻の
+             真上に中心があるので、左半分を押すと1つ前のシーンが
+             選び直されていた（実機の報告・2026-08-24）。
+             寄せる先を押した位置ではなくシーンの時刻にすれば、
+             どこを押しても同じ所へ着く */
+          onSelect={(scene) => {
+            selectSceneManually(scene.id);
+            seekTo(scene.timeSeconds);
+          }}
           onMoveSeconds={(scene, delta) =>
             void changeSceneTime(scene, placeAt(scene.timeSeconds + delta))
           }

@@ -9,6 +9,7 @@ import {
   scrollForSeconds,
 } from "@/features/music/lib/timelineScale";
 import { flickTargetSeconds } from "@/features/music/lib/counts";
+import { startedOnSceneCard } from "@/features/music/lib/bandTapTarget";
 import { capturePointer, releasePointer } from "@/lib/pointerCapture";
 import { TAP_PATTERN, vibrate } from "@/lib/haptics";
 
@@ -58,6 +59,11 @@ export function useTimelineGestures({
   releaseFollow,
 }: Args) {
   const pointersRef = useRef(new Map<number, number>());
+  /** コマの上から始まった指。**離しても、こちらはシークしない**。
+   * コマは押した時点で伝播を止めない（止めるとコマの上から波形を
+   * 引けなくなる）ので、その分の始末をここで付ける。理由は
+   * `lib/bandTapTarget` */
+  const fromCardRef = useRef(new Set<number>());
   const panRef = useRef({
     startX: 0,
     startScroll: 0,
@@ -128,6 +134,9 @@ export function useTimelineGestures({
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     const pointers = pointersRef.current;
     pointers.set(event.pointerId, event.clientX);
+    if (startedOnSceneCard(event.target)) {
+      fromCardRef.current.add(event.pointerId);
+    }
     capturePointer(event.currentTarget, event.pointerId);
     holdFollow();
 
@@ -202,23 +211,27 @@ export function useTimelineGestures({
 
   const onPointerUp = (event: PointerEvent<HTMLDivElement>) => {
     const pointers = pointersRef.current;
-    // コマの上で始まった操作は、押した時点をこちらが見ていない
-    // (コマが stopPropagation する)。離すところだけが上がってくるので、
-    // 覚えのない指は無視する。これを見落とすと、コマを掴んで動かした
-    // 拍子に、その位置へシークまで起きる
+    // 覚えのない指は無視する（旗と束ねは押した時点で伝播を止めるので、
+    // 離すところだけが上がってくる）
     if (!pointers.has(event.pointerId)) return;
 
     pointers.delete(event.pointerId);
+    const fromCard = fromCardRef.current.delete(event.pointerId);
     releasePointer(event.currentTarget, event.pointerId);
 
     if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
 
-    // 動かさずに離したらシーク
+    // 動かさずに離したらシーク。
+    // ただし**コマの上から始めたタップは、コマのもの**。ここで押した
+    // 位置へシークすると、コマは時刻の真上に中心があるので、左半分を
+    // 押したときに**1つ前のシーンが選ばれる**（lib/bandTapTarget）
     if (pointers.size === 0 && !panRef.current.moved) {
-      const rect = event.currentTarget.getBoundingClientRect();
-      seekTo(
-        axisSecondsAt(scrollX.get() + event.clientX - rect.left, pxPerSecond),
-      );
+      if (!fromCard) {
+        const rect = event.currentTarget.getBoundingClientRect();
+        seekTo(
+          axisSecondsAt(scrollX.get() + event.clientX - rect.left, pxPerSecond),
+        );
+      }
     } else if (pointers.size === 0 && shouldSnap && !panRef.current.freehand) {
       // 曲が無いときだけ、8カウントの頭で止める。拍の途中で止まると
       // 「4セット目の3.4カウント」という読めない位置になる
@@ -235,6 +248,7 @@ export function useTimelineGestures({
   };
 
   const onPointerCancel = (event: PointerEvent<HTMLDivElement>) => {
+    fromCardRef.current.delete(event.pointerId);
     if (!pointersRef.current.delete(event.pointerId)) return;
     if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
     setSnapPreviewSeconds(null);
