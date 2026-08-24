@@ -85,27 +85,16 @@ export function useSceneActions() {
     );
   };
 
-  /** シーンを別の時刻へ動かす。
-   * ripple を立てると以降のシーンも同じだけずれる。
-   * 立てていなければ前後を追い越さない範囲に収まる */
-  const changeSceneTime = async (
-    scene: Scene,
-    seconds: number,
-    ripple = false,
-  ) => {
+  /** シーンを別の時刻へ動かす。**動くのはそのシーン1つだけ**で、
+   * 隣を追い越せば順番もそのまま入れ替わる（並び順の正は時刻）。
+   *
+   * 「以降も一緒にずらす」の口はここには無い（2026-08-24 に外した）。
+   * 要るのは「移動が間に合わないから後ろへ送る」ときだけで、それは
+   * `changeSegmentSeconds` の ripple が持っている（useExtendMoveTime）。 */
+  const changeSceneTime = async (scene: Scene, seconds: number) => {
     const index = scenes.findIndex((s) => s.id === scene.id);
     if (index === -1) return;
-
-    if (!ripple) {
-      await commitTimes(moveSceneTo(scenes, index, seconds));
-      return;
-    }
-    // 以降をまとめてずらす。retimeScene は「前のシーンからの秒数」で
-    // 受けるので、時刻の差に直して渡す
-    const previousTime = scenes[index - 1]?.timeSeconds ?? 0;
-    await commitTimes(
-      retimeScene(scenes, index, seconds - previousTime, true).timesById,
-    );
+    await commitTimes(moveSceneTo(scenes, index, seconds));
   };
 
   /** 「このシーンへ入ってくる時間」を変える。
