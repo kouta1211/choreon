@@ -202,7 +202,7 @@ export function MusicTimeline({ project, audioRef }: Props) {
   );
 
   return (
-    <div className="flex flex-col gap-unit px-gutter">
+    <div className="flex flex-col gap-unit px-gutter pb-unit">
       <div
         ref={bandRef}
         data-tour="timeline"

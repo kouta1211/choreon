@@ -197,7 +197,7 @@ export function SceneDock({ project }: Props) {
          不透明だったりする面の色を、地の上へ重ねて必ず不透明にする
          (規約 frontend.md 2節3項)。上端の1本線を引かないのは今までどおり
          — 囲いは枠が持つので、中に区切り線は要らない */
-      className="card-surface mx-gutter rounded-2xl border border-line pt-unit pb-gutter"
+      className="card-surface mx-gutter rounded-2xl border border-line pt-unit pb-unit"
     >
       {/* 持ち手。シートが下から出てくることを形で示す。狭い画面だけ
           (広い画面では一覧が横に常時出ていて、開く相手が無い) */}
