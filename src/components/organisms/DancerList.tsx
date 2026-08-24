@@ -52,7 +52,7 @@ export function DancerList() {
 
   return (
     <div className="flex min-h-0 flex-col">
-      <div className="flex shrink-0 items-baseline justify-between gap-2 px-3.5 py-3">
+      <div className="flex shrink-0 items-baseline justify-between gap-unit px-gutter py-3">
         <span className="text-sm font-semibold text-fg-strong">
           {t.dancer.list.title}
         </span>
@@ -64,7 +64,7 @@ export function DancerList() {
       {/* 並べ替え。**2人以下では出さない** — 並べ替える意味が無いのに
           場所だけ取る（一覧の高さはステージの取り分と競っている） */}
       {rows.length > 2 && (
-        <div className="shrink-0 px-3 pb-2">
+        <div className="shrink-0 px-gutter pb-unit">
           <SegmentedControl
             label={t.dancer.list.sortLabel}
             value={dancerSort}
@@ -77,13 +77,13 @@ export function DancerList() {
         </div>
       )}
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
+      <div className="min-h-0 flex-1 overflow-y-auto px-gutter pb-3">
         {rows.length === 0 ? (
           <p className="px-0.5 text-caption leading-relaxed text-fg-muted">
             {t.dancer.list.empty}
           </p>
         ) : (
-          <ul className="flex flex-col gap-1">
+          <ul className="flex flex-col gap-base">
             {rows.map(({ dancer, position }) => {
               const isSelected = selectedDancerIds.includes(dancer.id);
               return (
@@ -99,7 +99,7 @@ export function DancerList() {
                       }
                     }}
                     aria-pressed={isSelected}
-                    className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left ${
+                    className={`flex w-full items-center gap-unit rounded-lg px-unit py-unit text-left ${
                       isSelected
                         ? "bg-surface-strong"
                         : "hover:bg-surface-strong/60"
@@ -128,7 +128,7 @@ export function DancerList() {
 
         <PressableButton
           onClick={() => setAddDancerSheetOpen(true)}
-          className="mt-2 flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-line-strong text-label font-medium whitespace-nowrap text-fg-sub"
+          className="mt-unit flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-line-strong text-label font-medium whitespace-nowrap text-fg-sub"
         >
           <UserPlus size={14} className="shrink-0" />
           {t.editor.addDancer}

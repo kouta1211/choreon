@@ -202,7 +202,7 @@ export function MusicTimeline({ project, audioRef }: Props) {
   );
 
   return (
-    <div className="flex flex-col gap-1.5 px-3.5">
+    <div className="flex flex-col gap-unit px-gutter">
       <div
         ref={bandRef}
         data-tour="timeline"
@@ -280,7 +280,7 @@ export function MusicTimeline({ project, audioRef }: Props) {
           作品ごとに覚えるので、一度寄せたら二度と引けなくなる。
           Ctrl＋ホイールも効くが、知らないと辿り着けない */}
       {layout.showZoomButtons && (
-        <div className="flex items-center justify-end gap-1.5">
+        <div className="flex items-center justify-end gap-unit">
           <span className="font-mono text-caption tabular-nums text-fg-muted">
             {Math.round(pxPerSecond)}
             <span className="ml-0.5">{t.music.pxPerSecond}</span>

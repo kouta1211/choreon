@@ -107,10 +107,10 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
   const allChecked = scenes.length > 0 && checkedIds.length === scenes.length;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-unit">
       {/* 「選ぶ」の入口。シーンが1つも無いときは出さない（選ぶ相手が居ない） */}
       {scenes.length > 0 && (
-        <div className="flex items-center justify-between gap-2 empty:hidden">
+        <div className="flex items-center justify-between gap-unit empty:hidden">
           {isSelecting ? (
             <>
               <PressableButton
@@ -119,7 +119,7 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
                     allChecked ? [] : scenes.map((scene) => scene.id),
                   )
                 }
-                className="rounded-lg px-2 py-1 text-label font-medium text-accent"
+                className="rounded-lg px-unit py-base text-label font-medium text-accent"
               >
                 {allChecked
                   ? t.editor.scenes.selectNone
@@ -127,7 +127,7 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
               </PressableButton>
               <PressableButton
                 onClick={() => setSceneSelectMode(false)}
-                className="flex items-center gap-1 rounded-lg px-2 py-1 text-label font-medium text-fg-sub"
+                className="flex items-center gap-base rounded-lg px-unit py-base text-label font-medium text-fg-sub"
               >
                 <X size={14} className="shrink-0" />
                 {t.editor.scenes.selectDone}
@@ -139,7 +139,7 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
                片方を直したときに必ず食い違う */
             <PressableButton
               onClick={() => setSceneSelectMode(true)}
-              className="flex items-center gap-1 rounded-lg px-2 py-1 text-label font-medium text-fg-sub"
+              className="flex items-center gap-base rounded-lg px-unit py-base text-label font-medium text-fg-sub"
             >
               <CheckSquare size={14} className="shrink-0" />
               {t.editor.scenes.select}

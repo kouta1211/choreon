@@ -27,8 +27,8 @@ export function SceneSidebar({ project }: Props) {
        (EditorSidePanel) と同じ材質にする。**以前は `bg-surface/60` という
        半透明の生トークン**で、地の質感が透けて中の文字が沈んでいた
        （実機の報告 2026-08-22）。規約は frontend.md 2節の3項 */
-    <aside className="card-surface flex w-[268px] shrink-0 flex-col overflow-hidden rounded-xl border border-line">
-      <div className="flex shrink-0 items-baseline justify-between gap-2 border-b border-line px-gutter py-3">
+    <aside className="card-surface flex w-[288px] shrink-0 flex-col overflow-hidden rounded-xl border border-line xl:w-[300px]">
+      <div className="flex shrink-0 items-baseline justify-between gap-unit border-b border-line px-gutter py-3">
         <span className="text-label text-fg-strong">
           {t.editor.scenes.title}
         </span>

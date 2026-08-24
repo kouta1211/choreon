@@ -128,7 +128,7 @@ export function SceneRow({
             : "border border-line bg-surface-raised"
       }`}
     >
-      <div className="flex items-center gap-2.5 p-2.5">
+      <div className="flex items-center gap-unit p-unit">
         {isSelecting && (
           /* 見た目だけ。押す相手は行そのもの（ここにボタンを置くと、
              升の外を押したときだけ何も起きない、という当たり外れができる） */
@@ -211,7 +211,7 @@ export function SceneRow({
       {/* 時刻と複製・削除は選択中の行にだけ出す。
           全行に並べると一覧として読めなくなる */}
       {isSelected && !isSelecting && (
-        <div className="flex flex-col gap-2 px-2.5 pb-2.5">
+        <div className="flex flex-col gap-unit px-unit pb-unit">
           {/* 合わせる相手（曲・拍）が無いときは、時刻も移動時間も出さない。
               移動はどれも同じ秒数なので、シーンごとに言うことが無い
               （理由は lib/timelineMode / sceneTiming の uniformTimes） */}
@@ -228,7 +228,7 @@ export function SceneRow({
               onCommitMoveSeconds={onChangeMoveSeconds}
             />
           )}
-          <div className="flex gap-1.5">
+          <div className="flex gap-unit">
             <RowAction
               icon={Trash2}
               label={t.editor.scenes.delete}

@@ -138,7 +138,7 @@ export function EditorLayout({
         <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col overflow-clip md:max-[1199px]:max-w-3xl min-[1200px]:max-w-[1400px]">
           <EditorHeader project={live} />
 
-          <div className="flex min-h-0 flex-1 gap-3 px-3.5 pb-1 md:gap-4 md:px-4">
+          <div className="flex min-h-0 flex-1 gap-gutter px-gutter pb-1">
             {/* 3ペインのときだけ、シーンを左のレールに出す */}
             <div className="hidden min-[1200px]:flex min-[1200px]:min-h-0">
               <SceneSidebar project={live} />

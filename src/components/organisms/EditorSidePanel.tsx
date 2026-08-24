@@ -42,7 +42,7 @@ export function EditorSidePanel({ project, showScenes }: Props) {
        中の一覧の文字が沈む（ホームのカードと同じ話。2026-08-20） */
     <aside className="card-surface flex w-[288px] shrink-0 flex-col overflow-hidden rounded-xl border border-line xl:w-[300px]">
       {showScenes ? (
-        <div className="flex shrink-0 gap-1 border-b border-line p-2">
+        <div className="flex shrink-0 gap-base border-b border-line p-unit">
           {[
             {
               value: "scenes" as const,
@@ -70,7 +70,7 @@ export function EditorSidePanel({ project, showScenes }: Props) {
 
       {activeTab === "scenes" ? (
         <>
-          <div className="flex shrink-0 items-baseline justify-between gap-2 px-3.5 py-3">
+          <div className="flex shrink-0 items-baseline justify-between gap-unit px-gutter py-3">
             <span className="text-sm font-semibold text-fg-strong">
               {t.editor.scenes.title}
             </span>
@@ -78,7 +78,7 @@ export function EditorSidePanel({ project, showScenes }: Props) {
               {sceneSummary}
             </span>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
+          <div className="min-h-0 flex-1 overflow-y-auto px-gutter pb-3">
             <SceneList project={project} thumbnailSizePx={64} />
           </div>
         </>
