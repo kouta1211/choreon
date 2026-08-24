@@ -93,6 +93,35 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  // 【待ってから event.currentTarget を読む】を捕まえる。
+  //
+  // React は合成イベントのハンドラを抜けた時点で currentTarget を null に
+  // 戻す（react-dom の executeDispatch）。素の DOM イベントも同じ。
+  // setTimeout の中で読むと必ず null になる。
+  //
+  // それでも**画面は動いて見える**のがたちが悪い。2026-08-24 に踏んだ形は
+  // 「押しっぱなしで掴む」の setTimeout の中で setPointerCapture を呼んで
+  // いたもので、null に対して呼ぶので例外になり、それを握り潰していた。
+  // 掴んだつもりで指を捕まえられておらず、帯の外で離した pointerup を
+  // 取り逃して、**押していないマウスにコマが付いてきた**。
+  //
+  // 直し方は、ハンドラの頭で `const target = event.currentTarget` と
+  // 控えてから、その変数を待ち先で使う。
+  {
+    files: ["src/**/*.ts", "src/**/*.tsx"],
+    ignores: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.name=/^(setTimeout|setInterval|requestAnimationFrame)$/] MemberExpression[property.name='currentTarget']",
+          message:
+            "待ってから currentTarget を読まない。イベントのハンドラを抜けた時点で null に戻る。ハンドラの頭で変数へ控えてから渡す",
+        },
+      ],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

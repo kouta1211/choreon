@@ -51,14 +51,22 @@ function drag(card: HTMLElement, deltaX: number) {
     vi.advanceTimersByTime(GRAB_HOLD_MS);
   });
   vi.useRealTimers();
-  fireEvent.pointerMove(card, { pointerId: 1, clientX: 100 + deltaX });
+  fireEvent.pointerMove(card, {
+    pointerId: 1,
+    clientX: 100 + deltaX,
+    buttons: 1,
+  });
   fireEvent.pointerUp(card, { pointerId: 1, clientX: 100 + deltaX });
 }
 
 /** 待たずに引く（帯を動かす操作） */
 function dragWithoutHold(card: HTMLElement, deltaX: number) {
   fireEvent.pointerDown(card, { pointerId: 1, clientX: 100 });
-  fireEvent.pointerMove(card, { pointerId: 1, clientX: 100 + deltaX });
+  fireEvent.pointerMove(card, {
+    pointerId: 1,
+    clientX: 100 + deltaX,
+    buttons: 1,
+  });
   fireEvent.pointerUp(card, { pointerId: 1, clientX: 100 + deltaX });
 }
 
@@ -123,7 +131,7 @@ describe("TimelineSceneCard", () => {
       vi.advanceTimersByTime(GRAB_HOLD_MS);
     });
     vi.useRealTimers();
-    fireEvent.pointerMove(card, { pointerId: 1, clientX: 110 });
+    fireEvent.pointerMove(card, { pointerId: 1, clientX: 110, buttons: 1 });
     fireEvent.pointerUp(card, { pointerId: 1, clientX: 152 });
 
     expect(onMoveSeconds).toHaveBeenCalledWith(2);
@@ -132,7 +140,7 @@ describe("TimelineSceneCard", () => {
   it("途中で取り消されたら何も起こさない", () => {
     const { card, onSelect, onMoveSeconds } = renderCard();
     fireEvent.pointerDown(card, { pointerId: 1, clientX: 100 });
-    fireEvent.pointerMove(card, { pointerId: 1, clientX: 160 });
+    fireEvent.pointerMove(card, { pointerId: 1, clientX: 160, buttons: 1 });
     fireEvent.pointerCancel(card, { pointerId: 1 });
 
     expect(onSelect).not.toHaveBeenCalled();
@@ -169,6 +177,56 @@ describe("TimelineSceneCard", () => {
       clientX: 30,
     });
     expect(onBandPointerDown).toHaveBeenCalledTimes(1);
+  });
+});
+
+/**
+ * 掴んだあと、**指を捕まえられているか**。
+ *
+ * 捕まえていないと、帯の外で離した pointerup がコマへ届かない。
+ * すると掴んだままの状態が残り、**押していないマウスが乗っただけで
+ * コマが付いてくる**（実機の報告・2026-08-24）。
+ */
+describe("掴んだ指を取り逃さない", () => {
+  it("待ち終えたら、そのコマの上で指を捕まえる", () => {
+    const original = Element.prototype.setPointerCapture;
+    const capture = vi.fn();
+    Element.prototype.setPointerCapture = capture;
+    try {
+      const { card } = renderCard();
+      vi.useFakeTimers();
+      fireEvent.pointerDown(card, { pointerId: 1, clientX: 100, buttons: 1 });
+      act(() => {
+        vi.advanceTimersByTime(GRAB_HOLD_MS);
+      });
+      vi.useRealTimers();
+
+      /* 待ってから呼ぶので、**押した時のイベントを持ち越せない**
+         （React は currentTarget を null に戻す）。null へ呼ぶと
+         例外が握り潰されて、掴めないまま先へ進んでしまう */
+      expect(capture).toHaveBeenCalledWith(1);
+      expect(capture.mock.instances[0]).toBe(card);
+    } finally {
+      Element.prototype.setPointerCapture = original;
+    }
+  });
+
+  it("ボタンを離したあとにマウスが乗っても、コマは付いてこない", () => {
+    const { card, onMoveSeconds } = renderCard();
+    vi.useFakeTimers();
+    fireEvent.pointerDown(card, { pointerId: 1, clientX: 100, buttons: 1 });
+    act(() => {
+      vi.advanceTimersByTime(GRAB_HOLD_MS);
+    });
+    vi.useRealTimers();
+    fireEvent.pointerMove(card, { pointerId: 1, clientX: 160, buttons: 1 });
+
+    /* 帯の外で離したので、pointerup はここへ来なかった。
+       そのあと、**何も押していないマウス**が上を通る */
+    fireEvent.pointerMove(card, { pointerId: 1, clientX: 300, buttons: 0 });
+    fireEvent.pointerUp(card, { pointerId: 1, clientX: 300 });
+
+    expect(onMoveSeconds).not.toHaveBeenCalled();
   });
 });
 

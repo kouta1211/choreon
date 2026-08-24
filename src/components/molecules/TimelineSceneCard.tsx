@@ -136,6 +136,16 @@ export function TimelineSceneCard({
    * 待っている間に動いたら、それは帯を引く操作なので手を出さない。
    */
   const handlePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
+    /* **待ってから使うものは、ここで控えておく。**
+       React は合成イベントのハンドラを抜けた時点で `currentTarget` を
+       null に戻す（react-dom の executeDispatch）。setTimeout の中で
+       読むと null で、`setPointerCapture` が例外になって握り潰され、
+       **掴んだつもりで掴めていない**状態になっていた。
+       そうなると帯の外で離した指を取り逃し、**押していないマウスに
+       コマが付いてくる**（実機の報告・2026-08-24） */
+    const grabTarget = event.currentTarget;
+    const { pointerId } = event;
+
     startXRef.current = event.clientX;
     movedRef.current = false;
     isGrabbedRef.current = false;
@@ -147,7 +157,7 @@ export function TimelineSceneCard({
       if (movedRef.current) return;
       isGrabbedRef.current = true;
       setIsGrabbed(true);
-      capturePointer(event.currentTarget, event.pointerId);
+      capturePointer(grabTarget, pointerId);
       vibrate(TAP_PATTERN);
     }, GRAB_HOLD_MS);
   };
@@ -155,6 +165,16 @@ export function TimelineSceneCard({
   const handlePointerMove = (event: PointerEvent<HTMLButtonElement>) => {
     const startX = startXRef.current;
     if (startX === null) return;
+
+    /* **離したあとの移動は、掴みの続きではない。**
+       掴むのは指を捕まえてから（setPointerCapture）だが、これは
+       失敗しうる（pointerCapture.ts のコメント）。捕まえられないまま
+       帯の外で離すと pointerup がここへ来ず、押していないのに
+       コマが付いてくる。ボタンが1つも押されていない移動で降りる */
+    if (event.buttons === 0) {
+      endGesture();
+      return;
+    }
 
     const delta = event.clientX - startX;
     if (Math.abs(delta) < DRAG_THRESHOLD_PX) return;
@@ -205,7 +225,8 @@ export function TimelineSceneCard({
     setDragPx(0);
   };
 
-  const handlePointerCancel = () => {
+  /** 掴みを畳んで、何も起こさずに元へ戻す */
+  const endGesture = () => {
     startXRef.current = null;
     setIsPressed(false);
     if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
@@ -213,6 +234,10 @@ export function TimelineSceneCard({
     setIsGrabbed(false);
     dragPxRef.current = 0;
     setDragPx(0);
+  };
+
+  const handlePointerCancel = () => {
+    endGesture();
   };
 
   return (

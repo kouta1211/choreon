@@ -544,3 +544,24 @@
   → 消す前に【消したものが消えたままか】と【やってはいけないことが
   起きていないか】に分ける。**前者だけが役目を終える。**
   まとめて消すと、後者の守りごと失う。
+
+- **待ってから `event.currentTarget` を読まない。**
+  「押しっぱなしで掴む」の `setTimeout` の中で `setPointerCapture` を
+  呼んでいた。React は**ハンドラを抜けた時点で `currentTarget` を null に
+  戻す**（`react-dom` の `executeDispatch`）ので、null に対して呼ばれ、
+  例外を握り潰していた。**掴んだつもりで指を捕まえられていない**。
+  帯の外で離した `pointerup` を取り逃し、押していないマウスにコマが
+  付いてきた。
+  → **ハンドラの頭で変数へ控えてから、待ち先で使う。**
+  `no-restricted-syntax` で `setTimeout` / `setInterval` /
+  `requestAnimationFrame` の中の `currentTarget` を塞いだ。
+  握り潰す `try/catch` があると、**失敗しても画面は動いて見える**ので
+  人のレビューでは落ちる。
+
+- **原因は「読めば分かる所」に書いてある。**
+  この件は、推測で当てにいけば「イベントの伝播」や「z-index」を
+  疑って外していた。実際の答えは `node_modules/react-dom` の中の
+  `event.currentTarget = null` という1行だった。
+  → **フレームワークの挙動は、記憶ではなく入っている実物を読む。**
+  `grep -n "currentTarget = null" node_modules/react-dom/cjs/*.development.js`
+  で 10秒で確かめられた。
