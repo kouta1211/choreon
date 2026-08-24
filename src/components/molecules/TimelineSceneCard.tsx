@@ -184,6 +184,11 @@ export function TimelineSceneCard({
       movedRef.current = true;
       return;
     }
+    /* **掴んだあとは、帯に譲らない。**
+       押した時点では譲る（そうしないとコマの上から波形を引けない）が、
+       掴んでからも譲ると、帯が「引き始めた」と見なして指を捕まえる。
+       そうなると離した合図がコマへ届かず、**置いた場所が保存されない** */
+    event.stopPropagation();
     movedRef.current = true;
     dragPxRef.current = delta;
     setDragPx(delta);

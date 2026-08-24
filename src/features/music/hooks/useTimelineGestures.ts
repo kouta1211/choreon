@@ -64,6 +64,8 @@ export function useTimelineGestures({
    * 引けなくなる）ので、その分の始末をここで付ける。理由は
    * `lib/bandTapTarget` */
   const fromCardRef = useRef(new Set<number>());
+  /** 帯が捕まえた指。**引き始めてから**捕まえる（下の onPointerDown） */
+  const capturedRef = useRef(new Set<number>());
   const panRef = useRef({
     startX: 0,
     startScroll: 0,
@@ -131,13 +133,29 @@ export function useTimelineGestures({
     return () => band.removeEventListener("wheel", onWheel);
   }, [bandRef, changeZoom, scrollX, contentPx, viewport]);
 
+  /** 引いている指を、帯に留めておく。一度でよい */
+  const holdPointer = (event: PointerEvent<HTMLDivElement>) => {
+    if (capturedRef.current.has(event.pointerId)) return;
+    capturedRef.current.add(event.pointerId);
+    capturePointer(event.currentTarget, event.pointerId);
+  };
+
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     const pointers = pointersRef.current;
     pointers.set(event.pointerId, event.clientX);
     if (startedOnSceneCard(event.target)) {
       fromCardRef.current.add(event.pointerId);
     }
-    capturePointer(event.currentTarget, event.pointerId);
+    /* **ここでは捕まえない。**（2026-08-24 に実機で踏んだ）
+       捕まえると、その指の pointerup は帯へ直に配られ、**コマには
+       二度と届かない**（捕まえた要素が的になる）。コマは離したときに
+       自分のシーンを選ぶので、選ぶ人が居なくなる。
+       それでも今まで動いて見えていたのは、**帯のシークが選び直して
+       いたから** — コマは時刻の真上に中心があるので、左半分を押すと
+       1つ前のシーンが選ばれていた（それが「前後のシーンにフォーカスが
+       いく」の正体）。
+       捕まえるのは【引き始めてから】でよい。要るのは、引いている指が
+       帯の外へ出ても追い続けることだけ */
     holdFollow();
 
     if (pointers.size === 2) {
@@ -176,6 +194,7 @@ export function useTimelineGestures({
 
       const rect = event.currentTarget.getBoundingClientRect();
       panRef.current.moved = true;
+      holdPointer(event);
       // 2本指は「掴んだときからの比」で決める。掛け算で積むと、
       // 指を戻しても元の倍率に戻らない
       changeZoom(
@@ -190,6 +209,8 @@ export function useTimelineGestures({
     const delta = event.clientX - pan.startX;
     if (!pan.moved && Math.abs(delta) < PAN_THRESHOLD_PX) return;
     pan.moved = true;
+    // ここからは帯を引く操作。指が帯の外へ出ても追い続けたいので捕まえる
+    holdPointer(event);
 
     // 勢いは直前の1区間だけで測る。全体の平均だと、止める直前に
     // 減速したことが結果に出ない
@@ -217,7 +238,9 @@ export function useTimelineGestures({
 
     pointers.delete(event.pointerId);
     const fromCard = fromCardRef.current.delete(event.pointerId);
-    releasePointer(event.currentTarget, event.pointerId);
+    if (capturedRef.current.delete(event.pointerId)) {
+      releasePointer(event.currentTarget, event.pointerId);
+    }
 
     if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
 
@@ -249,6 +272,7 @@ export function useTimelineGestures({
 
   const onPointerCancel = (event: PointerEvent<HTMLDivElement>) => {
     fromCardRef.current.delete(event.pointerId);
+    capturedRef.current.delete(event.pointerId);
     if (!pointersRef.current.delete(event.pointerId)) return;
     if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
     setSnapPreviewSeconds(null);
