@@ -31,7 +31,7 @@ type Props = {
   segmentSeconds: number;
   onSelect: () => void;
   onRename: (name: string) => void;
-  onChangeTime: (seconds: number, ripple: boolean) => void;
+  onChangeTime: (seconds: number) => void;
   /** 区間のうち、動くのに使う秒数を変える。null で区間まるごとへ戻す */
   onChangeMoveSeconds: (moveSeconds: number | null) => void;
   onDelete: () => void;

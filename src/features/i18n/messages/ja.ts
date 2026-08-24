@@ -264,9 +264,6 @@ export const ja = {
 
     scenes: {
       timeInSong: "曲のこの位置",
-      ripple: "以降のシーンも一緒にずらす",
-      rippleNote:
-        "切っていると、動くのはこのシーンだけです（隣を追い越すと順番も入れ替わります）",
       seconds: "秒",
       title: "シーン",
       dancers: "ダンサー",
@@ -280,7 +277,10 @@ export const ja = {
       segment: (seconds: number) => `→ ${seconds}s`,
       moveSeconds: "前のシーンから何秒で動くか",
       /** 区間のうち、動く前に止まっている秒数。移動時間の欄の見出し */
-      holdThenMove: (hold: string) => `うち ${hold}秒 は止まっていて、動くのは`,
+      /** 区間を2つに割る欄の見出し。どちらにも打てる */
+      hold: "滞在",
+      holdLabel: "この隊形のまま止まっている秒数",
+      move: "移動",
       moveSecondsLabel: "この区間で、動くのに使う秒数",
       delete: "削除",
       /** まとめて消すための「選ぶ」モード（一覧の見出しの右） */

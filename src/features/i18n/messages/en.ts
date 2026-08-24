@@ -242,9 +242,6 @@ export const en = {
 
     scenes: {
       timeInSong: "Position in the music",
-      ripple: "Move the later scenes too",
-      rippleNote:
-        "With this off, only this scene moves (passing a neighbour swaps their order).",
       seconds: "s",
       title: "Scenes",
       dancers: "Dancers",
@@ -256,7 +253,10 @@ export const en = {
       segment: (seconds: number) => `→ ${seconds}s`,
       moveSeconds: "Seconds to get here",
       /** How long the formation is held before the move starts */
-      holdThenMove: (hold: string) => `Holds for ${hold}s, then moves in`,
+      /** Labels for the two halves of the gap. Either one can be typed in */
+      hold: "Hold",
+      holdLabel: "Seconds this formation stays still",
+      move: "Move",
       moveSecondsLabel: "Seconds spent moving in this gap",
       delete: "Delete",
       /** The "select" mode for deleting several at once (top of the list) */

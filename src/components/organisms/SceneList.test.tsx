@@ -478,9 +478,16 @@ describe("区間の移動時間", () => {
     useUIStore.setState({ selectedSceneId: "scene-2", sceneSelection: null });
   });
 
+  /* 欄は2つ出るが、**保存しているのは移動の側だけ**。キープは
+     区間から引いて出している（lib/segmentSplit） */
+  const holdInput = () =>
+    screen.getByLabelText(/この隊形のまま止まっている秒数/);
+  const moveInput = () => screen.getByLabelText(/この区間で、動くのに使う秒数/);
+
   it("決めていなければ、区間まるごとを使う（キープは0秒）", () => {
     render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
-    expect(screen.getByText(/うち 0秒 は止まっていて/)).toBeInTheDocument();
+    expect(holdInput()).toHaveValue(0);
+    expect(moveInput()).toHaveValue(4);
   });
 
   it("移動時間を短くすると、余りがキープとして出る", () => {
@@ -492,13 +499,16 @@ describe("区間の移動時間", () => {
     render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
 
     // 4秒の区間で1秒だけ動く → 3秒は止まっている
-    expect(screen.getByText(/うち 3秒 は止まっていて/)).toBeInTheDocument();
+    expect(holdInput()).toHaveValue(3);
+    expect(moveInput()).toHaveValue(1);
   });
 
   it("先頭のシーンには出さない（入ってくる区間が無い）", () => {
     useUIStore.setState({ selectedSceneId: "scene-1" });
     render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
-    expect(screen.queryByText(/は止まっていて/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText(/この隊形のまま止まっている秒数/),
+    ).not.toBeInTheDocument();
   });
 
   it("欄に打つと、その秒数が保存される", async () => {
@@ -510,7 +520,7 @@ describe("区間の移動時間", () => {
 
     /* label の中に単位の「秒」も入るので、textContent は
        「…秒数秒」になる。完全一致では外れる */
-    const input = screen.getByLabelText(/この区間で、動くのに使う秒数/);
+    const input = moveInput();
     await user.clear(input);
     await user.type(input, "1.5");
     await user.tab();
@@ -518,7 +528,48 @@ describe("区間の移動時間", () => {
     await waitFor(() => {
       expect(spy).toHaveBeenCalledWith(expect.anything(), "scene-2", 1.5);
     });
-    // 画面にも、引き算した残りがその場で出る
-    expect(screen.getByText(/うち 2.5秒 は止まっていて/)).toBeInTheDocument();
+    // 隣の欄にも、引き算した残りがその場で出る
+    expect(holdInput()).toHaveValue(2.5);
+  });
+
+  /* ここが**キープの欄から打つ側**。打った数がそのまま保存される移動の
+     欄とは【答えが分かれる】ので、同じ値で書くと潰しても緑のままになる
+     （.claude/rules/testing.md 4節） */
+  it("キープの欄に打つと、区間から引いた分が【移動】として保存される", async () => {
+    const spy = vi
+      .spyOn(scenesApi, "updateSceneMoveSeconds")
+      .mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
+
+    await user.clear(holdInput());
+    await user.type(holdInput(), "1.5");
+    await user.tab();
+
+    // 打ったのは 1.5 だが、保存されるのは 4 − 1.5 = 2.5 の方
+    await waitFor(() => {
+      expect(spy).toHaveBeenCalledWith(expect.anything(), "scene-2", 2.5);
+    });
+    expect(moveInput()).toHaveValue(2.5);
+  });
+
+  it("キープの欄を空にすると、区間まるごとへ戻す（null を保存する）", async () => {
+    useProjectStore.setState((state) => ({
+      scenes: state.scenes.map((scene) =>
+        scene.id === "scene-2" ? { ...scene, moveSeconds: 1 } : scene,
+      ),
+    }));
+    const spy = vi
+      .spyOn(scenesApi, "updateSceneMoveSeconds")
+      .mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
+
+    await user.clear(holdInput());
+    await user.tab();
+
+    await waitFor(() => {
+      expect(spy).toHaveBeenCalledWith(expect.anything(), "scene-2", null);
+    });
   });
 });

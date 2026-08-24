@@ -170,9 +170,7 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
                   : selectSceneManually(scene.id)
               }
               onRename={(name) => renameSceneTo(scene, name)}
-              onChangeTime={(seconds, ripple) =>
-                changeSceneTime(scene, seconds, ripple)
-              }
+              onChangeTime={(seconds) => changeSceneTime(scene, seconds)}
               onChangeMoveSeconds={(moveSeconds) =>
                 void changeMoveSeconds(scene, moveSeconds)
               }

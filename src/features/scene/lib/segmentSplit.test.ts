@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { splitSegment } from "./segmentSplit";
+import { moveSecondsForHold, splitSegment } from "./segmentSplit";
 
 /**
  * 区間を【キープ】と【移動】に割る。
@@ -51,5 +51,51 @@ describe("splitSegment", () => {
     const { holdSeconds, moveSeconds } = splitSegment(0.3, 0.1);
     expect(moveSeconds).toBe(0.1);
     expect(holdSeconds).toBe(0.2);
+  });
+});
+
+/**
+ * キープの欄に打たれた秒数を、**保存する側（移動）**へ直す。
+ *
+ * 欄は2つ出しているが、保存しているのは移動の1つだけ。
+ * ここが `splitSegment` と**答えが分かれる向き**（打った数がそのまま
+ * 保存されない）なので、割る側のテストでは守れない。
+ */
+describe("moveSecondsForHold", () => {
+  it("打ったキープの分だけ、移動を短くする", () => {
+    expect(moveSecondsForHold(4, 3)).toBe(1);
+  });
+
+  it("キープ0なら、区間まるごとを移動に使う", () => {
+    expect(moveSecondsForHold(4, 0)).toBe(4);
+  });
+
+  it("キープが区間ちょうどなら、移動は0（一瞬で移る）", () => {
+    expect(moveSecondsForHold(4, 4)).toBe(0);
+  });
+
+  it("区間より長いキープは、区間で頭打ちにする（移動は負にしない）", () => {
+    expect(moveSecondsForHold(4, 10)).toBe(0);
+  });
+
+  it("負のキープは0として扱う", () => {
+    expect(moveSecondsForHold(4, -2)).toBe(4);
+  });
+
+  it("null は「決めていない」。区間まるごとへ戻す", () => {
+    expect(moveSecondsForHold(4, null)).toBeNull();
+  });
+
+  it("刻みの誤差を持ち込まない（素の引き算だと DB へ 2.1999… が入る）", () => {
+    expect(moveSecondsForHold(3.3, 1.1)).toBe(2.2);
+  });
+
+  it("区間が負でも、負を返さない", () => {
+    expect(moveSecondsForHold(-4, 1)).toBe(0);
+  });
+
+  it("打ち直すと元へ戻る（splitSegment と往復して同じ数になる）", () => {
+    const move = moveSecondsForHold(4, 2.5);
+    expect(splitSegment(4, move).holdSeconds).toBe(2.5);
   });
 });

@@ -2,11 +2,13 @@
 
 import { formatClock } from "@/features/scene/lib/clock";
 
-import { useId, useState, type FocusEvent } from "react";
+import { useId, type FocusEvent } from "react";
 import { Clock, MoveRight } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
 import { DurationSecondsInput } from "@/components/molecules/DurationSecondsInput";
-import { splitSegment } from "@/features/scene/lib/segmentSplit";
+import {
+  moveSecondsForHold,
+  splitSegment,
+} from "@/features/scene/lib/segmentSplit";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
@@ -16,8 +18,8 @@ type Props = {
   segmentSeconds: number;
   /** 先頭のシーンか。先頭は「入ってくる元」が無い */
   isFirst: boolean;
-  /** 時刻を変える。ripple が true なら以降のシーンも同じだけずらす */
-  onCommit: (timeSeconds: number, ripple: boolean) => void;
+  /** 時刻を変える。動くのはこのシーンだけ（隣を追い越せば順番も入れ替わる） */
+  onCommit: (timeSeconds: number) => void;
   /** 区間のうち、動くのに使う秒数。null なら区間まるごと */
   moveSeconds: number | null;
   /** 移動時間を変える。null で区間まるごとへ戻す */
@@ -35,12 +37,11 @@ type Props = {
  * だけでサビから外れる、ということが起きる。
  *
  * 入れるのは「0:42.0」のような曲の中の位置。触っていないシーンは動かない。
- * 移動にかかる時間は、隣との差として【表示だけ】する(編集はしない)。
- *
- * リップルは、それでも「以降を全部ずらしたい」ときのための逃げ道。
- * 動画編集ソフトと同じ考え方で、既定はオフ。オフのときは動くのは
- * このシーンだけで、隣を追い越せば順番もそのまま入れ替わる
+ * 動くのは打ったシーンだけで、隣を追い越せば順番もそのまま入れ替わる
  * (並び順の正は時刻。sceneTiming.ts)。
+ *
+ * 区間の【長さ】は隣との差なので、ここでは編集しない。編集できるのは
+ * その区間を【どう割るか】(キープ / 移動)だけ。
  */
 export function SceneTimeField({
   timeSeconds,
@@ -53,7 +54,6 @@ export function SceneTimeField({
 }: Props) {
   const t = useT();
   const inputId = useId();
-  const [ripple, setRipple] = useState(false);
   /* 滞在は持たない。区間から移動を引いて出す — 2つ持たせると、
      足して区間にならない状態を作れてしまう（lib/segmentSplit） */
   const split = splitSegment(segmentSeconds, moveSeconds);
@@ -64,7 +64,7 @@ export function SceneTimeField({
       event.target.value = formatClock(timeSeconds);
       return;
     }
-    onCommit(parsed, ripple);
+    onCommit(parsed);
   };
 
   return (
@@ -103,44 +103,42 @@ export function SceneTimeField({
             <MoveRight size={12} className="shrink-0" />
             {t.common.travelFromPrevious(String(segmentSeconds))}
           </p>
-          {/* label で囲まない。DurationSecondsInput が自前の label を
-              持っているので、入れ子になって読み上げの結び付きが壊れる */}
+          {/* **どちらにも打てる。** 足すと必ず区間になるので、片方を
+              打てばもう片方が動く。保存しているのは移動の側1つだけ
+              （2つ保存すると、足して区間にならない状態を作れてしまう）。
+              label で囲まない — DurationSecondsInput が自前の label を
+              持っていて、入れ子になると読み上げの結び付きが壊れる */}
           <div className="flex items-center gap-2">
-            <span className="min-w-0 flex-1 text-caption text-fg-muted">
-              {t.editor.scenes.holdThenMove(String(split.holdSeconds))}
+            <span className="shrink-0 text-caption text-fg-muted">
+              {t.editor.scenes.hold}
             </span>
             <DurationSecondsInput
-              key={fieldKey}
+              key={`hold-${fieldKey}-${split.holdSeconds}`}
+              label={t.editor.scenes.holdLabel}
+              value={split.holdSeconds}
+              onCommit={(hold) =>
+                onCommitMoveSeconds(moveSecondsForHold(segmentSeconds, hold))
+              }
+              min={0}
+              max={segmentSeconds}
+              suffix={t.editor.scenes.seconds}
+            />
+            <MoveRight size={12} className="shrink-0 text-fg-muted" />
+            <span className="shrink-0 text-caption text-fg-muted">
+              {t.editor.scenes.move}
+            </span>
+            <DurationSecondsInput
+              key={`move-${fieldKey}-${split.moveSeconds}`}
               label={t.editor.scenes.moveSecondsLabel}
-              value={moveSeconds}
+              value={split.moveSeconds}
               onCommit={onCommitMoveSeconds}
               min={0}
               max={segmentSeconds}
-              placeholder={String(segmentSeconds)}
               suffix={t.editor.scenes.seconds}
             />
           </div>
         </div>
       )}
-
-      {/* ラベルまで含めて押せる的にする(44px以上)。小さな四角だけを
-          狙わせない — 指では外しやすく、外すと何も起きないので
-          「効かない」ように見える */}
-      <label className="flex min-h-11 items-start gap-2.5 py-1 text-caption leading-snug text-fg-muted">
-        <Checkbox
-          checked={ripple}
-          onCheckedChange={(checked) => setRipple(checked === true)}
-          aria-label={t.editor.scenes.ripple}
-          className="mt-0.5"
-        />
-        <span>
-          {t.editor.scenes.ripple}
-          <span className="mt-0.5 block text-fg-muted/80">
-            {t.editor.scenes.rippleNote}
-
-          </span>
-        </span>
-      </label>
     </div>
   );
 }

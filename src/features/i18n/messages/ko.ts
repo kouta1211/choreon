@@ -241,9 +241,6 @@ export const ko = {
 
     scenes: {
       timeInSong: "음악에서의 위치",
-      ripple: "이후 장면도 함께 옮기기",
-      rippleNote:
-        "끄면 이 장면만 움직입니다(옆 장면을 넘어서면 순서도 바뀝니다).",
       seconds: "초",
       title: "장면",
       dancers: "댄서",
@@ -255,7 +252,10 @@ export const ko = {
       segment: (seconds: number) => `→ ${seconds}s`,
       moveSeconds: "앞 장면에서 몇 초로 이동할지",
       /** 이동 전에 대형을 유지하는 시간 */
-      holdThenMove: (hold: string) => `${hold}초 멈춘 뒤, 이동은`,
+      /** 구간을 둘로 나누는 칸의 머리글. 어느 쪽이든 입력할 수 있다 */
+      hold: "유지",
+      holdLabel: "이 대형 그대로 멈춰 있는 초",
+      move: "이동",
       moveSecondsLabel: "이 구간에서 이동에 쓰는 초",
       delete: "삭제",
       /** 한꺼번에 지우기 위한 "선택" 모드(목록 머리글 오른쪽) */

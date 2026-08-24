@@ -58,3 +58,27 @@ export function splitSegment(
 function round(value: number): number {
   return Math.round(value * 1000) / 1000;
 }
+
+/**
+ * **キープの側から打たれた秒数**を、保存する側（移動）へ直す。
+ *
+ * 欄は2つ出しているが、**保存しているのは移動の1つだけ**。
+ * 2つ保存すると「足しても区間にならない」状態を作れてしまうため
+ * （上の `splitSegment` の考え方と同じ）。
+ *
+ * ここを呼び出し側（`SceneTimeField`）に書かないのは、丸めと頭打ちが
+ * 要るから。`3.3 − 1.1` は素で引くと `2.1999999999999997` になり、
+ * **その値がそのまま DB へ入る**。
+ *
+ * @param holdSeconds 打たれたキープの秒数。**null は「決めていない」**
+ *   （＝区間まるごとを移動に使う。移動の欄を空にしたのと同じ）
+ */
+export function moveSecondsForHold(
+  segmentSeconds: number,
+  holdSeconds: number | null,
+): number | null {
+  if (holdSeconds === null) return null;
+  const span = Math.max(0, segmentSeconds);
+  const hold = Math.min(span, Math.max(0, holdSeconds));
+  return round(span - hold);
+}
