@@ -7,9 +7,7 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
-import { useDndContext, useDraggable } from "@dnd-kit/core";
-import { useGroupDrag } from "@/features/canvas/hooks/useGroupDrag";
-import { isFollowingGroupDrag } from "@/features/canvas/lib/groupDragFollow";
+import { useDancerGrab } from "@/features/canvas/hooks/useDancerGrab";
 import { CSS } from "@dnd-kit/utilities";
 import { motion } from "motion/react";
 import { DancerMarker } from "@/components/molecules/DancerIcon";
@@ -63,9 +61,11 @@ type Props = {
  * そのままCSSに反映するだけで、Zustandへのコミットはしない。位置の確定は
  * 呼び出し側がDndContextのonDragEndで1回だけ行う(このコンポーネントは関与しない)。
  *
- * 位置と濃さの【動き】は useDancerMotion が持つ(シーン切り替えの補間・
- * 曲線に沿った移動・払っている間の補間・薄くする、の4つ)。ここが持つのは
- * 掴む・選ぶ・フォーカス・見た目。
+ * ここが持つのは**見た目の組み立て**だけ。中身は3つに分けてある。
+ * - 位置と濃さの【動き】 → `useDancerMotion`（シーン切り替えの補間・
+ *   曲線に沿った移動・払っている間の補間・薄くする、の4つ）
+ * - 【掴む】と【一緒に動く】 → `useDancerGrab`
+ * - 矢印キーの読み替え → `lib/nudgeKey`
  *
  * 選択中は本体の外側に回転ハンドル(RotationHandle)を表示する。ハンドルの
  * ドラッグ中は見た目だけをliveRotationで即時更新し、指を離した時点で
@@ -83,7 +83,7 @@ type Props = {
  * 実装している。フォーカスが当たっている状態で矢印キーを押すとその場で
  * すぐ動く(Shiftキー併用で大きく移動。読み替えは nudgeForKey)。
  *
- * Tabキーでの巡回は無効にしている(tabIndex: -1、useDraggable参照)。
+ * Tabキーでの巡回は無効にしている(tabIndex: -1、useDancerGrab 参照)。
  * ダンサーの数だけTabを押させるのは操作性が悪く、またフォーカスが
  * 移るたびに選択状態も連動させるとDancerInspector(色変更・削除ボタンなど)が
  * 開いてTab移動の対象がさらに増えてしまう問題もあった。矢印キーで動かすには
@@ -120,37 +120,28 @@ function DraggableDancerIconImpl({
   const y = flipY(stageY);
   const curveControlY =
     stageCurveControlY == null ? stageCurveControlY : flipY(stageCurveControlY);
-  // dataは格子スナップ用のModifier(gridSnapModifier)がactive.data.current経由で
-  // 読み取る。ドラッグ開始時点の座標とステージサイズが分からないと、px単位の
-  // transformをステージ座標系に変換できないため
-  //
-  // tabIndex: -1にしてTabキーの移動順から外している。ダンサーの数だけTabを
-  // 押させるのは操作性が悪いため。クリック時にonClickで明示的に.focus()して
-  // いるので、tabIndex: -1でもプログラムからのフォーカス自体は問題なく機能する
-  // (Tabキーによる「巡回」だけを止めており、フォーカスそのものを禁止しては
-  // いない)
-  /* シーン移動のアニメーションが走っている最中でも掴める(2026-08-19)。
-     以前は掴ませない作りだったが、印は【区間の秒数まるごと】立つので、
-     8秒の区間へ切り替えると8秒間まったく掴めなかった。
-     食い違い(見た目は途中、保存の起点はシーンの位置)の方は、掴んだ瞬間に
-     移動を打ち切って確定値へ飛ばすことで消してある(useDancerMotion)。 */
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id: dancer.id,
-    // yは画面の向きに写した値。dnd-kitと格子スナップは画面の中だけで完結する
-    data: { x, y, stageWidthUnits, stageHeightUnits },
-    attributes: { tabIndex: -1 },
+  /* 掴む・一緒に動く・選ばれているか は useDancerGrab が持つ。
+     **ここへ条件を書き足さない** — 「誰が掴んでいるか」を見に行くと、
+     掴み始めの数フレームだけ style の形が入れ替わって動かなくなる
+     （2026-08-22 に踏んだ。理由はフックの doc に書いてある） */
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    isDragging,
+    isFollowingGroup,
+    groupOffset,
+    isSelected,
+    isOnlySelected,
+  } = useDancerGrab({
+    dancerId: dancer.id,
+    x,
+    y,
+    stageWidthUnits,
+    stageHeightUnits,
   });
-  const isSelected = useUIStore((state) =>
-    state.selectedDancerIds.includes(dancer.id),
-  );
-  /* 回転は1人ぶんの操作。複数選んでいる間はハンドルを出さない —
-     出すと「まとめて回せる」ように見えるが、そうはなっていない
-     （帯にも「向きと曲線は1人のときだけ」と書いてある） */
-  const isOnlySelected = useUIStore(
-    (state) =>
-      state.selectedDancerIds.length === 1 &&
-      state.selectedDancerIds[0] === dancer.id,
-  );
+
   const selectDancer = useUIStore((state) => state.selectDancer);
   const toggleDancer = useUIStore((state) => state.toggleDancer);
   const focusedDancerId = useUIStore((state) => state.focusedDancerId);
@@ -166,36 +157,6 @@ function DraggableDancerIconImpl({
   // タッチでも pointerenter は飛ぶので、素通しにするとスマートフォンで
   // 一度触った人がホバーしたまま貼り付き、離しても元に戻らなくなる
   const [isHovered, setIsHovered] = useState(false);
-  const isDragging = transform !== null;
-
-  /* **掴んでいる人と一緒に動く。**(2026-08-18、実機の報告 18-2)
-     まとめて選んでも、離すまで動くのは掴んだ本人だけだった。
-     選ばれていて、かつ自分が掴まれていないときだけ、本人と同じ量だけずらす。
-     移動量は MotionValue で来るので、動かしてもここは描き直らない。
-
-     ■ **誰が掴んでいるか(activeDancerId)は見ない**（2026-08-22、実機の
-     報告「ときどきドラッグ中についてこない」）。以前は
-     `activeDancerId !== null` を条件に入れていたが、あれは React の
-     state で、**掴み始めの数フレームはまだ null**。その間このダンサーは
-     追随しない側の style で描かれ、しかも
-     【x/y の MotionValue】と【transform の文字列】で**style の形自体が
-     入れ替わる**。motion は transform のキーが立っていると x/y を捨てる
-     ので、入れ替わる瞬間に噛み合わないと、そのまま動かなくなる。
-
-     移動量は掴んでいないとき 0 なので、**条件から外しても止まっている
-     ときの見た目は変わらない**。形が変わらなくなったぶん、確実に付いてくる */
-  const groupDrag = useGroupDrag();
-  /* 「いま誰かが掴んでいるか」は **dnd-kit 自身**に聞く。React の state で
-     持つと掴み始めの数フレームはまだ立っておらず、その間だけ style の形が
-     入れ替わる（motion は transform のキーが立っていると x/y を捨てる） */
-  const { active } = useDndContext();
-  const isFollowingGroup =
-    groupDrag !== null &&
-    isFollowingGroupDrag({
-      isSelected,
-      isGrabbed: isDragging,
-      isAnyDragging: active !== null,
-    });
 
   // dnd-kitのsetNodeRefと、回転中心の座標を読み取るための自前refを
   // 同じDOMノードに両方つなぐ
@@ -286,8 +247,8 @@ function DraggableDancerIconImpl({
          あるとそちらを優先し、x/y の MotionValue が効かなくなる
          （undefined でもキーが立っていれば同じ。実際にこれで動かなかった） */
       style={
-        isFollowingGroup
-          ? { left, top, opacity, x: groupDrag.offsetX, y: groupDrag.offsetY }
+        groupOffset
+          ? { left, top, opacity, x: groupOffset.x, y: groupOffset.y }
           : {
               left,
               top,
