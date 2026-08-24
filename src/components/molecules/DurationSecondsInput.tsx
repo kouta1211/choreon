@@ -20,6 +20,11 @@ type Props = {
   /** 数字のうしろに添える語。既定は「秒」。ドックでは「秒でここへ」に
    * して、この値が"このシーンへ入ってくる時間"だと文で分かるようにする */
   suffix?: string;
+  /** 上下キー・スピナーで動く幅(秒)。既定は 0.1。
+   * **拍のある画面では1拍ぶんを渡す** — 0.1 刻みで秒を詰めるのは、
+   * 踊る側の数え方（カウント）と合っていない。
+   * 打った数はそのまま通す（刻みは寄せ方であって、縛りではない） */
+  stepSeconds?: number;
   /** 配色。sceneはドック(中立の灰)、dancerはインスペクター(そのダンサーの
    * 側の色)。同じ見た目の秒数入力が2箇所にあると、いまどちらを編集して
    * いるのか分からなくなるため、地と文字色で区別する */
@@ -51,6 +56,7 @@ export function DurationSecondsInput({
   allowEmpty = true,
   placeholder,
   suffix,
+  stepSeconds = STEP,
   tone = "scene",
 }: Props) {
   const inputId = useId();
@@ -99,7 +105,7 @@ export function DurationSecondsInput({
         inputMode="decimal"
         min={min}
         max={max}
-        step={STEP}
+        step={stepSeconds}
         defaultValue={value ?? ""}
         placeholder={placeholder}
         onBlur={commit}

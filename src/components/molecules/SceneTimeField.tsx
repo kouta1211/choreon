@@ -23,6 +23,10 @@ type Props = {
   /** 出ていく区間の移動時間を変える。null で区間まるごとへ戻す。
    * **書き込む先は次のシーン**（呼び出し側が targetSceneId で結ぶ） */
   onCommitMoveSeconds: (moveSeconds: number | null) => void;
+  /** 秒数の欄が上下キーで動く幅。**1拍ぶん**を渡す（呼び出し側が
+   * `secondsPerBeat(project.bpm)` で出す）。0.1 刻みで秒を詰めるのは、
+   * 踊る側の数え方と合っていない */
+  stepSeconds: number;
   /** 入力欄を作り直す目印(シーンを切り替えたときに前の入力を残さない) */
   fieldKey: string;
 };
@@ -47,6 +51,7 @@ export function SceneTimeField({
   onCommit,
   outgoing,
   onCommitMoveSeconds,
+  stepSeconds,
   fieldKey,
 }: Props) {
   const t = useT();
@@ -129,6 +134,7 @@ export function SceneTimeField({
               }
               min={0}
               max={segmentSeconds}
+              stepSeconds={stepSeconds}
               suffix={t.editor.scenes.seconds}
             />
           </div>
@@ -143,6 +149,7 @@ export function SceneTimeField({
               onCommit={onCommitMoveSeconds}
               min={0}
               max={segmentSeconds}
+              stepSeconds={stepSeconds}
               suffix={t.editor.scenes.seconds}
             />
           </div>

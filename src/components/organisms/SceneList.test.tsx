@@ -563,6 +563,20 @@ describe("区間の移動時間", () => {
     expect(moveInput()).toHaveValue(2.5);
   });
 
+  /* 刻みは【1拍】。0.1 刻みで秒を詰めるのは、踊る側の数え方と
+     合っていない（実機の報告）。BPM を既定（120）から外した値で見る —
+     120 のまま書くと、呼び出し側が DEFAULT_BPM を直に読んでいても
+     緑になってしまう */
+  it("上下キーの刻みは、その作品の1拍ぶんになる", () => {
+    const project = makeProject({ isMetronomeEnabled: true, bpm: 150 });
+    useProjectStore.setState({ project });
+    render(<SceneList project={project} />);
+
+    // 60 / 150 = 0.4秒
+    expect(holdInput()).toHaveAttribute("step", "0.4");
+    expect(moveInput()).toHaveAttribute("step", "0.4");
+  });
+
   it("キープの欄を空にすると、区間まるごとへ戻す（null を保存する）", async () => {
     useProjectStore.setState((state) => ({
       scenes: state.scenes.map((scene) =>

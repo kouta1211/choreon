@@ -16,6 +16,7 @@ import type { Scene } from "@/features/scene/types";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useT } from "@/features/i18n/LocaleProvider";
 import type { OutgoingSegment } from "@/features/scene/lib/outgoingSegment";
+import { secondsPerBeat } from "@/features/music/lib/metronome";
 
 type Props = {
   scene: Scene;
@@ -220,6 +221,10 @@ export function SceneRow({
               timeSeconds={scene.timeSeconds}
               onCommit={onChangeTime}
               outgoing={outgoing}
+              /* 秒数の欄は【1拍ずつ】動かす。0.1 刻みで秒を詰めるのは
+                 踊る側の数え方と合っていない（実機の報告・2026-08-24）。
+                 打った数はそのまま通るので、拍から外れた値も置ける */
+              stepSeconds={secondsPerBeat(project.bpm)}
               onCommitMoveSeconds={onChangeMoveSeconds}
             />
           )}
