@@ -886,9 +886,6 @@ export const ja = {
     },
     inspector: {
       name: "ダンサー名",
-      ownDuration: "このダンサーだけの遷移時間(秒)",
-      /** 目に見える見出し。読み上げ用(ownDuration)とは別に短く置く */
-      ownDurationShort: "この人だけの移動時間",
       seconds: "秒",
       focus: "マイ・フォーカス",
       focusOn: "マイ・フォーカス中",
@@ -906,7 +903,6 @@ export const ja = {
       deleteDescription:
         "このダンサーの配置と導線が、すべてのシーンから消えます。削除は元に戻せません(移動や向きの変更は戻せます)。",
       deleteMeta: (scenes: number) => `${scenes} シーンぶんの配置`,
-      durationFailed: "個別の遷移時間の変更に失敗しました",
       nameFailed: "ダンサー名の変更に失敗しました",
       colorFailed: "色の変更に失敗しました",
       deleteFailed: "ダンサーの削除に失敗しました",

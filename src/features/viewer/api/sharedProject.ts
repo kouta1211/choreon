@@ -151,8 +151,6 @@ export async function getSharedProject(
       xCoordinate: position.x_coordinate,
       yCoordinate: position.y_coordinate,
       rotationAngle: position.rotation_angle,
-      dancerTransitionDurationSeconds:
-        position.dancer_transition_duration_seconds,
       curveControlX: position.curve_control_x,
       curveControlY: position.curve_control_y,
     })),

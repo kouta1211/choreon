@@ -231,9 +231,7 @@ export function DancerLayer({
             stageHeightUnits={stageHeightUnits}
             onRotateEnd={onRotateEnd}
             onNudge={onNudge}
-            transitionDurationSeconds={
-              segmentPosition?.dancerTransitionDurationSeconds ?? movingSeconds
-            }
+            transitionDurationSeconds={movingSeconds}
             curveControlX={
               isAdjacentStep ? segmentPosition?.curveControlX : null
             }

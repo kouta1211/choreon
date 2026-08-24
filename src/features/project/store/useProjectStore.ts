@@ -92,8 +92,8 @@ type ProjectState = {
 
   // --- Position ---
   // ドラッグ操作の確定時(dnd-kitのonDragEnd)に1回だけ呼ばれる想定。
-  // 渡さなかったフィールド(ダンサー個別の遷移時間・曲線制御点など)は
-  // 既存の値を保持する(下のupdateDancerPosition実装のマージ挙動を参照)
+  // 渡さなかったフィールド(曲線制御点など)は既存の値を保持する
+  // (下のupdateDancerPosition実装のマージ挙動を参照)
   updateDancerPosition: (
     sceneId: string,
     dancerId: string,
@@ -103,7 +103,6 @@ type ProjectState = {
         | "xCoordinate"
         | "yCoordinate"
         | "rotationAngle"
-        | "dancerTransitionDurationSeconds"
         | "curveControlX"
         | "curveControlY"
       >
@@ -277,10 +276,6 @@ export const useProjectStore = create<ProjectState>((set) => ({
         xCoordinate: next.xCoordinate ?? existing?.xCoordinate ?? 0,
         yCoordinate: next.yCoordinate ?? existing?.yCoordinate ?? 0,
         rotationAngle: next.rotationAngle ?? existing?.rotationAngle ?? 0,
-        dancerTransitionDurationSeconds:
-          "dancerTransitionDurationSeconds" in next
-            ? next.dancerTransitionDurationSeconds
-            : existing?.dancerTransitionDurationSeconds,
         curveControlX:
           "curveControlX" in next
             ? next.curveControlX

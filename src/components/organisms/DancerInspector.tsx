@@ -13,24 +13,16 @@ import {
   updateDancerName,
 } from "@/features/dancer/api/dancers";
 import { useDeleteDancers } from "@/features/dancer/hooks/useDeleteDancers";
-import { upsertPosition } from "@/features/scene/api/positions";
-import { DurationSecondsInput } from "@/components/molecules/DurationSecondsInput";
 import { InlineEditableText } from "@/components/molecules/InlineEditableText";
 import { Tooltip } from "@/components/atoms/Tooltip";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { useHardToSeeColor } from "@/features/dancer/hooks/useHardToSeeColor";
 import { DancerColorPicker } from "@/components/molecules/DancerColorPicker";
-import { sceneDurations } from "@/features/scene/lib/sceneTiming";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { useT } from "@/features/i18n/LocaleProvider";
-import { useOrderOnlyTimeline } from "@/features/scene/hooks/useOrderOnlyTimeline";
-
-/** ダンサー個別の遷移時間の入力が許容する範囲。schema.sqlのCHECK制約と合わせている */
-const MIN_DURATION_SECONDS = 0.1;
-const MAX_DURATION_SECONDS = 30;
 
 /**
- * 選択中のダンサーの色変更・遷移時間の個別上書き・削除を行うパネル。
+ * 選択中のダンサーの色変更・削除を行うパネル。
  * CanvasBoardでダンサーをクリックするとuseUIStore.selectedDancerIdが
  * セットされ、これが表示される。
  *
@@ -60,27 +52,16 @@ type Props = {
 
 export function DancerInspector({ variant = "floating" }: Props) {
   const t = useT();
-  const isOrderOnly = useOrderOnlyTimeline();
   // 1人だけ選んでいるときの板。複数のときは null になって出ない
   const selectedDancerId = useUIStore(selectPrimaryDancerId);
   const selectDancer = useUIStore((state) => state.selectDancer);
   const showToast = useUIStore((state) => state.showToast);
   const focusedDancerId = useUIStore((state) => state.focusedDancerId);
   const setFocusedDancer = useUIStore((state) => state.setFocusedDancer);
-  const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const dancer = useProjectStore((state) =>
     selectedDancerId ? state.dancers[selectedDancerId] : undefined,
   );
-  const scenes = useProjectStore((state) => state.scenes);
-  const position = useProjectStore((state) =>
-    selectedSceneId && selectedDancerId
-      ? state.positionsBySceneId[selectedSceneId]?.[selectedDancerId]
-      : undefined,
-  );
   const addDancer = useProjectStore((state) => state.addDancer);
-  const updateDancerPosition = useProjectStore(
-    (state) => state.updateDancerPosition,
-  );
   /* 確認から後片付けまでは features/dancer 側が持っている。
      右クリックのメニューの削除と**同じ道**を通る（前は同じ形が2箇所にあった）。
      フックなので、dancer が居ないときの早期 return より前で呼ぶ */
@@ -91,36 +72,6 @@ export function DancerInspector({ variant = "floating" }: Props) {
   const isHardToSee = useHardToSeeColor(dancer?.color ?? "");
 
   if (!dancer) return null;
-
-  // このシーンへ入ってくる区間の長さ。個別の上書きが空欄のときの目安として出す
-  const selectedSegmentSeconds =
-    sceneDurations(scenes)[scenes.findIndex((s) => s.id === selectedSceneId)] ??
-    1;
-
-  // このダンサー・このシーンだけの遷移時間の上書き。空欄=シーンの既定値を使う。
-  // 値の妥当性チェック(範囲外・未変更なら何もしない)はDurationSecondsInput側で
-  // 既に済んでいるので、ここでは確定した値をそのまま保存するだけでよい
-  const handleDurationOverrideCommit = async (parsed: number | null) => {
-    if (!selectedSceneId || !position) return;
-
-    const before = position;
-    const after = { ...position, dancerTransitionDurationSeconds: parsed };
-    updateDancerPosition(selectedSceneId, dancer.id, {
-      dancerTransitionDurationSeconds: parsed,
-    });
-
-    try {
-      await persist((supabase) => upsertPosition(supabase, after));
-    } catch (error) {
-      updateDancerPosition(selectedSceneId, dancer.id, {
-        dancerTransitionDurationSeconds: before.dancerTransitionDurationSeconds,
-      });
-      showToast({
-        message: toUserMessage(error, t.dancer.inspector.durationFailed),
-        type: "error",
-      });
-    }
-  };
 
   const commitRename = async (name: string) => {
     const previous = dancer;
@@ -281,42 +232,6 @@ export function DancerInspector({ variant = "floating" }: Props) {
             </span>
           )}
         </div>
-
-        {/* この人だけ移動を速く/遅くする欄。
-
-            ■ **名前の行から出した**（実機の報告 2026-08-22:
-            「名前を変更する際に、変な秒数の項目が表示されてる」）
-            以前は名前のすぐ横に並んでいて、しかもこの欄は**時計の絵と
-            数字だけ**（見出しは読み上げ用にしか付いていない）。名前を
-            直そうとすると、由来の分からない数字が隣にある状態だった。
-            見出しを目に見える形で添えて、色と同じ「下の段」へ移す。
-
-            ■ **順番だけで作っているときは出さない**（実機の報告 17-3）
-            移動がどれも同じ秒数の作品で、1人ぶんの秒数だけ置いても
-            比べる相手が無い */}
-        {selectedSceneId && position && !isOrderOnly && (
-          <div className="mt-2 flex items-center gap-2">
-            {/* 読み上げ用の名前は欄そのものが持っている（sr-only）。
-                ここは目で読むためだけなので、二重に読ませない */}
-            <span
-              aria-hidden
-              className="min-w-0 flex-1 text-caption text-fg-muted"
-            >
-              {t.dancer.inspector.ownDurationShort}
-            </span>
-            <DurationSecondsInput
-              key={`${dancer.id}-${selectedSceneId}`}
-              label={t.dancer.inspector.ownDuration}
-              value={position.dancerTransitionDurationSeconds ?? null}
-              onCommit={handleDurationOverrideCommit}
-              min={MIN_DURATION_SECONDS}
-              max={MAX_DURATION_SECONDS}
-              placeholder={String(selectedSegmentSeconds)}
-              suffix={t.dancer.inspector.seconds}
-              tone="dancer"
-            />
-          </div>
-        )}
 
         {/* 地と同化する色を**選べなくはしない**（2026-08-21）。衣装に
             合わせて決める人がいるし、沈ませたい場面もある。知らせるだけ。

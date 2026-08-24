@@ -305,8 +305,8 @@ export function CanvasBoard({
   );
 
   // 導線(PathOverlay)の曲線制御点をドラッグで確定した時に呼ばれる。
-  // 制御点は「そこへ遷移してくるシーン」のpositionに保存する(遷移時間の
-  // dancerTransitionDurationSecondsと同じ考え方)
+  // 制御点は「そこへ遷移してくるシーン」のpositionに保存する
+  // (区間の情報は後ろ側のシーンが持つ、という決まり。lib/pathSegment)
   const handleCurveControlPointChange = useCallback(
     async (
       dancerId: string,

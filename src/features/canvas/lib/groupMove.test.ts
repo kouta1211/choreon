@@ -110,14 +110,14 @@ describe("groupMoveChanges", () => {
     ).toEqual([]);
   });
 
-  it("向きや個別の遷移時間は持ち越す（触るのは座標だけ）", () => {
+  it("向きや曲線の制御点は持ち越す（触るのは座標だけ）", () => {
     const positions = {
       a: makePosition({
         dancerId: "a",
         xCoordinate: 3,
         yCoordinate: 3,
         rotationAngle: 90,
-        dancerTransitionDurationSeconds: 1.5,
+        curveControlX: 1.5,
       }),
     };
     const [change] = groupMoveChanges({
@@ -129,7 +129,7 @@ describe("groupMoveChanges", () => {
     });
 
     expect(change.after.rotationAngle).toBe(90);
-    expect(change.after.dancerTransitionDurationSeconds).toBe(1.5);
+    expect(change.after.curveControlX).toBe(1.5);
   });
 });
 

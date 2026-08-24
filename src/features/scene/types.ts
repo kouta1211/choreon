@@ -16,12 +16,6 @@ export type Position = {
   xCoordinate: number;
   yCoordinate: number;
   rotationAngle: number;
-  /** このダンサーだけ、区間の長さより短く動きたい場合に設定する(秒)。
-   * null/undefinedなら区間いっぱいを使う(全員が同じ速さで動く)。
-   * シーンが時刻を持つようになったので、区間の長さは
-   * 「次の時刻 − この時刻」で決まる。ここに区間より短い値を入れると
-   * 「早く着いて、残りは立って待つ」という意味になる */
-  dancerTransitionDurationSeconds?: number | null;
   /** 自由曲線パスの制御点(二次ベジェ)。ステージ座標系(0..stageWidthUnits/
    * 0..stageHeightUnits)。null/undefinedなら前シーンの位置からの直線 */
   curveControlX?: number | null;

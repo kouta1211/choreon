@@ -817,9 +817,6 @@ export const ko = {
     },
     inspector: {
       name: "댄서 이름",
-      ownDuration: "이 댄서만의 이동 시간(초)",
-      /** 目に見える見出し。読み上げ用(ownDuration)とは別に短く置く */
-      ownDurationShort: "이 사람만의 이동 시간",
       seconds: "초",
       focus: "마이 포커스",
       focusOn: "마이 포커스 중",
@@ -836,7 +833,6 @@ export const ko = {
       deleteDescription:
         "이 댄서의 위치와 동선이 모든 장면에서 사라집니다. 삭제는 되돌릴 수 없습니다(이동과 방향은 되돌릴 수 있습니다).",
       deleteMeta: (scenes: number) => `${scenes}개 장면의 위치`,
-      durationFailed: "이동 시간을 바꾸지 못했습니다",
       nameFailed: "댄서 이름을 바꾸지 못했습니다",
       colorFailed: "색을 바꾸지 못했습니다",
       deleteFailed: "댄서를 삭제하지 못했습니다",

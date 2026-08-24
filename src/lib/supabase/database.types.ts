@@ -136,7 +136,6 @@ export type Database = {
           x_coordinate: number;
           y_coordinate: number;
           rotation_angle: number;
-          dancer_transition_duration_seconds: number | null;
           curve_control_x: number | null;
           curve_control_y: number | null;
         };
@@ -146,7 +145,6 @@ export type Database = {
           x_coordinate?: number;
           y_coordinate?: number;
           rotation_angle?: number;
-          dancer_transition_duration_seconds?: number | null;
           curve_control_x?: number | null;
           curve_control_y?: number | null;
         };
@@ -156,7 +154,6 @@ export type Database = {
           x_coordinate?: number;
           y_coordinate?: number;
           rotation_angle?: number;
-          dancer_transition_duration_seconds?: number | null;
           curve_control_x?: number | null;
           curve_control_y?: number | null;
         };

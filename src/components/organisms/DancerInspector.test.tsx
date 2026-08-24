@@ -267,51 +267,6 @@ describe("DancerInspector の置き場所", () => {
 
 /* 実機の報告 17-3。移動がどれも同じ秒数の作品で、1人ぶんの秒数だけ
    置いても比べる相手が無い */
-describe("DancerInspector の秒数（曲もメトロノームも無いとき）", () => {
-  it("この人だけの秒数の欄を出さない", () => {
-    useProjectStore.setState({
-      project: makeProject({ isMetronomeEnabled: false }),
-      dancers: { "dancer-1": makeDancer() },
-      scenes: [makeScene()],
-      positionsBySceneId: { "scene-1": { "dancer-1": makePosition() } },
-    });
-    useUIStore.setState({
-      selectedDancerIds: ["dancer-1"],
-      selectedSceneId: "scene-1",
-    });
-
-    render(
-      <LocaleProvider locale="ja">
-        <DancerInspector />
-      </LocaleProvider>,
-    );
-    expect(screen.queryByLabelText(/この人だけ|秒/)).toBeNull();
-  });
-
-  it("拍があるときは出す", () => {
-    useProjectStore.setState({
-      project: makeProject({ isMetronomeEnabled: true }),
-      dancers: { "dancer-1": makeDancer() },
-      scenes: [makeScene()],
-      positionsBySceneId: { "scene-1": { "dancer-1": makePosition() } },
-    });
-    useUIStore.setState({
-      selectedDancerIds: ["dancer-1"],
-      selectedSceneId: "scene-1",
-    });
-
-    render(
-      <LocaleProvider locale="ja">
-        <DancerInspector />
-      </LocaleProvider>,
-    );
-    expect(screen.getByLabelText(/この人だけ|秒/)).toBeInTheDocument();
-  });
-});
-
-/* 実機の報告 17-7。17-5 で左へ寄せたが、右端へ戻した。名前の長さで位置が
-   動くのは「名前のすぐ隣」に置いたときだけで、ml-auto で右へ寄せれば動かない。
-   吹き出しは右揃えにして、パネルの縁で切れないようにする */
 describe("DancerInspector の操作ボタン", () => {
   function showInspector() {
     useProjectStore.setState({
@@ -381,44 +336,3 @@ describe("DancerInspector の操作ボタン", () => {
  * 項目が表示されてる」。この欄は【時計の絵と数字だけ】で、見出しは
  * 読み上げ用にしか付いていなかった。それが名前のすぐ横に並んでいた。
  */
-describe("この人だけの移動時間の置き場所", () => {
-  /** 拍があると、この欄が出る */
-  function setup() {
-    useProjectStore.setState({
-      project: makeProject({ isMetronomeEnabled: true }),
-      dancers: { "dancer-1": makeDancer() },
-      scenes: [makeScene()],
-      positionsBySceneId: { "scene-1": { "dancer-1": makePosition() } },
-    });
-    useUIStore.setState({
-      selectedDancerIds: ["dancer-1"],
-      selectedSceneId: "scene-1",
-    });
-    render(
-      <LocaleProvider locale="ja">
-        <DancerInspector />
-      </LocaleProvider>,
-    );
-  }
-
-  it("名前と同じ行には置かない", () => {
-    setup();
-
-    const duration = screen.getByLabelText(/このダンサーだけの遷移時間/);
-    const nameRow = screen.getByTestId("dancer-name-row");
-
-    // 名前を直す口（鉛筆）はこの行に居る
-    expect(nameRow.contains(screen.getByLabelText("ダンサー名を変更"))).toBe(
-      true,
-    );
-    // 秒数の欄は居ない
-    expect(nameRow.contains(duration)).toBe(false);
-  });
-
-  /* 時計の絵と数字だけでは、何の秒数なのか読めない */
-  it("目に見える見出しを添える（読み上げ用だけにしない）", () => {
-    setup();
-
-    expect(screen.getByText("この人だけの移動時間")).toBeInTheDocument();
-  });
-});

@@ -12,9 +12,6 @@ function toPosition(row: PositionRow): Position {
     yCoordinate: row.y_coordinate,
     rotationAngle: row.rotation_angle,
     // スキーマが古いSupabaseプロジェクトではrowにこれらのキー自体が
-    // 存在せずundefinedになる(select("*")は実在する列しか返さないため)。
-    // Position型側もoptionalにしてあるので、そのまま渡して問題ない
-    dancerTransitionDurationSeconds: row.dancer_transition_duration_seconds,
     curveControlX: row.curve_control_x,
     curveControlY: row.curve_control_y,
   };
@@ -64,8 +61,6 @@ export async function upsertPositions(
       x_coordinate: position.xCoordinate,
       y_coordinate: position.yCoordinate,
       rotation_angle: position.rotationAngle,
-      dancer_transition_duration_seconds:
-        position.dancerTransitionDurationSeconds,
       curve_control_x: position.curveControlX,
       curve_control_y: position.curveControlY,
     })),
@@ -88,8 +83,6 @@ export async function upsertPosition(
         x_coordinate: position.xCoordinate,
         y_coordinate: position.yCoordinate,
         rotation_angle: position.rotationAngle,
-        dancer_transition_duration_seconds:
-          position.dancerTransitionDurationSeconds,
         curve_control_x: position.curveControlX,
         curve_control_y: position.curveControlY,
       },

@@ -827,9 +827,6 @@ export const en = {
     },
     inspector: {
       name: "Dancer name",
-      ownDuration: "Travel time for this dancer only (s)",
-      /** 目に見える見出し。読み上げ用(ownDuration)とは別に短く置く */
-      ownDurationShort: "Travel time for this dancer",
       seconds: "s",
       focus: "Focus on me",
       focusOn: "Focused",
@@ -846,7 +843,6 @@ export const en = {
       deleteDescription:
         "Their position and paths disappear from every scene. Deleting cannot be undone (moves and facings can be).",
       deleteMeta: (scenes: number) => `positions in ${scenes} scenes`,
-      durationFailed: "Could not change the travel time",
       nameFailed: "Could not rename the dancer",
       colorFailed: "Could not change the colour",
       deleteFailed: "Could not delete the dancer",

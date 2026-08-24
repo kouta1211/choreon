@@ -156,9 +156,7 @@ export function PathTrail({
           x2,
           y2,
           durationSeconds:
-            segment?.dancerTransitionDurationSeconds ??
-            sceneDurationSeconds ??
-            DEFAULT_TRANSITION_DURATION_SECONDS,
+            sceneDurationSeconds ?? DEFAULT_TRANSITION_DURATION_SECONDS,
         },
       ];
     }),

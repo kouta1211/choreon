@@ -84,7 +84,7 @@ export function useSceneWarnings({
         control: hasCurve
           ? { x: to.curveControlX as number, y: to.curveControlY as number }
           : null,
-        seconds: to.dancerTransitionDurationSeconds ?? nextSceneSeconds,
+        seconds: nextSceneSeconds,
       });
     }
     return findCollisions(movers);

@@ -60,7 +60,6 @@ function hydrate(positionOverrides: Partial<Position>[] = []) {
       yCoordinate: 2,
       curveControlX: 20,
       curveControlY: 21,
-      dancerTransitionDurationSeconds: 9,
     },
     {
       sceneId: "scene-3",
@@ -68,7 +67,6 @@ function hydrate(positionOverrides: Partial<Position>[] = []) {
       yCoordinate: 3,
       curveControlX: 30,
       curveControlY: 31,
-      dancerTransitionDurationSeconds: 7,
     },
   ];
   const positions = [...base, ...positionOverrides].map((overrides) =>
@@ -126,7 +124,7 @@ describe("どの行から区間の情報を読むか", () => {
     // シーン1→2 の制御点はシーン2の行にある
     expect(props.curveControlX).toBe(20);
     expect(props.curveControlY).toBe(21);
-    expect(props.transitionDurationSeconds).toBe(9);
+    expect(props.transitionDurationSeconds).toBe(2);
   });
 
   it("1つ戻ったときも、同じ区間の行(さっきまでいたシーン)を読む", () => {
@@ -140,7 +138,7 @@ describe("どの行から区間の情報を読むか", () => {
     // 戻り道も同じ区間なので、シーン2の行の制御点で曲がる
     expect(props.curveControlX).toBe(20);
     expect(props.curveControlY).toBe(21);
-    expect(props.transitionDurationSeconds).toBe(9);
+    expect(props.transitionDurationSeconds).toBe(2);
   });
 
   it("隣り合わないシーンへ飛んだときは、直線で動かす(制御点を渡さない)", () => {
@@ -154,21 +152,14 @@ describe("どの行から区間の情報を読むか", () => {
     expect(props.curveControlY).toBeNull();
   });
 
-  it("ダンサー個別の秒数が無ければ、その区間の長さを使う", () => {
-    hydrate([
-      {
-        sceneId: "scene-2",
-        xCoordinate: 2,
-        yCoordinate: 2,
-        dancerTransitionDurationSeconds: null,
-      },
-    ]);
-    goTo("scene-1");
-    renderLayer();
+  it("移動時間は、いま通っている区間の長さになる", () => {
+    hydrate();
     goTo("scene-2");
+    renderLayer();
+    goTo("scene-3");
 
-    // シーン1(0秒)→シーン2(2秒)なので2秒
-    expect(lastPropsFor("dancer-1").transitionDurationSeconds).toBe(2);
+    // シーン2(2秒)→シーン3(5秒)なので3秒。手前の区間(2秒)ではない
+    expect(lastPropsFor("dancer-1").transitionDurationSeconds).toBe(3);
   });
 });
 

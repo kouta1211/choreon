@@ -126,11 +126,16 @@ create index scenes_project_id_idx on public.scenes (project_id);
 -- ステージサイズはproject単位で可変なため上限はDB側では表現できない
 -- (単純なcheckでは他テーブルの値を参照できないため)。下限(0以上)と
 -- NaN混入の防止だけをDB側の最終防衛ラインとして持たせる
--- dancer_transition_duration_secondsは、このダンサーだけシーンの
--- transition_duration_secondsを上書きしたい場合に使う(null=シーンの既定値)。
 -- curve_control_x/yは自由曲線パス(二次ベジェ)の制御点(null=前シーンの
--- 位置からの直線)。どちらもnullを許容する追加的な列で、既存のnot null列とは
+-- 位置からの直線)。nullを許容する追加的な列で、既存のnot null列とは
 -- 独立している
+--
+-- 「このダンサーだけの移動時間」(dancer_transition_duration_seconds)は
+-- 2026-08-24 に外した。1人ずつ秒数を決めるのは操作が難しく、しかも
+-- 「先に動いて着いてから待つ」という意味だったため、**シーンが持つ
+-- 移動時間**(scenes.transition_duration_seconds)と反対を向いていた。
+-- 同じ秒数が打つ場所で逆の意味になる状態は読めない。
+-- **DBの列を落とすSQLは、シーン側の列を足すSQLと一緒に流す。**
 create table public.positions (
   scene_id uuid not null references public.scenes (id) on delete cascade,
   dancer_id uuid not null references public.dancers (id) on delete cascade,
@@ -140,14 +145,6 @@ create table public.positions (
     check (y_coordinate::float8 >= 0),
   rotation_angle numeric not null default 0
     check (rotation_angle::float8 >= 0 and rotation_angle::float8 < 360),
-  dancer_transition_duration_seconds numeric
-    check (
-      dancer_transition_duration_seconds is null
-      or (
-        dancer_transition_duration_seconds::float8 > 0
-        and dancer_transition_duration_seconds::float8 <= 30
-      )
-    ),
   curve_control_x numeric
     check (curve_control_x is null or curve_control_x::float8 = curve_control_x::float8),
   curve_control_y numeric

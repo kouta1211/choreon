@@ -177,12 +177,12 @@ describe("separateOverlaps", () => {
     expect(change.after.yCoordinate).toBeLessThanOrEqual(10);
   });
 
-  it("ずらしても向きや個別の遷移時間は持ち越す", () => {
+  it("ずらしても向きや曲線の制御点は持ち越す", () => {
     const change = move("a", [5, 5]);
     change.after = {
       ...change.after,
       rotationAngle: 90,
-      dancerTransitionDurationSeconds: 2,
+      curveControlX: 2,
     };
     const [result] = separateOverlaps({
       changes: [change],
@@ -192,6 +192,6 @@ describe("separateOverlaps", () => {
     });
 
     expect(result.after.rotationAngle).toBe(90);
-    expect(result.after.dancerTransitionDurationSeconds).toBe(2);
+    expect(result.after.curveControlX).toBe(2);
   });
 });
