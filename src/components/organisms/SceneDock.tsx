@@ -430,7 +430,12 @@ export function SceneDock({ project }: Props) {
           畳んでいるときは【描かない】 — 高さ0で隠すだけだと、中の
           時間軸が毎フレーム測り直しに走る */}
       {isTimelineVisible && (
-        <div className="mt-2.5">
+        /* 上の余白は、カードの下の余白（pb-gutter）と**同じ段**にする。
+           以前は mt-2.5（10px）で、下が 16px だったので帯が上に寄って
+           見えていた（2026-08-24 に user の指摘で実測）。
+           帯の側はさらに上下 4px を自分で持っている（SceneStrip の
+           pt-1 / pb-1）ので、そちらも足し引きが揃う */
+        <div className="mt-gutter">
           {isOrderOnly ? (
             <SceneStrip project={project} />
           ) : (

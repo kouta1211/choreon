@@ -123,7 +123,10 @@ export function SceneStrip({ project }: Props) {
           /* コマとコマの間隔は【矢印の左右の余白だけ】で決める。ここに
              gap を足すと、矢印の左だけが広くなって間隔がばらばらに
              見える（実機の報告 17-4） */
-          className="flex items-end overflow-x-auto px-0.5 pb-1"
+          /* 上下の 4px は【同じ幅】。横に流れる帯なので、選んだコマの
+             輪郭が overflow で切られないための逃げで、片側だけ空けると
+             帯が上か下に寄って見える */
+          className="flex items-end overflow-x-auto px-0.5 pt-1 pb-1"
         >
           {scenes.map((scene, index) => (
             <SceneStripCard
