@@ -3,7 +3,12 @@ import { render, screen, act } from "@testing-library/react";
 import { DancerLayer } from "./DancerLayer";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
-import { makeDancer, makePosition, makeScene } from "@/test/factories";
+import {
+  makeDancer,
+  makePosition,
+  makeProject,
+  makeScene,
+} from "@/test/factories";
 import type { Position } from "@/features/scene/types";
 
 /**
@@ -71,7 +76,7 @@ function hydrate(positionOverrides: Partial<Position>[] = []) {
   );
 
   useProjectStore.getState().hydrate({
-    project: null,
+    project: makeProject({ stageWidth: 8, stageHeight: 8 }),
     dancers: [makeDancer({ id: "dancer-1" })],
     scenes,
     positions,
