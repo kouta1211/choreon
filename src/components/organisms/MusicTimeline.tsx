@@ -10,7 +10,6 @@ import { useTimelineViewport } from "@/features/music/hooks/useTimelineViewport"
 import { useTimelinePlayhead } from "@/features/music/hooks/useTimelinePlayhead";
 import { useTimelineGestures } from "@/features/music/hooks/useTimelineGestures";
 import { useSceneActions } from "@/features/scene/hooks/useSceneActions";
-import { sceneIndexAtSeconds } from "@/features/music/lib/musicTimeline";
 import {
   axisX,
   contentWidth,
@@ -73,7 +72,6 @@ export function MusicTimeline({ project, audioRef }: Props) {
     (state) => state.thumbnailBySceneId,
   );
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
-  const selectScene = useUIStore((state) => state.selectScene);
   const isPlaying = useUIStore((state) => state.isPlaying);
   const setCurrentTime = useMusicStore((state) => state.setCurrentTime);
   const musicDuration = useMusicStore((state) => state.durationSeconds);
@@ -109,19 +107,27 @@ export function MusicTimeline({ project, audioRef }: Props) {
     isPlaying,
   });
 
-  /** その位置の時刻へ飛ぶ。再生中なら鳴らしたまま飛ぶ */
+  /**
+   * その位置の時刻へ飛ぶ。**動かすのは縦線だけ。**
+   *
+   * ここでシーンを選び直さない（user の指示 2026-08-24:
+   * 「波形をクリックしたら、縦線が変更するだけで、シーンはフォーカス
+   * しないでね」）。**シーンを切り替えるのはコマを触ったときだけ**で、
+   * 帯の地・波形はどこを触っても選択を動かさない。
+   *
+   * 以前はここで `sceneIndexAtSeconds` を引いて選び直していた。
+   * コマは時刻の真上に中心があるので、**コマの左半分を押すと1つ前の
+   * シーンが選ばれる**という形で表に出ていた（実機の報告）。
+   *
+   * 再生中に曲がシーンを進めるのは別の道（useMusicPlayback /
+   * useSilentClock）で、そちらは今までどおり。
+   */
   const seekTo = (seconds: number) => {
     const clamped = Math.max(0, seconds);
     const audio = audioRef.current;
     if (audio) audio.currentTime = offsetSeconds + clamped;
     setCurrentTime(clamped);
     playheadSeconds.set(clamped);
-
-    // その時刻に出ているべき隊形へ合わせる。再生中は曲の側が
-    // シーンを決めているので、そちらに任せる
-    if (isPlaying) return;
-    const scene = scenes[sceneIndexAtSeconds(scenes, clamped)];
-    if (scene) selectScene(scene.id);
   };
 
   const { handlers, snapPreviewSeconds } = useTimelineGestures({
@@ -238,12 +244,9 @@ export function MusicTimeline({ project, audioRef }: Props) {
           stageHeightUnits={project.stageHeight}
           layerX={layerX}
           contentPx={contentPx}
-          /* 選んでから、**そのシーンの時刻ちょうど**へ再生位置を寄せる。
-             以前は帯が「押した位置」へシークしていたが、コマは時刻の
-             真上に中心があるので、左半分を押すと1つ前のシーンが
-             選び直されていた（実機の報告・2026-08-24）。
-             寄せる先を押した位置ではなくシーンの時刻にすれば、
-             どこを押しても同じ所へ着く */
+          /* **シーンを切り替えるのは、ここだけ。**
+             選んでから、そのシーンの時刻ちょうどへ縦線を寄せる。
+             コマのどこを押しても同じ所へ着く（押した位置ではない） */
           onSelect={(scene) => {
             selectSceneManually(scene.id);
             seekTo(scene.timeSeconds);
