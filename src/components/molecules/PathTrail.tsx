@@ -33,6 +33,9 @@ type Props = {
   segmentPositions: Record<string, Position>;
   /** 区間の既定の遷移時間(秒)。ダンサー個別の上書きが無い場合に使う */
   sceneDurationSeconds: number | undefined;
+  /** 動き出すまで止まっている秒数。ダンサーと同じだけ待たないと、
+   * 線だけ先に消えていく（`lib/segmentSplit`）*/
+  holdSeconds?: number;
   dancers: Record<string, Dancer>;
   stageWidthUnits: number;
   stageHeightUnits: number;
@@ -53,6 +56,8 @@ type TrailSegment = {
   x2: number;
   y2: number;
   durationSeconds: number;
+  /** 動き出すまでの待ち。ダンサーの holdSeconds と同じ値 */
+  holdSeconds: number;
 };
 
 /**
@@ -96,6 +101,7 @@ export function PathTrail({
   toPositions,
   segmentPositions,
   sceneDurationSeconds,
+  holdSeconds = 0,
   dancers,
   stageWidthUnits,
   stageHeightUnits,
@@ -157,6 +163,7 @@ export function PathTrail({
           y2,
           durationSeconds:
             sceneDurationSeconds ?? DEFAULT_TRANSITION_DURATION_SECONDS,
+          holdSeconds,
         },
       ];
     }),
@@ -261,6 +268,9 @@ function PathTrailSegment({
 
     const animation = animate(0, 1, {
       duration: resolveTransitionDuration(segment.durationSeconds),
+      // ダンサーが動き出すのを待つ。線だけ先に消えると、
+      // まだ立っている人の足元から導線が無くなる
+      delay: segment.holdSeconds,
       ease: SCENE_TRANSITION_EASE,
       onUpdate: (progress) => {
         element.setAttribute("d", toTrailPathD(segment, mode, progress));

@@ -38,9 +38,13 @@ type Props = {
   onRotateEnd?: (dancerId: string, rotationAngle: number) => void;
   /** フォーカス中に矢印キーを押した時に呼ばれる。Supabase保存はCanvasBoard側に集約する */
   onNudge?: (dancerId: string, dx: number, dy: number) => void;
-  /** シーン切り替え時、位置・向きの補間アニメーションにかける秒数
-   * (選択中シーンのtransitionDurationSeconds)。省略時は0.3秒 */
+  /** シーン切り替え時、位置・向きの補間アニメーションにかける秒数。
+   * 区間まるごとではなく、**動くのに使う秒数**（`lib/segmentSplit`）。
+   * 省略時は0.3秒 */
   transitionDurationSeconds?: number;
+  /** 動き出すまで、この隊形のまま止まっている秒数。
+   * 区間のうち移動に使わない余りがここに来る。省略時は0（すぐ動く） */
+  holdSeconds?: number;
   /** このシーンへ移動してくる際の曲線制御点(ステージ座標系)。
    * PathOverlayが描いている曲線と同じ制御点で、両方揃っている時だけ
    * 曲線に沿って移動する(片方でもnull/undefinedなら直線移動) */
@@ -101,6 +105,7 @@ function DraggableDancerIconImpl({
   onRotateEnd,
   onNudge,
   transitionDurationSeconds = DEFAULT_TRANSITION_DURATION_SECONDS,
+  holdSeconds = 0,
   curveControlX,
   curveControlY: stageCurveControlY,
   excessiveMove = null,
@@ -227,6 +232,7 @@ function DraggableDancerIconImpl({
       : null,
     isDragging,
     transitionDurationSeconds,
+    holdSeconds,
     dimmedOpacity: isDimmed ? 0.3 : 1,
   });
 

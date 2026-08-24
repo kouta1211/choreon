@@ -98,8 +98,8 @@ export type Database = {
           project_id: string;
           name: string;
           order_index: number;
-          transition_duration_seconds: number;
           time_seconds: number;
+          move_seconds: number | null;
           created_at: string;
         };
         Insert: {
@@ -107,8 +107,8 @@ export type Database = {
           project_id: string;
           name: string;
           order_index: number;
-          transition_duration_seconds?: number;
           time_seconds?: number;
+          move_seconds?: number | null;
           created_at?: string;
         };
         Update: {
@@ -116,8 +116,8 @@ export type Database = {
           project_id?: string;
           name?: string;
           order_index?: number;
-          transition_duration_seconds?: number;
           time_seconds?: number;
+          move_seconds?: number | null;
           created_at?: string;
         };
         Relationships: [

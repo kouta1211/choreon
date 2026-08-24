@@ -12,6 +12,7 @@ import {
   useUIStore,
 } from "@/features/canvas/store/useUIStore";
 import { resolvePathSegment } from "@/features/canvas/lib/pathSegment";
+import { splitSegment } from "@/features/scene/lib/segmentSplit";
 import { useTrailPhase } from "@/features/canvas/hooks/useTrailPhase";
 import { useGroupDrag } from "@/features/canvas/hooks/useGroupDrag";
 import { movingWith } from "@/features/canvas/lib/groupMove";
@@ -121,6 +122,24 @@ export function DancerLayer({
     (state) => state.positionsBySceneId[segmentSceneId ?? ""] ?? EMPTY_POSITIONS,
   );
 
+  /* 区間を【キープ】と【移動】に割る。余りは**移動の前**に置かれるので、
+     短くすると【この隊形のまま止まってから、最後に動く】になる。
+     割り方は features/scene/lib/segmentSplit が1本で持つ */
+  const segmentScene = scenes.find((scene) => scene.id === segmentSceneId);
+  const { holdSeconds, moveSeconds } = splitSegment(
+    movingSeconds,
+    segmentScene?.moveSeconds ?? null,
+  );
+
+  /* 【次の】区間の移動時間。速さの警告と衝突の判定はこちらで割る —
+     区間まるごとではなく、実際に動いている秒数で見ないと、
+     キープを長く取った区間で「間に合う」と嘘をつく */
+  const nextScene = scenes.find((scene) => scene.id === nextSceneId);
+  const { moveSeconds: nextMoveSeconds } = splitSegment(
+    nextSceneSeconds,
+    nextScene?.moveSeconds ?? null,
+  );
+
   // 移動の最中は「通った跡」だけ、止まっている間は「区間の線」だけを出す
   const { isTrailAnimating, onTrailComplete } = useTrailPhase({
     selectedSceneId,
@@ -134,7 +153,7 @@ export function DancerLayer({
     positions,
     nextPositions,
     nextSceneId,
-    nextSceneSeconds,
+    nextMoveSeconds,
     isPathVisible,
     isBlindSpotCheckVisible,
   });
@@ -202,7 +221,8 @@ export function DancerLayer({
           fromPositions={previousPositions}
           toPositions={positions}
           segmentPositions={segmentPositions}
-          sceneDurationSeconds={movingSeconds}
+          sceneDurationSeconds={moveSeconds}
+          holdSeconds={holdSeconds}
           dancers={dancers}
           stageWidthUnits={stageWidthUnits}
           stageHeightUnits={stageHeightUnits}
@@ -231,7 +251,8 @@ export function DancerLayer({
             stageHeightUnits={stageHeightUnits}
             onRotateEnd={onRotateEnd}
             onNudge={onNudge}
-            transitionDurationSeconds={movingSeconds}
+            transitionDurationSeconds={moveSeconds}
+            holdSeconds={holdSeconds}
             curveControlX={
               isAdjacentStep ? segmentPosition?.curveControlX : null
             }

@@ -450,3 +450,75 @@ describe("消したあとに見せるシーン", () => {
     expect(useUIStore.getState().selectedSceneId).toBe("scene-2");
   });
 });
+
+/**
+ * 区間を【キープ】と【移動】に割る欄。
+ *
+ * user の指摘（2026-08-24）:「ある程度そのフォーメーションに滞在して、
+ * 一瞬で移動する場合もあると思います」。
+ *
+ * 割り方そのものは純粋関数（`lib/segmentSplit`）が持つ。ここで縛るのは
+ * **そこへ何を渡し、返ってきた値をどこへ出すか** — 今日2回、そこに穴が
+ * あった（`useDancerGrab` と `sceneAfterDelete`）。
+ */
+describe("区間の移動時間", () => {
+  beforeEach(() => {
+    useProjectStore.setState({
+      project: makeProject({ isMetronomeEnabled: true }),
+      scenes: [
+        makeScene({ timeSeconds: 0 }),
+        makeScene({
+          id: "scene-2",
+          name: "シーン2",
+          orderIndex: 1,
+          timeSeconds: 4,
+        }),
+      ],
+    });
+    useUIStore.setState({ selectedSceneId: "scene-2", sceneSelection: null });
+  });
+
+  it("決めていなければ、区間まるごとを使う（キープは0秒）", () => {
+    render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
+    expect(screen.getByText(/うち 0秒 は止まっていて/)).toBeInTheDocument();
+  });
+
+  it("移動時間を短くすると、余りがキープとして出る", () => {
+    useProjectStore.setState((state) => ({
+      scenes: state.scenes.map((scene) =>
+        scene.id === "scene-2" ? { ...scene, moveSeconds: 1 } : scene,
+      ),
+    }));
+    render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
+
+    // 4秒の区間で1秒だけ動く → 3秒は止まっている
+    expect(screen.getByText(/うち 3秒 は止まっていて/)).toBeInTheDocument();
+  });
+
+  it("先頭のシーンには出さない（入ってくる区間が無い）", () => {
+    useUIStore.setState({ selectedSceneId: "scene-1" });
+    render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
+    expect(screen.queryByText(/は止まっていて/)).not.toBeInTheDocument();
+  });
+
+  it("欄に打つと、その秒数が保存される", async () => {
+    const spy = vi
+      .spyOn(scenesApi, "updateSceneMoveSeconds")
+      .mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
+
+    /* label の中に単位の「秒」も入るので、textContent は
+       「…秒数秒」になる。完全一致では外れる */
+    const input = screen.getByLabelText(/この区間で、動くのに使う秒数/);
+    await user.clear(input);
+    await user.type(input, "1.5");
+    await user.tab();
+
+    await waitFor(() => {
+      expect(spy).toHaveBeenCalledWith(expect.anything(), "scene-2", 1.5);
+    });
+    // 画面にも、引き算した残りがその場で出る
+    expect(screen.getByText(/うち 2.5秒 は止まっていて/)).toBeInTheDocument();
+  });
+});

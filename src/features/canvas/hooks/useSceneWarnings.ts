@@ -20,8 +20,10 @@ type Args = {
   nextPositions: PositionsByDancerId;
   /** 次のシーンがあるか。無ければぶつかりようが無い */
   nextSceneId: string | undefined;
-  /** 次のシーンへ移動するのにかかる秒数 */
-  nextSceneSeconds: number;
+  /** 次のシーンへ**動くのに使う**秒数。区間まるごとではなく、
+   * キープを引いたあとの移動のぶん（`lib/segmentSplit`）。
+   * 速さはここで割るので、一瞬で動く指定にすると当然「速すぎます」が出る */
+  nextMoveSeconds: number;
   isPathVisible: boolean;
   isBlindSpotCheckVisible: boolean;
 };
@@ -47,7 +49,7 @@ export function useSceneWarnings({
   positions,
   nextPositions,
   nextSceneId,
-  nextSceneSeconds,
+  nextMoveSeconds,
   isPathVisible,
   isBlindSpotCheckVisible,
 }: Args): {
@@ -56,8 +58,8 @@ export function useSceneWarnings({
   collisions: Map<string, Collision>;
 } {
   const excessiveMoves = useMemo(
-    () => findExcessiveMoves(positions, nextPositions, nextSceneSeconds),
-    [positions, nextPositions, nextSceneSeconds],
+    () => findExcessiveMoves(positions, nextPositions, nextMoveSeconds),
+    [positions, nextPositions, nextMoveSeconds],
   );
 
   const blockedDancerIds = useMemo(
@@ -84,11 +86,11 @@ export function useSceneWarnings({
         control: hasCurve
           ? { x: to.curveControlX as number, y: to.curveControlY as number }
           : null,
-        seconds: nextSceneSeconds,
+        seconds: nextMoveSeconds,
       });
     }
     return findCollisions(movers);
-  }, [isPathVisible, nextSceneId, positions, nextPositions, nextSceneSeconds]);
+  }, [isPathVisible, nextSceneId, positions, nextPositions, nextMoveSeconds]);
 
   return { excessiveMoves, blockedDancerIds, collisions };
 }

@@ -107,6 +107,19 @@ create index dancers_project_id_idx on public.dancers (project_id);
 --
 -- order_indexは時刻が同じときの並びを決めるためだけに残している
 -- (アプリは0.1秒以上空けるので、通常は出番が無い)
+--
+-- move_secondsは「区間のうち、**動くのに使う**秒数」(2026-08-24)。
+-- null なら区間まるごとを使う(=いままでどおり)。区間そのものの長さは
+-- 時刻から決まり、ここでは変えない。**余りは移動の前**に置くので、
+-- 短くすると【この隊形のまま止まってから、最後に動く】になる。
+--
+-- 上の旧 transition_duration_seconds とは別物。あちらは**時刻の代わり**で、
+-- 1つ変えると以降が全部ずれた。こちらは区間の【中】の話しかしていない。
+--
+-- 「滞在時間」は持たない。滞在 = 区間 − 移動 で出るので、2つ持たせると
+-- 足して区間にならない状態を作れてしまう。**保存する正は1つ**にする。
+-- 上限を置かないのは、区間を超える値はアプリ側(splitSegment)が区間まで
+-- 丸めるため。0は許す(一瞬で移動)。
 create table public.scenes (
   id uuid primary key default gen_random_uuid(),
   project_id uuid not null references public.projects (id) on delete cascade,
@@ -114,6 +127,8 @@ create table public.scenes (
   order_index integer not null,
   time_seconds numeric not null default 0
     check (time_seconds::float8 >= 0),
+  move_seconds numeric
+    check (move_seconds is null or move_seconds::float8 >= 0),
   created_at timestamptz not null default now()
 );
 

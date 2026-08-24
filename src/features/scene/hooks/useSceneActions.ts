@@ -7,6 +7,7 @@ import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
 import {
   renameScene as renameSceneApi,
+  updateSceneMoveSeconds,
   updateSceneTimes,
 } from "@/features/scene/api/scenes";
 import type { Scene } from "@/features/scene/types";
@@ -40,6 +41,9 @@ export function useSceneActions() {
   const scenes = useProjectStore((state) => state.scenes);
   const renameScene = useProjectStore((state) => state.renameScene);
   const applySceneTimes = useProjectStore((state) => state.applySceneTimes);
+  const setSceneMoveSeconds = useProjectStore(
+    (state) => state.setSceneMoveSeconds,
+  );
   const selectScene = useUIStore((state) => state.selectScene);
   const setIsPlaying = useUIStore((state) => state.setIsPlaying);
   const showToast = useUIStore((state) => state.showToast);
@@ -168,6 +172,36 @@ export function useSceneActions() {
   };
 
   /**
+   * 区間のうち、**動くのに使う**秒数を変える。null で区間まるごとへ戻す。
+   *
+   * **時刻には触らない。** 変わるのは区間の【中】の割り方だけで、
+   * 次のシーンが来る瞬間は動かない。だから以降のシーンもずれない
+   * （旧 transition_duration_seconds を落とした理由がここに当たらない）。
+   *
+   * 割り方そのものは `lib/segmentSplit` が持つ。余りは**移動の前**に
+   * 置かれるので、短くすると【止まってから、最後に動く】になる。
+   */
+  const changeMoveSeconds = async (
+    scene: Scene,
+    moveSeconds: number | null,
+  ) => {
+    const previous = scene.moveSeconds ?? null;
+    setSceneMoveSeconds(scene.id, moveSeconds);
+
+    try {
+      await persist((supabase) =>
+        updateSceneMoveSeconds(supabase, scene.id, moveSeconds),
+      );
+    } catch (error) {
+      setSceneMoveSeconds(scene.id, previous);
+      showToast({
+        message: toUserMessage(error, t.sceneActions.moveSecondsFailed),
+        type: "error",
+      });
+    }
+  };
+
+  /**
    * 1件だけ消す。**まとめて消すのと同じ道**を通す（`useDeleteScenes`）。
    *
    * 以前はここが自前で持っていて、消したあと**必ず先頭のシーンへ飛んで**
@@ -190,6 +224,7 @@ export function useSceneActions() {
     reorderTo,
     changeSceneTime,
     changeSegmentSeconds,
+    changeMoveSeconds,
     confirmDelete,
     selectSceneManually,
   };

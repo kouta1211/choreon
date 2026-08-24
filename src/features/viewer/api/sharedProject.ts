@@ -54,6 +54,7 @@ type SharedPayload = {
     name: string;
     order_index: number;
     time_seconds: number;
+    move_seconds: number | null;
   }[];
   positions: {
     scene_id: string;
@@ -144,6 +145,7 @@ export async function getSharedProject(
       name: scene.name,
       orderIndex: scene.order_index,
       timeSeconds: scene.time_seconds,
+      moveSeconds: scene.move_seconds,
     })),
     positions: (payload.positions ?? []).map((position) => ({
       sceneId: position.scene_id,

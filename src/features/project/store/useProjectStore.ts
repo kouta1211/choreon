@@ -89,6 +89,8 @@ type ProjectState = {
   removeScene: (sceneId: string) => void;
   renameScene: (sceneId: string, name: string) => void;
   applySceneTimes: (timesById: Map<string, number>) => void;
+  /** そのシーンへ入ってくる区間の「動くのに使う秒数」。null で区間まるごとへ戻す */
+  setSceneMoveSeconds: (sceneId: string, moveSeconds: number | null) => void;
 
   // --- Position ---
   // ドラッグ操作の確定時(dnd-kitのonDragEnd)に1回だけ呼ばれる想定。
@@ -249,6 +251,15 @@ export const useProjectStore = create<ProjectState>((set) => ({
 
   /** 複数シーンの時刻をまとめて差し替える。1つ動かすと隣も動くこと
    * (リップル)があるので、常に一括で受ける */
+  setSceneMoveSeconds: (sceneId, moveSeconds) =>
+    set((state) => ({
+      // 並べ直さない。移動時間は**区間の中**の話で、並び順の正である
+      // 時刻には触らないため（applySceneTimes とはそこが違う）
+      scenes: state.scenes.map((scene) =>
+        scene.id === sceneId ? { ...scene, moveSeconds } : scene,
+      ),
+    })),
+
   applySceneTimes: (timesById) =>
     set((state) => ({
       // 並べ直すのを忘れない。時刻が並び順の正なので、隣を追い越す

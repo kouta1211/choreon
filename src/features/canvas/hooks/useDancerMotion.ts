@@ -25,6 +25,16 @@ type Args = {
    */
   isFollowingGroup: boolean;
   transitionDurationSeconds: number;
+  /**
+   * 動き出すまで、**この隊形のまま止まっている**秒数。
+   *
+   * 区間のうち移動に使わない余りがここに来る（`lib/segmentSplit`）。
+   * 余りを**前**に置くことで、**全員が次のシーンの時刻ちょうどに着く**。
+   *
+   * 動きを減らす設定では縮めない。**止まっていること自体は酔わせない**し、
+   * 拍に合わせて止まる長さは振付そのものだから。縮めるのは移動の側だけ。
+   */
+  holdSeconds: number;
   /** 誰かにフォーカスが当たっている間、自分以外を薄くするための濃さ */
   dimmedOpacity: number;
 };
@@ -55,6 +65,7 @@ export function useDancerMotion({
   isDragging,
   isFollowingGroup,
   transitionDurationSeconds,
+  holdSeconds,
   dimmedOpacity,
 }: Args) {
   const leftPct = useMotionValue(leftPercent);
@@ -128,6 +139,8 @@ export function useDancerMotion({
 
       const curveAnimation = animate(0, 1, {
         duration: resolveTransitionDuration(transitionDurationSeconds),
+        // 動き出すまで止まっている。値は掴まれていないので、そのまま留まる
+        delay: holdSeconds,
         ease: SCENE_TRANSITION_EASE,
         onUpdate: (progress) => {
           leftPct.set(
@@ -149,10 +162,12 @@ export function useDancerMotion({
     const duration = resolveTransitionDuration(transitionDurationSeconds);
     const leftAnimation = animate(leftPct, leftPercent, {
       duration,
+      delay: holdSeconds,
       ease: SCENE_TRANSITION_EASE,
     });
     const topAnimation = animate(topPct, topPercent, {
       duration,
+      delay: holdSeconds,
       ease: SCENE_TRANSITION_EASE,
     });
     return () => {
@@ -166,6 +181,7 @@ export function useDancerMotion({
     leftPct,
     topPct,
     transitionDurationSeconds,
+    holdSeconds,
     controlLeftPercent,
     controlTopPercent,
   ]);

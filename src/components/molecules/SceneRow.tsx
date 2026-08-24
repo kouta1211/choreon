@@ -32,6 +32,8 @@ type Props = {
   onSelect: () => void;
   onRename: (name: string) => void;
   onChangeTime: (seconds: number, ripple: boolean) => void;
+  /** 区間のうち、動くのに使う秒数を変える。null で区間まるごとへ戻す */
+  onChangeMoveSeconds: (moveSeconds: number | null) => void;
   onDelete: () => void;
 };
 
@@ -58,6 +60,7 @@ export function SceneRow({
   onSelect,
   onRename,
   onChangeTime,
+  onChangeMoveSeconds,
   onDelete,
 }: Props) {
   const t = useT();
@@ -212,6 +215,8 @@ export function SceneRow({
               segmentSeconds={segmentSeconds}
               isFirst={index === 0}
               onCommit={onChangeTime}
+              moveSeconds={scene.moveSeconds ?? null}
+              onCommitMoveSeconds={onChangeMoveSeconds}
             />
           )}
           <div className="flex gap-1.5">

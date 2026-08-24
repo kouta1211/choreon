@@ -23,6 +23,7 @@ const BASE = {
   isDragging: false,
   isFollowingGroup: false,
   transitionDurationSeconds: 4,
+  holdSeconds: 0,
   dimmedOpacity: 1,
 };
 
@@ -72,5 +73,51 @@ describe("useDancerMotion の、掴み終わり", () => {
 
     // 4秒かけて動くので、1フレームでは着いていない
     expect(result.current.left.get()).not.toBe("31.25%");
+  });
+});
+
+/**
+ * **キープしてから動く。**
+ *
+ * user の指摘（2026-08-24）:「ある程度そのフォーメーションに滞在して、
+ * 一瞬で移動する場合もあると思います」。
+ *
+ * 区間のうち移動に使わない余りは**移動の前**に置く。そうすると
+ * **全員が次のシーンの時刻ちょうどに着く** — 踊りは拍で隊形を決めるので、
+ * 着地の瞬間が揃っているのが正しい。
+ */
+describe("動き出すまでのキープ", () => {
+  it("キープの間は、まだ元の場所に居る", async () => {
+    const { result, rerender } = renderHook((props) => useDancerMotion(props), {
+      initialProps: { ...BASE, holdSeconds: 5, transitionDurationSeconds: 1 },
+    });
+
+    rerender({
+      ...BASE,
+      holdSeconds: 5,
+      transitionDurationSeconds: 1,
+      leftPercent: 75,
+    });
+    await nextFrame();
+
+    // 5秒待つはずなので、1フレームでは1ミリも動いていない
+    expect(result.current.left.get()).toBe("25%");
+  });
+
+  it("キープが無ければ、その場から動き出す", async () => {
+    const { result, rerender } = renderHook((props) => useDancerMotion(props), {
+      initialProps: { ...BASE, holdSeconds: 0, transitionDurationSeconds: 1 },
+    });
+
+    rerender({
+      ...BASE,
+      holdSeconds: 0,
+      transitionDurationSeconds: 1,
+      leftPercent: 75,
+    });
+    await nextFrame();
+
+    // 動き始めているので、もう始点ではない
+    expect(result.current.left.get()).not.toBe("25%");
   });
 });

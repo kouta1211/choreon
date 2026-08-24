@@ -279,6 +279,9 @@ export const ja = {
       /** 等間隔の帯で、コマとコマの間に出す区間の秒数 */
       segment: (seconds: number) => `→ ${seconds}s`,
       moveSeconds: "前のシーンから何秒で動くか",
+      /** 区間のうち、動く前に止まっている秒数。移動時間の欄の見出し */
+      holdThenMove: (hold: string) => `うち ${hold}秒 は止まっていて、動くのは`,
+      moveSecondsLabel: "この区間で、動くのに使う秒数",
       delete: "削除",
       /** まとめて消すための「選ぶ」モード（一覧の見出しの右） */
       select: "選ぶ",
@@ -555,6 +558,7 @@ export const ja = {
     deleteDescription:
       "このシーンの配置と、ここへ入る導線も一緒に消えます。削除は元に戻せません(移動や向きの変更は戻せます)。",
     deleteMeta: (dancers: number) => `${dancers} 人の配置`,
+    moveSecondsFailed: "移動時間の変更に失敗しました",
     deleteManyTitle: (count: number) => `${count} 件のシーンを削除しますか?`,
     deleteFailed: "シーンの削除に失敗しました",
     remove: (name: string) => `「${name}」を削除`,

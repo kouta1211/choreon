@@ -69,6 +69,7 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
     renameSceneTo,
     reorderTo,
     changeSceneTime,
+    changeMoveSeconds,
     confirmDelete,
     selectSceneManually,
   } = useSceneActions();
@@ -171,6 +172,9 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
               onRename={(name) => renameSceneTo(scene, name)}
               onChangeTime={(seconds, ripple) =>
                 changeSceneTime(scene, seconds, ripple)
+              }
+              onChangeMoveSeconds={(moveSeconds) =>
+                void changeMoveSeconds(scene, moveSeconds)
               }
               onDelete={() => confirmDelete(scene)}
             />

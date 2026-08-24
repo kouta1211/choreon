@@ -254,6 +254,9 @@ export const ko = {
       moveIn: (seconds: number) => ` · ${seconds}s 동안 이동`,
       segment: (seconds: number) => `→ ${seconds}s`,
       moveSeconds: "앞 장면에서 몇 초로 이동할지",
+      /** 이동 전에 대형을 유지하는 시간 */
+      holdThenMove: (hold: string) => `${hold}초 멈춘 뒤, 이동은`,
+      moveSecondsLabel: "이 구간에서 이동에 쓰는 초",
       delete: "삭제",
       /** 한꺼번에 지우기 위한 "선택" 모드(목록 머리글 오른쪽) */
       select: "선택",
@@ -508,6 +511,7 @@ export const ko = {
     deleteDescription:
       "이 장면의 위치와, 여기로 들어오는 동선도 함께 사라집니다. 삭제는 되돌릴 수 없습니다(이동과 방향은 되돌릴 수 있습니다).",
     deleteMeta: (dancers: number) => `${dancers}명의 위치`,
+    moveSecondsFailed: "이동 시간을 바꾸지 못했습니다",
     deleteManyTitle: (count: number) => `장면 ${count}개를 삭제할까요?`,
     deleteFailed: "장면을 삭제하지 못했습니다",
     remove: (name: string) => `'${name}' 삭제`,

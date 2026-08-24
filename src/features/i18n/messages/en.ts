@@ -255,6 +255,9 @@ export const en = {
       moveIn: (seconds: number) => ` · ${seconds}s to get there`,
       segment: (seconds: number) => `→ ${seconds}s`,
       moveSeconds: "Seconds to get here",
+      /** How long the formation is held before the move starts */
+      holdThenMove: (hold: string) => `Holds for ${hold}s, then moves in`,
+      moveSecondsLabel: "Seconds spent moving in this gap",
       delete: "Delete",
       /** The "select" mode for deleting several at once (top of the list) */
       select: "Select",
@@ -510,6 +513,7 @@ export const en = {
     deleteDescription:
       "The positions in this scene go, and so do the paths leading into it. Deleting cannot be undone (moves and facings can be).",
     deleteMeta: (dancers: number) => `positions for ${dancers} dancers`,
+    moveSecondsFailed: "Could not change the move time",
     deleteManyTitle: (count: number) => `Delete ${count} scenes?`,
     deleteFailed: "Could not delete the scene",
     remove: (name: string) => `Delete “${name}”`,

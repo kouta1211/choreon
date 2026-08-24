@@ -73,7 +73,9 @@ export function measureMove(
   const dx = to.xCoordinate - from.xCoordinate;
   const dy = to.yCoordinate - from.yCoordinate;
   const distanceMeters = Math.hypot(dx, dy) * metersPerUnit;
-  // 秒数はDB側で0より大きいことが保証されているが、念のため0除算を避ける
+  /* 0秒（一瞬で移動＝テレポート）が来る。**塞がずに知らせる**方針なので、
+     0.1秒として測って「速すぎます」を出す。押し止めるのではなく、
+     無理な速さであることだけを伝える */
   const safeSeconds = seconds > 0 ? seconds : 0.1;
   const speed = distanceMeters / safeSeconds;
 

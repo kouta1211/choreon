@@ -5,6 +5,8 @@ import { formatClock } from "@/features/scene/lib/clock";
 import { useId, useState, type FocusEvent } from "react";
 import { Clock, MoveRight } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DurationSecondsInput } from "@/components/molecules/DurationSecondsInput";
+import { splitSegment } from "@/features/scene/lib/segmentSplit";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
@@ -16,6 +18,10 @@ type Props = {
   isFirst: boolean;
   /** 時刻を変える。ripple が true なら以降のシーンも同じだけずらす */
   onCommit: (timeSeconds: number, ripple: boolean) => void;
+  /** 区間のうち、動くのに使う秒数。null なら区間まるごと */
+  moveSeconds: number | null;
+  /** 移動時間を変える。null で区間まるごとへ戻す */
+  onCommitMoveSeconds: (moveSeconds: number | null) => void;
   /** 入力欄を作り直す目印(シーンを切り替えたときに前の入力を残さない) */
   fieldKey: string;
 };
@@ -41,11 +47,16 @@ export function SceneTimeField({
   segmentSeconds,
   isFirst,
   onCommit,
+  moveSeconds,
+  onCommitMoveSeconds,
   fieldKey,
 }: Props) {
   const t = useT();
   const inputId = useId();
   const [ripple, setRipple] = useState(false);
+  /* 滞在は持たない。区間から移動を引いて出す — 2つ持たせると、
+     足して区間にならない状態を作れてしまう（lib/segmentSplit） */
+  const split = splitSegment(segmentSeconds, moveSeconds);
 
   const commit = (event: FocusEvent<HTMLInputElement>) => {
     const parsed = parseClock(event.target.value);
@@ -79,13 +90,37 @@ export function SceneTimeField({
         </span>
       </label>
 
-      {/* 移動時間は差として出るだけ。ここを直接いじらせると、
-          「時刻を決める」と「長さを決める」が同じ画面で競合する */}
+      {/* ■ **区間の長さ**は、ここでは変えられない（差として出るだけ）。
+             長さを変えることは時刻を動かすことなので、上の欄の仕事。
+             同じ画面に2つ置くと「時刻を決める」と「長さを決める」が競合する。
+
+          ■ **区間の中の割り方**は、ここで決める（2026-08-24）。
+             移動時間を短くすると、余りは**前**のキープになる。
+             時刻は1ミリも動かないので、上の競合には当たらない。 */}
       {!isFirst && (
-        <p className="flex items-center gap-1.5 text-caption text-fg-muted">
-          <MoveRight size={12} className="shrink-0" />
-          {t.common.travelFromPrevious(String(segmentSeconds))}
-        </p>
+        <div className="flex flex-col gap-1.5">
+          <p className="flex items-center gap-1.5 text-caption text-fg-muted">
+            <MoveRight size={12} className="shrink-0" />
+            {t.common.travelFromPrevious(String(segmentSeconds))}
+          </p>
+          {/* label で囲まない。DurationSecondsInput が自前の label を
+              持っているので、入れ子になって読み上げの結び付きが壊れる */}
+          <div className="flex items-center gap-2">
+            <span className="min-w-0 flex-1 text-caption text-fg-muted">
+              {t.editor.scenes.holdThenMove(String(split.holdSeconds))}
+            </span>
+            <DurationSecondsInput
+              key={fieldKey}
+              label={t.editor.scenes.moveSecondsLabel}
+              value={moveSeconds}
+              onCommit={onCommitMoveSeconds}
+              min={0}
+              max={segmentSeconds}
+              placeholder={String(segmentSeconds)}
+              suffix={t.editor.scenes.seconds}
+            />
+          </div>
+        </div>
       )}
 
       {/* ラベルまで含めて押せる的にする(44px以上)。小さな四角だけを

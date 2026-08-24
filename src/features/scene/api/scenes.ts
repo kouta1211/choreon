@@ -11,6 +11,7 @@ function toScene(row: SceneRow): Scene {
     name: row.name,
     orderIndex: row.order_index,
     timeSeconds: row.time_seconds,
+    moveSeconds: row.move_seconds,
   };
 }
 
@@ -41,6 +42,7 @@ export async function createScene(
       name: scene.name,
       order_index: scene.orderIndex,
       time_seconds: scene.timeSeconds,
+      move_seconds: scene.moveSeconds,
     })
     .select()
     .single();
@@ -66,6 +68,7 @@ export async function createScenes(
         name: scene.name,
         order_index: scene.orderIndex,
         time_seconds: scene.timeSeconds,
+        move_seconds: scene.moveSeconds,
       })),
     )
     .select();
@@ -129,5 +132,19 @@ export async function deleteScenes(
   if (sceneIds.length === 0) return;
 
   const { error } = await supabase.from("scenes").delete().in("id", sceneIds);
+  if (error) throw error;
+}
+
+/** そのシーンの「動くのに使う秒数」。null なら区間まるごとへ戻す */
+export async function updateSceneMoveSeconds(
+  supabase: SupabaseClient<Database>,
+  sceneId: string,
+  moveSeconds: number | null,
+): Promise<void> {
+  const { error } = await supabase
+    .from("scenes")
+    .update({ move_seconds: moveSeconds })
+    .eq("id", sceneId);
+
   if (error) throw error;
 }
