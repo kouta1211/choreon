@@ -256,6 +256,13 @@ export const en = {
       segment: (seconds: number) => `→ ${seconds}s`,
       moveSeconds: "Seconds to get here",
       delete: "Delete",
+      /** The "select" mode for deleting several at once (top of the list) */
+      select: "Select",
+      selectDone: "Done",
+      selectAll: "Select all",
+      selectNone: "Clear",
+      selectHint: "Tap the scenes you want to delete",
+      deleteChecked: (count: number) => `Delete ${count}`,
     },
 
     save: {
@@ -503,6 +510,7 @@ export const en = {
     deleteDescription:
       "The positions in this scene go, and so do the paths leading into it. Deleting cannot be undone (moves and facings can be).",
     deleteMeta: (dancers: number) => `positions for ${dancers} dancers`,
+    deleteManyTitle: (count: number) => `Delete ${count} scenes?`,
     deleteFailed: "Could not delete the scene",
     remove: (name: string) => `Delete “${name}”`,
   },

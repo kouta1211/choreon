@@ -1,11 +1,16 @@
 "use client";
 
-import { DndContext, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import {
+  DndContext,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
 import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Plus } from "lucide-react";
+import { CheckSquare, Plus, Trash2, X } from "lucide-react";
 import { SceneRow } from "@/components/molecules/SceneRow";
 import { sceneDurations } from "@/features/scene/lib/sceneTiming";
 import {
@@ -20,6 +25,7 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { reorderSceneIds } from "@/features/scene/lib/sceneReorder";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
 import { useSceneActions } from "@/features/scene/hooks/useSceneActions";
+import { useDeleteScenes } from "@/features/scene/hooks/useDeleteScenes";
 import type { Project } from "@/features/project/types";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { useT } from "@/features/i18n/LocaleProvider";
@@ -45,6 +51,15 @@ type Props = {
 export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
   const t = useT();
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
+  /* null なら「選ぶ」モードに入っていない。モードと印をひとつの値で持つので、
+     【入っていないのに印だけ残っている】が作れない（useUIStore 参照） */
+  const sceneSelection = useUIStore((state) => state.sceneSelection);
+  const setSceneSelectMode = useUIStore((state) => state.setSceneSelectMode);
+  const toggleSceneChecked = useUIStore((state) => state.toggleSceneChecked);
+  const setSceneChecked = useUIStore((state) => state.setSceneChecked);
+  const deleteScenes = useDeleteScenes();
+  const isSelecting = sceneSelection !== null;
+  const checkedIds = sceneSelection ?? [];
   const scenes = useProjectStore((state) => state.scenes);
   const thumbnailBySceneId = useProjectStore(
     (state) => state.thumbnailBySceneId,
@@ -87,8 +102,50 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
 
   const durations = sceneDurations(scenes);
 
+  const allChecked = scenes.length > 0 && checkedIds.length === scenes.length;
+
   return (
     <div className="flex flex-col gap-2">
+      {/* 「選ぶ」の入口。シーンが1つも無いときは出さない（選ぶ相手が居ない） */}
+      {scenes.length > 0 && (
+        <div className="flex items-center justify-between gap-2 empty:hidden">
+          {isSelecting ? (
+            <>
+              <PressableButton
+                onClick={() =>
+                  setSceneChecked(
+                    allChecked ? [] : scenes.map((scene) => scene.id),
+                  )
+                }
+                className="rounded-lg px-2 py-1 text-label font-medium text-accent"
+              >
+                {allChecked
+                  ? t.editor.scenes.selectNone
+                  : t.editor.scenes.selectAll}
+              </PressableButton>
+              <PressableButton
+                onClick={() => setSceneSelectMode(false)}
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-label font-medium text-fg-sub"
+              >
+                <X size={14} className="shrink-0" />
+                {t.editor.scenes.selectDone}
+              </PressableButton>
+            </>
+          ) : (
+            /* 件数はここに出さない。**外の見出しが既に出している**
+               （EditorSidePanel / SceneListSheet）。2箇所に置くと、
+               片方を直したときに必ず食い違う */
+            <PressableButton
+              onClick={() => setSceneSelectMode(true)}
+              className="flex items-center gap-1 rounded-lg px-2 py-1 text-label font-medium text-fg-sub"
+            >
+              <CheckSquare size={14} className="shrink-0" />
+              {t.editor.scenes.select}
+            </PressableButton>
+          )}
+        </div>
+      )}
+
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <SortableContext
           items={scenes.map((scene) => scene.id)}
@@ -100,11 +157,17 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
               scene={scene}
               index={index}
               isSelected={scene.id === selectedSceneId}
+              isSelecting={isSelecting}
+              isChecked={checkedIds.includes(scene.id)}
               project={project}
               thumbnail={thumbnailBySceneId[scene.id]}
               thumbnailSizePx={thumbnailSizePx}
               segmentSeconds={durations[index]}
-              onSelect={() => selectSceneManually(scene.id)}
+              onSelect={() =>
+                isSelecting
+                  ? toggleSceneChecked(scene.id)
+                  : selectSceneManually(scene.id)
+              }
               onRename={(name) => renameSceneTo(scene, name)}
               onChangeTime={(seconds, ripple) =>
                 changeSceneTime(scene, seconds, ripple)
@@ -115,15 +178,30 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
         </SortableContext>
       </DndContext>
 
-      <PressableButton
-        onClick={addScene}
-        disabled={isCreating || !canAdd}
-        title={canAdd ? undefined : t.editor.dock.addSceneNeedsPlayback}
-        className="flex h-13 items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong text-label font-medium whitespace-nowrap text-fg-sub disabled:opacity-50"
-      >
-        <Plus size={15} className="shrink-0" />
-        {t.editor.copyCurrent}
-      </PressableButton>
+      {isSelecting ? (
+        /* 選んでいる間は、足す口を出さない。ここで足せると
+           「消しに来たのに増えた」が起きる */
+        <PressableButton
+          onClick={() => deleteScenes(checkedIds)}
+          disabled={checkedIds.length === 0}
+          className="flex h-13 items-center justify-center gap-1.5 rounded-xl border border-red-950 bg-surface text-label font-medium whitespace-nowrap text-red-400 disabled:opacity-50"
+        >
+          <Trash2 size={15} className="shrink-0" />
+          {checkedIds.length === 0
+            ? t.editor.scenes.selectHint
+            : t.editor.scenes.deleteChecked(checkedIds.length)}
+        </PressableButton>
+      ) : (
+        <PressableButton
+          onClick={addScene}
+          disabled={isCreating || !canAdd}
+          title={canAdd ? undefined : t.editor.dock.addSceneNeedsPlayback}
+          className="flex h-13 items-center justify-center gap-1.5 rounded-xl border border-dashed border-line-strong text-label font-medium whitespace-nowrap text-fg-sub disabled:opacity-50"
+        >
+          <Plus size={15} className="shrink-0" />
+          {t.editor.copyCurrent}
+        </PressableButton>
+      )}
     </div>
   );
 }

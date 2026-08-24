@@ -6,7 +6,6 @@ import { useHistoryStore } from "@/features/canvas/store/useHistoryStore";
 import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
 import {
-  deleteScene,
   renameScene as renameSceneApi,
   updateSceneTimes,
 } from "@/features/scene/api/scenes";
@@ -17,6 +16,7 @@ import {
   uniformTimes,
   retimeScene,
 } from "@/features/scene/lib/sceneTiming";
+import { useDeleteScenes } from "@/features/scene/hooks/useDeleteScenes";
 import { useT } from "@/features/i18n/LocaleProvider";
 import { useOrderOnlyTimeline } from "@/features/scene/hooks/useOrderOnlyTimeline";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
@@ -38,17 +38,13 @@ export function useSceneActions() {
     (state) => state.defaultSegmentSeconds,
   );
   const scenes = useProjectStore((state) => state.scenes);
-  const positionsBySceneId = useProjectStore(
-    (state) => state.positionsBySceneId,
-  );
-  const removeScene = useProjectStore((state) => state.removeScene);
   const renameScene = useProjectStore((state) => state.renameScene);
   const applySceneTimes = useProjectStore((state) => state.applySceneTimes);
   const selectScene = useUIStore((state) => state.selectScene);
   const setIsPlaying = useUIStore((state) => state.setIsPlaying);
   const showToast = useUIStore((state) => state.showToast);
   const pushHistory = useHistoryStore((state) => state.push);
-  const requestConfirm = useUIStore((state) => state.requestConfirm);
+  const deleteScenes = useDeleteScenes();
 
   const renameSceneTo = async (scene: Scene, name: string) => {
     const previousName = scene.name;
@@ -171,39 +167,15 @@ export function useSceneActions() {
     }
   };
 
+  /**
+   * 1件だけ消す。**まとめて消すのと同じ道**を通す（`useDeleteScenes`）。
+   *
+   * 以前はここが自前で持っていて、消したあと**必ず先頭のシーンへ飛んで**
+   * いた。1件と複数で「消したあとどこを見るか」の規則が分かれると、
+   * 必ず片方が取り残される（.claude/rules/state.md 6節）。
+   */
   const confirmDelete = (scene: Scene) => {
-    // このシーンに何人ぶんの配置が入っているかを数えて見せる
-    const dancerCount = Object.keys(positionsBySceneId[scene.id] ?? {}).length;
-
-    requestConfirm({
-      title: t.sceneActions.deleteTitle(scene.name),
-      description: t.sceneActions.deleteDescription,
-      meta: [t.sceneActions.deleteMeta(dancerCount)],
-      onConfirm: async () => {
-        try {
-          await persist((supabase) => deleteScene(supabase, scene.id));
-          removeScene(scene.id);
-          const remaining = scenes.filter((s) => s.id !== scene.id);
-          selectScene(remaining[0]?.id ?? null);
-          /* 順番だけで作っているときは、消したぶんの穴を詰める。
-             詰めないと、そこだけ移動に2倍の時間がかかる。**画面には
-             秒数が出ない**ので、再生してみるまで気づけない */
-          if (isOrderOnly) {
-            await commitTimes(
-              uniformTimes(
-                remaining.map((item) => item.id),
-                defaultSegmentSeconds,
-              ),
-            );
-          }
-        } catch (error) {
-          showToast({
-            message: toUserMessage(error, t.sceneActions.deleteFailed),
-            type: "error",
-          });
-        }
-      },
-    });
+    deleteScenes([scene.id]);
   };
 
   // 再生中に手動でシーンを選んだら再生を止める(取りこぼしのない一貫した

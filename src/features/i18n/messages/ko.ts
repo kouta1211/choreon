@@ -255,6 +255,13 @@ export const ko = {
       segment: (seconds: number) => `→ ${seconds}s`,
       moveSeconds: "앞 장면에서 몇 초로 이동할지",
       delete: "삭제",
+      /** 한꺼번에 지우기 위한 "선택" 모드(목록 머리글 오른쪽) */
+      select: "선택",
+      selectDone: "완료",
+      selectAll: "전체 선택",
+      selectNone: "선택 해제",
+      selectHint: "삭제할 장면을 누르세요",
+      deleteChecked: (count: number) => `${count}개 삭제`,
     },
 
     save: {
@@ -501,6 +508,7 @@ export const ko = {
     deleteDescription:
       "이 장면의 위치와, 여기로 들어오는 동선도 함께 사라집니다. 삭제는 되돌릴 수 없습니다(이동과 방향은 되돌릴 수 있습니다).",
     deleteMeta: (dancers: number) => `${dancers}명의 위치`,
+    deleteManyTitle: (count: number) => `장면 ${count}개를 삭제할까요?`,
     deleteFailed: "장면을 삭제하지 못했습니다",
     remove: (name: string) => `'${name}' 삭제`,
   },

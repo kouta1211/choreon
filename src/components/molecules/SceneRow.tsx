@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Trash2 } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { SceneThumbnail } from "@/components/molecules/SceneThumbnail";
 import { InlineEditableText } from "@/components/molecules/InlineEditableText";
 import { SceneTimeField } from "@/components/molecules/SceneTimeField";
@@ -20,6 +20,10 @@ type Props = {
   scene: Scene;
   index: number;
   isSelected: boolean;
+  /** 「選ぶ」モードに入っているか。入っている間、行は消す相手を決める場所になる */
+  isSelecting: boolean;
+  /** 消す相手として印が付いているか（モードに入っていないときは常に false） */
+  isChecked: boolean;
   project: Project;
   thumbnail: string | undefined;
   thumbnailSizePx: number;
@@ -45,6 +49,8 @@ export function SceneRow({
   scene,
   index,
   isSelected,
+  isSelecting,
+  isChecked,
   project,
   thumbnail,
   thumbnailSizePx,
@@ -102,12 +108,33 @@ export function SceneRow({
       className={`touch-manipulation cursor-pointer overflow-hidden rounded-xl ${
         isDragging ? "relative z-10 opacity-70" : ""
       } ${isJustAdded ? "scene-row-added" : ""} ${
-        isSelected
+        /* 「印が付いている」と「いま見ている」は別のこと。
+           選ぶモードの間は**印の方**を強く見せる — 決めているのは
+           消す相手であって、どこを見ているかではない */
+        isChecked
           ? "border-2 border-accent bg-accent-row"
-          : "border border-line bg-surface-raised"
+          : isSelected && !isSelecting
+            ? "border-2 border-accent bg-accent-row"
+            : "border border-line bg-surface-raised"
       }`}
     >
       <div className="flex items-center gap-2.5 p-2.5">
+        {isSelecting && (
+          /* 見た目だけ。押す相手は行そのもの（ここにボタンを置くと、
+             升の外を押したときだけ何も起きない、という当たり外れができる） */
+          <span
+            aria-hidden
+            data-testid="scene-check"
+            data-checked={isChecked}
+            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
+              isChecked
+                ? "border-accent bg-accent text-white"
+                : "border-line-strong"
+            }`}
+          >
+            {isChecked && <Check size={13} strokeWidth={3} />}
+          </span>
+        )}
         <SceneThumbnail
           scene={scene}
           thumbnail={thumbnail}
@@ -117,32 +144,43 @@ export function SceneRow({
           onClick={onSelect}
           sizePx={thumbnailSizePx}
           showGrid
-          onDelete={onDelete}
+          onDelete={isSelecting ? undefined : onDelete}
           // 名前と番号はカードの右側に別レイアウトで組むため、
           // ミニチュア側の見出しは出さない
         />
         <div className="min-w-0 flex-1">
           {/* keyにシーンIDを渡して、並び替えなどで行が入れ替わった
               ときに編集中の入力欄が別のシーンへ持ち越されないようにする */}
-          <InlineEditableText
-            key={scene.id}
-            value={scene.name}
-            onCommit={onRename}
-            label={t.editor.scenes.sceneName}
-            textClassName={
-              isSelected ? "text-sm font-semibold" : "text-sm font-medium"
-            }
-            prefix={
-              <span
-                className={`shrink-0 font-mono text-caption font-semibold ${
-                  isSelected ? "text-accent-soft" : "text-fg-muted"
-                }`}
-              >
+          {/* 選ぶモードの間、名前は**押せない字**にする。押すと編集が
+              始まってしまうと、行のどこを押しても印が付く、が崩れる */}
+          {isSelecting ? (
+            <p className="flex items-center gap-1.5 truncate text-sm font-medium">
+              <span className="shrink-0 font-mono text-caption font-semibold text-fg-muted">
                 {String(index + 1).padStart(2, "0")}
               </span>
-            }
-            fullWidth
-          />
+              <span className="truncate">{scene.name}</span>
+            </p>
+          ) : (
+            <InlineEditableText
+              key={scene.id}
+              value={scene.name}
+              onCommit={onRename}
+              label={t.editor.scenes.sceneName}
+              textClassName={
+                isSelected ? "text-sm font-semibold" : "text-sm font-medium"
+              }
+              prefix={
+                <span
+                  className={`shrink-0 font-mono text-caption font-semibold ${
+                    isSelected ? "text-accent-soft" : "text-fg-muted"
+                  }`}
+                >
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+              }
+              fullWidth
+            />
+          )}
           {/* 「表示中」の札は出さない(実機の報告 17-4)。選んでいる行は
               敷き色と番号の色で既に分かるので、文字で言うと二重になる。
               順番だけで作っているときは、この行ごと出さない
@@ -162,7 +200,7 @@ export function SceneRow({
 
       {/* 時刻と複製・削除は選択中の行にだけ出す。
           全行に並べると一覧として読めなくなる */}
-      {isSelected && (
+      {isSelected && !isSelecting && (
         <div className="flex flex-col gap-2 px-2.5 pb-2.5">
           {/* 合わせる相手（曲・拍）が無いときは、時刻も移動時間も出さない。
               移動はどれも同じ秒数なので、シーンごとに言うことが無い

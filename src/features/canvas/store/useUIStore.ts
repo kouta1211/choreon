@@ -54,6 +54,18 @@ type UIState = {
    * (DancerLayerが読み取る) */
   previousSceneId: string | null;
   /**
+   * シーンの「選ぶ」モード。**null ならモードに入っていない。**
+   *
+   * ■ なぜ selectedSceneId とは別なのか
+   * `selectedSceneId` は「**いま見ているシーン**」で、ステージはこれを
+   * 描いている。ダンサーのように並びへ変えると、何を描けばよいのか
+   * 決まらなくなる。**消す相手として印を付けた**シーンは、別の入れ物で持つ。
+   *
+   * モードとひとつの値にしてあるのは、【入っていないのに印だけ残っている】
+   * を作れなくするため。モードを出れば印もまとめて消える。
+   */
+  sceneSelection: string[] | null;
+  /**
    * 選んでいるダンサー。**選んだ順**に並ぶ（空なら未選択）。
    *
    * 1人だけだったものを並びにしたのは、「前列4人をまとめて1マス下げる」を
@@ -152,6 +164,12 @@ type UIState = {
   authDialogMode: "login" | "signup" | null;
 
   selectScene: (sceneId: string | null) => void;
+  /** シーンの「選ぶ」モードに入る/出る。出るときは印も落とす */
+  setSceneSelectMode: (on: boolean) => void;
+  /** 印を付ける/外す。モードに入っていなければ何もしない */
+  toggleSceneChecked: (sceneId: string) => void;
+  /** まとめて印を付け直す（全部を選ぶ / 全部を外す） */
+  setSceneChecked: (sceneIds: string[]) => void;
   /** その人だけを選ぶ。null で解除 */
   selectDancer: (dancerId: string | null) => void;
   /** 選びに足す/外す（修飾キーを押しながらのクリック） */
@@ -263,6 +281,7 @@ export function selectPrimaryDancerId(state: UIState): string | null {
 export const useUIStore = create<UIState>((set, get) => ({
   selectedSceneId: null,
   previousSceneId: null,
+  sceneSelection: null,
   selectedDancerIds: [],
   // 3つの既定値は viewPreference が持つ。サーバーで描くHTMLと最初の
   // ブラウザ描画を一致させるため、ここでは必ず既定から始め、
@@ -299,6 +318,24 @@ export const useUIStore = create<UIState>((set, get) => ({
         ? {}
         : { selectedSceneId: sceneId, previousSceneId: state.selectedSceneId },
     ),
+  setSceneSelectMode: (on) => set({ sceneSelection: on ? [] : null }),
+
+  toggleSceneChecked: (sceneId) =>
+    set((state) => {
+      if (state.sceneSelection === null) return {};
+      const checked = state.sceneSelection.includes(sceneId);
+      return {
+        sceneSelection: checked
+          ? state.sceneSelection.filter((id) => id !== sceneId)
+          : [...state.sceneSelection, sceneId],
+      };
+    }),
+
+  setSceneChecked: (sceneIds) =>
+    set((state) =>
+      state.sceneSelection === null ? {} : { sceneSelection: sceneIds },
+    ),
+
   selectDancer: (dancerId) =>
     set({ selectedDancerIds: dancerId === null ? [] : [dancerId] }),
 

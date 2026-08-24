@@ -280,6 +280,13 @@ export const ja = {
       segment: (seconds: number) => `→ ${seconds}s`,
       moveSeconds: "前のシーンから何秒で動くか",
       delete: "削除",
+      /** まとめて消すための「選ぶ」モード（一覧の見出しの右） */
+      select: "選ぶ",
+      selectDone: "やめる",
+      selectAll: "全部を選ぶ",
+      selectNone: "全部を外す",
+      selectHint: "消したいシーンを押してください",
+      deleteChecked: (count: number) => `${count}件を削除`,
     },
 
     save: {
@@ -548,6 +555,7 @@ export const ja = {
     deleteDescription:
       "このシーンの配置と、ここへ入る導線も一緒に消えます。削除は元に戻せません(移動や向きの変更は戻せます)。",
     deleteMeta: (dancers: number) => `${dancers} 人の配置`,
+    deleteManyTitle: (count: number) => `${count} 件のシーンを削除しますか?`,
     deleteFailed: "シーンの削除に失敗しました",
     remove: (name: string) => `「${name}」を削除`,
   },
