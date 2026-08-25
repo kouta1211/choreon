@@ -1,0 +1,288 @@
+/**
+ * **拍と秒の写像**。振付は拍で持ち、秒はここから毎回導く。
+ *
+ * ■ なぜ拍が正なのか（2026-08-25）
+ * 振付は**カウントで組み、最後に曲へ載せる**。載せ方を変えても
+ * （曲を差し替える・伸ばして合わせ直す）**振付の中身は1つも変わらない**
+ * のが正しい。秒を正にすると、載せ直すたびに隊形が音からずれる。
+ *
+ * ■ 配列で持つ理由
+ * 要素が1つでも配列にしておく。**テンポが変わる曲**は、振付を区切って
+ * 別々に載せる形で表す（変わり目ごとに1要素）。ここを単数で始めると、
+ * 増やすときに**保存済みの全作品を移行することになる**。
+ *
+ * ■ `atSeconds` は【作品の時間】で測る
+ * `music_offset_seconds` を引いた後の秒。既存の再生系は
+ * `audio.currentTime = music_offset_seconds + 作品の時間` なので、
+ * ここを作品の時間に揃えておくと**再生の側に一切触らずに済む**。
+ *
+ * ⚠️ `music_offset_seconds` は「曲の再生開始位置」の意味だけ持つ。
+ * 拍の原点はこちらが引き取る（列を分けたり意味を変えたりしない）。
+ */
+
+import {
+  DEFAULT_BPM,
+  MAX_BPM,
+  MIN_BPM,
+} from "@/features/music/lib/metronomePreference";
+import { secondsPerBeat } from "@/features/music/lib/metronome";
+
+/** 拍→秒の写像。1つの区間ぶん */
+export type Placement = {
+  /** この載せ方が効き始める拍。最初の要素は 0 */
+  fromBeat: number;
+  /** その拍が【作品の時間の】何秒目か */
+  atSeconds: number;
+  /** 1拍の長さ（秒）。**0以下は許さない** */
+  secondsPerBeat: number;
+};
+
+/** 曲を入れていない作品の既定。BPM 120 = 1拍 0.5秒 */
+export const DEFAULT_PLACEMENTS: readonly Placement[] = [
+  { fromBeat: 0, atSeconds: 0, secondsPerBeat: secondsPerBeat(DEFAULT_BPM) },
+];
+
+/**
+ * 秒の丸め。`sceneTiming` の中の丸めと同じ桁。
+ *
+ * **写像そのものでは丸めない。** 丸めると `拍 → 秒 → 拍` の往復が
+ * ずれ、繰り返すたびに積もる。丸めるのは**画面へ出す秒を作るときだけ**
+ * （`withDerivedTimes` と `durationSeconds`）。
+ */
+function roundSeconds(value: number): number {
+  return Math.round(value * 1000) / 1000;
+}
+
+/**
+ * **外から来た値の門番。** `music_placements` は jsonb なので、
+ * DB は中身を守ってくれない。
+ *
+ * `secondsPerBeat` に 0 が1つ入るだけで、**全シーンの秒が `Infinity` になり、
+ * 画面はシーンが1つも無いように見える**。壊れて見えないので気づけない。
+ *
+ * @param fallbackBpm 何も取れなかったときに使う速さ（作品の `bpm`）
+ */
+export function normalizePlacements(
+  raw: unknown,
+  fallbackBpm: number = DEFAULT_BPM,
+): Placement[] {
+  const fallback: Placement[] = [
+    {
+      fromBeat: 0,
+      atSeconds: 0,
+      secondsPerBeat: secondsPerBeat(clampBpm(fallbackBpm)),
+    },
+  ];
+  if (!Array.isArray(raw)) return fallback;
+
+  const parsed = raw
+    .map(toPlacement)
+    .filter((item): item is Placement => item !== null)
+    // 効き始める拍の順に並べ直す。降順で来ても答えを変えない
+    .sort((a, b) => a.fromBeat - b.fromBeat);
+
+  if (parsed.length === 0) return fallback;
+  // 先頭は必ず 0 から。手前に隙間があると、そこの拍を写せない
+  return [{ ...parsed[0], fromBeat: 0 }, ...parsed.slice(1)];
+}
+
+function toPlacement(raw: unknown): Placement | null {
+  if (raw === null || typeof raw !== "object") return null;
+  const item = raw as Record<string, unknown>;
+  const fromBeat = finite(item.fromBeat);
+  const atSeconds = finite(item.atSeconds);
+  const perBeat = finite(item.secondsPerBeat);
+  if (fromBeat === null || atSeconds === null || perBeat === null) return null;
+  // 1拍の長さが0以下だと、拍と秒の対応が付かない
+  if (perBeat <= 0) return null;
+  return { fromBeat, atSeconds, secondsPerBeat: perBeat };
+}
+
+function finite(value: unknown): number | null {
+  const num = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(num) ? num : null;
+}
+
+function clampBpm(bpm: number): number {
+  if (!Number.isFinite(bpm)) return DEFAULT_BPM;
+  return Math.min(MAX_BPM, Math.max(MIN_BPM, bpm));
+}
+
+/** その拍を含む区間。**先頭より手前の拍も先頭の区間で写す**
+ *  （1カウント目より前に置かれた隊形は、負の秒になるのが正しい） */
+function placementAtBeat(
+  placements: readonly Placement[],
+  beat: number,
+): Placement {
+  let found = placements[0];
+  for (const item of placements) {
+    if (item.fromBeat <= beat) found = item;
+    else break;
+  }
+  return found;
+}
+
+/** その秒を含む区間 */
+function placementAtSeconds(
+  placements: readonly Placement[],
+  seconds: number,
+): Placement {
+  let found = placements[0];
+  for (const item of placements) {
+    if (item.atSeconds <= seconds) found = item;
+    else break;
+  }
+  return found;
+}
+
+/** 拍 → 作品の時間（秒） */
+export function secondsAtBeat(
+  placements: readonly Placement[],
+  beat: number,
+): number {
+  const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
+  const at = placementAtBeat(list, beat);
+  return at.atSeconds + (beat - at.fromBeat) * at.secondsPerBeat;
+}
+
+/** 作品の時間（秒） → 拍 */
+export function beatAtSeconds(
+  placements: readonly Placement[],
+  seconds: number,
+): number {
+  const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
+  const at = placementAtSeconds(list, seconds);
+  return at.fromBeat + (seconds - at.atSeconds) / at.secondsPerBeat;
+}
+
+/**
+ * 拍で測った長さを、秒の長さへ直す。
+ *
+ * **差で定義する。** 区間の途中で載せ方が変わると「1拍が何秒か」は
+ * 1つに決まらないので、`長さ = 終わりの秒 − 始まりの秒` として出す。
+ *
+ * @param endBeat 区間の終わりの拍（＝次のシーンの位置）
+ * @param beats その手前へ何拍ぶんか
+ */
+export function durationSeconds(
+  placements: readonly Placement[],
+  endBeat: number,
+  beats: number,
+): number {
+  return roundSeconds(
+    secondsAtBeat(placements, endBeat) -
+      secondsAtBeat(placements, endBeat - beats),
+  );
+}
+
+/** 秒の長さを、拍の長さへ直す（`durationSeconds` の逆） */
+export function durationBeats(
+  placements: readonly Placement[],
+  endBeat: number,
+  seconds: number,
+): number {
+  return endBeat - beatAtSeconds(placements, secondsAtBeat(placements, endBeat) - seconds);
+}
+
+/** 拍を持つもの。`Scene` そのものに依存しない（テストしやすさのため） */
+type Beated = { positionBeats: number; moveBeats?: number | null };
+/** 派生させた秒を載せたもの */
+type Timed = { timeSeconds: number; moveSeconds: number | null };
+
+/**
+ * **派生した秒を載せる。作る口はここ1つだけ。**
+ *
+ * `scene.timeSeconds` を直接読む所が34ファイルある。それらを凍結したまま
+ * 正を拍へ移すために、**メモリ上の `Scene` には秒を載せ続ける**。
+ * 作る場所が散ると、必ずどこかが「拍を持たないシーン」を作る
+ * （`.claude/rules/state.md` 6節）。
+ *
+ * `moveSeconds` は**区間の長さ**なので、`durationSeconds` で差から出す。
+ */
+export function withDerivedTimes<T extends Beated>(
+  scenes: readonly T[],
+  placements: readonly Placement[],
+): (T & Timed)[] {
+  const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
+  return scenes.map((scene) => ({
+    ...scene,
+    timeSeconds: roundSeconds(secondsAtBeat(list, scene.positionBeats)),
+    moveSeconds:
+      scene.moveBeats == null
+        ? null
+        : durationSeconds(list, scene.positionBeats, scene.moveBeats),
+  }));
+}
+
+/**
+ * 秒で来た変更を、拍へ直す。
+ *
+ * `updateSceneTimes` を呼ぶ所が4つあり、**それぞれで換算を書くと必ず
+ * どこかが取り残される**。通り道を1本にするためのもの。
+ */
+export function beatsForTimes(
+  timesById: ReadonlyMap<string, number>,
+  placements: readonly Placement[],
+): Map<string, number> {
+  const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
+  const beats = new Map<string, number>();
+  for (const [id, seconds] of timesById) {
+    beats.set(id, beatAtSeconds(list, seconds));
+  }
+  return beats;
+}
+
+/**
+ * **秒はそのまま。拍を数え直す。**（BPM スライダーの意味・2026-08-25 に決定）
+ *
+ * 「1拍の長さ」の見立てだけを変える操作。シーンは1つも動かないので、
+ * 変わるのは「何カウント目か」の数え方と、拍線の間隔だけ。
+ *
+ * ⚠️ **`restretch` と取り違えない。** あちらは拍を保って秒を動かす。
+ * 同じ引数で正反対の結果になるので、名前で見分ける。
+ */
+export function regrid<T extends Beated & { id: string }>(
+  scenes: readonly T[],
+  placements: readonly Placement[],
+  nextSecondsPerBeat: number,
+): { placements: Placement[]; beatsById: Map<string, number> } {
+  const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
+  if (!Number.isFinite(nextSecondsPerBeat) || nextSecondsPerBeat <= 0) {
+    return { placements: [...list], beatsById: new Map() };
+  }
+
+  /* 数え直したあとの載せ方は1本にまとめる。区切りは「曲へ載せた」結果
+     であって、物差しを変えただけで区切りが増えるのはおかしい */
+  const next: Placement[] = [
+    { fromBeat: 0, atSeconds: list[0].atSeconds, secondsPerBeat: nextSecondsPerBeat },
+  ];
+
+  const beatsById = new Map<string, number>();
+  for (const scene of scenes) {
+    const seconds = secondsAtBeat(list, scene.positionBeats);
+    beatsById.set(scene.id, beatAtSeconds(next, seconds));
+  }
+  return { placements: next, beatsById };
+}
+
+/**
+ * **拍はそのまま。秒を伸ばす。**（曲へ載せる操作。第3段で使う）
+ *
+ * ⚠️ **`regrid` と取り違えない。** こちらは隊形が音の上で動く。
+ */
+export function restretch(
+  placements: readonly Placement[],
+  nextSecondsPerBeat: number,
+): Placement[] {
+  const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
+  if (!Number.isFinite(nextSecondsPerBeat) || nextSecondsPerBeat <= 0) {
+    return [...list];
+  }
+  return list.map((item) => ({ ...item, secondsPerBeat: nextSecondsPerBeat }));
+}
+
+/** いまの物差しを BPM で読む。**古い列や、音を鳴らす側へ渡すため** */
+export function bpmOf(placements: readonly Placement[]): number {
+  const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
+  return clampBpm(60 / list[0].secondsPerBeat);
+}
