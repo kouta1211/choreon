@@ -171,7 +171,6 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
               project={project}
               thumbnail={thumbnailBySceneId[scene.id]}
               thumbnailSizePx={thumbnailSizePx}
-              segmentSeconds={durations[index]}
               outgoing={outgoing}
               onSelect={() =>
                 isSelecting

@@ -248,15 +248,21 @@ export const ko = {
       summary: (count: number, seconds: number) =>
         `${count}개 · 합계 ${seconds}s`,
       summaryCount: (count: number) => `${count}개`,
-      moveIn: (seconds: number) => ` · ${seconds}s 동안 이동`,
+      /** 목록 행에 표시하는 **다음 장면으로 나가는** 구간.
+       *  아래의 유지／이동과 같은 구간이어야 한다 */
+      moveOut: (seconds: number) => ` · 다음까지 ${seconds}s`,
       segment: (seconds: number) => `→ ${seconds}s`,
-      moveSeconds: "앞 장면에서 몇 초로 이동할지",
-      /** 이동 전에 대형을 유지하는 시간 */
       /** 구간을 둘로 나누는 칸의 머리글. 어느 쪽이든 입력할 수 있다 */
       hold: "유지",
       holdLabel: "이 대형 그대로 멈춰 있는 초",
       move: "이동",
       moveSecondsLabel: "다음 장면으로 이동하는 데 쓰는 초",
+      /** 나누고 있는 구간의 길이. 막대 위에 덧붙인다 */
+      segmentTotal: (seconds: number) => `구간 ${seconds}초`,
+      /** 막대 본체. 왼쪽이 유지, 오른쪽이 이동 */
+      splitBar: "유지와 이동의 경계",
+      splitBarValue: (hold: number, move: number) =>
+        `유지 ${hold}초, 이동 ${move}초`,
       delete: "삭제",
       /** 한꺼번에 지우기 위한 "선택" 모드(목록 머리글 오른쪽) */
       select: "선택",

@@ -5,6 +5,7 @@ import { formatClock } from "@/features/scene/lib/clock";
 import { useId, type FocusEvent } from "react";
 import { Clock } from "lucide-react";
 import { DurationSecondsInput } from "@/components/molecules/DurationSecondsInput";
+import { SegmentSplitBar } from "@/components/atoms/SegmentSplitBar";
 import {
   moveSecondsForHold,
   splitSegment,
@@ -102,6 +103,22 @@ export function SceneTimeField({
              時刻は1ミリも動かないので、上の競合には当たらない。 */}
       {outgoing !== null && (
         <div className="flex flex-col gap-1.5">
+          {/* **割っている区間の長さを出す**（2026-08-25、user の求め）。
+              滞在＋移動＝区間なので数としては言い直しだが、**打つ前に
+              読める所に無いと、user が毎回引き算する**ことになっていた。
+              バーと合わせて「4秒の枠を、どこで割るか」が1目で分かる */}
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-caption text-fg-muted">
+              {t.editor.scenes.segmentTotal(segmentSeconds)}
+            </span>
+          </div>
+          <SegmentSplitBar
+            segmentSeconds={segmentSeconds}
+            holdSeconds={split.holdSeconds}
+            moveSeconds={split.moveSeconds}
+            stepSeconds={stepSeconds}
+            onCommit={onCommitMoveSeconds}
+          />
           {/* **どちらにも打てる。** 足すと必ず区間になるので、片方を
               打てばもう片方が動く。保存しているのは移動の側1つだけ
               （2つ保存すると、足して区間にならない状態を作れてしまう）。

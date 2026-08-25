@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SceneList } from "./SceneList";
 import { ConfirmDialog } from "@/components/organisms/ConfirmDialog";
@@ -575,6 +575,76 @@ describe("区間の移動時間", () => {
     // 60 / 150 = 0.4秒
     expect(holdInput()).toHaveAttribute("step", "0.4");
     expect(moveInput()).toHaveAttribute("step", "0.4");
+  });
+
+  /* ここからバー（2026-08-25）。純粋関数（lib/segmentBar）は境目の計算しか
+     守っていない。**バーが正しい区間の長さを渡しているか**と
+     **書き込む先が次のシーンか**は、こちら側でしか見えない */
+  describe("区間バー", () => {
+    /** jsdom は幅を持たないので、200px の帯として答えさせる */
+    function widenBar(): HTMLElement {
+      const bar = screen.getByTestId("segment-split-bar");
+      bar.getBoundingClientRect = () =>
+        ({
+          left: 0,
+          top: 0,
+          right: 200,
+          bottom: 10,
+          width: 200,
+          height: 10,
+          x: 0,
+          y: 0,
+          toJSON: () => ({}),
+        }) as DOMRect;
+      bar.setPointerCapture = vi.fn();
+      return bar;
+    }
+
+    it("割っている区間の長さを出す", () => {
+      render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
+      expect(screen.getByText("区間 4秒")).toBeInTheDocument();
+    });
+
+    /* **区間の長さを渡し違えていないか。** 4秒の区間の 3/4 の所を
+       押したとき、答えが 1 になるのは区間が 4 のときだけ */
+    it("引いて離すと、その割り方が【次のシーン】へ保存される", () => {
+      const spy = vi
+        .spyOn(scenesApi, "updateSceneMoveSeconds")
+        .mockResolvedValue(undefined);
+      render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
+
+      const bar = widenBar();
+      fireEvent.pointerDown(bar, { pointerId: 1, clientX: 150 });
+      fireEvent.pointerUp(bar, { pointerId: 1, clientX: 150 });
+
+      // 開いているのは scene-1 だが、書き換わるのは scene-2。
+      // 200px のうち 150px まで待つ → 滞在3秒・移動1秒
+      expect(spy).toHaveBeenCalledWith(expect.anything(), "scene-2", 1);
+    });
+
+    /* **刻みを渡し違えていないか。** 1拍が 0.4秒の作品で右キーを1回
+       押すと、滞在 0 → 0.4秒。既定の 120（0.5秒）を直に読んでいたら
+       3.5 になって落ちる */
+    it("矢印キーの刻みは、その作品の1拍ぶんになる", () => {
+      const spy = vi
+        .spyOn(scenesApi, "updateSceneMoveSeconds")
+        .mockResolvedValue(undefined);
+      const project = makeProject({ isMetronomeEnabled: true, bpm: 150 });
+      useProjectStore.setState({ project });
+      render(<SceneList project={project} />);
+
+      fireEvent.keyDown(screen.getByTestId("segment-split-bar"), {
+        key: "ArrowRight",
+      });
+
+      expect(spy).toHaveBeenCalledWith(expect.anything(), "scene-2", 3.6);
+    });
+
+    it("最後のシーンには出さない（出ていく先が無い）", () => {
+      useUIStore.setState({ selectedSceneId: "scene-2" });
+      render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
+      expect(screen.queryByTestId("segment-split-bar")).toBeNull();
+    });
   });
 
   it("キープの欄を空にすると、区間まるごとへ戻す（null を保存する）", async () => {

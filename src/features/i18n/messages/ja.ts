@@ -272,16 +272,23 @@ export const ja = {
         `${count}件 · 合計 ${seconds}s`,
       /** 順番だけで作っているとき。合計の秒数は出さない */
       summaryCount: (count: number) => `${count}件`,
-      moveIn: (seconds: number) => ` · ${seconds}s で移動`,
+      /** 一覧の行に出す、**次のシーンへ出ていく**区間の秒数。
+       *  下に出している滞在／移動と同じ区間でなければならない
+       *  （2026-08-25 まで、ここだけ入ってくる側を出していた） */
+      moveOut: (seconds: number) => ` · 次へ ${seconds}s`,
       /** 等間隔の帯で、コマとコマの間に出す区間の秒数 */
       segment: (seconds: number) => `→ ${seconds}s`,
-      moveSeconds: "前のシーンから何秒で動くか",
-      /** 区間のうち、動く前に止まっている秒数。移動時間の欄の見出し */
       /** 区間を2つに割る欄の見出し。どちらにも打てる */
       hold: "滞在",
       holdLabel: "この隊形のまま止まっている秒数",
       move: "移動",
       moveSecondsLabel: "次のシーンへ動くのに使う秒数",
+      /** 割っている区間の長さ。バーの上に添える */
+      segmentTotal: (seconds: number) => `区間 ${seconds}秒`,
+      /** 区間バー本体。左が滞在、右が移動 */
+      splitBar: "滞在と移動の境目",
+      splitBarValue: (hold: number, move: number) =>
+        `滞在 ${hold}秒、移動 ${move}秒`,
       delete: "削除",
       /** まとめて消すための「選ぶ」モード（一覧の見出しの右） */
       select: "選ぶ",

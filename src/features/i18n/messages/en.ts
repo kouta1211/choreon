@@ -249,15 +249,21 @@ export const en = {
       summary: (count: number, seconds: number) =>
         `${count} scenes · ${seconds}s in total`,
       summaryCount: (count: number) => `${count} scenes`,
-      moveIn: (seconds: number) => ` · ${seconds}s to get there`,
+      /** The gap **out to the next scene**, shown on the row.
+       *  Must be the same gap as the hold/move fields below it */
+      moveOut: (seconds: number) => ` · ${seconds}s to the next`,
       segment: (seconds: number) => `→ ${seconds}s`,
-      moveSeconds: "Seconds to get here",
-      /** How long the formation is held before the move starts */
       /** Labels for the two halves of the gap. Either one can be typed in */
       hold: "Hold",
       holdLabel: "Seconds this formation stays still",
       move: "Move",
       moveSecondsLabel: "Seconds spent moving to the next scene",
+      /** The length of the gap being split. Sits above the bar */
+      segmentTotal: (seconds: number) => `Gap ${seconds}s`,
+      /** The bar itself. Hold on the left, move on the right */
+      splitBar: "Where the hold ends and the move begins",
+      splitBarValue: (hold: number, move: number) =>
+        `Hold ${hold}s, move ${move}s`,
       delete: "Delete",
       /** The "select" mode for deleting several at once (top of the list) */
       select: "Select",

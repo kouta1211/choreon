@@ -29,8 +29,6 @@ type Props = {
   project: Project;
   thumbnail: string | undefined;
   thumbnailSizePx: number;
-  /** このシーンへ**入ってくる**のにかかる秒数。行の見出しの札に出すだけ */
-  segmentSeconds: number;
   /** このシーンから**次のシーンへ出ていく**区間。最後のシーンは null。
    * 引くのは `lib/outgoingSegment` — ここへ条件を書き足さない */
   outgoing: OutgoingSegment | null;
@@ -62,7 +60,6 @@ export function SceneRow({
   project,
   thumbnail,
   thumbnailSizePx,
-  segmentSeconds,
   outgoing,
   onSelect,
   onRename,
@@ -202,7 +199,11 @@ export function SceneRow({
               }`}
             >
               {formatClock(scene.timeSeconds)}
-              {index > 0 && t.editor.scenes.moveIn(segmentSeconds)}
+              {/* **出ていく側**の区間を出す（2026-08-25）。
+                  すぐ下の 滞在／移動 と同じ区間でなければ、
+                  1つの行が2つの区間の話をすることになる。
+                  最後のシーンには行き先が無いので出さない */}
+              {outgoing !== null && t.editor.scenes.moveOut(outgoing.segmentSeconds)}
             </span>
           )}
         </div>
