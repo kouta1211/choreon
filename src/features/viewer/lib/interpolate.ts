@@ -13,6 +13,7 @@
 
 import { easeOutProgress } from "@/features/canvas/lib/collision";
 import { quadraticBezierAt } from "@/features/canvas/lib/curvePath";
+import { splitSegment } from "@/features/scene/lib/segmentSplit";
 import type { Position, Scene } from "@/features/scene/types";
 
 export type PositionsBySceneId = Record<string, Record<string, Position>>;
@@ -24,7 +25,18 @@ export type InterpolatedPosition = {
   rotationAngle: number;
 };
 
-/** その時刻を挟む2つのシーンと、区間内の進み具合(0〜1) */
+/**
+ * その時刻を挟む2つのシーンと、区間内の進み具合(0〜1)。
+ *
+ * ■ **区間の割り方に従う**(2026-08-25)
+ * 区間はまるごと移動に使うとは限らない。`move_seconds` が決まっていれば、
+ * **余りは移動の前**に置かれる —【この隊形のまま止まっている → 最後に動く】。
+ * 作る側(`DancerLayer`)は前からそうしていたのに、ここは区間をそのまま
+ * 線で割っていたので、**同じ作品が作る画面と見る画面で違う動きをしていた**。
+ *
+ * `move_seconds` を持つのは**行き先のシーン**(`to`)。区間は行き先に
+ * 付いている、という数え方は `lib/outgoingSegment` と同じ。
+ */
 export function sceneSpanAt(
   scenes: Scene[],
   seconds: number,
@@ -42,7 +54,18 @@ export function sceneSpanAt(
   if (!to) return { from, to: null, progress: 0 };
 
   const span = to.timeSeconds - from.timeSeconds;
-  const raw = span > 0 ? (seconds - from.timeSeconds) / span : 1;
+  if (span <= 0) return { from, to, progress: 1 };
+
+  const { holdSeconds, moveSeconds } = splitSegment(span, to.moveSeconds ?? null);
+  const elapsed = seconds - from.timeSeconds;
+  /* 止まっているあいだは 0 のまま。移動が 0秒(一瞬で動く)なら、
+     区間の終わりに着くまで 0 で、そこで 1 へ飛ぶ */
+  const raw =
+    elapsed < holdSeconds
+      ? 0
+      : moveSeconds > 0
+        ? (elapsed - holdSeconds) / moveSeconds
+        : 1;
   return { from, to, progress: Math.min(1, Math.max(0, raw)) };
 }
 
