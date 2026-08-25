@@ -4,6 +4,10 @@ import type { Project, ProjectSummary } from "@/features/project/types";
 import { listPositionsByScenes } from "@/features/scene/api/positions";
 import { totalSeconds } from "@/features/scene/lib/sceneTiming";
 import { DEFAULT_BPM } from "@/features/music/lib/metronomePreference";
+import {
+  normalizePlacements,
+  type Placement,
+} from "@/features/music/lib/placement";
 import { nextAvailableTitle } from "@/features/project/lib/projectTitle";
 
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
@@ -26,6 +30,12 @@ function toProject(row: ProjectRow): Project {
     beatsPerBar: row.beats_per_bar ?? 4,
     // メトロノームの列を足す前のDBには無い。鳴らさない側へ落とす
     isMetronomeEnabled: row.is_metronome_enabled ?? false,
+    // 拍→秒の写像。**壊れた値をここで弾く** — jsonb なので DB は中身を
+    // 守らない。列がまだ無い DB では、その作品の bpm から作る
+    musicPlacements: normalizePlacements(
+      row.music_placements,
+      row.bpm ?? DEFAULT_BPM,
+    ),
     // 共有リンクを足す前のスキーマのままのDBには、この2つの列がまだ無い。
     // トークンが無ければ共有の口は出せないので null / false に落とす
     shareToken: row.share_token ?? null,
@@ -95,6 +105,26 @@ export async function updateProjectBpm(
   const { error } = await supabase
     .from("projects")
     .update({ bpm })
+    .eq("id", projectId);
+
+  if (error && error.code !== "PGRST204") throw error;
+}
+
+/**
+ * **拍→秒の写像**を保存する。BPMと同じく、列がまだ無いDBでは黙って流す。
+ *
+ * ここが変わると、シーンの拍はそのままでも**画面に出る秒が全部動く**
+ * （曲へ載せ直したとき）。逆に BPM スライダーは秒を動かさない側で、
+ * あちらは拍を数え直す（`placement.ts` の `regrid` / `restretch`）。
+ */
+export async function updateMusicPlacements(
+  supabase: SupabaseClient<Database>,
+  projectId: string,
+  placements: Placement[],
+): Promise<void> {
+  const { error } = await supabase
+    .from("projects")
+    .update({ music_placements: placements })
     .eq("id", projectId);
 
   if (error && error.code !== "PGRST204") throw error;

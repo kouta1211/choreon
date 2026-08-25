@@ -111,7 +111,7 @@ describe("SceneStrip の並び替え", () => {
 
   it("コマを掴んで動かすと、その順番で確定する", async () => {
     const update = vi
-      .spyOn(scenesApi, "updateSceneTimes")
+      .spyOn(scenesApi, "updateSceneBeats")
       .mockResolvedValue(undefined);
     show();
     layOutCards();

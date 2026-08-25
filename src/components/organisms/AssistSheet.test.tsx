@@ -343,7 +343,7 @@ describe("AssistSheet", () => {
   });
 
   it("移動に時間を足すときも、秒数はアプリが決める", async () => {
-    vi.spyOn(scenesApi, "updateSceneTimes").mockResolvedValue(undefined);
+    vi.spyOn(scenesApi, "updateSceneBeats").mockResolvedValue(undefined);
     // 0,1 → 8,1（7.2m）を 0.6秒。歩ける速さなら4秒
     setUp({
       positions: { blocked: position("blocked", 0, 1) },

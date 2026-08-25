@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { nextSceneName } from "./sceneName";
 import type { Scene } from "@/features/scene/types";
+import { makeScene } from "@/test/factories";
 
 const sceneName = (index: number) => `シーン${index}`;
 
 function scenes(...names: string[]): Scene[] {
-  return names.map((name, index) => ({
+  return names.map((name, index) => makeScene({
     id: `s${index}`,
     projectId: "p",
     name,

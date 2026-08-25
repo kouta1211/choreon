@@ -6,12 +6,14 @@ import {
   type HistoryEntry,
   type StageSizeChange,
 } from "@/features/canvas/store/useHistoryStore";
+import type { SceneTimeChange } from "@/features/canvas/store/useHistoryStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { upsertPositions } from "@/features/scene/api/positions";
-import { updateSceneTimes } from "@/features/scene/api/scenes";
+import { updateSceneBeats } from "@/features/scene/api/scenes";
+import { DEFAULT_PLACEMENTS } from "@/features/music/lib/placement";
 import { updateStageSize } from "@/features/project/api/projects";
 import { useT } from "@/features/i18n/LocaleProvider";
 
@@ -30,7 +32,10 @@ export function useHistoryActions() {
   const updateDancerPosition = useProjectStore(
     (state) => state.updateDancerPosition,
   );
-  const applySceneTimes = useProjectStore((state) => state.applySceneTimes);
+  const applySceneBeats = useProjectStore((state) => state.applySceneBeats);
+  const placements = useProjectStore(
+    (state) => state.project?.musicPlacements ?? DEFAULT_PLACEMENTS,
+  );
   const setStageSize = useProjectStore((state) => state.setStageSize);
   const selectScene = useUIStore((state) => state.selectScene);
   const setIsPlaying = useUIStore((state) => state.setIsPlaying);
@@ -44,34 +49,35 @@ export function useHistoryActions() {
    */
   const applyTimes = useCallback(
     async (
-      changes: { sceneId: string; before: number; after: number }[],
+      changes: SceneTimeChange[],
       direction: "undo" | "redo",
     ) => {
       const pick = (change: (typeof changes)[number]) =>
-        direction === "undo" ? change.before : change.after;
+        direction === "undo" ? change.beforeBeats : change.afterBeats;
       const revert = (change: (typeof changes)[number]) =>
-        direction === "undo" ? change.after : change.before;
+        direction === "undo" ? change.afterBeats : change.beforeBeats;
 
       const toMap = (
         take: (change: (typeof changes)[number]) => number,
       ): Map<string, number> =>
         new Map(changes.map((change) => [change.sceneId, take(change)]));
 
-      applySceneTimes(toMap(pick));
+      applySceneBeats(toMap(pick));
 
       try {
         await persist((supabase) =>
-          updateSceneTimes(
+          updateSceneBeats(
             supabase,
             changes.map((change) => ({
               id: change.sceneId,
-              timeSeconds: pick(change),
+              positionBeats: pick(change),
             })),
+            placements,
           ),
         );
         return true;
       } catch (error) {
-        applySceneTimes(toMap(revert));
+        applySceneBeats(toMap(revert));
         showToast({
           message: toUserMessage(
             error,
@@ -82,7 +88,7 @@ export function useHistoryActions() {
         return false;
       }
     },
-    [applySceneTimes, showToast, t],
+    [applySceneBeats, placements, showToast, t],
   );
 
   /**

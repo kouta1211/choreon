@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position, Scene } from "@/features/scene/types";
+import { sortScenes } from "@/features/scene/lib/sceneTiming";
 import type { Project } from "@/features/project/types";
 import type { PositionsBySceneId } from "@/features/viewer/lib/interpolate";
 import {
@@ -117,15 +118,21 @@ export const useViewerStore = create<ViewerState>((set, get) => ({
       saveFocusedDancerId(project.id, requestedDancerId);
     }
 
+    /* **並べ直す。** ここは渡された順をそのまま信じていて、並び順の正が
+       共有用の関数の `order by` に外注されていた。関数の差し替えと
+       アプリのデプロイは同時に起きないので、その隙間で並びが壊れる。
+       作る側は `applySceneTimes` が必ず `sortScenes` を通している */
+    const sorted = sortScenes(scenes);
+
     set({
       project,
       hasMusic: hasMusic ?? project.musicTitle !== null,
       dancers,
-      scenes,
+      scenes: sorted,
       positionsBySceneId,
       focusedDancerId,
       hasChosen: focusedDancerId !== null,
-      currentSeconds: scenes[0]?.timeSeconds ?? 0,
+      currentSeconds: sorted[0]?.timeSeconds ?? 0,
     });
   },
 

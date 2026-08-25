@@ -21,6 +21,13 @@ import type { Position, Scene } from "@/features/scene/types";
  */
 
 /** 形が変わったら上げる。古い版は読まずに断る */
+import {
+  beatAtSeconds,
+  durationBeats,
+  normalizePlacements,
+  type Placement,
+} from "@/features/music/lib/placement";
+
 export const BACKUP_VERSION = 1;
 
 export type Backup = {
@@ -36,9 +43,29 @@ export type Backup = {
     | "bpm"
     | "beatsPerBar"
     | "isMetronomeEnabled"
+    | "musicPlacements"
   >;
   dancers: Pick<Dancer, "id" | "name" | "color" | "initialDirection">[];
-  scenes: Pick<Scene, "id" | "name" | "orderIndex" | "timeSeconds">[];
+  /**
+   * **拍で書き出す**（2026-08-25）。秒で書き出すと、別の載せ方の作品へ
+   * 取り込んだときに隊形が音からずれる。
+   *
+   * `timeSeconds` も一緒に書くのは、**古いアプリでも取り込めるようにする**
+   * ため。読むときは拍があれば拍を、無ければ秒から換算する。
+   *
+   * `moveSeconds` / `moveBeats` は**これまで書き出していなかった**。
+   * 書き出して取り込むと、滞在／移動の割り方が全部消えていた（既存の不具合）。
+   */
+  scenes: Pick<
+    Scene,
+    | "id"
+    | "name"
+    | "orderIndex"
+    | "timeSeconds"
+    | "positionBeats"
+    | "moveSeconds"
+    | "moveBeats"
+  >[];
   positions: Position[];
 };
 
@@ -60,6 +87,7 @@ export function buildBackup(input: {
       musicOffsetSeconds: input.project.musicOffsetSeconds,
       bpm: input.project.bpm,
       beatsPerBar: input.project.beatsPerBar,
+      musicPlacements: input.project.musicPlacements,
     },
     dancers: input.dancers.map((dancer) => ({
       id: dancer.id,
@@ -71,7 +99,11 @@ export function buildBackup(input: {
       id: scene.id,
       name: scene.name,
       orderIndex: scene.orderIndex,
+      positionBeats: scene.positionBeats,
+      moveBeats: scene.moveBeats ?? null,
+      // 古いアプリでも取り込めるように、秒も一緒に書く
       timeSeconds: scene.timeSeconds,
+      moveSeconds: scene.moveSeconds ?? null,
     })),
     positions: input.positions,
   };
@@ -107,10 +139,13 @@ export function parseBackup(raw: string, words: BackupWords): Backup {
   }
 
   const record = parsed as Record<string, unknown>;
-  if (record.version !== BACKUP_VERSION) {
-    throw new BackupFormatError(
-      words.wrongVersion,
-    );
+  /* **版を上げない。** 上げると、この例外を受けた `loadGuestDraft` が
+     `forgetGuestDraft()` を呼び、**未ログインの下書きが全員ぶん消える**。
+     項目を足すときは、古いファイルでも読める形にして版は据え置く
+     （欠けた項目は下で補う）。新しすぎるファイルだけを弾く */
+  const version = Number(record.version);
+  if (!Number.isFinite(version) || version > BACKUP_VERSION) {
+    throw new BackupFormatError(words.wrongVersion);
   }
 
   const project = record.project as Backup["project"] | undefined;
@@ -139,11 +174,51 @@ export function parseBackup(raw: string, words: BackupWords): Backup {
       musicOffsetSeconds: Number(project.musicOffsetSeconds) || 0,
       bpm: Number(project.bpm) || 120,
       beatsPerBar: Number(project.beatsPerBar) || 4,
+      /* 書き換えられたファイルも来る外部入力。門番を通す */
+      musicPlacements: normalizePlacements(
+        project.musicPlacements,
+        Number(project.bpm) || 120,
+      ),
     },
     dancers: record.dancers as Backup["dancers"],
-    scenes: record.scenes as Backup["scenes"],
+    /* **拍が無い古いファイル**は、その作品の物差しで秒から換算する */
+    scenes: withBackfilledBeats(
+      record.scenes as Backup["scenes"],
+      normalizePlacements(project.musicPlacements, Number(project.bpm) || 120),
+    ),
     positions: record.positions as Position[],
   };
+}
+
+
+/**
+ * 拍を持たない古い書き出しを、その作品の物差しで埋める。
+ *
+ * **秒しか無いファイルを読めなくしない。** 版を上げれば弾けるが、
+ * それをすると未ログインの下書きまで消える（`parseBackup` の注記）。
+ */
+function withBackfilledBeats(
+  scenes: Backup["scenes"],
+  placements: Placement[],
+): Backup["scenes"] {
+  if (!Array.isArray(scenes)) return [];
+  return scenes.map((scene) => {
+    const positionBeats =
+      typeof scene.positionBeats === "number" && Number.isFinite(scene.positionBeats)
+        ? scene.positionBeats
+        : beatAtSeconds(placements, Number(scene.timeSeconds) || 0);
+    const moveSeconds =
+      typeof scene.moveSeconds === "number" && Number.isFinite(scene.moveSeconds)
+        ? scene.moveSeconds
+        : null;
+    const moveBeats =
+      typeof scene.moveBeats === "number" && Number.isFinite(scene.moveBeats)
+        ? scene.moveBeats
+        : moveSeconds === null
+          ? null
+          : durationBeats(placements, positionBeats, moveSeconds);
+    return { ...scene, positionBeats, moveBeats, moveSeconds };
+  });
 }
 
 /** 保存するときのファイル名。作品名をそのまま使う */

@@ -1,3 +1,5 @@
+import type { Placement } from "@/features/music/lib/placement";
+
 export type Project = {
   id: string;
   userId: string;
@@ -24,6 +26,17 @@ export type Project = {
    * 見える」が成り立たなかった。音源は共有しないが、クリックは BPM と
    * 拍子から合成できるので共有できる */
   isMetronomeEnabled: boolean;
+  /**
+   * **拍→秒の写像**（2026-08-25）。シーンの位置は拍で持ち、
+   * 画面に出す秒はここから毎回導く（`features/music/lib/placement.ts`）。
+   *
+   * 要素が1つでも配列。**テンポが変わる曲**は、変わり目ごとに1要素で表す。
+   * `atSeconds` は【作品の時間】で測る（`musicOffsetSeconds` を引いた後）。
+   *
+   * 読むときは必ず `normalizePlacements` を通す — jsonb なので
+   * DB は中身を守らない。
+   */
+  musicPlacements: Placement[];
   /**
    * 共有リンクの合鍵。**持ち主の画面にしか入らない**
    * (共有リンクで開いた人には返さない。合鍵をそのまま配ることになるため)。

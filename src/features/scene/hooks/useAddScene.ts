@@ -7,7 +7,14 @@ import { canAddScene } from "@/features/scene/lib/canAddScene";
 import { findFreePositions } from "@/features/dancer/lib/newDancers";
 import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
-import { createScene, updateSceneTimes } from "@/features/scene/api/scenes";
+import { createScene, updateSceneBeats } from "@/features/scene/api/scenes";
+import {
+  beatAtSeconds,
+  beatsForTimes,
+  DEFAULT_PLACEMENTS,
+  sameBeat,
+  withDerivedTimes,
+} from "@/features/music/lib/placement";
 import { upsertPositions } from "@/features/scene/api/positions";
 import type { Project } from "@/features/project/types";
 import { randomId } from "@/lib/randomId";
@@ -54,7 +61,10 @@ export function useAddScene(project: Project) {
   const [isCreating, setIsCreating] = useState(false);
   const scenes = useProjectStore((state) => state.scenes);
   const addScene = useProjectStore((state) => state.addScene);
-  const applySceneTimes = useProjectStore((state) => state.applySceneTimes);
+  const applySceneBeats = useProjectStore((state) => state.applySceneBeats);
+  const placements = useProjectStore(
+    (state) => state.project?.musicPlacements ?? DEFAULT_PLACEMENTS,
+  );
   const removeScene = useProjectStore((state) => state.removeScene);
   const updateDancerPosition = useProjectStore(
     (state) => state.updateDancerPosition,
@@ -129,7 +139,13 @@ export function useAddScene(project: Project) {
       // 並び順の正は時刻。order_index は同じ時刻に並んだときの
       // 打ち消し合いを防ぐためだけに残っている
       orderIndex: scenes.length,
-      timeSeconds,
+      /* **正は拍。** 秒は載せ方から作る（`withDerivedTimes`）。
+         ここでリテラルに秒だけ書くと、追加した1つだけが拍を持たない
+         シーンになる（ストアは並べ直すだけで派生を作らない口もある） */
+      ...withDerivedTimes(
+        [{ positionBeats: beatAtSeconds(placements, timeSeconds), moveBeats: null }],
+        placements,
+      )[0],
     };
     /* 隊形は**いま見ているシーンから写す**。だから「足す」は
        「この隊形をもう一枚」でもある（複製という別の口は要らなかった） */
@@ -168,10 +184,13 @@ export function useAddScene(project: Project) {
           }));
 
     // 楽観的更新: 先にローカルへ反映し、保存に失敗したら取り消す
-    const previousTimes = new Map(
-      scenes.map((item) => [item.id, item.timeSeconds]),
+    const previousBeats = new Map(
+      scenes.map((item) => [item.id, item.positionBeats]),
     );
-    if (restacked) applySceneTimes(restacked);
+    const restackedBeats = restacked
+      ? beatsForTimes(restacked, placements)
+      : null;
+    if (restackedBeats) applySceneBeats(restackedBeats);
     addScene(scene);
     for (const position of copiedPositions) {
       updateDancerPosition(scene.id, position.dancerId, position);
@@ -190,27 +209,35 @@ export function useAddScene(project: Project) {
 
     try {
       await persist(async (supabase) => {
-        await createScene(supabase, scene);
+        await createScene(supabase, scene, placements);
         await upsertPositions(supabase, copiedPositions);
         // 押しのけたぶんも同じ往復で送る。片方だけ通ると、画面と
         // 保存されているものがずれたまま気づけない
-        if (restacked) {
+        if (restackedBeats) {
           // 押し出したぶんも同じ往復で送る。片方だけ通ると、画面と
-          // 保存されているものがずれたまま気づけない
-          await updateSceneTimes(
+          // 保存されているものがずれたまま気づけない。
+          // **拍で比べる** — 秒は派生値なので等号が当てにならない
+          await updateSceneBeats(
             supabase,
             scenes
-              .filter((item) => restacked.get(item.id) !== item.timeSeconds)
+              .filter(
+                (item) =>
+                  !sameBeat(
+                    restackedBeats.get(item.id) ?? item.positionBeats,
+                    item.positionBeats,
+                  ),
+              )
               .map((item) => ({
                 id: item.id,
-                timeSeconds: restacked.get(item.id)!,
+                positionBeats: restackedBeats.get(item.id)!,
               })),
+            placements,
           );
         }
       });
     } catch (error) {
       removeScene(scene.id);
-      if (restacked) applySceneTimes(previousTimes);
+      if (restackedBeats) applySceneBeats(previousBeats);
       selectScene(previousSelectedSceneId);
       if (!hasMusic) useMusicStore.getState().setCurrentTime(previousTime);
       showToast({

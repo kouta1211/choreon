@@ -17,6 +17,7 @@ const ROW: ProjectRow = {
   bpm: 120,
   beats_per_bar: 4,
   is_metronome_enabled: false,
+  music_placements: [{ fromBeat: 0, atSeconds: 0, secondsPerBeat: 0.5 }],
   share_token: "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
   is_shared: false,
   created_at: "2026-01-01T00:00:00.000Z",

@@ -2,6 +2,13 @@ import { create } from "zustand";
 import type { Project } from "@/features/project/types";
 import type { Dancer } from "@/features/dancer/types";
 import { sortScenes } from "@/features/scene/lib/sceneTiming";
+import {
+  beatsForTimes,
+  DEFAULT_PLACEMENTS,
+  regrid,
+  withDerivedTimes,
+  type Placement,
+} from "@/features/music/lib/placement";
 import type { Position, Scene } from "@/features/scene/types";
 
 /** シーンごと・ダンサーごとのPosition。DBの複合PK(scene_id, dancer_id)に対応させ、
@@ -88,9 +95,15 @@ type ProjectState = {
   // 実際の削除(確定後更新)にも流用する
   removeScene: (sceneId: string) => void;
   renameScene: (sceneId: string, name: string) => void;
+  /** 秒で来た変更を適用する。**中で拍へ直し、秒は拍から作り直す**
+   *  （渡された秒はそのまま持たない。正は拍） */
   applySceneTimes: (timesById: Map<string, number>) => void;
+  /** 拍で来た変更を適用する。履歴のように**拍で考える側**が使う */
+  applySceneBeats: (beatsById: Map<string, number>) => void;
+  /** 曲への載せ方を差し替える。**全シーンの秒を作り直す** */
+  applyPlacements: (placements: Placement[]) => void;
   /** そのシーンへ入ってくる区間の「動くのに使う秒数」。null で区間まるごとへ戻す */
-  setSceneMoveSeconds: (sceneId: string, moveSeconds: number | null) => void;
+  setSceneMoveBeats: (sceneId: string, moveBeats: number | null) => void;
 
   // --- Position ---
   // ドラッグ操作の確定時(dnd-kitのonDragEnd)に1回だけ呼ばれる想定。
@@ -111,6 +124,35 @@ type ProjectState = {
     >,
   ) => void;
 };
+
+/** その作品の載せ方。作品がまだ無いときは既定の物差し */
+function placementsOf(state: {
+  project: Project | null;
+}): readonly Placement[] {
+  return state.project?.musicPlacements ?? DEFAULT_PLACEMENTS;
+}
+
+/**
+ * 拍の変更を適用する。**並べ直すのを忘れない** —
+ * 位置が並び順の正なので、隣を追い越す拍を入れたらその場で順番も入れ替わる。
+ */
+function applyBeats(
+  state: { project: Project | null; scenes: Scene[] },
+  beatsById: ReadonlyMap<string, number>,
+): { scenes: Scene[] } {
+  const placements = placementsOf(state);
+  return {
+    scenes: sortScenes(
+      withDerivedTimes(
+        state.scenes.map((scene) => {
+          const next = beatsById.get(scene.id);
+          return next === undefined ? scene : { ...scene, positionBeats: next };
+        }),
+        placements,
+      ),
+    ),
+  };
+}
 
 export const useProjectStore = create<ProjectState>((set) => ({
   project: null,
@@ -139,7 +181,8 @@ export const useProjectStore = create<ProjectState>((set) => ({
       return {
         project,
         dancers: dancersById,
-        scenes: sortScenes(scenes),
+        // 念のためもう一度派生を作る（API 層で通してあるが、口を1つに保つ）
+        scenes: sortScenes(withDerivedTimes(scenes, project.musicPlacements)),
         positionsBySceneId,
         isGuest,
         // 読み込んだ直後は、まだ何も編集していない
@@ -152,10 +195,31 @@ export const useProjectStore = create<ProjectState>((set) => ({
       state.project ? { project: { ...state.project, title } } : {},
     ),
 
+  /**
+   * 速さの物差しを変える。**シーンの秒は1ミリも動かない**（2026-08-25 に決定）。
+   *
+   * 変わるのは「何カウント目か」の数え方と拍線の間隔だけ。
+   * 拍を保って秒を伸ばす操作（曲へ載せ直す）は `applyPlacements` の側で、
+   * `placement.ts` では `restretch` という別の名前にしてある。
+   * **同じ引数で正反対の結果になるので、混ぜない。**
+   */
   setBpm: (bpm: number) =>
-    set((state) =>
-      state.project ? { project: { ...state.project, bpm } } : {},
-    ),
+    set((state) => {
+      if (!state.project) return {};
+      const { placements, beatsById } = regrid(
+        state.scenes,
+        state.project.musicPlacements,
+        60 / Math.max(1, bpm),
+      );
+      const scenes = state.scenes.map((scene) => ({
+        ...scene,
+        positionBeats: beatsById.get(scene.id) ?? scene.positionBeats,
+      }));
+      return {
+        project: { ...state.project, bpm, musicPlacements: placements },
+        scenes: sortScenes(withDerivedTimes(scenes, placements)),
+      };
+    }),
 
   setBeatsPerBar: (beatsPerBar: number) =>
     set((state) =>
@@ -229,8 +293,15 @@ export const useProjectStore = create<ProjectState>((set) => ({
       ),
     })),
 
+  /* **派生した秒をここでも作り直す。** 呼び出し側が組み立てた Scene を
+     そのまま入れると、追加した1つだけが拍と秒の食い違ったシーンになる
+     （`.claude/rules/state.md` 6節） */
   addScene: (scene) =>
-    set((state) => ({ scenes: sortScenes([...state.scenes, scene]) })),
+    set((state) => ({
+      scenes: sortScenes(
+        withDerivedTimes([...state.scenes, scene], placementsOf(state)),
+      ),
+    })),
 
   removeScene: (sceneId) =>
     set((state) => {
@@ -251,26 +322,39 @@ export const useProjectStore = create<ProjectState>((set) => ({
 
   /** 複数シーンの時刻をまとめて差し替える。1つ動かすと隣も動くこと
    * (リップル)があるので、常に一括で受ける */
-  setSceneMoveSeconds: (sceneId, moveSeconds) =>
+  setSceneMoveBeats: (sceneId, moveBeats) =>
     set((state) => ({
       // 並べ直さない。移動時間は**区間の中**の話で、並び順の正である
-      // 時刻には触らないため（applySceneTimes とはそこが違う）
-      scenes: state.scenes.map((scene) =>
-        scene.id === sceneId ? { ...scene, moveSeconds } : scene,
+      // 位置には触らないため（applySceneTimes とはそこが違う）
+      scenes: withDerivedTimes(
+        state.scenes.map((scene) =>
+          scene.id === sceneId ? { ...scene, moveBeats } : scene,
+        ),
+        placementsOf(state),
       ),
     })),
 
   applySceneTimes: (timesById) =>
-    set((state) => ({
-      // 並べ直すのを忘れない。時刻が並び順の正なので、隣を追い越す
-      // 時刻を入れたらその場で順番も入れ替わる
-      scenes: sortScenes(
-        state.scenes.map((scene) => {
-          const next = timesById.get(scene.id);
-          return next === undefined ? scene : { ...scene, timeSeconds: next };
-        }),
-      ),
-    })),
+    set((state) => {
+      const placements = placementsOf(state);
+      /* **渡された秒は持たない。** 拍へ直し、秒は拍から作り直す。
+         そのまま持つと、載せ方で表せない秒が残り、次の変換で辻褄が
+         合わなくなる（正は拍の側） */
+      return applyBeats(state, beatsForTimes(timesById, placements));
+    }),
+
+  applySceneBeats: (beatsById) =>
+    set((state) => applyBeats(state, beatsById)),
+
+  applyPlacements: (placements) =>
+    set((state) => {
+      if (!state.project) return {};
+      return {
+        project: { ...state.project, musicPlacements: placements },
+        // 拍はそのまま。**秒だけが全部動く**
+        scenes: sortScenes(withDerivedTimes(state.scenes, placements)),
+      };
+    }),
 
 
 

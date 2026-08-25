@@ -1,3 +1,4 @@
+import { withDerivedTimes } from "@/features/music/lib/placement";
 import {
   BackupFormatError,
   buildBackup,
@@ -98,6 +99,8 @@ export function loadGuestDraft(): GuestDraft | null {
       id: GUEST_PROJECT_ID,
       userId: "guest",
       isMetronomeEnabled: backup.project.isMetronomeEnabled ?? false,
+      // 拍→秒の写像。取り込みの側(parseBackup)が門番を通してある
+      musicPlacements: backup.project.musicPlacements,
       // 曲の名前は書き出しに入っていない（音源ごと端末の外へは出さない）
       musicTitle: null,
       shareToken: null,
@@ -110,10 +113,15 @@ export function loadGuestDraft(): GuestDraft | null {
       projectId: GUEST_PROJECT_ID,
       createdAt: now,
     })),
-    scenes: backup.scenes.map((scene) => ({
-      ...scene,
-      projectId: GUEST_PROJECT_ID,
-    })),
+    /* 秒は載せ方から導く。取り込んだファイルの秒をそのまま信じない
+       （別の物差しで書き出されたものかもしれない） */
+    scenes: withDerivedTimes(
+      backup.scenes.map((scene) => ({
+        ...scene,
+        projectId: GUEST_PROJECT_ID,
+      })),
+      backup.project.musicPlacements,
+    ),
     positions: backup.positions,
   };
 }

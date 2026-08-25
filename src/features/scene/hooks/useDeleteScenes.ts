@@ -4,7 +4,11 @@ import { useCallback } from "react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { persist } from "@/features/project/lib/persistence";
-import { deleteScenes, updateSceneTimes } from "@/features/scene/api/scenes";
+import { deleteScenes, updateSceneBeats } from "@/features/scene/api/scenes";
+import {
+  beatsForTimes,
+  DEFAULT_PLACEMENTS,
+} from "@/features/music/lib/placement";
 import { sceneAfterDelete } from "@/features/scene/lib/sceneAfterDelete";
 import { uniformTimes } from "@/features/scene/lib/sceneTiming";
 import { useOrderOnlyTimeline } from "@/features/scene/hooks/useOrderOnlyTimeline";
@@ -85,14 +89,21 @@ export function useDeleteScenes() {
               remaining.map((scene) => scene.id),
               defaultSegmentSeconds,
             );
-            useProjectStore.getState().applySceneTimes(times);
+            /* **拍へ直してから流す。** 秒のまま送ると、載せ方の外の値が
+               DB へ入り、次に読んだときに拍と食い違う */
+            const placements =
+              useProjectStore.getState().project?.musicPlacements ??
+              DEFAULT_PLACEMENTS;
+            const beats = beatsForTimes(times, placements);
+            useProjectStore.getState().applySceneBeats(beats);
             await persist((supabase) =>
-              updateSceneTimes(
+              updateSceneBeats(
                 supabase,
                 remaining.map((scene) => ({
                   id: scene.id,
-                  timeSeconds: times.get(scene.id) ?? scene.timeSeconds,
+                  positionBeats: beats.get(scene.id) ?? scene.positionBeats,
                 })),
+                placements,
               ),
             );
           } catch (error) {

@@ -3,6 +3,12 @@ import type { Database } from "@/lib/supabase/database.types";
 import type { Project } from "@/features/project/types";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position, Scene } from "@/features/scene/types";
+import {
+  beatAtSeconds,
+  durationBeats,
+  normalizePlacements,
+  withDerivedTimes,
+} from "@/features/music/lib/placement";
 import { DEFAULT_BPM } from "@/features/music/lib/metronomePreference";
 
 /**
@@ -37,6 +43,8 @@ type SharedPayload = {
     bpm?: number;
     beats_per_bar?: number;
     is_metronome_enabled?: boolean;
+    /** 拍→秒の写像。関数を入れ替える前の環境からは来ない */
+    music_placements?: unknown;
     created_at: string;
     updated_at: string;
   };
@@ -53,8 +61,11 @@ type SharedPayload = {
     project_id: string;
     name: string;
     order_index: number;
-    time_seconds: number;
-    move_seconds: number | null;
+    /** 古い環境からしか来ない。**正は position_beats** */
+    time_seconds?: number;
+    move_seconds?: number | null;
+    position_beats?: number | null;
+    move_beats?: number | null;
   }[];
   positions: {
     scene_id: string;
@@ -104,6 +115,13 @@ export async function getSharedProject(
   const payload = data as SharedPayload | null;
   if (!payload?.project) return null;
 
+  /* 拍→秒の写像。関数を入れ替える前の環境では来ないので、
+     そのときは作品の bpm から作る（門番も兼ねる） */
+  const placements = normalizePlacements(
+    payload.project.music_placements,
+    payload.project.bpm ?? DEFAULT_BPM,
+  );
+
   return {
     project: {
       id: payload.project.id,
@@ -119,6 +137,7 @@ export async function getSharedProject(
       bpm: payload.project.bpm ?? DEFAULT_BPM,
       beatsPerBar: payload.project.beats_per_bar ?? 4,
       isMetronomeEnabled: payload.project.is_metronome_enabled ?? false,
+      musicPlacements: placements,
       // 合鍵そのものは返さない(共有リンクで開いた人へ渡すと、
       // その人がリンクを作り直せてしまうわけではないが、配る必要が無い)
       shareToken: null,
@@ -139,14 +158,31 @@ export async function getSharedProject(
       initialDirection: dancer.initial_direction,
       createdAt: dancer.created_at,
     })),
-    scenes: (payload.scenes ?? []).map((scene) => ({
-      id: scene.id,
-      projectId: scene.project_id,
-      name: scene.name,
-      orderIndex: scene.order_index,
-      timeSeconds: scene.time_seconds,
-      moveSeconds: scene.move_seconds,
-    })),
+    /* **秒は載せ方から導く。** 関数を入れ替える前の環境では拍が来ないので、
+       そのときだけ秒から逆算する（画面が真っ白になるより、少し古い
+       物差しで動く方がよい） */
+    scenes: withDerivedTimes(
+      (payload.scenes ?? []).map((scene) => ({
+        id: scene.id,
+        projectId: scene.project_id,
+        name: scene.name,
+        orderIndex: scene.order_index,
+        positionBeats:
+          scene.position_beats ??
+          beatAtSeconds(placements, scene.time_seconds ?? 0),
+        moveBeats:
+          scene.move_beats ??
+          (scene.move_seconds == null
+            ? null
+            : durationBeats(
+                placements,
+                scene.position_beats ??
+                  beatAtSeconds(placements, scene.time_seconds ?? 0),
+                scene.move_seconds,
+              )),
+      })),
+      placements,
+    ),
     positions: (payload.positions ?? []).map((position) => ({
       sceneId: position.scene_id,
       dancerId: position.dancer_id,

@@ -4,7 +4,11 @@ import type { Project } from "@/features/project/types";
 import type { Dancer } from "@/features/dancer/types";
 import type { Position, Scene } from "@/features/scene/types";
 import { randomId } from "@/lib/randomId";
-import { DEFAULT_SEGMENT_SECONDS } from "@/features/scene/lib/sceneTiming";
+import { BEATS_PER_SET } from "@/features/music/lib/counts";
+import {
+  DEFAULT_PLACEMENTS,
+  withDerivedTimes,
+} from "@/features/music/lib/placement";
 
 /** プロジェクト1件ぶんの中身をまとめたもの。ゲストの下書きを作るときも、
  * それをクラウドへ保存するときも、この形で受け渡しする */
@@ -98,6 +102,8 @@ export function createGuestProject(
     bpm: DEFAULT_BPM,
     beatsPerBar: 4,
     isMetronomeEnabled: false,
+    // 曲へ載せていないので、既定の物差し(BPM 120 = 1拍 0.5秒)
+    musicPlacements: [...DEFAULT_PLACEMENTS],
     // 下書きは端末の中にしか無いので、配る先が無い。
     // クラウドへ保存した時点でDB側が合鍵を作る
     shareToken: null,
@@ -115,14 +121,19 @@ export function createGuestProject(
     createdAt: now,
   }));
 
-  const scenes: Scene[] = SEED_IDS.scenes.map((id, index) => ({
-    id,
-    projectId: project.id,
-    name: words.sceneName(index + 1),
-    orderIndex: index,
-    // 1秒おきに並べた種。時刻は絶対値で持つ
-    timeSeconds: index * DEFAULT_SEGMENT_SECONDS,
-  }));
+  /* 1つの8カウントおきに並べた種。**正は拍**で、秒は載せ方から導く。
+     既定の物差し(BPM 120)では8拍がちょうど4秒 = DEFAULT_SEGMENT_SECONDS */
+  const scenes: Scene[] = withDerivedTimes(
+    SEED_IDS.scenes.map((id, index) => ({
+      id,
+      projectId: project.id,
+      name: words.sceneName(index + 1),
+      orderIndex: index,
+      positionBeats: index * BEATS_PER_SET,
+      moveBeats: null,
+    })),
+    project.musicPlacements,
+  );
 
   const positions: Position[] = scenes.flatMap((scene, sceneIndex) =>
     dancers.map((dancer, dancerIndex) => {

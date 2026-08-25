@@ -34,7 +34,8 @@ export default async function ProjectPage(
 
   const [dancers, scenes] = await Promise.all([
     listDancers(supabase, projectId),
-    listScenes(supabase, projectId),
+    // 秒は載せ方から導く。作品を読んでからでないとシーンを組み立てられない
+    listScenes(supabase, projectId, project.musicPlacements),
   ]);
 
   const positions = await listPositionsByScenes(

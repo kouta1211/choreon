@@ -7,9 +7,15 @@ import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
 import {
   renameScene as renameSceneApi,
-  updateSceneMoveSeconds,
-  updateSceneTimes,
+  updateSceneMoveBeats,
+  updateSceneBeats,
 } from "@/features/scene/api/scenes";
+import {
+  beatsForTimes,
+  DEFAULT_PLACEMENTS,
+  durationBeats,
+  sameBeat,
+} from "@/features/music/lib/placement";
 import type { Scene } from "@/features/scene/types";
 import {
   moveSceneTo,
@@ -40,9 +46,12 @@ export function useSceneActions() {
   );
   const scenes = useProjectStore((state) => state.scenes);
   const renameScene = useProjectStore((state) => state.renameScene);
-  const applySceneTimes = useProjectStore((state) => state.applySceneTimes);
-  const setSceneMoveSeconds = useProjectStore(
-    (state) => state.setSceneMoveSeconds,
+  const applySceneBeats = useProjectStore((state) => state.applySceneBeats);
+  const placements = useProjectStore(
+    (state) => state.project?.musicPlacements ?? DEFAULT_PLACEMENTS,
+  );
+  const setSceneMoveBeats = useProjectStore(
+    (state) => state.setSceneMoveBeats,
   );
   const selectScene = useUIStore((state) => state.selectScene);
   const setIsPlaying = useUIStore((state) => state.setIsPlaying);
@@ -123,36 +132,44 @@ export function useSceneActions() {
      * (積むと、数字を1つ直すたびに履歴が1段増える) */
     recordHistory = false,
   ) => {
+    /* **拍で比べる。** 秒は拍から導いた派生値なので、丸めの都合で
+       `4.000000000000001` のような値になりうる。秒で比べると
+       「動かしていない行まで変わった」と判定して書き込んでしまう */
+    const beatsById = beatsForTimes(timesById, placements);
     const changed = scenes
       .filter((scene) => {
-        const next = timesById.get(scene.id);
-        return next !== undefined && next !== scene.timeSeconds;
+        const next = beatsById.get(scene.id);
+        return next !== undefined && !sameBeat(next, scene.positionBeats);
       })
       .map((scene) => ({
         id: scene.id,
-        timeSeconds: timesById.get(scene.id)!,
+        positionBeats: beatsById.get(scene.id)!,
       }));
     if (changed.length === 0) return;
 
-    const previous = new Map(scenes.map((s) => [s.id, s.timeSeconds]));
-    applySceneTimes(timesById);
+    const previous = new Map(scenes.map((s) => [s.id, s.positionBeats]));
+    applySceneBeats(beatsById);
 
     if (recordHistory) {
       pushHistory({
         kind: "retime",
         changes: [],
+        /* **履歴も拍で積む。** 秒で積むと、曲へ載せ直したあとに戻したとき
+           古い秒が復活して隊形が音からずれる */
         sceneTimes: changed.map((scene) => ({
           sceneId: scene.id,
-          before: previous.get(scene.id) ?? scene.timeSeconds,
-          after: scene.timeSeconds,
+          beforeBeats: previous.get(scene.id) ?? scene.positionBeats,
+          afterBeats: scene.positionBeats,
         })),
       });
     }
 
     try {
-      await persist((supabase) => updateSceneTimes(supabase, changed));
+      await persist((supabase) =>
+        updateSceneBeats(supabase, changed, placements),
+      );
     } catch (error) {
-      applySceneTimes(previous);
+      applySceneBeats(previous);
       showToast({
         message: toUserMessage(error, t.sceneActions.retimeFailed),
         type: "error",
@@ -174,15 +191,27 @@ export function useSceneActions() {
     scene: Scene,
     moveSeconds: number | null,
   ) => {
-    const previous = scene.moveSeconds ?? null;
-    setSceneMoveSeconds(scene.id, moveSeconds);
+    const previous = scene.moveBeats ?? null;
+    /* 欄は秒で打つが、**保存するのは拍**。区間の長さなので差で出す
+       （載せ方の変わり目をまたぐと掛け算では答えがずれる） */
+    const moveBeats =
+      moveSeconds === null
+        ? null
+        : durationBeats(placements, scene.positionBeats, moveSeconds);
+    setSceneMoveBeats(scene.id, moveBeats);
 
     try {
       await persist((supabase) =>
-        updateSceneMoveSeconds(supabase, scene.id, moveSeconds),
+        updateSceneMoveBeats(
+          supabase,
+          scene.id,
+          moveBeats,
+          scene.positionBeats,
+          placements,
+        ),
       );
     } catch (error) {
-      setSceneMoveSeconds(scene.id, previous);
+      setSceneMoveBeats(scene.id, previous);
       showToast({
         message: toUserMessage(error, t.sceneActions.moveSecondsFailed),
         type: "error",

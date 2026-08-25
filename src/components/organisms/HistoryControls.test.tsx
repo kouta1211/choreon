@@ -7,7 +7,7 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import * as positionsApi from "@/features/scene/api/positions";
 import type { Position } from "@/features/scene/types";
-import { makePosition as makeBasePosition } from "@/test/factories";
+import { makePosition as makeBasePosition, makeScene } from "@/test/factories";
 import { LocaleProvider } from "@/features/i18n/LocaleProvider";
 
 vi.mock("@/lib/supabase/client", () => ({
@@ -36,13 +36,13 @@ function seedMovedDancer() {
       },
     },
     scenes: [
-      {
+      makeScene({
         id: "scene-1",
         projectId: "project-1",
         name: "シーン1",
         orderIndex: 0,
         timeSeconds: 1,
-      },
+      }),
     ],
     positionsBySceneId: { "scene-1": { "dancer-1": after } },
   });

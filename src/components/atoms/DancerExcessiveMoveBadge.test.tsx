@@ -78,7 +78,7 @@ describe("DancerExcessiveMoveBadge の直し", () => {
 
   /** ここが要点。読んで「意図した速さだ」と決められる */
   it("開いただけでは、時刻は動かない", async () => {
-    const spy = vi.spyOn(scenesApi, "updateSceneTimes");
+    const spy = vi.spyOn(scenesApi, "updateSceneBeats");
     render(<DancerExcessiveMoveBadge strain={STRAIN} dancerName="1" />);
 
     await openPopover();
@@ -88,7 +88,7 @@ describe("DancerExcessiveMoveBadge の直し", () => {
   });
 
   it("押すと、次のシーンがその秒数まで後ろへ動く", async () => {
-    vi.spyOn(scenesApi, "updateSceneTimes").mockResolvedValue(undefined);
+    vi.spyOn(scenesApi, "updateSceneBeats").mockResolvedValue(undefined);
     render(<DancerExcessiveMoveBadge strain={STRAIN} dancerName="1" />);
 
     await openPopover();
@@ -102,7 +102,7 @@ describe("DancerExcessiveMoveBadge の直し", () => {
   });
 
   it("押したあと、その移動はもう警告が出る速さではない", async () => {
-    vi.spyOn(scenesApi, "updateSceneTimes").mockResolvedValue(undefined);
+    vi.spyOn(scenesApi, "updateSceneBeats").mockResolvedValue(undefined);
     render(<DancerExcessiveMoveBadge strain={STRAIN} dancerName="1" />);
 
     await openPopover();
@@ -123,7 +123,7 @@ describe("DancerExcessiveMoveBadge の直し", () => {
    * 当てたら手で打ち直すしかなかった。
    */
   it("当てたものは、元に戻す1回で消える", async () => {
-    vi.spyOn(scenesApi, "updateSceneTimes").mockResolvedValue(undefined);
+    vi.spyOn(scenesApi, "updateSceneBeats").mockResolvedValue(undefined);
 
     function Harness() {
       const { undo } = useHistoryActions();

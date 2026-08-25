@@ -281,6 +281,21 @@ export function restretch(
   return list.map((item) => ({ ...item, secondsPerBeat: nextSecondsPerBeat }));
 }
 
+/**
+ * 2つの拍を「同じ位置」とみなすか。
+ *
+ * **秒で `===` を書かないためのもの**（2026-08-25）。秒は拍から導いた
+ * 派生値なので、丸めの都合で `4.000000000000001` のような値になる。
+ * 秒で等号を書くと:
+ * - 動かしていない行まで「変わった」と判定して書き込む
+ * - シーンの重なり検出が**二度と一致せず**、2つのシーンが同じ位置に重なれる
+ *
+ * 幅は 1e-6 拍。BPM 120 なら 0.5マイクロ秒で、人が意図して作れる差ではない。
+ */
+export function sameBeat(a: number, b: number): boolean {
+  return Math.abs(a - b) < 1e-6;
+}
+
 /** いまの物差しを BPM で読む。**古い列や、音を鳴らす側へ渡すため** */
 export function bpmOf(placements: readonly Placement[]): number {
   const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;

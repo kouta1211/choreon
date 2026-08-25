@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { withDerivedTimes } from "@/features/music/lib/placement";
 import {
   insertTimeSeconds,
   uniformTimes,
@@ -268,5 +269,31 @@ describe("uniformTimes", () => {
 
   it("シーンが無ければ空", () => {
     expect(uniformTimes([], 4).size).toBe(0);
+  });
+});
+
+/**
+ * **重なりの判定が等号で足りる根拠**（2026-08-25）。
+ *
+ * 時刻は拍から導いた派生値になったが、`withDerivedTimes` が1ミリ秒の格子へ
+ * 丸めている。だから `4` と `4.0000000000001` の組はここへ来ない。
+ * **この前提が崩れたら、2つのシーンが同じ時刻に重なれるようになる。**
+ */
+describe("派生した時刻は、丸めの格子に乗っている", () => {
+  it("半端な拍から作った時刻も、1ミリ秒の格子に乗る", () => {
+    // BPM 128（1拍 0.46875秒）で 12.6拍 → 5.90625秒 → 5.906秒
+    const [scene] = withDerivedTimes(
+      [{ id: "s1", positionBeats: 12.6, moveBeats: null }],
+      [{ fromBeat: 0, atSeconds: 0, secondsPerBeat: 60 / 128 }],
+    );
+    expect(scene.timeSeconds * 1000).toBe(Math.round(scene.timeSeconds * 1000));
+  });
+
+  it("その時刻へ重ねようとすると、最小の間隔ぶんずれる", () => {
+    const scenes = [
+      { id: "s1", timeSeconds: 0 },
+      { id: "s2", timeSeconds: 5.906 },
+    ];
+    expect(moveSceneTo(scenes, 0, 5.906).get("s1")).toBeCloseTo(6.006, 9);
   });
 });

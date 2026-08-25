@@ -54,7 +54,7 @@ beforeEach(() => {
   vi.spyOn(scenesApi, "createScene").mockImplementation(
     async (_supabase, scene) => scene,
   );
-  vi.spyOn(scenesApi, "updateSceneTimes").mockResolvedValue(undefined);
+  vi.spyOn(scenesApi, "updateSceneBeats").mockResolvedValue(undefined);
   vi.spyOn(positionsApi, "upsertPositions").mockResolvedValue(undefined);
 });
 afterEach(() => vi.restoreAllMocks());

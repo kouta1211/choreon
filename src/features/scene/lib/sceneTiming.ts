@@ -81,6 +81,7 @@ function roundSeconds(value: number): number {
   return Math.round(value * 1000) / 1000;
 }
 
+
 export type RetimeResult = {
   /** 変更後の時刻。触っていないシーンは元の値のまま入る */
   timesById: Map<string, number>;
@@ -156,8 +157,14 @@ export function moveSceneTo(
   if (index < 0 || index >= scenes.length) return timesById;
 
   const target = roundSeconds(Math.max(0, seconds));
-  // ちょうど同じ時刻に重ねると、どちらの隊形を出すか決まらなくなる。
-  // 既に居るところへ置こうとしたときだけ、最小の間隔ぶんずらす
+  /* ちょうど同じ時刻に重ねると、どちらの隊形を出すか決まらなくなる。
+     既に居るところへ置こうとしたときだけ、最小の間隔ぶんずらす。
+
+     **等号で足りる。** 時刻は拍から導いた派生値だが、`withDerivedTimes` が
+     1ミリ秒の格子へ丸めており、`target` もすぐ上で同じ桁へ丸めている。
+     両側が同じ格子に乗っているので、`4.0000000000001` のような値は
+     ここへ来ない（幅を持たせた比較を試したが、歯が無かった）。
+     ⚠️ **丸めをやめるなら、ここを幅のある比較に変える。** */
   const taken = scenes.some(
     (scene, i) => i !== index && scene.timeSeconds === target,
   );

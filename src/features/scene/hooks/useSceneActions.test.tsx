@@ -37,7 +37,7 @@ const timesById = () =>
   );
 
 beforeEach(() => {
-  vi.spyOn(scenesApi, "updateSceneTimes").mockResolvedValue(undefined);
+  vi.spyOn(scenesApi, "updateSceneBeats").mockResolvedValue(undefined);
 });
 afterEach(() => vi.restoreAllMocks());
 

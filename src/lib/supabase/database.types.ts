@@ -18,6 +18,10 @@ export type Database = {
           bpm: number;
           beats_per_bar: number;
           is_metronome_enabled: boolean;
+          /** 拍→秒の写像。[{fromBeat, atSeconds, secondsPerBeat}, ...]。
+           * 読むときは必ず normalizePlacements(placement.ts) を通す —
+           * jsonb なので DB は中身を守らない */
+          music_placements: unknown;
           /** 共有リンクの合鍵。持ち主だけが読める(RLSで自分の行しか見えない) */
           share_token: string;
           is_shared: boolean;
@@ -35,6 +39,7 @@ export type Database = {
           bpm?: number;
           beats_per_bar?: number;
           is_metronome_enabled?: boolean;
+          music_placements?: unknown;
           share_token?: string;
           is_shared?: boolean;
           created_at?: string;
@@ -51,6 +56,7 @@ export type Database = {
           bpm?: number;
           beats_per_bar?: number;
           is_metronome_enabled?: boolean;
+          music_placements?: unknown;
           share_token?: string;
           is_shared?: boolean;
           created_at?: string;
@@ -100,6 +106,11 @@ export type Database = {
           order_index: number;
           time_seconds: number;
           move_seconds: number | null;
+          /** **新しい正**。頭から何拍目か(8拍=1セット)。
+           * 上の秒の2列は移行の間だけ両方へ書いている(dual write) */
+          position_beats: number | null;
+          /** 区間のうち動くのに使う拍数。null なら区間まるごと */
+          move_beats: number | null;
           created_at: string;
         };
         Insert: {
@@ -109,6 +120,8 @@ export type Database = {
           order_index: number;
           time_seconds?: number;
           move_seconds?: number | null;
+          position_beats?: number | null;
+          move_beats?: number | null;
           created_at?: string;
         };
         Update: {
@@ -118,6 +131,8 @@ export type Database = {
           order_index?: number;
           time_seconds?: number;
           move_seconds?: number | null;
+          position_beats?: number | null;
+          move_beats?: number | null;
           created_at?: string;
         };
         Relationships: [

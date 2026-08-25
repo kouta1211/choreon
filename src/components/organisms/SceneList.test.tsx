@@ -95,7 +95,7 @@ describe("SceneList", () => {
   it("選択中シーンの時刻を変更できる", async () => {
     useProjectStore.setState({ scenes: SCENES });
     useUIStore.setState({ selectedSceneId: "scene-2" });
-    vi.spyOn(scenesApi, "updateSceneTimes").mockResolvedValue(undefined);
+    vi.spyOn(scenesApi, "updateSceneBeats").mockResolvedValue(undefined);
     const user = userEvent.setup();
 
     render(<SceneList project={makeProject()} />);
@@ -107,16 +107,20 @@ describe("SceneList", () => {
     await waitFor(() => {
       expect(useProjectStore.getState().scenes[1].timeSeconds).toBe(3.5);
     });
-    expect(scenesApi.updateSceneTimes).toHaveBeenCalledWith(expect.anything(), [
-      { id: "scene-2", timeSeconds: 3.5 },
-    ]);
+    /* **保存するのは拍**。BPM 120（1拍 0.5秒）なので 3.5秒 = 7拍。
+       この数字が合うことが、秒→拍の換算が効いている証拠になる */
+    expect(scenesApi.updateSceneBeats).toHaveBeenCalledWith(
+      expect.anything(),
+      [{ id: "scene-2", positionBeats: 7 }],
+      expect.anything(),
+    );
   });
 
   // 時刻は分秒でも打てる。稽古で「1分20秒あたり」と言うときの形
   it("分秒の形(1:20)でも受け付ける", async () => {
     useProjectStore.setState({ scenes: SCENES });
     useUIStore.setState({ selectedSceneId: "scene-2" });
-    vi.spyOn(scenesApi, "updateSceneTimes").mockResolvedValue(undefined);
+    vi.spyOn(scenesApi, "updateSceneBeats").mockResolvedValue(undefined);
     const user = userEvent.setup();
 
     render(<SceneList project={makeProject()} />);
@@ -139,7 +143,7 @@ describe("SceneList", () => {
     ];
     useProjectStore.setState({ scenes: three });
     useUIStore.setState({ selectedSceneId: "scene-2" });
-    vi.spyOn(scenesApi, "updateSceneTimes").mockResolvedValue(undefined);
+    vi.spyOn(scenesApi, "updateSceneBeats").mockResolvedValue(undefined);
     const user = userEvent.setup();
 
     render(<SceneList project={makeProject()} />);
@@ -524,7 +528,7 @@ describe("区間の移動時間", () => {
      1つ手前の区間が動いてしまう（純粋関数のテストからは見えない） */
   it("欄に打つと、その秒数が【次のシーン】へ保存される", async () => {
     const spy = vi
-      .spyOn(scenesApi, "updateSceneMoveSeconds")
+      .spyOn(scenesApi, "updateSceneMoveBeats")
       .mockResolvedValue(undefined);
     const user = userEvent.setup();
     render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
@@ -536,7 +540,14 @@ describe("区間の移動時間", () => {
 
     // 開いているのは scene-1 だが、書き換わるのは scene-2
     await waitFor(() => {
-      expect(spy).toHaveBeenCalledWith(expect.anything(), "scene-2", 1.5);
+      // 打ったのは 1.5秒。BPM 120 なので 3拍
+      expect(spy).toHaveBeenCalledWith(
+        expect.anything(),
+        "scene-2",
+        3,
+        expect.anything(),
+        expect.anything(),
+      );
     });
     // 隣の欄にも、引き算した残りがその場で出る
     expect(holdInput()).toHaveValue(2.5);
@@ -547,7 +558,7 @@ describe("区間の移動時間", () => {
      （.claude/rules/testing.md 4節） */
   it("キープの欄に打つと、区間から引いた分が【移動】として保存される", async () => {
     const spy = vi
-      .spyOn(scenesApi, "updateSceneMoveSeconds")
+      .spyOn(scenesApi, "updateSceneMoveBeats")
       .mockResolvedValue(undefined);
     const user = userEvent.setup();
     render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
@@ -558,7 +569,14 @@ describe("区間の移動時間", () => {
 
     // 打ったのは 1.5 だが、保存されるのは 4 − 1.5 = 2.5 の方
     await waitFor(() => {
-      expect(spy).toHaveBeenCalledWith(expect.anything(), "scene-2", 2.5);
+      // 打ったのは 1.5秒（キープ）だが、保存されるのは 4 − 1.5 = 2.5秒 = 5拍
+      expect(spy).toHaveBeenCalledWith(
+        expect.anything(),
+        "scene-2",
+        5,
+        expect.anything(),
+        expect.anything(),
+      );
     });
     expect(moveInput()).toHaveValue(2.5);
   });
@@ -609,7 +627,7 @@ describe("区間の移動時間", () => {
        押したとき、答えが 1 になるのは区間が 4 のときだけ */
     it("引いて離すと、その割り方が【次のシーン】へ保存される", () => {
       const spy = vi
-        .spyOn(scenesApi, "updateSceneMoveSeconds")
+        .spyOn(scenesApi, "updateSceneMoveBeats")
         .mockResolvedValue(undefined);
       render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
 
@@ -619,7 +637,14 @@ describe("区間の移動時間", () => {
 
       // 開いているのは scene-1 だが、書き換わるのは scene-2。
       // 200px のうち 150px まで待つ → 滞在3秒・移動1秒
-      expect(spy).toHaveBeenCalledWith(expect.anything(), "scene-2", 1);
+      // 200px のうち 150px まで待つ → 移動1秒 = 2拍
+      expect(spy).toHaveBeenCalledWith(
+        expect.anything(),
+        "scene-2",
+        2,
+        expect.anything(),
+        expect.anything(),
+      );
     });
 
     /* **刻みを渡し違えていないか。** 1拍が 0.4秒の作品で右キーを1回
@@ -627,7 +652,7 @@ describe("区間の移動時間", () => {
        3.5 になって落ちる */
     it("矢印キーの刻みは、その作品の1拍ぶんになる", () => {
       const spy = vi
-        .spyOn(scenesApi, "updateSceneMoveSeconds")
+        .spyOn(scenesApi, "updateSceneMoveBeats")
         .mockResolvedValue(undefined);
       const project = makeProject({ isMetronomeEnabled: true, bpm: 150 });
       useProjectStore.setState({ project });
@@ -637,7 +662,15 @@ describe("区間の移動時間", () => {
         key: "ArrowRight",
       });
 
-      expect(spy).toHaveBeenCalledWith(expect.anything(), "scene-2", 3.6);
+      /* BPM 150（1拍 0.4秒）。右キー1回で滞在が1拍ぶん増えるので、
+         移動は 4 − 0.4 = 3.6秒 = 9拍。**BPM を渡し違えたらここが落ちる** */
+      expect(spy).toHaveBeenCalledWith(
+        expect.anything(),
+        "scene-2",
+        9,
+        expect.anything(),
+        expect.anything(),
+      );
     });
 
     it("最後のシーンには出さない（出ていく先が無い）", () => {
@@ -654,7 +687,7 @@ describe("区間の移動時間", () => {
       ),
     }));
     const spy = vi
-      .spyOn(scenesApi, "updateSceneMoveSeconds")
+      .spyOn(scenesApi, "updateSceneMoveBeats")
       .mockResolvedValue(undefined);
     const user = userEvent.setup();
     render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
@@ -663,7 +696,13 @@ describe("区間の移動時間", () => {
     await user.tab();
 
     await waitFor(() => {
-      expect(spy).toHaveBeenCalledWith(expect.anything(), "scene-2", null);
+      expect(spy).toHaveBeenCalledWith(
+        expect.anything(),
+        "scene-2",
+        null,
+        expect.anything(),
+        expect.anything(),
+      );
     });
   });
 });

@@ -217,7 +217,7 @@ describe("ReviewSheet の指摘", () => {
   });
 
   it("速すぎる移動の指摘では、延ばす秒数がアプリ側で決まる", async () => {
-    vi.spyOn(scenesApi, "updateSceneTimes").mockResolvedValue(undefined);
+    vi.spyOn(scenesApi, "updateSceneBeats").mockResolvedValue(undefined);
     // 0,1 → 8,1（7.2m）を 0.6秒。歩ける速さなら4秒
     setUp({
       positions: { runner: position("runner", 0, 1) },

@@ -2,9 +2,10 @@ import { describe, expect, it } from "vitest";
 import { buildPaths, buildStageMarks } from "./exportOverlays";
 import type { PositionsBySceneId } from "@/features/viewer/lib/interpolate";
 import type { Position, Scene } from "@/features/scene/types";
+import { makeScene } from "@/test/factories";
 
 function scene(id: string, timeSeconds: number): Scene {
-  return { id, projectId: "p", name: id, orderIndex: 0, timeSeconds };
+  return makeScene({ id, projectId: "p", name: id, timeSeconds });
 }
 
 function position(

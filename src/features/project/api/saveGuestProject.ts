@@ -51,7 +51,7 @@ export async function saveGuestProject(
   try {
     await Promise.all([
       createDancers(supabase, fresh.dancers),
-      createScenes(supabase, fresh.scenes),
+      createScenes(supabase, fresh.scenes, fresh.project.musicPlacements),
     ]);
     await upsertPositions(supabase, fresh.positions);
   } catch (error) {

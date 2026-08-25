@@ -20,8 +20,14 @@ export type PositionChange = {
  */
 export type SceneTimeChange = {
   sceneId: string;
-  before: number;
-  after: number;
+  /**
+   * **拍で持つ**(2026-08-25)。秒で持つと、曲へ載せ直したあとに戻したとき
+   * 古い秒が復活し、隊形が音からずれた場所へ着地する。
+   * 名前も `before`/`after` から変えてある — 秒のまま残った所が
+   * 型で見つかるように。
+   */
+  beforeBeats: number;
+  afterBeats: number;
 };
 
 /**

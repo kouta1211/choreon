@@ -8,6 +8,7 @@ import {
   normalizePlacements,
   regrid,
   restretch,
+  sameBeat,
   secondsAtBeat,
   withDerivedTimes,
   type Placement,
@@ -254,4 +255,25 @@ describe("移行しても、秒が1ミリも動かないこと", () => {
       expect(derived.map((scene) => scene.timeSeconds)).toEqual(REAL_TIMES);
     },
   );
+});
+
+/**
+ * **秒で `===` を書かないための道具。**
+ * 秒は派生値なので `4.000000000000001` のような値になり、
+ * 等号で比べると「動かしていない行まで変わった」ことになる。
+ */
+describe("同じ位置とみなすか", () => {
+  it("丸めの誤差は同じ位置とみなす", () => {
+    expect(sameBeat(8, 8.0000000001)).toBe(true);
+  });
+
+  it("人が作れる差は、別の位置とみなす", () => {
+    // 0.001拍 = BPM 120 で 0.5ミリ秒。入力欄の刻み(0.1秒)よりずっと細かい
+    expect(sameBeat(8, 8.001)).toBe(false);
+  });
+
+  it("負の拍でも効く（1カウント目より手前）", () => {
+    expect(sameBeat(-4, -4.0000000001)).toBe(true);
+    expect(sameBeat(-4, -3.9)).toBe(false);
+  });
 });
