@@ -101,7 +101,10 @@ describe("一緒に動くかどうか", () => {
     const { result } = renderGrab("付いていく人");
 
     expect(result.current.isFollowingGroup).toBe(false);
-    expect(result.current.groupOffset).toBeNull();
+    // 移動量の2本は**いつでもある**（止まっているので 0）。
+    // 無くすと style の形が入れ替わり、motion が transform を塗り戻す
+    expect(result.current.offset.x.get()).toBe(0);
+    expect(result.current.offset.y.get()).toBe(0);
   });
 
   it("掴んでいる人が state に載る前でも、選ばれている人は追随する", () => {
@@ -112,7 +115,6 @@ describe("一緒に動くかどうか", () => {
 
     // ここが false になると、style の形が途中で入れ替わって動かなくなる
     expect(result.current.isFollowingGroup).toBe(true);
-    expect(result.current.groupOffset).not.toBeNull();
   });
 
   it("選ばれていない人は、誰かが掴んでいても動かない", () => {
@@ -122,6 +124,7 @@ describe("一緒に動くかどうか", () => {
     startDragging();
 
     expect(result.current.isFollowingGroup).toBe(false);
-    expect(result.current.groupOffset).toBeNull();
+    expect(result.current.offset.x.get()).toBe(0);
+    expect(result.current.offset.y.get()).toBe(0);
   });
 });

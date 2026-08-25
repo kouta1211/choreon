@@ -8,7 +8,6 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { useDancerGrab } from "@/features/canvas/hooks/useDancerGrab";
-import { CSS } from "@dnd-kit/utilities";
 import { motion } from "motion/react";
 import { DancerMarker } from "@/components/molecules/DancerIcon";
 import { RotationHandle } from "@/components/atoms/RotationHandle";
@@ -133,10 +132,9 @@ function DraggableDancerIconImpl({
     attributes,
     listeners,
     setNodeRef,
-    transform,
     isDragging,
     isFollowingGroup,
-    groupOffset,
+    offset,
     isSelected,
     isOnlySelected,
   } = useDancerGrab({
@@ -249,21 +247,13 @@ function DraggableDancerIconImpl({
       className={`absolute touch-none select-none ${
         isDragging ? "z-10 cursor-grabbing" : "cursor-grab"
       }`}
-      /* 追随中は transform のキーごと外す。motion は style に transform が
-         あるとそちらを優先し、x/y の MotionValue が効かなくなる
-         （undefined でもキーが立っていれば同じ。実際にこれで動かなかった） */
-      style={
-        groupOffset
-          ? { left, top, opacity, x: groupOffset.x, y: groupOffset.y }
-          : {
-              left,
-              top,
-              opacity,
-              transform: transform
-                ? CSS.Translate.toString(transform)
-                : undefined,
-            }
-      }
+      /* **style の形はここ1つ。場合分けしない**（2026-08-25）。
+         以前は追随中だけ x/y、掴んでいる間は dnd-kit の transform 文字列、と
+         書き手が入れ替わっていて、**一度でも一緒に動いた人はその後
+         掴んでも動かなくなっていた**（motion が transform を "none" で
+         塗り戻し続ける）。理由は useDancerGrab の doc にある。
+         移動量は掴んでいてもいなくても offset が答える（止まっていれば 0）*/
+      style={{ left, top, opacity, x: offset.x, y: offset.y }}
       // マウス以外(指・ペン)では立てない。上の isHovered のコメント参照
       onPointerEnter={(event) => {
         if (event.pointerType === "mouse") setIsHovered(true);

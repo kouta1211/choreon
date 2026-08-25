@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import { useDndContext, useDraggable } from "@dnd-kit/core";
-import type { MotionValue } from "motion/react";
+import { useMotionValue, type MotionValue } from "motion/react";
 import { useGroupDrag } from "@/features/canvas/hooks/useGroupDrag";
 import { isFollowingGroupDrag } from "@/features/canvas/lib/groupDragFollow";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
@@ -25,8 +26,14 @@ type DancerGrab = {
   isDragging: boolean;
   /** 掴まれてはいないが、掴んだ人と一緒に動いているか */
   isFollowingGroup: boolean;
-  /** 一緒に動くときの移動量。追随していないときは null */
-  groupOffset: { x: MotionValue<number>; y: MotionValue<number> } | null;
+  /**
+   * **手で動かされている移動量（px）。いつでも同じ2本**。
+   *
+   * 自分を掴んでいるとき・一緒に動いているとき・止まっているときの
+   * どれでもこの2本が答える（止まっていれば 0）。**入れ替えない**
+   * ことが要点で、理由は下の doc の3つ目。
+   */
+  offset: { x: MotionValue<number>; y: MotionValue<number> };
   isSelected: boolean;
   /** 1人だけ選ばれている状態か（回転ハンドルを出す条件） */
   isOnlySelected: boolean;
@@ -52,6 +59,26 @@ type DancerGrab = {
  * 「いま誰かが掴んでいるか」は **dnd-kit 自身**に聞く。移動量は掴んで
  * いないとき 0 なので、条件から外しても止まっているときの見た目は
  * 変わらない。形が変わらなくなったぶん、確実に付いてくる。
+ *
+ * ■ **移動量は、どの場合も同じ x/y へ流す**（2026-08-25、実機の報告
+ * 「たまにドラッグにダンサーがついてこない」）
+ * 上の2件を直してもなお、**一度でも一緒に動いた人は、その後
+ * 自分を掴んでも動かなくなっていた**。原因は style の形の残り香で、
+ * 追随中だけ x/y、掴んでいる間は dnd-kit の transform 文字列、と
+ * **書き手が入れ替わっていた**こと。
+ *
+ * motion は要素ごとに `renderState` を持ち回っている。x/y が style から
+ * 外れた瞬間、`buildHTMLStyles` は「前は transform を組み立てていたのに
+ * 今は無い」と見て **`transform: none` を書き戻す**
+ * （`motion-dom` の buildHTMLStyles）。しかもその書き戻しは
+ * `scheduleRenderMicrotask()` で**毎レンダー**予約される
+ * （`framer-motion` の use-visual-element）。掴んでいる間は
+ * pointermove ごとに描き直るので、React が置いた `translate3d(...)` が
+ * **毎フレーム打ち消され続ける**。
+ *
+ * だから **transform の文字列はもう使わない。** dnd-kit の移動量も
+ * ここで x/y へ写し、書き手を1つにする。motion から見れば
+ * 「x/y はいつでもある」状態になり、none の書き戻しは起きようがない。
  */
 export function useDancerGrab({
   dancerId,
@@ -106,6 +133,51 @@ export function useDancerGrab({
       isAnyDragging: active !== null,
     });
 
+  /* この2本だけが、この人の移動量を答える。**作り直さない**
+     （identity が変わると motion の値の付け替えが起きる） */
+  const offsetX = useMotionValue(0);
+  const offsetY = useMotionValue(0);
+
+  /* 掴まれている間の移動量。dnd-kit は React の state で配ってくるので、
+     ここで写して x/y へ流す */
+  const grabbedX = transform?.x ?? 0;
+  const grabbedY = transform?.y ?? 0;
+  /* 一緒に動くときの移動量。こちらは MotionValue なので購読して写す
+     （PathOverlay が同じ形で読んでいる） */
+  const groupX = groupDrag?.offsetX ?? null;
+  const groupY = groupDrag?.offsetY ?? null;
+
+  useEffect(() => {
+    if (isDragging) {
+      offsetX.set(grabbedX);
+      offsetY.set(grabbedY);
+      return;
+    }
+    if (!isFollowingGroup || !groupX || !groupY) {
+      // 止まっている。次に掴んだとき前回のぶんだけずれないよう 0 へ戻す
+      offsetX.set(0);
+      offsetY.set(0);
+      return;
+    }
+    offsetX.set(groupX.get());
+    offsetY.set(groupY.get());
+    const stopX = groupX.on("change", (value) => offsetX.set(value));
+    const stopY = groupY.on("change", (value) => offsetY.set(value));
+    return () => {
+      stopX();
+      stopY();
+    };
+  }, [
+    isDragging,
+    grabbedX,
+    grabbedY,
+    isFollowingGroup,
+    groupX,
+    groupY,
+    offsetX,
+    offsetY,
+  ]);
+
   return {
     attributes,
     listeners,
@@ -113,10 +185,7 @@ export function useDancerGrab({
     transform,
     isDragging,
     isFollowingGroup,
-    groupOffset:
-      isFollowingGroup && groupDrag
-        ? { x: groupDrag.offsetX, y: groupDrag.offsetY }
-        : null,
+    offset: { x: offsetX, y: offsetY },
     isSelected,
     isOnlySelected,
   };

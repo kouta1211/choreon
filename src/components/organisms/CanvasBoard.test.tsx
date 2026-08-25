@@ -331,12 +331,35 @@ describe("掴み分けられないほど重なる所へ置いたとき", () => {
   });
 });
 
+/**
+ * **移動量は motion が書く。読むのは microtask を1回ぶん進めてから**
+ * （2026-08-25）。
+ *
+ * 掴んでいる間の見た目は、dnd-kit の transform 文字列ではなく
+ * `useDancerGrab` の x/y（MotionValue）が動かしている。motion は
+ * 描き直しを `scheduleRenderMicrotask()` で予約するので、実機では
+ * paint の前に必ず走るが、**同期に読むテストだけが間に合わない**。
+ *
+ * 逆に `waitFor` は act() で包んでこの予約より前に読んでしまい、
+ * **壊れていても緑になる**（実際にそれで1件見逃した）。
+ */
+async function afterMotionRender() {
+  await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+/** 画面の上で、横に動いている量(px)。動いていなければ 0。
+ *  組み立てるのは motion なので、書式は `translateX(...)` */
+function shiftX(node: HTMLElement): number {
+  const match = /translate(?:X|3d)?\(([-0-9.]+)px/.exec(node.style.transform);
+  return match ? Number(match[1]) : 0;
+}
+
 /* 掴んでいる間も丸めが効いているか。**見た目の話**なので保存された座標では
    確かめられない（離した瞬間の丸めは前から効いていて、結果は同じになる）。
    代わりに、ドラッグ中に光る格子線（dragSnapLine）で見る — これは
    modifier を通ったあとの移動量から決まっている */
 describe("まとめて動かしているときの、壁での止まり方", () => {
-  it("掴んでいる間も、全員が収まる所までしか進まない", () => {
+  it("掴んでいる間も、全員が収まる所までしか進まない", async () => {
     render(
       <CanvasBoard
         isGuest
@@ -391,12 +414,12 @@ describe("まとめて動かしているときの、壁での止まり方", () =
     fireEvent.pointerMove(document, to);
     fireEvent.pointerMove(document, to);
 
+    await afterMotionRender();
+
     /* 8マスを 800px で描いているので 1ユニット = 100px。
        右端の ゆい は 7 から 1ユニットしか動けないので、掴んでいる
        あいり の見た目も 100px で止まる（縮まなければ 400px 動く）*/
-    expect(dancerNode("dancer-1").style.transform).toContain(
-      "translate3d(100px",
-    );
+    expect(shiftX(dancerNode("dancer-1"))).toBe(100);
 
     fireEvent.pointerUp(document, to);
   });
@@ -622,22 +645,17 @@ describe("掴んでいる最中に、画面の上で動いているか", () => {
     return () => fireEvent.pointerUp(document, to);
   }
 
-  /** 画面の上で、横に動いている量(px)。動いていなければ 0 */
-  function shiftX(node: HTMLElement): number {
-    const match = /translate(?:3d)?\(([-0-9.]+)px/.exec(node.style.transform);
-    return match ? Number(match[1]) : 0;
-  }
-
-  it("1人を掴んだら、その人が動く", () => {
+  it("1人を掴んだら、その人が動く", async () => {
     renderDragBoard();
     const release = grabAndMove("dancer-1", 40);
+    await afterMotionRender();
 
     expect(shiftX(dancerNode("dancer-1"))).toBeGreaterThan(0);
     release();
   });
 
   /* ここが報告の場面 */
-  it("まとめて動かしたあとでも、掴んだ人が動く", () => {
+  it("まとめて動かしたあとでも、掴んだ人が動く", async () => {
     renderDragBoard();
     act(() => {
       useUIStore.getState().selectDancers(["dancer-1", "dancer-2"]);
@@ -645,12 +663,13 @@ describe("掴んでいる最中に、画面の上で動いているか", () => {
     drag("dancer-1", 40);
 
     const release = grabAndMove("dancer-1", 40);
+    await afterMotionRender();
 
     expect(shiftX(dancerNode("dancer-1"))).toBeGreaterThan(0);
     release();
   });
 
-  it("まとめて動かしたあと、選択を1人に絞っても掴んだ人が動く", () => {
+  it("まとめて動かしたあと、選択を1人に絞っても掴んだ人が動く", async () => {
     renderDragBoard();
     act(() => {
       useUIStore.getState().selectDancers(["dancer-1", "dancer-2"]);
@@ -661,6 +680,28 @@ describe("掴んでいる最中に、画面の上で動いているか", () => {
     });
 
     const release = grabAndMove("dancer-2", 40);
+    await afterMotionRender();
+
+    expect(shiftX(dancerNode("dancer-2"))).toBeGreaterThan(0);
+    release();
+  });
+
+  /**
+   * **一度でも一緒に動いた人が、その後もう掴めなくなっていた**
+   * （実機の報告 2026-08-25:「たまにドラッグにダンサーがついてこない」）。
+   * 上の2件と違い、**追随を挟んでから離し**、それから掴む。
+   * 理由は `useDancerGrab` の doc（motion が transform を塗り戻す）。
+   */
+  it("一緒に動いて離したあとでも、掴んだ人が動く", async () => {
+    renderDragBoard();
+    act(() => {
+      useUIStore.getState().selectDancers(["dancer-1", "dancer-2"]);
+    });
+    // dancer-1 を掴んで動かして離す。dancer-2 は追随して離される側
+    drag("dancer-1", 40);
+
+    const release = grabAndMove("dancer-2", 40);
+    await afterMotionRender();
 
     expect(shiftX(dancerNode("dancer-2"))).toBeGreaterThan(0);
     release();
