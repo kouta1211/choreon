@@ -45,6 +45,25 @@ create table public.projects (
   -- 以前は端末ごとの設定(localStorage)だったが、それだと
   -- 「振付師が決めたとおりに見える」が成り立たなかった
   is_metronome_enabled boolean not null default false,
+  -- 拍→秒の写像。**振付は拍で持ち、秒はここから毎回導く**(2026-08-25)。
+  -- 振付はカウントで組み、最後に曲へ載せる。載せ方を変えても
+  -- (曲を差し替える・伸ばして合わせ直す)振付の中身は1つも変わらないのが
+  -- 正しい。秒を正にすると、載せ直すたびに隊形が音からずれる。
+  --
+  -- 形は [{fromBeat, atSeconds, secondsPerBeat}, ...]。**要素1つでも配列**に
+  -- しておく — テンポが変わる曲は「変わり目ごとに1要素」で表す。単数で
+  -- 始めると、増やすときに保存済みの全作品を移行することになる。
+  --
+  -- atSeconds は【作品の時間】で測る(music_offset_seconds を引いた後)。
+  -- 再生は audio.currentTime = music_offset_seconds + 作品の時間 なので、
+  -- ここを作品の時間に揃えておくと再生の側に一切触らずに済む。
+  --
+  -- jsonb なので DB は中身を守れない。secondsPerBeat に 0 が1つ入るだけで
+  -- アプリ側の全シーンの秒が Infinity になり、**画面はシーンが1つも無い
+  -- ように見える**。読むときは必ず normalizePlacements(placement.ts) を通す。
+  music_placements jsonb not null
+    default '[{"fromBeat":0,"atSeconds":0,"secondsPerBeat":0.5}]'::jsonb
+    check (jsonb_typeof(music_placements) = 'array'),
   -- 「リンクを知っている人だけ」に見せるための合鍵と、そのオン/オフ。
   -- トークンは常に持っているが、is_shared が false の間はどのリンクでも
   -- 開けない。閲覧は public.shared_project(token) 経由で、テーブルそのものは
@@ -129,6 +148,20 @@ create table public.scenes (
     check (time_seconds::float8 >= 0),
   move_seconds numeric
     check (move_seconds is null or move_seconds::float8 >= 0),
+  -- position_beats / move_beats が**新しい正**(2026-08-25)。上の秒の2列は
+  -- 移行の間だけ両方へ書いており(dual write)、落とすのは別便。
+  --
+  -- position_beats は「頭から何拍目か」。8拍=1セット(稽古場で数える単位)。
+  -- **0以上の縛りを置かない** — 1カウント目より手前に置かれた隊形は負の拍に
+  -- なり、それは正しい状態。弾くとその作品の移行が丸ごと失敗する。
+  -- NaN だけは弾く(numeric は 'NaN' を許し、NaN >= 0 が true になるため
+  -- ::float8 で自分自身と比べる。curve_control_x と同じ理由)。
+  position_beats numeric
+    check (position_beats is null
+           or position_beats::float8 = position_beats::float8),
+  -- 区間のうち動くのに使う拍数。null なら区間まるごと(move_seconds と同じ)
+  move_beats numeric
+    check (move_beats is null or move_beats::float8 >= 0),
   created_at timestamptz not null default now()
 );
 
@@ -354,3 +387,59 @@ where tablename in ('projects', 'dancers', 'scenes', 'positions');
 -- select column_name, data_type, column_default, is_nullable
 -- from information_schema.columns
 -- where table_name = 'projects' and column_name = 'is_metronome_enabled';
+
+-- -----------------------------------------
+-- 2026-08-25 シーンの位置の正を「秒」から「拍」へ移す(第1段: 足すだけ)
+-- -----------------------------------------
+-- 振付はカウントで組み、最後に曲へ載せる。載せ方を変えても振付の中身が
+-- 変わらないようにするため、正を拍へ移す。**この便では秒の列を落とさない** —
+-- アプリは両方へ書き(dual write)、読むのは拍の側。落とすのは、実データで
+-- 食い違いが無いことを確かめてから別便で。
+--
+-- 共有用の関数 shared_project は to_jsonb(s) / to_jsonb(p) で列をまるごと
+-- 返すので、この便では関数の変更も要らない。
+--
+-- alter table public.projects
+--   add column if not exists music_placements jsonb not null
+--     default '[{"fromBeat":0,"atSeconds":0,"secondsPerBeat":0.5}]'::jsonb;
+--
+-- alter table public.scenes
+--   add column if not exists position_beats numeric,
+--   add column if not exists move_beats numeric;
+--
+-- -- 既存作品を1ミリも動かさないので、**丸めない**
+-- update public.projects
+-- set music_placements = jsonb_build_array(
+--   jsonb_build_object(
+--     'fromBeat', 0, 'atSeconds', 0,
+--     'secondsPerBeat', 60.0 / greatest(bpm, 1)))
+-- where music_placements = '[]'::jsonb
+--    or music_placements is null;
+--
+-- update public.scenes s
+-- set position_beats = s.time_seconds / (60.0 / greatest(p.bpm, 1))
+-- from public.projects p
+-- where p.id = s.project_id and s.position_beats is null;
+--
+-- update public.scenes s
+-- set move_beats = s.move_seconds / (60.0 / greatest(p.bpm, 1))
+-- from public.projects p
+-- where p.id = s.project_id
+--   and s.move_beats is null and s.move_seconds is not null;
+--
+-- 確認1: 1件でも出たら移行が壊れている。**0でなければ次へ進まない**
+-- select count(*) as drifted
+-- from public.scenes s join public.projects p on p.id = s.project_id
+-- where abs(s.time_seconds - s.position_beats * (60.0 / greatest(p.bpm, 1)))
+--       > 1e-6;
+--
+-- 確認2: 取りこぼし(列を足す前に作られた行)
+-- select count(*) as missing from public.scenes where position_beats is null;
+--
+-- 確認3: 載せ方の形。secondsPerBeat が 0 や欠損だと、アプリ側で
+--        全シーンの秒が Infinity になり「シーンが1つも無い」ように見える
+-- select id, title, music_placements from public.projects
+-- where jsonb_array_length(music_placements) = 0
+--    or exists (select 1 from jsonb_array_elements(music_placements) e
+--               where (e->>'secondsPerBeat') is null
+--                  or (e->>'secondsPerBeat')::float8 <= 0);
