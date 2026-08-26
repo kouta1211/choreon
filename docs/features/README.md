@@ -5,8 +5,8 @@
 | ドメイン | 何を持っているか | 主なもの |
 | --- | --- | --- |
 | `canvas` | ステージ上の操作すべて。選ぶ・動かす・向き・曲線・当たり・履歴 | `useUIStore` `useHistoryStore` `dragMath` `marquee` `stageFlip` |
-| `music` | 曲・BPM・メトロノーム・時間軸（タイムライン） | `useMusicStore` `musicTimeline` `waveformPeaks` |
-| `scene` | シーン（隊形）の追加・複製・並び替え・時刻・保存 | `usePositionCommit` `sceneTiming` `sceneReorder` |
+| `music` | 曲・カウント・メトロノーム・時間軸・**曲への載せ方** | `useMusicStore` `placement` `counts` `waveformPeaks` |
+| `scene` | シーン（隊形）の追加・複製・並び替え・**位置（カウント）**・保存 | `usePositionCommit` `sceneTiming` `sceneReorder` |
 | `project` | 作品そのもの。読み込み・保存・下書き・共有リンク・ステージの広さ | `useProjectStore` `persistence` `guestDraft` `stageResize` |
 | `i18n` | ja / en / ko の文言。**3つそろっていないとビルドが落ちる** | `messages/` `LocaleProvider` `server.ts` |
 | `viewer` | 共有リンクで見る画面（読むだけ）。補間・目盛り | `useViewerStore` `interpolate` `rulerTicks` |
