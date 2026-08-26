@@ -37,19 +37,11 @@ export const MIN_SEGMENT_SECONDS = 0.1;
  */
 export const DEFAULT_SEGMENT_SECONDS = 4;
 
-/** 時刻の刻み。入力欄(SceneTimeField)が受け付ける桁と同じ */
-export const SECONDS_STEP = 0.1;
-
-/**
- * 時刻を 0.1秒 の刻みへ寄せる。
- *
- * 時間軸の上でコマを掴んで動かすと、1pxごとに 1/26秒 のような端数が出て
- * 「1.077秒で移動」のような数字になる。人が読む数でも、入力欄で打てる
- * 数でもないので、置いた瞬間に丸める。
- */
-export function snapSeconds(seconds: number): number {
-  return Math.round(seconds / SECONDS_STEP) * SECONDS_STEP;
-}
+/* **0.1秒の刻み（`SECONDS_STEP` / `snapSeconds`）は消した**（2026-08-26）。
+   コマを置く先は拍だけになったので、読む人も打つ人も居なくなった。
+   残しておくと「曲があるときだけ細かく置けた方が」と手が伸びるが、
+   その刻みで置いたコマは**どのカウントにも乗らない**。
+   端数を丸めたいときは `features/music/lib/counts.ts` の `snapToBeat`。 */
 
 type TimedScene = { id: string; timeSeconds: number };
 

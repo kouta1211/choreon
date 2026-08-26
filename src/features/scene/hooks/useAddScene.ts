@@ -7,12 +7,10 @@ import { canAddScene } from "@/features/scene/lib/canAddScene";
 import { findFreePositions } from "@/features/dancer/lib/newDancers";
 import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
-import { createScene, updateSceneBeats } from "@/features/scene/api/scenes";
+import { createScene } from "@/features/scene/api/scenes";
 import {
   beatAtSeconds,
-  beatsForTimes,
   DEFAULT_PLACEMENTS,
-  sameBeat,
   withDerivedTimes,
 } from "@/features/music/lib/placement";
 import { upsertPositions } from "@/features/scene/api/positions";
@@ -21,7 +19,6 @@ import { randomId } from "@/lib/randomId";
 import {
   duplicateTimeSeconds,
   insertTimeSeconds,
-  uniformTimes,
 } from "@/features/scene/lib/sceneTiming";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
@@ -61,7 +58,6 @@ export function useAddScene(project: Project) {
   const [isCreating, setIsCreating] = useState(false);
   const scenes = useProjectStore((state) => state.scenes);
   const addScene = useProjectStore((state) => state.addScene);
-  const applySceneBeats = useProjectStore((state) => state.applySceneBeats);
   const placements = useProjectStore(
     (state) => state.project?.musicPlacements ?? DEFAULT_PLACEMENTS,
   );
@@ -77,8 +73,6 @@ export function useAddScene(project: Project) {
     const previousSelectedSceneId = useUIStore.getState().selectedSceneId;
 
     const hasMusic = useMusicStore.getState().objectUrl !== null;
-    const isMetronomeEnabled =
-      useProjectStore.getState().project?.isMetronomeEnabled ?? false;
     // 作成に失敗したときに戻す先。再生ヘッドを動かすのは曲が無いときだけ
     const previousTime = useMusicStore.getState().currentTime;
     const segmentSeconds = useSettingsStore.getState().defaultSegmentSeconds;
@@ -88,19 +82,7 @@ export function useAddScene(project: Project) {
       scenes.find((scene) => scene.id === previousSelectedSceneId) ??
       scenes[scenes.length - 1];
 
-    /* 順番だけで作っているときは、**選んでいるシーンの次**へ入れて
-       全部を同じ秒数で積み直す。この形では時刻が順番以上のことを
-       持たないので、書き換えても失われるものが無い（lib/timelineMode） */
     const newSceneId = randomId();
-    const restacked =
-      !hasMusic && !isMetronomeEnabled && scenes.length > 0
-        ? uniformTimes(
-            scenes.flatMap((item) =>
-              item.id === source.id ? [item.id, newSceneId] : [item.id],
-            ),
-            segmentSeconds,
-          )
-        : null;
 
     /* シーンがまだ1つも無いときは曲の頭から始める（最初の隊形は
        「曲のこの秒から」ではなく「はじまり」なので）。
@@ -117,7 +99,13 @@ export function useAddScene(project: Project) {
     /* 曲があるときは**鳴らしている最中しか来ない**（canAddScene）ので、
        ここは常に押した瞬間の位置。**最初の1つも同じ** — イントロが長い
        曲なら、振付が始まるのは0秒ではない。
-       曲が無いときだけ、最初は0秒・以降は選んでいるシーンの次 */
+       曲が無いときだけ、最初は0秒・以降は選んでいるシーンの次。
+
+       ⚠️ **積み直さない**（2026-08-26）。以前はここに
+       「曲もクリックも無いときは全部を同じ秒数で積み直す」枝があった。
+       カウントで組むようになって **`3-5` に置いたこと自体が振付の意図**
+       になったので、触っていないシーンは動かさない。
+       削除・並び替えと同じ扱いで、**3箇所そろえてある** */
     const timeSeconds = hasMusic
       ? insertTimeSeconds(
           scenes,
@@ -126,9 +114,7 @@ export function useAddScene(project: Project) {
         )
       : scenes.length === 0
         ? 0
-        : restacked
-          ? (restacked.get(newSceneId) ?? 0)
-          : duplicateTimeSeconds(scenes, source, segmentSeconds);
+        : duplicateTimeSeconds(scenes, source, segmentSeconds);
 
     const scene = {
       id: newSceneId,
@@ -184,13 +170,6 @@ export function useAddScene(project: Project) {
           }));
 
     // 楽観的更新: 先にローカルへ反映し、保存に失敗したら取り消す
-    const previousBeats = new Map(
-      scenes.map((item) => [item.id, item.positionBeats]),
-    );
-    const restackedBeats = restacked
-      ? beatsForTimes(restacked, placements)
-      : null;
-    if (restackedBeats) applySceneBeats(restackedBeats);
     addScene(scene);
     for (const position of copiedPositions) {
       updateDancerPosition(scene.id, position.dancerId, position);
@@ -209,35 +188,14 @@ export function useAddScene(project: Project) {
 
     try {
       await persist(async (supabase) => {
+        /* **送るのは増えた1件だけ**（2026-08-26）。以前はここで、
+           積み直したぶんの全シーンも同じ往復で送っていた。
+           触っていないシーンを動かさなくなったので、送る相手も無い */
         await createScene(supabase, scene, placements);
         await upsertPositions(supabase, copiedPositions);
-        // 押しのけたぶんも同じ往復で送る。片方だけ通ると、画面と
-        // 保存されているものがずれたまま気づけない
-        if (restackedBeats) {
-          // 押し出したぶんも同じ往復で送る。片方だけ通ると、画面と
-          // 保存されているものがずれたまま気づけない。
-          // **拍で比べる** — 秒は派生値なので等号が当てにならない
-          await updateSceneBeats(
-            supabase,
-            scenes
-              .filter(
-                (item) =>
-                  !sameBeat(
-                    restackedBeats.get(item.id) ?? item.positionBeats,
-                    item.positionBeats,
-                  ),
-              )
-              .map((item) => ({
-                id: item.id,
-                positionBeats: restackedBeats.get(item.id)!,
-              })),
-            placements,
-          );
-        }
       });
     } catch (error) {
       removeScene(scene.id);
-      if (restackedBeats) applySceneBeats(previousBeats);
       selectScene(previousSelectedSceneId);
       if (!hasMusic) useMusicStore.getState().setCurrentTime(previousTime);
       showToast({

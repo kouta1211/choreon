@@ -65,15 +65,19 @@ afterEach(() => vi.restoreAllMocks());
  * **どちらが選ばれるか**をここで縛る。
  */
 describe("useAddScene の割り込み方", () => {
-  it("曲も拍も無いときは、全部を同じ秒数で積み直す", async () => {
+  /* **曲もクリックも無くても、答えは同じ**（2026-08-26）。
+     以前はこの形だけ全部を積み直していた。カウントで組むようになって
+     「そのカウントに置いた」こと自体が振付の意図になったので、
+     触っていないシーンは動かさない。**積み直す枝を戻すと、ここが
+     [0, 4, 8, 12] になって落ちる** */
+  it("曲もクリックも無いときも、間へ割り込む（後ろは動かない）", async () => {
     const { result } = setup({ isMetronomeEnabled: false });
 
     await act(async () => {
       await result.current.addScene();
     });
 
-    // 選んでいた a の次へ入り、全部が既定の 4秒 間隔になる
-    await waitFor(() => expect(times()).toEqual([0, 4, 8, 12]));
+    await waitFor(() => expect(times()).toEqual([0, 2, 4, 6]));
   });
 
   /**
