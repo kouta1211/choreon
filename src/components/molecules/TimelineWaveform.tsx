@@ -13,14 +13,16 @@ import {
   shouldDrawBeatLines,
 } from "@/features/music/lib/counts";
 import { peakBetween, type Waveform } from "@/features/music/lib/waveformPeaks";
+import type { BeatOriginSeconds } from "@/features/music/lib/placement";
 
 type Props = {
   /** 曲の山の列。読み込み中や曲が無いときは null */
   waveform: Waveform | null;
   /** 軸の左端(px)。ここが動いたら描き直す */
   scrollX: MotionValue<number>;
-  /** 曲の頭(0秒)が軸の何pxにあるか。帯とミニマップで縮尺が違うので、
-   * 先頭の余白も縮尺に合わせて渡してもらう */
+  /** **作品の頭(0秒)**が軸の何pxにあるか。帯とミニマップで縮尺が違うので、
+   * 先頭の余白も縮尺に合わせて渡してもらう。
+   * 曲の頭ではない — 頭出し(`musicOffsetSeconds`)を入れると両者はずれる */
   originPx: number;
   pxPerSecond: number;
   width: number;
@@ -29,8 +31,14 @@ type Props = {
   playheadSeconds: MotionValue<number> | null;
   /** 曲が無いときに敷く拍のグリッド。曲があるなら null */
   bpm: number | null;
-  /** 1拍目がどこか(曲の頭出しのオフセット) */
-  originSeconds: number;
+  /** 1拍目が【軸の秒＝作品の時間の】何秒目か。
+   * 出どころは `beatOriginSeconds(placements)` **の1つだけ**
+   * （素の number を受けないので、`musicOffsetSeconds` は型で弾かれる） */
+  originSeconds: BeatOriginSeconds;
+  /** **軸の秒 → 曲の秒**の差。`musicOffsetSeconds` そのもの。
+   * 波形は曲の頭から復号してあるので、引くときだけこれを足す。
+   * **拍の側には一切効かせない**(拍は作品の時間で数える) */
+  songOffsetSeconds?: number;
   /** 何拍ごとに強拍(太い線)を引くか。作品の拍子。
    * 稽古場で数える単位は8カウントだが、それは拍子とは別の話で、
    * 線の太さを決めるのはこちら */
@@ -78,6 +86,7 @@ export function TimelineWaveform({
   playheadSeconds,
   bpm,
   originSeconds,
+  songOffsetSeconds = 0,
   beatsPerBar = null,
   showSetNumbers = false,
   opacity = 1,
@@ -223,10 +232,13 @@ export function TimelineWaveform({
           : (playheadSeconds.get() - fromSeconds) * pxPerSecond;
 
       for (let x = 0; x < width; x += 1) {
-        const at = fromSeconds + x * secondsPerPixel;
-        if (at < 0 || at > waveform.durationSeconds) continue;
+        // 軸は【作品の時間】。波形は【曲の時間】で持っているので、
+        // 引くときだけ頭出しを足す。ここを足さないと、頭出しを入れた
+        // 作品で**聞こえている音と波形がずれる**
+        const songAt = songOffsetSeconds + fromSeconds + x * secondsPerPixel;
+        if (songAt < 0 || songAt > waveform.durationSeconds) continue;
 
-        const peak = peakBetween(waveform, at, at + secondsPerPixel);
+        const peak = peakBetween(waveform, songAt, songAt + secondsPerPixel);
         // 無音の箇所でも軸が途切れて見えないよう、最低1pxは残す
         const barHeight = Math.max(1, peak * half);
         context.fillStyle = x < playedX ? played : idle;
@@ -251,6 +263,7 @@ export function TimelineWaveform({
     playheadSeconds,
     bpm,
     originSeconds,
+    songOffsetSeconds,
     beatsPerBar,
     showSetNumbers,
     themePreference,

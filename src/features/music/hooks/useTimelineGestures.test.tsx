@@ -3,6 +3,10 @@ import { useRef } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { useMotionValue } from "motion/react";
 import { useTimelineGestures } from "./useTimelineGestures";
+import {
+  beatOriginSeconds,
+  DEFAULT_PLACEMENTS,
+} from "@/features/music/lib/placement";
 
 /**
  * 帯の【離したときのシーク】だけを見る。
@@ -26,7 +30,7 @@ function Harness({ seekTo }: { seekTo: (seconds: number) => void }) {
     seekTo,
     shouldSnap: false,
     bpm: 120,
-    offsetSeconds: 0,
+    originSeconds: beatOriginSeconds(DEFAULT_PLACEMENTS),
     holdFollow: () => {},
     releaseFollow: () => {},
   });

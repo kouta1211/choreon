@@ -15,6 +15,7 @@ import {
   LEAD_IN_PX,
 } from "@/features/music/lib/timelineScale";
 import type { Waveform } from "@/features/music/lib/waveformPeaks";
+import type { BeatOriginSeconds } from "@/features/music/lib/placement";
 
 /** 常にこの高さ。倍率を変えても段の高さが動かないようにする
  * (縦の余白がいちばん貴重なので、可変にすると帯が上下する) */
@@ -33,7 +34,10 @@ type Props = {
   sceneTimes: number[];
   /** 拍のグリッドを地にする(曲が無いとき)。曲があれば波形が地になる */
   bpm: number | null;
-  originSeconds: number;
+  /** 1拍目が【軸の秒＝作品の時間の】何秒目か。`musicOffsetSeconds` ではない */
+  originSeconds: BeatOriginSeconds;
+  /** 軸の秒 → 曲の秒の差（`musicOffsetSeconds`）。波形の引きにだけ効く */
+  songOffsetSeconds?: number;
 };
 
 /**
@@ -57,6 +61,7 @@ export function TimelineMinimap({
   sceneTimes,
   bpm,
   originSeconds,
+  songOffsetSeconds = 0,
 }: Props) {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const draggingRef = useRef(false);
@@ -114,6 +119,7 @@ export function TimelineMinimap({
         playheadSeconds={null}
         bpm={bpm}
         originSeconds={originSeconds}
+        songOffsetSeconds={songOffsetSeconds}
         opacity={0.45}
         className="absolute inset-0"
       />

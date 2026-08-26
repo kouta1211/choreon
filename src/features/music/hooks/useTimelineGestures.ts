@@ -12,6 +12,7 @@ import { flickTargetSeconds } from "@/features/music/lib/counts";
 import { startedOnSceneCard } from "@/features/music/lib/bandTapTarget";
 import { capturePointer, releasePointer } from "@/lib/pointerCapture";
 import { TAP_PATTERN, vibrate } from "@/lib/haptics";
+import type { BeatOriginSeconds } from "@/features/music/lib/placement";
 
 /** これ未満の移動はタップ。それ以上は軸を引っ張る操作 */
 const PAN_THRESHOLD_PX = 6;
@@ -29,7 +30,10 @@ type Args = {
   /** 曲が無いときだけ、8カウントの頭へ吸着させる */
   shouldSnap: boolean;
   bpm: number;
-  offsetSeconds: number;
+  /** 1拍目が【軸の秒＝作品の時間の】何秒目か。
+   * 出どころは `beatOriginSeconds(placements)`
+   * （素の number を受けないので、`musicOffsetSeconds` は型で弾かれる） */
+  originSeconds: BeatOriginSeconds;
   holdFollow: () => void;
   /** 引いたかどうかを渡す。引いたなら、その再生の間は追従を戻さない */
   releaseFollow: (didPan: boolean) => void;
@@ -54,7 +58,7 @@ export function useTimelineGestures({
   seekTo,
   shouldSnap,
   bpm,
-  offsetSeconds,
+  originSeconds,
   holdFollow,
   releaseFollow,
 }: Args) {
@@ -92,7 +96,7 @@ export function useTimelineGestures({
     );
     // px/ms を 秒/秒 に直す。1000倍して ms を秒に、pxPerSecond で割って px を秒に
     const velocity = (velocityPxPerMs * 1000) / pxPerSecond;
-    return flickTargetSeconds(seenSeconds, velocity, bpm, offsetSeconds);
+    return flickTargetSeconds(seenSeconds, velocity, bpm, originSeconds);
   };
 
   /**

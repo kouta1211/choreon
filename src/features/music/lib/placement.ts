@@ -301,3 +301,30 @@ export function bpmOf(placements: readonly Placement[]): number {
   const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
   return clampBpm(60 / list[0].secondsPerBeat);
 }
+
+/**
+ * **1拍目が【作品の時間の】何秒目か。**
+ *
+ * ただの秒だが、**別の型にしてある**。理由は 2026-08-26 に踏んだバグで、
+ * 拍の原点へ `musicOffsetSeconds`（曲の再生開始位置）が5箇所で
+ * 渡されていた。あの列は**曲の時間**で測っていて、時間軸の方は既に
+ * 作品の時間（`audio.currentTime - musicOffsetSeconds`）なので、
+ * 渡すと**原点を二重に足す**。
+ *
+ * ⚠️ **見ても気づけない壊れ方だった。** 頭出しが 0 の作品では両者が
+ * 一致するので、普通に使っている限り画面は正しく見える。
+ * テストも 221件が緑のままだった（原点に 999 を入れても落ちなかった）。
+ *
+ * だから**素の `number` を受け付けない**。`BeatOriginSeconds` を作れるのは
+ * この関数だけで、`musicOffsetSeconds` を渡そうとすると**型で落ちる**。
+ */
+export type BeatOriginSeconds = number & {
+  readonly __beatOriginSeconds: unique symbol;
+};
+
+export function beatOriginSeconds(
+  placements: readonly Placement[],
+): BeatOriginSeconds {
+  const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
+  return list[0].atSeconds as BeatOriginSeconds;
+}

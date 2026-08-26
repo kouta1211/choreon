@@ -20,6 +20,7 @@ import {
   zoomForCluster,
 } from "@/features/music/lib/timelineScale";
 import { snapToBeat } from "@/features/music/lib/counts";
+import { beatOriginSeconds } from "@/features/music/lib/placement";
 import { TimelineWaveform } from "@/components/molecules/TimelineWaveform";
 import { TimelineSceneLayer } from "@/components/molecules/TimelineSceneLayer";
 import { TimelineMinimap } from "@/components/molecules/TimelineMinimap";
@@ -89,6 +90,18 @@ export function MusicTimeline({ project, audioRef }: Props) {
   const layout = TIMELINE_LAYOUT[useScreenKind()];
 
   const offsetSeconds = project.musicOffsetSeconds ?? 0;
+  /**
+   * 拍の原点。**軸の秒（＝作品の時間）で測る。**
+   *
+   * `offsetSeconds` と取り違えない — あちらは「曲の何秒目から鳴らすか」で、
+   * 軸そのものが既にそれを引いた後（`seekTo` / `useMusicPlayback`）。
+   * 渡すと二重に足すことになる（2026-08-26 に直した）。
+   */
+  const beatOrigin = beatOriginSeconds(
+    useProjectStore(
+      (state) => state.project?.musicPlacements ?? project.musicPlacements,
+    ),
+  );
   const lastSceneSeconds = scenes[scenes.length - 1]?.timeSeconds ?? 0;
   // 曲より後ろにシーンを置くこともある(曲を差し替える前に組む場合など)。
   // 軸は長い方に合わせないと、置いたシーンへ辿り着けない
@@ -142,7 +155,7 @@ export function MusicTimeline({ project, audioRef }: Props) {
     // 波形が手がかりになるので、自由に止まれた方がよい
     shouldSnap: !hasMusic,
     bpm,
-    offsetSeconds,
+    originSeconds: beatOrigin,
     holdFollow,
     releaseFollow,
   });
@@ -187,7 +200,7 @@ export function MusicTimeline({ project, audioRef }: Props) {
    * 曲があるときは波形に合わせたいので、0.1秒の刻みだけに丸める。
    */
   const placeAt = (seconds: number) =>
-    hasMusic ? snapSeconds(seconds) : snapToBeat(seconds, bpm, offsetSeconds);
+    hasMusic ? snapSeconds(seconds) : snapToBeat(seconds, bpm, beatOrigin);
 
 
   const layerX = useTransform(scrollX, (value) => -value);
@@ -219,7 +232,8 @@ export function MusicTimeline({ project, audioRef }: Props) {
           height={layout.bandHeight}
           playheadSeconds={playheadSeconds}
           bpm={bpm}
-          originSeconds={offsetSeconds}
+          originSeconds={beatOrigin}
+          songOffsetSeconds={offsetSeconds}
           /* 曲があるときは拍子を持たないので、太い線も引かない */
           beatsPerBar={hasMusic ? null : beatsPerBar}
           showSetNumbers
@@ -319,7 +333,8 @@ export function MusicTimeline({ project, audioRef }: Props) {
           pxPerSecond={pxPerSecond}
           sceneTimes={scenes.map((scene) => scene.timeSeconds)}
           bpm={bpm}
-          originSeconds={offsetSeconds}
+          originSeconds={beatOrigin}
+          songOffsetSeconds={offsetSeconds}
         />
       )}
     </div>

@@ -26,6 +26,7 @@ import {
 import { useSilentClock } from "@/features/music/hooks/useSilentClock";
 import { useMetronome } from "@/features/music/hooks/useMetronome";
 import { playbackStartIndex } from "@/features/music/lib/playbackStart";
+import { beatOriginSeconds } from "@/features/music/lib/placement";
 import { useBpm } from "@/features/music/hooks/useBpm";
 import { usePlaybackToggle } from "@/features/music/hooks/usePlaybackToggle";
 import { useToastOffset } from "@/components/hooks/useToastOffset";
@@ -86,13 +87,10 @@ export function SceneDock({ project }: Props) {
   const musicUrl = useMusicStore((state) => state.objectUrl);
   const musicFileName = useMusicStore((state) => state.fileName);
   const setMusicDuration = useMusicStore((state) => state.setDurationSeconds);
-  // 速さ・拍子・頭出しは【storeから読む】。props の project は
+  // 速さ・拍子・拍の原点は【storeから読む】。props の project は
   // ページが取ってきたときのままで、シートで変えても更新されない。
   // props を読んでいると、鳴っているメトロノームだけが古い速さのままになる
   const { bpm, beatsPerBar } = useBpm();
-  const offsetSeconds = useProjectStore(
-    (state) => state.project?.musicOffsetSeconds ?? project.musicOffsetSeconds,
-  );
   /* メトロノームは作品の設定になった(2026-08-18)。端末ごとではない */
   const { isMetronomeEnabled, toggleMetronome } = useMetronomeSetting();
   /* 時刻という概念を出すかどうか。曲も拍も無いときは出さない */
@@ -120,9 +118,16 @@ export function SceneDock({ project }: Props) {
   const selectedScene = selectedIndex >= 0 ? scenes[selectedIndex] : null;
   // 曲が無ければカウントで読む。毎レンダー新しい入れ物を作ると
   // PlayheadClock の購読が張り直されるので、中身が同じなら使い回す
+  // 拍の原点は【作品の時間】で測る。`musicOffsetSeconds`(曲の再生開始位置)は
+  // 軸が違うので渡さない。渡すと二重に足すことになる（2026-08-26 に直した）
+  const beatOrigin = beatOriginSeconds(
+    useProjectStore(
+      (state) => state.project?.musicPlacements ?? project.musicPlacements,
+    ),
+  );
   const countSetting = useMemo(
-    () => (hasMusic ? null : { bpm, originSeconds: offsetSeconds ?? 0 }),
-    [hasMusic, bpm, offsetSeconds],
+    () => (hasMusic ? null : { bpm, originSeconds: beatOrigin }),
+    [hasMusic, bpm, beatOrigin],
   );
 
   // 曲が無いときの時計。曲があるときは<audio>が時刻の正になる

@@ -12,6 +12,8 @@ import {
   secondsAtBeat,
   withDerivedTimes,
   type Placement,
+  beatOriginSeconds,
+  DEFAULT_PLACEMENTS,
 } from "./placement";
 
 /**
@@ -275,5 +277,24 @@ describe("同じ位置とみなすか", () => {
   it("負の拍でも効く（1カウント目より手前）", () => {
     expect(sameBeat(-4, -4.0000000001)).toBe(true);
     expect(sameBeat(-4, -3.9)).toBe(false);
+  });
+});
+
+describe("beatOriginSeconds", () => {
+  it("最初の載せ方の atSeconds を返す（作品の時間で測る）", () => {
+    expect(
+      beatOriginSeconds([
+        { fromBeat: 0, atSeconds: 1.25, secondsPerBeat: 0.5 },
+        { fromBeat: 16, atSeconds: 9.25, secondsPerBeat: 0.4 },
+      ]),
+    ).toBe(1.25);
+  });
+
+  it("空なら既定（0拍目が0秒）", () => {
+    expect(beatOriginSeconds([])).toBe(0);
+  });
+
+  it("曲を入れていない作品の既定は 0 — 頭出しとは無関係", () => {
+    expect(beatOriginSeconds(DEFAULT_PLACEMENTS)).toBe(0);
   });
 });

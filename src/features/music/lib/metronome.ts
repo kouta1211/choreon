@@ -26,8 +26,13 @@ export function secondsPerBeat(bpm: number): number {
 /**
  * [fromSeconds, toSeconds) に入る拍の時刻を、早い順に返す。
  *
- * `originSeconds` は「1拍目がいつか」。曲の頭出し位置(music_offset_seconds)を
- * 渡せば、イントロを飛ばした位置から拍を数え始められる。
+ * `originSeconds` は「1拍目がいつか」を、**呼ぶ側が使っている時計で**測った値。
+ * メトロノームなら `AudioContext.currentTime`、時間軸なら【作品の時間】。
+ *
+ * ⚠️ **`music_offset_seconds` を渡さない。** あちらは【曲の時間】で測った
+ * 再生開始位置で、時間軸の方は既にそれを引いた後（`audio.currentTime - offset`）。
+ * 渡すと原点を二重に足す（2026-08-26 に5箇所でこれを踏んだ。時間軸の側は
+ * `beatOriginSeconds(placements)` から取り、型で塞いである）。
  *
  * 半開区間([from, to))にしているのは、窓を連ねて呼んだときに
  * 境目の拍を二度鳴らさないため。

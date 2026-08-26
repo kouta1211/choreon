@@ -6,13 +6,14 @@ import { useEffect, useState } from "react";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { countAt, formatCount } from "@/features/music/lib/counts";
 import { useT } from "@/features/i18n/LocaleProvider";
+import type { BeatOriginSeconds } from "@/features/music/lib/placement";
 
 type Props = {
   /** 曲(または最後のシーン)の長さ。分からなければ null */
   totalSeconds: number | null;
   /** 曲が入っていないときは、時刻ではなくカウントで読む。
    * 稽古場で数える単位がそちらなので、無い曲の秒数より通じる */
-  counts: { bpm: number; originSeconds: number } | null;
+  counts: { bpm: number; originSeconds: BeatOriginSeconds } | null;
 };
 
 /**
