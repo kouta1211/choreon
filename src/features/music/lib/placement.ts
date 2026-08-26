@@ -232,38 +232,17 @@ export function beatsForTimes(
   return beats;
 }
 
-/**
- * **秒はそのまま。拍を数え直す。**（BPM スライダーの意味・2026-08-25 に決定）
- *
- * 「1拍の長さ」の見立てだけを変える操作。シーンは1つも動かないので、
- * 変わるのは「何カウント目か」の数え方と、拍線の間隔だけ。
- *
- * ⚠️ **`restretch` と取り違えない。** あちらは拍を保って秒を動かす。
- * 同じ引数で正反対の結果になるので、名前で見分ける。
- */
-export function regrid<T extends Beated & { id: string }>(
-  scenes: readonly T[],
-  placements: readonly Placement[],
-  nextSecondsPerBeat: number,
-): { placements: Placement[]; beatsById: Map<string, number> } {
-  const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
-  if (!Number.isFinite(nextSecondsPerBeat) || nextSecondsPerBeat <= 0) {
-    return { placements: [...list], beatsById: new Map() };
-  }
+/* **`regrid`（秒を保って拍を数え直す）は消した**（2026-08-26・第4段）。
 
-  /* 数え直したあとの載せ方は1本にまとめる。区切りは「曲へ載せた」結果
-     であって、物差しを変えただけで区切りが増えるのはおかしい */
-  const next: Placement[] = [
-    { fromBeat: 0, atSeconds: list[0].atSeconds, secondsPerBeat: nextSecondsPerBeat },
-  ];
+   速さの入力が `restretch` になって、呼ぶ人が居なくなった。
+   画面が秒を出していたころは「BPM を変えてもコマが動かない」方が
+   自然に見えたが、第2段でカウントを出した瞬間に壊れた —
+   数え直すと `3-5` が `2-8` になり、**振付の中身が書き換わる**。
 
-  const beatsById = new Map<string, number>();
-  for (const scene of scenes) {
-    const seconds = secondsAtBeat(list, scene.positionBeats);
-    beatsById.set(scene.id, beatAtSeconds(next, seconds));
-  }
-  return { placements: next, beatsById };
-}
+   要るとしたら「実は倍テンポで数えていた」という直しだが、
+   まだ困っていないので作らない。復活させるなら、
+   **カウントが変わる操作だと画面で言い切ってから**。 */
+
 
 /**
  * **拍はそのまま。秒を伸ばす。**（曲へ載せる操作。第3段で使う）

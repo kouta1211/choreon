@@ -27,7 +27,6 @@ import { TimelineMinimap } from "@/components/molecules/TimelineMinimap";
 import { TimelineSpanLayer } from "@/components/molecules/TimelineSpanLayer";
 import { useMusicPlacement } from "@/features/music/hooks/useMusicPlacement";
 import { PressableButton } from "@/components/atoms/PressableButton";
-import { CountControls } from "@/components/molecules/CountControls";
 import { useScreenKind } from "@/components/hooks/useIsWideScreen";
 import {
   SPAN_HEIGHT_PX,
@@ -356,7 +355,7 @@ export function MusicTimeline({ project, audioRef }: Props) {
 
       {/* 曲が無いときは、ミニマップの段を速さの操作にあてる。
           描く波形が無いうえ、段を増やすと縦の余白を食う */}
-      {!hasMusic && <CountControls />}
+
 
       {hasMusic && layout.showMinimap && viewport > 0 && (
         <TimelineMinimap

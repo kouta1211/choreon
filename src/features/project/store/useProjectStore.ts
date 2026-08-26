@@ -5,7 +5,7 @@ import { sortScenes } from "@/features/scene/lib/sceneTiming";
 import {
   beatsForTimes,
   DEFAULT_PLACEMENTS,
-  regrid,
+  restretch,
   withDerivedTimes,
   type Placement,
 } from "@/features/music/lib/placement";
@@ -196,28 +196,32 @@ export const useProjectStore = create<ProjectState>((set) => ({
     ),
 
   /**
-   * 速さの物差しを変える。**シーンの秒は1ミリも動かない**（2026-08-25 に決定）。
+   * 速さを変える。**シーンのカウントは1つも動かない**（2026-08-26 に変更）。
    *
-   * 変わるのは「何カウント目か」の数え方と拍線の間隔だけ。
-   * 拍を保って秒を伸ばす操作（曲へ載せ直す）は `applyPlacements` の側で、
-   * `placement.ts` では `restretch` という別の名前にしてある。
-   * **同じ引数で正反対の結果になるので、混ぜない。**
+   * 変わるのは**1カウントが何秒か**だけで、`3-5` は `3-5` のまま。
+   * 動くのは秒の側なので、時間軸の上ではコマの間隔が広がる／縮まる。
+   *
+   * ⚠️ **以前は逆だった**（`regrid`：秒を保って拍を数え直す）。
+   * 画面が秒を出していたころは「コマが動かない」方が自然に見えたが、
+   * 第2段でカウントを出すようにした瞬間に**壊れた** —
+   * BPM を 120 → 90 にすると `3-5` が `2-8` になり、
+   * **振付の中身そのものが書き換わって**いた。
+   *
+   * 数え直す操作（`regrid`）は、これで誰も呼ばなくなったので消した。
+   * 要るとしたら「実は倍テンポで数えていた」という直しだが、
+   * まだ困っていないので作らない。
    */
   setBpm: (bpm: number) =>
     set((state) => {
       if (!state.project) return {};
-      const { placements, beatsById } = regrid(
-        state.scenes,
+      const placements = restretch(
         state.project.musicPlacements,
         60 / Math.max(1, bpm),
       );
-      const scenes = state.scenes.map((scene) => ({
-        ...scene,
-        positionBeats: beatsById.get(scene.id) ?? scene.positionBeats,
-      }));
       return {
         project: { ...state.project, bpm, musicPlacements: placements },
-        scenes: sortScenes(withDerivedTimes(scenes, placements)),
+        // 拍はそのまま。**秒だけが全部動く**
+        scenes: sortScenes(withDerivedTimes(state.scenes, placements)),
       };
     }),
 

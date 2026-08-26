@@ -7,7 +7,6 @@ import {
   durationBeats,
   durationSeconds,
   normalizePlacements,
-  regrid,
   restretch,
   sameBeat,
   secondsAtBeat,
@@ -197,26 +196,14 @@ describe("派生した秒を載せる", () => {
 });
 
 /**
- * **`regrid` と `restretch` は同じ引数で正反対の結果になる。**
- * だから対で書く — 取り違えたら、どちらかが必ず落ちる。
+ * **速さを変えても、拍は1つも動かない**（2026-08-26・第4段）。
+ *
+ * 以前はここに `regrid`（秒を保って拍を数え直す）と対で書いていた。
+ * カウントを画面に出した時点で、数え直す側は**振付の中身を書き換える**
+ * 操作になったので消した。残ったのは `restretch` の一本道。
  */
-describe("物差しを変える（regrid）と、曲へ載せ直す（restretch）", () => {
-  const scenes = [
-    { id: "s1", positionBeats: 0 },
-    { id: "s2", positionBeats: 8 },
-  ];
-
-  it("regrid は、秒を1ミリも動かさない", () => {
-    const { placements, beatsById } = regrid(scenes, AT_120, 60 / 128);
-
-    // s2 は 4秒のまま
-    expect(secondsAtBeat(placements, beatsById.get("s2")!)).toBeCloseTo(4, 9);
-    // 拍の数え方だけが変わる（8拍 → 8.53拍）
-    expect(beatsById.get("s2")).toBeCloseTo(8.5333, 3);
-    expect(beatsById.get("s2")).not.toBe(8);
-  });
-
-  it("restretch は、拍を保ったまま秒を動かす", () => {
+describe("曲へ載せ直す（restretch）", () => {
+  it("拍を保ったまま、秒を動かす", () => {
     const next = restretch(AT_120, 60 / 128);
 
     // 8拍は8拍のまま。秒の方が縮む
@@ -224,14 +211,24 @@ describe("物差しを変える（regrid）と、曲へ載せ直す（restretch�
     expect(secondsAtBeat(next, 8)).not.toBeCloseTo(4, 3);
   });
 
-  it("regrid は載せ方を1本にまとめる（物差しを変えただけで区切りは増えない）", () => {
-    const { placements } = regrid(scenes, CHANGING, 60 / 128);
-    expect(placements).toHaveLength(1);
+  /* **カウントが動かないことが、この操作の約束。**
+     同じ秒を引き直すと同じ拍に戻る */
+  it("速さを変えても、同じ拍は同じ拍のまま", () => {
+    const next = restretch(AT_120, 60 / 128);
+    expect(beatAtSeconds(next, secondsAtBeat(next, 20))).toBeCloseTo(20);
+  });
+
+  it("区切りが複数あっても、全部の速さが揃う", () => {
+    const next = restretch(CHANGING, 60 / 128);
+    expect(next.map((item) => item.secondsPerBeat)).toEqual([
+      60 / 128,
+      60 / 128,
+    ]);
   });
 
   it("壊れた速さを渡されたら、何も変えない", () => {
-    expect(regrid(scenes, AT_120, 0).placements).toEqual(AT_120);
     expect(restretch(AT_120, Number.NaN)).toEqual(AT_120);
+    expect(restretch(AT_120, 0)).toEqual(AT_120);
   });
 });
 
