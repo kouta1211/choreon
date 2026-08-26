@@ -844,6 +844,13 @@ export const ja = {
     span: (total: number, from: string, to: string) =>
       `通しで ${total}秒 · ${from} 〜 ${to}`,
     counts: (set: number, count: number) => `${set}セット ${count}カウント`,
+    /* ── 曲へ載せる（第3段・2026-08-26）。バーの本体と両端の取っ手 ── */
+    placeBar: "振付を曲のどこへ載せるか",
+    placeMove: "振付ぜんぶを前後へ動かす",
+    placeStretch: "振付の終わりを合わせる",
+    /** バーの上に添える。載っている区間の長さ */
+    placeSpan: (from: string, to: string) => `振付 ${from} 〜 ${to}`,
+    placeFailed: "曲への載せ方を保存できませんでした",
     zoomIn: "時間軸を寄せる",
     zoomOut: "時間軸を引く",
     pxPerSecond: "px/秒",

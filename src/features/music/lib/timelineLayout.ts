@@ -123,3 +123,12 @@ export function maxCardHeight(layout: TimelineLayout): number {
 export function cardMinGapPx(layout: TimelineLayout): number {
   return (layout.cardWidth + layout.selectedCardWidth) / 2 + 4;
 }
+
+/**
+ * 振付を曲へ載せるバーの高さ（2026-08-26・第3段）。
+ *
+ * **帯の上端に細く敷く。** ここを厚くすると波形が読めなくなる
+ * （波形は「曲の形」で、そこにしか無い情報）。掴む的としては細いが、
+ * 横に長い帯なので指でも狙える。
+ */
+export const SPAN_HEIGHT_PX = 12;

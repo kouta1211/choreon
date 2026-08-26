@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { MAX_BPM, MIN_BPM } from "@/features/music/lib/metronomePreference";
 import {
   beatAtSeconds,
   beatsForTimes,
@@ -14,6 +15,9 @@ import {
   type Placement,
   beatOriginSeconds,
   DEFAULT_PLACEMENTS,
+  placedSpan,
+  reanchor,
+  stretchToEnd,
 } from "./placement";
 
 /**
@@ -296,5 +300,119 @@ describe("beatOriginSeconds", () => {
 
   it("曲を入れていない作品の既定は 0 — 頭出しとは無関係", () => {
     expect(beatOriginSeconds(DEFAULT_PLACEMENTS)).toBe(0);
+  });
+});
+
+/**
+ * **曲へ載せる**（第3段）。
+ *
+ * 決めるのは「どこから」と「どれだけ」の2つだけで、**拍は1つも
+ * 動かない**。ここで縛るのは、載せ直しても振付の中身（何カウント目に
+ * どの隊形か）が変わらないこと。
+ */
+describe("placedSpan", () => {
+  /* 1拍 0.5秒（BPM 120）で、5秒目から載せてある */
+  const placed: Placement[] = [
+    { fromBeat: 0, atSeconds: 5, secondsPerBeat: 0.5 },
+  ];
+
+  it("頭は載せ方の atSeconds、終わりは最後の拍の秒", () => {
+    // 20拍 = 10秒ぶん。5 + 10 = 15
+    expect(placedSpan(placed, 20)).toEqual({
+      fromSeconds: 5,
+      toSeconds: 15,
+    });
+  });
+
+  it("拍が1つも無ければ、長さ0の区間", () => {
+    expect(placedSpan(placed, 0)).toEqual({ fromSeconds: 5, toSeconds: 5 });
+  });
+
+  it("空の載せ方でも落ちない", () => {
+    expect(placedSpan([], 8)).toEqual({ fromSeconds: 0, toSeconds: 4 });
+  });
+});
+
+describe("reanchor", () => {
+  const placed: Placement[] = [
+    { fromBeat: 0, atSeconds: 5, secondsPerBeat: 0.5 },
+  ];
+
+  it("頭を動かしても、1拍の長さは変わらない", () => {
+    const next = reanchor(placed, 12);
+    expect(next[0].atSeconds).toBe(12);
+    expect(next[0].secondsPerBeat).toBe(0.5);
+  });
+
+  /* **拍は動かない。** 動くのは秒だけ、というのがこの操作の約束 */
+  it("拍から出る秒が、ずらしたぶんだけ動く", () => {
+    const next = reanchor(placed, 12);
+    // 20拍目は 5+10=15秒 → 12+10=22秒
+    expect(secondsAtBeat(next, 20)).toBe(22);
+    // 拍の側は変わっていない（同じ秒を引き直せば同じ拍に戻る）
+    expect(beatAtSeconds(next, 22)).toBeCloseTo(20);
+  });
+
+  /* **区切りが複数あるときは、全部を同じだけずらす。**
+     先頭だけ動かすと、テンポの変わり目より後ろが置き去りになる */
+  it("テンポの変わる曲でも、区切りぜんぶが同じだけ動く", () => {
+    const twoParts: Placement[] = [
+      { fromBeat: 0, atSeconds: 5, secondsPerBeat: 0.5 },
+      { fromBeat: 16, atSeconds: 13, secondsPerBeat: 0.4 },
+    ];
+    const next = reanchor(twoParts, 8);
+
+    expect(next[0].atSeconds).toBe(8);
+    expect(next[1].atSeconds).toBe(16);
+    // 変わり目の後ろの拍も、ずらしたぶん（5 → 8 なので +3）だけ動いている
+    expect(secondsAtBeat(next, 20)).toBeCloseTo(secondsAtBeat(twoParts, 20) + 3);
+  });
+
+  it("曲が始まる前へは置けない", () => {
+    expect(reanchor(placed, -3)[0].atSeconds).toBe(0);
+  });
+});
+
+describe("stretchToEnd", () => {
+  const placed: Placement[] = [
+    { fromBeat: 0, atSeconds: 4, secondsPerBeat: 0.5 },
+  ];
+
+  it("終わりを合わせると、1拍の長さがそこから決まる", () => {
+    // 16拍を 4秒 → 12秒 に載せる。8秒 ÷ 16拍 = 0.5秒/拍
+    expect(stretchToEnd(placed, 16, 12)[0].secondsPerBeat).toBeCloseTo(0.5);
+    // 伸ばす: 16拍を 4 → 20秒。16秒 ÷ 16拍 = 1秒/拍
+    expect(stretchToEnd(placed, 16, 20)[0].secondsPerBeat).toBeCloseTo(1);
+  });
+
+  it("頭は動かない", () => {
+    expect(stretchToEnd(placed, 16, 20)[0].atSeconds).toBe(4);
+  });
+
+  /* **拍は動かない。** 伸ばしても、20拍目は20拍目のまま */
+  it("伸ばしても、シーンの拍は変わらない", () => {
+    const next = stretchToEnd(placed, 16, 20);
+    expect(beatAtSeconds(next, secondsAtBeat(next, 13))).toBeCloseTo(13);
+  });
+
+  /* **潰させない。** 1拍が0秒になると、全シーンの秒が同じ値へ潰れる */
+  it("縮めすぎは、いちばん速い所で止まる", () => {
+    // 16拍を 0.01秒 に押し込もうとする
+    const next = stretchToEnd(placed, 16, 4.01);
+    expect(next[0].secondsPerBeat).toBeCloseTo(60 / MAX_BPM);
+  });
+
+  it("伸ばしすぎは、いちばん遅い所で止まる", () => {
+    const next = stretchToEnd(placed, 16, 4000);
+    expect(next[0].secondsPerBeat).toBeCloseTo(60 / MIN_BPM);
+  });
+
+  it("頭より前へ引いても、潰れずに止まる", () => {
+    const next = stretchToEnd(placed, 16, 0);
+    expect(next[0].secondsPerBeat).toBeCloseTo(60 / MAX_BPM);
+  });
+
+  it("拍が1つも無ければ、何も変えない", () => {
+    expect(stretchToEnd(placed, 0, 99)).toEqual(placed);
   });
 });

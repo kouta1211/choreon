@@ -24,10 +24,13 @@ import { beatOriginSeconds } from "@/features/music/lib/placement";
 import { TimelineWaveform } from "@/components/molecules/TimelineWaveform";
 import { TimelineSceneLayer } from "@/components/molecules/TimelineSceneLayer";
 import { TimelineMinimap } from "@/components/molecules/TimelineMinimap";
+import { TimelineSpanLayer } from "@/components/molecules/TimelineSpanLayer";
+import { useMusicPlacement } from "@/features/music/hooks/useMusicPlacement";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { CountControls } from "@/components/molecules/CountControls";
 import { useScreenKind } from "@/components/hooks/useIsWideScreen";
 import {
+  SPAN_HEIGHT_PX,
   cardMinGapPx,
   TIMELINE_LAYOUT,
 } from "@/features/music/lib/timelineLayout";
@@ -82,6 +85,8 @@ export function MusicTimeline({ project, audioRef }: Props) {
   const beatsPerBar = useProjectStore((state) => state.project?.beatsPerBar ?? 4);
 
   const { changeSceneTime, selectSceneManually } = useSceneActions();
+  /* 曲へどう載せるか。バーの位置も、引いたときの保存もここが持つ */
+  const placement = useMusicPlacement();
   const waveform = useWaveformPeaks();
   // 寸法は画面の段ごとに1つのオブジェクトから引く。ここを唯一の
   // 出どころにしておかないと、コマの幅・帯の高さ・縮退の閾値が
@@ -229,6 +234,25 @@ export function MusicTimeline({ project, audioRef }: Props) {
           showSetNumbers
           className="absolute inset-0"
         />
+
+        {/* **振付が曲のどこに載っているか**（2026-08-26・第3段）。
+            波形とコマの【あいだ】に敷く — 波形（曲の形）の上に、
+            振付という別の物差しを重ねて見せるもの。
+            コマより下に置くのは、掴む的がコマと取り合わないようにするため。
+
+            **曲があるときだけ出す。** 載せる相手が無ければ、
+            決めるものも無い（拍の列がそのまま時間軸になる） */}
+        {hasMusic && placement.lastBeat > 0 && (
+          <TimelineSpanLayer
+            fromSeconds={placement.span.fromSeconds}
+            toSeconds={placement.span.toSeconds}
+            pxPerSecond={pxPerSecond}
+            layerX={layerX}
+            heightPx={SPAN_HEIGHT_PX}
+            onMoveTo={(seconds) => void placement.moveTo(seconds)}
+            onStretchTo={(seconds) => void placement.stretchTo(seconds)}
+          />
+        )}
 
         {/* **中央の幕は置かない**（user の指示 2026-08-22:「波形の真ん中が
             黒くなっていますが、普通に戻してほしい。シーンを追加した際は、

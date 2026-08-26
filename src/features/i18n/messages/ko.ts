@@ -779,6 +779,11 @@ export const ko = {
     span: (total: number, from: string, to: string) =>
       `전체 ${total}초 · ${from} ~ ${to}`,
     counts: (set: number, count: number) => `${set}세트 ${count}카운트`,
+    placeBar: "안무를 곡의 어디에 얹을지",
+    placeMove: "안무 전체를 앞뒤로 옮기기",
+    placeStretch: "안무의 끝을 맞추기",
+    placeSpan: (from: string, to: string) => `안무 ${from} ~ ${to}`,
+    placeFailed: "곡에 얹는 방식을 저장하지 못했습니다",
     zoomIn: "타임라인 확대",
     zoomOut: "타임라인 축소",
     pxPerSecond: "px/초",

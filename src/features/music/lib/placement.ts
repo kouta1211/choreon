@@ -328,3 +328,94 @@ export function beatOriginSeconds(
   const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
   return list[0].atSeconds as BeatOriginSeconds;
 }
+
+/* ────────────────────────────────────────────────────────────
+   曲へ載せる（第3段・2026-08-26）
+
+   振付はカウントで組んである。**載せる**とは、その拍の列を曲の
+   どこへ、どれだけの長さで置くかを決めること。決めるのは2つだけ:
+
+     - **どこから**（`atSeconds`）… 振付の1拍目が作品の何秒目か
+     - **どれだけ**（`secondsPerBeat`）… 1拍の長さ
+
+   拍そのものは1つも動かない。**動くのは秒だけ**なので、載せ直しても
+   振付の中身（何カウント目にどの隊形か）は変わらない。
+   ──────────────────────────────────────────────────────────── */
+
+/** 振付が曲のどこに載っているか。**作品の時間**での区間 */
+export type PlacedSpan = {
+  /** 1拍目の秒 */
+  fromSeconds: number;
+  /** 最後の拍の秒。振付が1拍もなければ `fromSeconds` と同じ */
+  toSeconds: number;
+};
+
+/**
+ * いま振付が載っている区間。**帯の上にバーとして描くために読む。**
+ *
+ * @param lastBeat いちばん後ろのシーンの拍。0以下なら長さ0の区間
+ */
+export function placedSpan(
+  placements: readonly Placement[],
+  lastBeat: number,
+): PlacedSpan {
+  const from = beatOriginSeconds(placements);
+  if (!Number.isFinite(lastBeat) || lastBeat <= 0) {
+    return { fromSeconds: from, toSeconds: from };
+  }
+  return { fromSeconds: from, toSeconds: secondsAtBeat(placements, lastBeat) };
+}
+
+/**
+ * **振付ぜんぶを、曲の中で前後へ動かす。** 速さは変えない。
+ *
+ * バーの真ん中を掴んで引く操作がこれ。1拍目を `atSeconds` へ置き直す
+ * だけで、拍の間隔（`secondsPerBeat`）には触らない。
+ *
+ * ⚠️ **区切りが複数あるときは、全部を同じだけずらす。** 先頭だけ動かすと
+ * テンポの変わり目より後ろが置き去りになり、そこから先の秒が飛ぶ。
+ *
+ * 負の秒には置けない（曲が始まる前に振付は始まらない）。
+ */
+export function reanchor(
+  placements: readonly Placement[],
+  atSeconds: number,
+): Placement[] {
+  const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
+  if (!Number.isFinite(atSeconds)) return [...list];
+
+  const shift = Math.max(0, atSeconds) - list[0].atSeconds;
+  return list.map((item) => ({
+    ...item,
+    atSeconds: roundSeconds(item.atSeconds + shift),
+  }));
+}
+
+/**
+ * **振付の終わりを、曲のこの秒へ合わせる。** 頭は動かさない。
+ *
+ * バーの右の取っ手を掴んで引く操作がこれ。頭（`atSeconds`）を軸に、
+ * 最後の拍が `endSeconds` に来るような1拍の長さを出して伸縮させる。
+ *
+ * ⚠️ **速さには上限と下限がある**（`MIN_BPM` 〜 `MAX_BPM`）。
+ * 縮めすぎ・伸ばしすぎは、そこで止まる — 止めないと1拍が0秒になり、
+ * **全シーンの秒が同じ値に潰れる**。
+ *
+ * @param lastBeat いちばん後ろのシーンの拍。0以下なら伸縮しようがない
+ */
+export function stretchToEnd(
+  placements: readonly Placement[],
+  lastBeat: number,
+  endSeconds: number,
+): Placement[] {
+  const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
+  if (!Number.isFinite(lastBeat) || lastBeat <= 0) return [...list];
+  if (!Number.isFinite(endSeconds)) return [...list];
+
+  const from = list[0].atSeconds;
+  const wanted = (endSeconds - from) / lastBeat;
+  /* 速さの形に直してから丸める。秒のまま丸めると、上限・下限の
+     すぐ内側で「押しても動かない」帯ができる */
+  const nextSecondsPerBeat = 60 / clampBpm(60 / Math.max(1e-6, wanted));
+  return restretch(list, nextSecondsPerBeat);
+}
