@@ -53,8 +53,6 @@ afterEach(() => {
 describe("SceneDock", () => {
   it("選択中のシーンの番号と名前を出す", () => {
     useProjectStore.setState({
-      // 秒数の行が出るのは【合わせる相手があるとき】。曲も拍も無いと
-      // 「シーン 2 / 2」に変わる（features/scene/lib/timelineMode）
       project: makeProject({ isMetronomeEnabled: true }),
       scenes: [
         makeScene({ timeSeconds: 0 }),
@@ -70,11 +68,12 @@ describe("SceneDock", () => {
 
     render(<SceneDock project={makeProject()} />);
 
-    // 時刻は【いま再生している位置】(先頭なら0:00.0)。その隣に、
-    // 選択中のシーンへ入ってくるのにかかる秒数が出る
-    expect(screen.getByText(/· 1秒で移動/)).toBeInTheDocument();
-    // 曲が入っていないので、時刻ではなくカウントで読む
-    expect(screen.getByText("1セット 1カウント")).toBeInTheDocument();
+    /* カウントは【いま再生している位置】（先頭なら 1-1）。その隣に、
+       選択中のシーンへ入ってくるのに使うカウント数が出る。
+       1秒 = 2拍（BPM 120） */
+    expect(screen.getByText(/· 2カウントで移動/)).toBeInTheDocument();
+    // 曲が入っていないので、秒は添えない
+    expect(screen.getByText("1-1")).toBeInTheDocument();
     expect(screen.getAllByText("サビ").length).toBeGreaterThan(0);
   });
 
@@ -341,6 +340,8 @@ describe("SceneDock", () => {
  * 空にすると再生中にどこに居るのか読む先が無くなるので、
  * 代わりに「何番目か」を置いている（実機の報告 17-3）。
  */
+/* **曲もクリックも無い作品でも、カウントで読む**（2026-08-26）。
+   以前はここだけ「シーン 2 / 2」と番号に差し替えていた */
 describe("SceneDock（曲もメトロノームも無いとき）", () => {
   beforeEach(() => {
     useProjectStore.setState({
@@ -358,11 +359,14 @@ describe("SceneDock（曲もメトロノームも無いとき）", () => {
     useUIStore.setState({ selectedSceneId: "scene-2" });
   });
 
-  it("秒を出さず、何番目かを出す", () => {
+  it("カウントで読む。秒は添えない", () => {
     render(<SceneDock project={makeProject()} />);
 
-    expect(screen.getByText("シーン 2 / 2")).toBeInTheDocument();
-    expect(screen.queryByText(/秒で移動/)).toBeNull();
+    // 再生位置は 0秒 = 1-1
+    expect(screen.getByText("1-1")).toBeInTheDocument();
+    // 4秒 = 8拍ぶんかけて入ってくる
+    expect(screen.getByText(/· 8カウントで移動/)).toBeInTheDocument();
+    /* **秒は出さない。** 合わせる相手が無いので `0:00.0` に意味が無い */
     expect(screen.queryByText(/0:0/)).toBeNull();
   });
 });

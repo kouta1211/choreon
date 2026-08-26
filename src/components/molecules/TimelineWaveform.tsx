@@ -158,6 +158,8 @@ export function TimelineWaveform({
     const drawCounts = (
       context: CanvasRenderingContext2D,
       { fromSeconds, toSeconds }: { fromSeconds: number; toSeconds: number },
+      /** 濃さ。波形の上に敷くときは薄くする（主役は波形） */
+      strength: number,
     ) => {
       if (!bpm) return;
       const setSeconds = secondsPerBeat(bpm) * BEATS_PER_SET;
@@ -168,7 +170,7 @@ export function TimelineWaveform({
         Math.max(0, fromSeconds - originSeconds) / setSeconds,
       );
       const lastSet = Math.ceil((toSeconds - originSeconds) / setSeconds);
-      context.fillStyle = `rgba(${ink}, 0.03)`;
+      context.fillStyle = `rgba(${ink}, ${0.03 * strength})`;
       for (let set = firstSet; set <= lastSet; set += 1) {
         if (set % 2 !== 0) continue;
         const start = originSeconds + set * setSeconds;
@@ -176,11 +178,11 @@ export function TimelineWaveform({
       }
 
       // 2. 拍線
-      drawBeatLines(context, { fromSeconds, toSeconds }, 1);
+      drawBeatLines(context, { fromSeconds, toSeconds }, strength);
 
       // 3. セット番号。小節番号ではなく、稽古場で数える単位の番号
       if (showSetNumbers && setSeconds * pxPerSecond >= 34) {
-        context.fillStyle = `rgba(${ink}, 0.34)`;
+        context.fillStyle = `rgba(${ink}, ${0.34 * strength})`;
         context.font = '9px ui-monospace, SFMono-Regular, Menlo, monospace';
         context.textBaseline = "top";
         for (let set = Math.max(0, firstSet); set <= lastSet; set += 1) {
@@ -205,21 +207,23 @@ export function TimelineWaveform({
       context.setTransform(ratio, 0, 0, ratio, 0, 0);
       context.clearRect(0, 0, width, height);
 
+      const window = {
+        fromSeconds,
+        toSeconds: fromSeconds + width / pxPerSecond,
+      };
+
       // 曲が無いときはカウントの地。波形の代わりに置くもので、
       // 「機能が欠けた画面」ではなく「カウントで組む画面」にする
       if (!waveform) {
-        if (bpm) drawCounts(context, { fromSeconds, toSeconds: fromSeconds + width / pxPerSecond });
+        if (bpm) drawCounts(context, window, 1);
         return;
       }
 
-      // 曲が入っても拍線は残す。BPMが分かっているなら、波形と拍を
-      // 重ねて見られる方が良い。ただし主役は波形なので半分の濃さで、
-      // 波形より先に(下に)描く
-      drawBeatLines(
-        context,
-        { fromSeconds, toSeconds: fromSeconds + width / pxPerSecond },
-        0.5,
-      );
+      /* **曲が入ってもカウントの地は敷く**（2026-08-26）。
+         振付はカウントで組むので、波形の上でも「いま何セット目か」が
+         読めなければならない。ただし主役は波形なので薄くして、
+         波形より先に(下に)描く */
+      if (bpm) drawCounts(context, window, 0.5);
 
       const center = height / 2;
       // 上下いっぱいまで振らせない。帯の縁で頭打ちになると、

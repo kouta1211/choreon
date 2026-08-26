@@ -22,45 +22,51 @@
  * 「待ってから動く」は時刻をどう動かしても言えないので、
  * **足すべき primitive はこちら側だけ**。
  */
+/**
+ * ⚠️ **単位を名前に持たせない**（2026-08-26）。ここの割り算は
+ * 「区間から移動を引く」だけで、**秒でも拍でも同じ式**。
+ * 画面はカウント（拍）で打つようになったので、`holdSeconds` のままだと
+ * 拍を入れた瞬間に**名前が嘘になる**。渡した単位でそのまま返る。
+ */
 export type SegmentSplit = {
-  /** この隊形のまま止まっている時間（秒） */
-  holdSeconds: number;
-  /** 次の隊形へ動くのにかける時間（秒） */
-  moveSeconds: number;
+  /** この隊形のまま止まっている長さ。**渡した単位のまま** */
+  hold: number;
+  /** 次の隊形へ動くのにかける長さ。**渡した単位のまま** */
+  move: number;
 };
 
 /**
- * @param segmentSeconds 区間の長さ。`sceneDurations` が返す値
- * @param requestedMoveSeconds 決めた移動時間。**null なら区間まるごと**
+ * @param segment 区間の長さ。**拍でも秒でもよい**（画面は拍で渡す）
+ * @param requestedMove 決めた移動の長さ。**null なら区間まるごと**
  */
 export function splitSegment(
-  segmentSeconds: number,
-  requestedMoveSeconds: number | null,
+  segment: number,
+  requestedMove: number | null,
 ): SegmentSplit {
-  // 並びが壊れている作品でも、時間として意味のない値を外へ出さない
-  const span = Math.max(0, segmentSeconds);
-  if (span === 0) return { holdSeconds: 0, moveSeconds: 0 };
+  // 並びが壊れている作品でも、長さとして意味のない値を外へ出さない
+  const span = Math.max(0, segment);
+  if (span === 0) return { hold: 0, move: 0 };
 
   const move =
-    requestedMoveSeconds === null
+    requestedMove === null
       ? span
-      : // 次のシーンの時刻を追い越して動くことはできない。
+      : // 次のシーンを追い越して動くことはできない。
         // 0 はそのまま通す（一瞬で移動＝テレポート。振付として有り。
         // 速すぎるかどうかは physicalLimits が別に知らせる）
-        Math.min(span, Math.max(0, requestedMoveSeconds));
+        Math.min(span, Math.max(0, requestedMove));
 
-  return { holdSeconds: round(span - move), moveSeconds: round(move) };
+  return { hold: round(span - move), move: round(move) };
 }
 
 /** 0.1 + 0.2 = 0.30000000000000004 のような誤差を落とす。
- * 入力の刻みが0.1なので、その桁で丸めれば意味のある差は消えない
+ * 拍でも秒でも、3桁より細かい差は画面にも保存にも出てこない
  * （sceneTiming.ts の roundSeconds と同じ考え方） */
 function round(value: number): number {
   return Math.round(value * 1000) / 1000;
 }
 
 /**
- * **キープの側から打たれた秒数**を、保存する側（移動）へ直す。
+ * **滞在の側から打たれた長さ**を、保存する側（移動）へ直す。
  *
  * 欄は2つ出しているが、**保存しているのは移動の1つだけ**。
  * 2つ保存すると「足しても区間にならない」状態を作れてしまうため
@@ -70,15 +76,15 @@ function round(value: number): number {
  * 要るから。`3.3 − 1.1` は素で引くと `2.1999999999999997` になり、
  * **その値がそのまま DB へ入る**。
  *
- * @param holdSeconds 打たれたキープの秒数。**null は「決めていない」**
+ * @param requestedHold 打たれた滞在の長さ。**null は「決めていない」**
  *   （＝区間まるごとを移動に使う。移動の欄を空にしたのと同じ）
  */
-export function moveSecondsForHold(
-  segmentSeconds: number,
-  holdSeconds: number | null,
+export function moveForHold(
+  segment: number,
+  requestedHold: number | null,
 ): number | null {
-  if (holdSeconds === null) return null;
-  const span = Math.max(0, segmentSeconds);
-  const hold = Math.min(span, Math.max(0, holdSeconds));
+  if (requestedHold === null) return null;
+  const span = Math.max(0, segment);
+  const hold = Math.min(span, Math.max(0, requestedHold));
   return round(span - hold);
 }

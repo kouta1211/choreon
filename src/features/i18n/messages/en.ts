@@ -226,9 +226,8 @@ export const en = {
       /** シーンがまだ無いとき。進む先が無いので「最後のシーンまで」は嘘になる */
       playMusicOnly: "Play the music",
       sceneSettings: (name: string) => `Open the settings for “${name}”`,
-      moveSeconds: (seconds: number) => ` · ${seconds}s to get there`,
-      scenePosition: (index: number, total: number) =>
-        `Scene ${index} / ${total}`,
+      /** Move length in counts. Written differently from a position (3-5) */
+      moveCounts: (counts: string) => ` · ${counts} counts to get there`,
       addScene: "Add a scene",
       /** 曲があるときは鳴らしている最中しか増やせない（canAddScene） */
       addSceneNeedsPlayback:
@@ -241,29 +240,29 @@ export const en = {
     },
 
     scenes: {
-      timeInSong: "Position in the music",
+      /** Heading for the position field. Typed in counts (3-5), not seconds */
+      countPosition: "Count",
+      counts: "counts",
       seconds: "s",
       title: "Scenes",
       dancers: "Dancers",
       sceneName: "Scene name",
-      summary: (count: number, seconds: number) =>
-        `${count} scenes · ${seconds}s in total`,
-      summaryCount: (count: number) => `${count} scenes`,
+      summary: (count: number, counts: string) =>
+        `${count} scenes · ${counts} counts in total`,
       /** The gap **out to the next scene**, shown on the row.
        *  Must be the same gap as the hold/move fields below it */
-      moveOut: (seconds: number) => ` · ${seconds}s to the next`,
-      segment: (seconds: number) => `→ ${seconds}s`,
+      moveOut: (counts: string) => ` · ${counts} to the next`,
       /** Labels for the two halves of the gap. Either one can be typed in */
       hold: "Hold",
-      holdLabel: "Seconds this formation stays still",
+      holdLabel: "Counts this formation stays still",
       move: "Move",
-      moveSecondsLabel: "Seconds spent moving to the next scene",
+      moveCountsLabel: "Counts spent moving to the next scene",
       /** The length of the gap being split. Sits above the bar */
-      segmentTotal: (seconds: number) => `Gap ${seconds}s`,
+      segmentTotalCounts: (counts: string) => `Gap ${counts} counts`,
       /** The bar itself. Hold on the left, move on the right */
       splitBar: "Where the hold ends and the move begins",
       splitBarValue: (hold: number, move: number) =>
-        `Hold ${hold}s, move ${move}s`,
+        `Hold ${hold} counts, move ${move} counts`,
       delete: "Delete",
       /** The "select" mode for deleting several at once (top of the list) */
       select: "Select",
@@ -454,17 +453,12 @@ export const en = {
     stageTitle: "This is the stage",
     stageBody:
       "Labels along the top and bottom of the stage mark upstage and the audience side. The circles are dancers — pick one up and move it. The numbers are the distance from centre.",
-    timelineOrderTitle: "Across is the order of the formations",
-    timelineOrderBody:
-      "Frames line up from the left. The number is how long it takes to move into that frame. Add a track and the positions become times in the music.",
-    timelineTitle: "Across is time in the music",
+    timelineTitle: "Across is the count",
     timelineBody:
-      "Each frame sits at the second of the track it belongs to. Drag a frame sideways to change that time, and the gap between frames is the time the move gets.",
+      "Each frame sits at its count (3-5 means set 3, count 5). Drag a frame sideways to change that position, and the gap between frames is the counts the move gets.",
     addTitle: "Add a formation",
-    addOrderBody:
-      "Makes a new formation next to the selected one, copied from the current one. Make it, then move people — that is the usual order.",
     addBody:
-      "Makes a new formation at the position you are listening to, copied from the current one. Make it, then move people — that is the usual order.",
+      "Makes a new formation next to the selected one, copied from the current one. Make it, then move people — that is the usual order. While the track is playing it lands where you are listening.",
     viewTitle: "Menu",
     viewBody:
       "The grid, paths and the blocked-view warning are switched here, along with the way in to music, video and settings. So is this walkthrough, if you want it again.",
@@ -569,14 +563,13 @@ export const en = {
       all: "All",
       summary: (scenes: number, total: string) =>
         `${scenes} scenes · ${total} end to end`,
-      summaryNoTime: (scenes: number) => `${scenes} scenes`,
       lastFormation: "This is the last formation",
       startHere: "You start here",
       stepsNote: "Steps are an estimate: 60 cm a step, 90 cm a square.",
       sidesNote: "Left and right are as the audience sees them.",
       fast: " — quick",
-      travelSeconds: (seconds: string) => `over ${seconds}s`,
-      travelSecondsAside: (seconds: string) => `(over ${seconds}s)`,
+      travelCounts: (counts: string) => `over ${counts} counts`,
+      travelCountsAside: (counts: string) => `(over ${counts} counts)`,
       hereNow: " · you are here",
       tooFast: "Too fast to walk",
       reselect: "Pick a different position",
@@ -595,8 +588,6 @@ export const en = {
       position: (name: string) => `${name}'s position`,
       counts: (scenes: number, dancers: number, total: string) =>
         `${scenes} scenes · ${dancers} dancers · ${total}`,
-      countsNoTime: (scenes: number, dancers: number) =>
-        `${scenes} scenes · ${dancers} dancers`,
       pick: "Pick yourself",
       pickNamed: (name: string) => `Watch as ${name}`,
       skip: "Skip and watch everyone",

@@ -23,7 +23,7 @@ function hydrate(scenes = 3, hasMusic = true) {
 }
 
 describe("ViewerSceneList", () => {
-  it("押すと、番号・名前・時刻が並ぶ", async () => {
+  it("押すと、番号・名前・カウントが並ぶ", async () => {
     const user = userEvent.setup();
     hydrate();
     render(<ViewerSceneList />);
@@ -32,8 +32,9 @@ describe("ViewerSceneList", () => {
 
     expect(screen.getByText("シーン1")).toBeInTheDocument();
     expect(screen.getByText("シーン3")).toBeInTheDocument();
-    // 3番目は 16秒 = 0:16
-    expect(screen.getByText("0:16")).toBeInTheDocument();
+    /* 3番目は 16秒 = 32拍（BPM 120）= 5セット目の1カウント。
+       **作る側の一覧と同じ数**でなければならない（規約 state.md 6節） */
+    expect(screen.getByText("5-1")).toBeInTheDocument();
   });
 
   it("順番だけで組まれた作品では、時刻を出さない", async () => {

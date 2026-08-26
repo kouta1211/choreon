@@ -13,20 +13,17 @@ import {
 import {
   beatsForTimes,
   DEFAULT_PLACEMENTS,
-  durationBeats,
   sameBeat,
+  secondsAtBeat,
 } from "@/features/music/lib/placement";
 import type { Scene } from "@/features/scene/types";
 import {
   moveSceneTo,
   retimeForOrder,
-  uniformTimes,
   retimeScene,
 } from "@/features/scene/lib/sceneTiming";
 import { useDeleteScenes } from "@/features/scene/hooks/useDeleteScenes";
 import { useT } from "@/features/i18n/LocaleProvider";
-import { useOrderOnlyTimeline } from "@/features/scene/hooks/useOrderOnlyTimeline";
-import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 
 /**
  * シーンの改名・並び替え・遷移時間・削除。
@@ -39,11 +36,6 @@ import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
  */
 export function useSceneActions() {
   const t = useT();
-  /* 時刻という概念を出しているかどうか。並び替えの直し方がここで変わる */
-  const isOrderOnly = useOrderOnlyTimeline();
-  const defaultSegmentSeconds = useSettingsStore(
-    (state) => state.defaultSegmentSeconds,
-  );
   const scenes = useProjectStore((state) => state.scenes);
   const renameScene = useProjectStore((state) => state.renameScene);
   const applySceneBeats = useProjectStore((state) => state.applySceneBeats);
@@ -77,21 +69,18 @@ export function useSceneActions() {
   /**
    * 一覧で行を並び替えたとき。
    *
-   * 並び順の正は時刻なので、順番そのものを保存する場所は無い。
-   * 時刻を書き換えることで、結果としてその位置に並ぶ。**書き換え方が
-   * 2通りある**（どちらを使うかは lib/timelineMode の条件と同じ）。
+   * 並び順の正は位置なので、順番そのものを保存する場所は無い。
+   * 位置を書き換えることで、結果としてその位置に並ぶ。
    *
-   * - 曲か拍がある … 動かした1つだけを新しい隣同士の中間へ。
-   *   触っていないシーンを動かさない（曲に合わせて置いた隊形を守る）
-   * - どちらも無い … 全部を同じ秒数で積み直す。この形では時刻が
-   *   順番以上のことを持たないので、書き換えても失われるものが無い
+   * **動かした1つだけ**を新しい隣同士の中間へ置く。触っていないシーンは
+   * 動かさない — カウントで組むようになって（2026-08-26）「3-5 に置いた」
+   * こと自体が振付の意図になったので、勝手に積み直さない。
+   *
+   * 以前は「合わせる相手が無い作品」だけ全部を積み直していたが、
+   * その概念ごと畳んだ（lib/timelineMode を削除）。
    */
   const reorderTo = async (orderedSceneIds: string[]) => {
-    await commitTimes(
-      isOrderOnly
-        ? uniformTimes(orderedSceneIds, defaultSegmentSeconds)
-        : retimeForOrder(scenes, orderedSceneIds),
-    );
+    await commitTimes(retimeForOrder(scenes, orderedSceneIds));
   };
 
   /** シーンを別の時刻へ動かす。**動くのはそのシーン1つだけ**で、
@@ -104,6 +93,17 @@ export function useSceneActions() {
     const index = scenes.findIndex((s) => s.id === scene.id);
     if (index === -1) return;
     await commitTimes(moveSceneTo(scenes, index, seconds));
+  };
+
+  /**
+   * 位置を**拍で**変える。カウントの欄から呼ぶ（2026-08-26）。
+   *
+   * 画面はカウントで打つので、ここで秒へ直してから既存の道へ流す。
+   * 直す口を1つに閉じ込めておかないと、**打った所ごとに換算が散る**
+   * （第1段で `updateSceneBeats` を拍だけにしたのと同じ理由）。
+   */
+  const changeSceneBeats = async (scene: Scene, positionBeats: number) => {
+    await changeSceneTime(scene, secondsAtBeat(placements, positionBeats));
   };
 
   /** 「このシーンへ入ってくる時間」を変える。
@@ -178,7 +178,7 @@ export function useSceneActions() {
   };
 
   /**
-   * 区間のうち、**動くのに使う**秒数を変える。null で区間まるごとへ戻す。
+   * 区間のうち、**動くのに使う**カウント数を変える。null で区間まるごとへ。
    *
    * **時刻には触らない。** 変わるのは区間の【中】の割り方だけで、
    * 次のシーンが来る瞬間は動かない。だから以降のシーンもずれない
@@ -187,17 +187,11 @@ export function useSceneActions() {
    * 割り方そのものは `lib/segmentSplit` が持つ。余りは**移動の前**に
    * 置かれるので、短くすると【止まってから、最後に動く】になる。
    */
-  const changeMoveSeconds = async (
-    scene: Scene,
-    moveSeconds: number | null,
-  ) => {
+  const changeMoveBeats = async (scene: Scene, moveBeats: number | null) => {
     const previous = scene.moveBeats ?? null;
-    /* 欄は秒で打つが、**保存するのは拍**。区間の長さなので差で出す
-       （載せ方の変わり目をまたぐと掛け算では答えがずれる） */
-    const moveBeats =
-      moveSeconds === null
-        ? null
-        : durationBeats(placements, scene.positionBeats, moveSeconds);
+    /* **秒を受ける口は無い**（2026-08-26）。欄がカウントで打つように
+       なったので、換算を挟むと丸めの往復が入るだけで得るものが無い。
+       第1段と同じで、古い形を受け付けない型にして取り残しを消す */
     setSceneMoveBeats(scene.id, moveBeats);
 
     try {
@@ -241,8 +235,9 @@ export function useSceneActions() {
     renameSceneTo,
     reorderTo,
     changeSceneTime,
+    changeSceneBeats,
     changeSegmentSeconds,
-    changeMoveSeconds,
+    changeMoveBeats,
     confirmDelete,
     selectSceneManually,
   };

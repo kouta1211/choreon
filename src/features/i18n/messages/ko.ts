@@ -226,9 +226,8 @@ export const ko = {
       /** シーンがまだ無いとき。進む先が無いので「最後のシーンまで」は嘘になる */
       playMusicOnly: "음악 재생",
       sceneSettings: (name: string) => `'${name}' 설정 열기`,
-      moveSeconds: (seconds: number) => ` · ${seconds}초 동안 이동`,
-      scenePosition: (index: number, total: number) =>
-        `장면 ${index} / ${total}`,
+      /** 카운트로 센 이동 길이. 위치(3-5)와는 다른 형태로 쓴다 */
+      moveCounts: (counts: string) => ` · ${counts}카운트 동안 이동`,
       addScene: "장면 추가",
       /** 曲があるときは鳴らしている最中しか増やせない（canAddScene） */
       addSceneNeedsPlayback:
@@ -240,29 +239,29 @@ export const ko = {
     },
 
     scenes: {
-      timeInSong: "음악에서의 위치",
+      /** 위치 칸의 머리글. 초가 아니라 카운트(3-5)로 입력한다 */
+      countPosition: "카운트",
+      counts: "카운트",
       seconds: "초",
       title: "장면",
       dancers: "댄서",
       sceneName: "장면 이름",
-      summary: (count: number, seconds: number) =>
-        `${count}개 · 합계 ${seconds}s`,
-      summaryCount: (count: number) => `${count}개`,
+      summary: (count: number, counts: string) =>
+        `${count}개 · 전체 ${counts}카운트`,
       /** 목록 행에 표시하는 **다음 장면으로 나가는** 구간.
        *  아래의 유지／이동과 같은 구간이어야 한다 */
-      moveOut: (seconds: number) => ` · 다음까지 ${seconds}s`,
-      segment: (seconds: number) => `→ ${seconds}s`,
+      moveOut: (counts: string) => ` · 다음까지 ${counts}`,
       /** 구간을 둘로 나누는 칸의 머리글. 어느 쪽이든 입력할 수 있다 */
       hold: "유지",
-      holdLabel: "이 대형 그대로 멈춰 있는 초",
+      holdLabel: "이 대형 그대로 멈춰 있는 카운트",
       move: "이동",
-      moveSecondsLabel: "다음 장면으로 이동하는 데 쓰는 초",
+      moveCountsLabel: "다음 장면으로 이동하는 데 쓰는 카운트",
       /** 나누고 있는 구간의 길이. 막대 위에 덧붙인다 */
-      segmentTotal: (seconds: number) => `구간 ${seconds}초`,
+      segmentTotalCounts: (counts: string) => `구간 ${counts}카운트`,
       /** 막대 본체. 왼쪽이 유지, 오른쪽이 이동 */
       splitBar: "유지와 이동의 경계",
       splitBarValue: (hold: number, move: number) =>
-        `유지 ${hold}초, 이동 ${move}초`,
+        `유지 ${hold}카운트, 이동 ${move}카운트`,
       delete: "삭제",
       /** 한꺼번에 지우기 위한 "선택" 모드(목록 머리글 오른쪽) */
       select: "선택",
@@ -453,17 +452,12 @@ export const ko = {
     stageTitle: "여기가 무대입니다",
     stageBody:
       "무대의 위아래에 무대 뒤와 객석 쪽 표시가 나옵니다. 동그라미가 댄서이고, 잡아서 옮길 수 있습니다. 눈금은 센터에서의 거리입니다.",
-    timelineOrderTitle: "가로 순서가 대형의 순서입니다",
-    timelineOrderBody:
-      "컷은 왼쪽부터 차례로 놓입니다. 숫자는 그 컷으로 들어가기까지 걸리는 초입니다. 곡을 넣으면 가로 위치가 곡의 시간으로 바뀝니다.",
-    timelineTitle: "가로 위치가 곡의 시간입니다",
+    timelineTitle: "가로 위치가 카운트입니다",
     timelineBody:
-      "각 컷은 '곡의 몇 초의 대형인지'의 위치에 놓입니다. 컷을 옆으로 끌면 그 시각이 움직이고, 간격이 그대로 이동에 쓸 수 있는 시간이 됩니다.",
+      "각 컷은 '몇 세트의 몇 카운트인지'의 위치에 놓입니다(3-5는 3세트째의 5카운트). 컷을 옆으로 끌면 그 위치가 움직이고, 간격이 그대로 다음 대형으로 넘어가는 카운트 수가 됩니다.",
     addTitle: "대형 추가하기",
-    addOrderBody:
-      "선택한 장면 옆에, 지금 배치를 복사한 대형을 만듭니다. 만들고 나서 옮기는 것이 기본 흐름입니다.",
     addBody:
-      "지금 듣고 있는 위치에, 지금 배치를 복사한 대형을 만듭니다. 만들고 나서 옮기는 것이 기본 흐름입니다.",
+      "선택한 장면 옆에, 지금 배치를 복사한 대형을 만듭니다. 만들고 나서 옮기는 것이 기본 흐름입니다. 곡을 재생 중이면 듣고 있는 위치에 생깁니다.",
     viewTitle: "메뉴",
     viewBody:
       "격자·동선·가림 경고 같은 전환과, 음악·영상·설정으로 들어가는 입구가 여기 있습니다. 이 안내를 다시 보는 것도 여기서 할 수 있습니다.",
@@ -564,14 +558,13 @@ export const ko = {
       all: "전부",
       summary: (scenes: number, total: string) =>
         `${scenes}장면 · 전체 ${total}`,
-      summaryNoTime: (scenes: number) => `${scenes} 장면`,
       lastFormation: "여기가 마지막 대형입니다",
       startHere: "여기에서 시작합니다",
       stepsNote: "걸음 수는 한 걸음 60cm·한 칸 90cm로 계산한 어림값입니다.",
       sidesNote: "상수／하수는 객석에서 본 방향입니다.",
       fast: " — 빠름",
-      travelSeconds: (seconds: string) => `${seconds}초에 걸쳐`,
-      travelSecondsAside: (seconds: string) => `(${seconds}초에 걸쳐)`,
+      travelCounts: (counts: string) => `${counts}카운트에 걸쳐`,
+      travelCountsAside: (counts: string) => `(${counts}카운트에 걸쳐)`,
       hereNow: " · 지금 여기",
       tooFast: "걸어서는 갈 수 없는 속도입니다",
       reselect: "포지션 다시 고르기",
@@ -590,8 +583,6 @@ export const ko = {
       position: (name: string) => `${name}의 위치`,
       counts: (scenes: number, dancers: number, total: string) =>
         `${scenes} 장면 · ${dancers} 명 · ${total}`,
-      countsNoTime: (scenes: number, dancers: number) =>
-        `${scenes} 장면 · ${dancers} 명`,
       pick: "본인을 골라 주세요",
       pickNamed: (name: string) => `'${name}'(으)로 보기`,
       skip: "고르지 않고 전체 보기",

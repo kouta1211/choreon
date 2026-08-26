@@ -30,9 +30,8 @@ afterEach(() => {
  * 中の操作ボタンまで「選択」に飲み込まれていないかを一緒に確かめる。
  */
 describe("SceneList", () => {
-  /* 時刻の欄が出るのは【合わせる相手があるとき】。曲もメトロノームも
-     無いと「何秒で動くか」の欄に変わる（lib/timelineMode）。
-     ここは時刻の側を確かめる組なので、メトロノームを入れておく */
+  /* カウントの欄は**どの作品にも出る**（2026-08-26 に「順番だけ」の
+     モードを畳んだ）。BPM 120 なので 1拍 0.5秒 = 1カウント */
   beforeEach(() => {
     useProjectStore.setState({
       project: makeProject({ isMetronomeEnabled: true }),
@@ -50,13 +49,14 @@ describe("SceneList", () => {
     expect(useUIStore.getState().selectedSceneId).toBe("scene-2");
   });
 
-  it("カードの時刻の行を押しても、そのシーンに切り替わる", async () => {
+  it("カードのカウントの行を押しても、そのシーンに切り替わる", async () => {
     useProjectStore.setState({ scenes: SCENES });
     useUIStore.setState({ selectedSceneId: "scene-1" });
     const user = userEvent.setup();
 
     render(<SceneList project={makeProject()} />);
-    await user.click(screen.getByText(/0:02\.0/));
+    // 2秒 = 4拍 = 1セット目の5カウント
+    await user.click(screen.getByText(/1-5/));
 
     expect(useUIStore.getState().selectedSceneId).toBe("scene-2");
   });
@@ -92,50 +92,53 @@ describe("SceneList", () => {
     });
   });
 
-  it("選択中シーンの時刻を変更できる", async () => {
+  it("選択中シーンの位置をカウントで変更できる", async () => {
     useProjectStore.setState({ scenes: SCENES });
     useUIStore.setState({ selectedSceneId: "scene-2" });
     vi.spyOn(scenesApi, "updateSceneBeats").mockResolvedValue(undefined);
     const user = userEvent.setup();
 
     render(<SceneList project={makeProject()} />);
-    const input = screen.getByLabelText(/曲のこの位置/);
+    const input = screen.getByLabelText("カウント");
     await user.clear(input);
-    await user.type(input, "3.5");
+    // 2-4 = 1セット(8拍) + 3 = 11拍目
+    await user.type(input, "2-4");
     await user.tab();
 
+    /* **打ったカウントが、そのまま拍として保存される**。
+       ここが 11 でなければ、どこかで秒へ落としてから戻している */
     await waitFor(() => {
-      expect(useProjectStore.getState().scenes[1].timeSeconds).toBe(3.5);
+      expect(scenesApi.updateSceneBeats).toHaveBeenCalledWith(
+        expect.anything(),
+        [{ id: "scene-2", positionBeats: 11 }],
+        expect.anything(),
+      );
     });
-    /* **保存するのは拍**。BPM 120（1拍 0.5秒）なので 3.5秒 = 7拍。
-       この数字が合うことが、秒→拍の換算が効いている証拠になる */
-    expect(scenesApi.updateSceneBeats).toHaveBeenCalledWith(
-      expect.anything(),
-      [{ id: "scene-2", positionBeats: 7 }],
-      expect.anything(),
-    );
+    // BPM 120 なので 11拍 = 5.5秒。派生の秒も揃っている
+    expect(useProjectStore.getState().scenes[1].timeSeconds).toBe(5.5);
   });
 
-  // 時刻は分秒でも打てる。稽古で「1分20秒あたり」と言うときの形
-  it("分秒の形(1:20)でも受け付ける", async () => {
+  /* **読めない値は丸めずに戻す。** 秒の形（1:20）で打っても、
+     カウントとしては読めないので前の値のまま。半端な位置が黙って
+     保存されると、打った数と画面の数が食い違う */
+  it("秒の形(1:20)は読まず、前の値へ戻す", async () => {
     useProjectStore.setState({ scenes: SCENES });
     useUIStore.setState({ selectedSceneId: "scene-2" });
     vi.spyOn(scenesApi, "updateSceneBeats").mockResolvedValue(undefined);
     const user = userEvent.setup();
 
     render(<SceneList project={makeProject()} />);
-    const input = screen.getByLabelText(/曲のこの位置/);
+    const input = screen.getByLabelText("カウント");
     await user.clear(input);
     await user.type(input, "1:20");
     await user.tab();
 
-    await waitFor(() => {
-      expect(useProjectStore.getState().scenes[1].timeSeconds).toBe(80);
-    });
+    expect(scenesApi.updateSceneBeats).not.toHaveBeenCalled();
+    expect(useProjectStore.getState().scenes[1].timeSeconds).toBe(2);
   });
 
-  // これが絶対時刻にした理由そのもの。触っていないシーンは動かない
-  it("既定では、変えたシーン以外の時刻は動かない", async () => {
+  // これが絶対位置にした理由そのもの。触っていないシーンは動かない
+  it("既定では、変えたシーン以外の位置は動かない", async () => {
     const three = [
       makeScene({ timeSeconds: 0 }),
       makeScene({ id: "scene-2", orderIndex: 1, timeSeconds: 2 }),
@@ -147,9 +150,10 @@ describe("SceneList", () => {
     const user = userEvent.setup();
 
     render(<SceneList project={makeProject()} />);
-    const input = screen.getByLabelText(/曲のこの位置/);
+    const input = screen.getByLabelText("カウント");
     await user.clear(input);
-    await user.type(input, "3");
+    // 1-7 = 6拍目 = 3秒
+    await user.type(input, "1-7");
     await user.tab();
 
     await waitFor(() => {
@@ -158,14 +162,14 @@ describe("SceneList", () => {
     expect(useProjectStore.getState().scenes[2].timeSeconds).toBe(5);
   });
 
-  // 先頭にも時刻はある(0秒とは限らない)ので、入力欄は出す
-  it("先頭シーンにも時刻の入力を出す", () => {
+  // 先頭にも位置はある(1-1 とは限らない)ので、入力欄は出す
+  it("先頭シーンにもカウントの入力を出す", () => {
     useProjectStore.setState({ scenes: SCENES });
     useUIStore.setState({ selectedSceneId: "scene-1" });
 
     render(<SceneList project={makeProject()} />);
 
-    expect(screen.getByLabelText(/曲のこの位置/)).toBeInTheDocument();
+    expect(screen.getByLabelText("カウント")).toBeInTheDocument();
   });
 
   // ×は「小さいので誤タップしやすい」場所にある。押した瞬間に消えるのでは
@@ -465,7 +469,7 @@ describe("消したあとに見せるシーン", () => {
  * **そこへ何を渡し、返ってきた値をどこへ出すか** — 今日2回、そこに穴が
  * あった（`useDancerGrab` と `sceneAfterDelete`）。
  */
-describe("区間の移動時間", () => {
+describe("区間の割り方（カウント）", () => {
   beforeEach(() => {
     useProjectStore.setState({
       project: makeProject({ isMetronomeEnabled: true }),
@@ -487,26 +491,28 @@ describe("区間の移動時間", () => {
   /* 欄は2つ出るが、**保存しているのは移動の側だけ**。滞在は
      区間から引いて出している（lib/segmentSplit） */
   const holdInput = () =>
-    screen.getByLabelText(/この隊形のまま止まっている秒数/);
-  const moveInput = () => screen.getByLabelText(/次のシーンへ動くのに使う秒数/);
+    screen.getByLabelText(/この隊形のまま止まっているカウント数/);
+  const moveInput = () =>
+    screen.getByLabelText(/次のシーンへ動くのに使うカウント数/);
 
-  it("決めていなければ、区間まるごとを使う（キープは0秒）", () => {
+  /* 4秒の区間・BPM 120 → **8カウント**。以降この数で読む */
+  it("決めていなければ、区間まるごとを使う（滞在は0）", () => {
     render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
     expect(holdInput()).toHaveValue(0);
-    expect(moveInput()).toHaveValue(4);
+    expect(moveInput()).toHaveValue(8);
   });
 
-  it("移動時間を短くすると、余りがキープとして出る", () => {
+  it("移動を短くすると、余りが滞在として出る", () => {
     useProjectStore.setState((state) => ({
       scenes: state.scenes.map((scene) =>
-        scene.id === "scene-2" ? { ...scene, moveSeconds: 1 } : scene,
+        scene.id === "scene-2" ? { ...scene, moveBeats: 2 } : scene,
       ),
     }));
     render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
 
-    // 4秒の区間で1秒だけ動く → 3秒は止まっている
-    expect(holdInput()).toHaveValue(3);
-    expect(moveInput()).toHaveValue(1);
+    // 8カウントの区間で2カウントだけ動く → 6カウントは止まっている
+    expect(holdInput()).toHaveValue(6);
+    expect(moveInput()).toHaveValue(2);
   });
 
   /* ここが 2026-08-24 に入れ替えた向き。**先頭に出て、最後に出ない**。
@@ -520,13 +526,13 @@ describe("区間の移動時間", () => {
     useUIStore.setState({ selectedSceneId: "scene-2" });
     render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
     expect(
-      screen.queryByLabelText(/この隊形のまま止まっている秒数/),
+      screen.queryByLabelText(/この隊形のまま止まっているカウント数/),
     ).not.toBeInTheDocument();
   });
 
   /* **書き込む先は次のシーン**。開いているシーンの列を書き換えると、
      1つ手前の区間が動いてしまう（純粋関数のテストからは見えない） */
-  it("欄に打つと、その秒数が【次のシーン】へ保存される", async () => {
+  it("欄に打つと、そのカウント数が【次のシーン】へ保存される", async () => {
     const spy = vi
       .spyOn(scenesApi, "updateSceneMoveBeats")
       .mockResolvedValue(undefined);
@@ -535,12 +541,13 @@ describe("区間の移動時間", () => {
 
     const input = moveInput();
     await user.clear(input);
-    await user.type(input, "1.5");
+    await user.type(input, "3");
     await user.tab();
 
     // 開いているのは scene-1 だが、書き換わるのは scene-2
     await waitFor(() => {
-      // 打ったのは 1.5秒。BPM 120 なので 3拍
+      /* **打ったカウントがそのまま拍として保存される**。
+         ここが 1.5 なら、どこかで秒として扱っている */
       expect(spy).toHaveBeenCalledWith(
         expect.anything(),
         "scene-2",
@@ -550,13 +557,13 @@ describe("区間の移動時間", () => {
       );
     });
     // 隣の欄にも、引き算した残りがその場で出る
-    expect(holdInput()).toHaveValue(2.5);
+    expect(holdInput()).toHaveValue(5);
   });
 
   /* ここが**キープの欄から打つ側**。打った数がそのまま保存される移動の
      欄とは【答えが分かれる】ので、同じ値で書くと潰しても緑のままになる
      （.claude/rules/testing.md 4節） */
-  it("キープの欄に打つと、区間から引いた分が【移動】として保存される", async () => {
+  it("滞在の欄に打つと、区間から引いた分が【移動】として保存される", async () => {
     const spy = vi
       .spyOn(scenesApi, "updateSceneMoveBeats")
       .mockResolvedValue(undefined);
@@ -564,12 +571,11 @@ describe("区間の移動時間", () => {
     render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
 
     await user.clear(holdInput());
-    await user.type(holdInput(), "1.5");
+    await user.type(holdInput(), "3");
     await user.tab();
 
-    // 打ったのは 1.5 だが、保存されるのは 4 − 1.5 = 2.5 の方
+    // 打ったのは 3（滞在）だが、保存されるのは 8 − 3 = 5 の方
     await waitFor(() => {
-      // 打ったのは 1.5秒（キープ）だが、保存されるのは 4 − 1.5 = 2.5秒 = 5拍
       expect(spy).toHaveBeenCalledWith(
         expect.anything(),
         "scene-2",
@@ -578,21 +584,20 @@ describe("区間の移動時間", () => {
         expect.anything(),
       );
     });
-    expect(moveInput()).toHaveValue(2.5);
+    expect(moveInput()).toHaveValue(5);
   });
 
-  /* 刻みは【1拍】。0.1 刻みで秒を詰めるのは、踊る側の数え方と
-     合っていない（実機の報告）。BPM を既定（120）から外した値で見る —
-     120 のまま書くと、呼び出し側が DEFAULT_BPM を直に読んでいても
-     緑になってしまう */
-  it("上下キーの刻みは、その作品の1拍ぶんになる", () => {
+  /* 刻みは【1カウント】で、**BPM に関わらず 1**（2026-08-26）。
+     以前は秒で打っていたので `secondsPerBeat(bpm)` を渡していた。
+     BPM を既定（120）から外した値で見る — 刻みが速さに引きずられて
+     いたら、ここで 0.4 になって落ちる */
+  it("上下キーの刻みは、速さに関わらず1カウント", () => {
     const project = makeProject({ isMetronomeEnabled: true, bpm: 150 });
     useProjectStore.setState({ project });
     render(<SceneList project={project} />);
 
-    // 60 / 150 = 0.4秒
-    expect(holdInput()).toHaveAttribute("step", "0.4");
-    expect(moveInput()).toHaveAttribute("step", "0.4");
+    expect(holdInput()).toHaveAttribute("step", "1");
+    expect(moveInput()).toHaveAttribute("step", "1");
   });
 
   /* ここからバー（2026-08-25）。純粋関数（lib/segmentBar）は境目の計算しか
@@ -620,7 +625,7 @@ describe("区間の移動時間", () => {
 
     it("割っている区間の長さを出す", () => {
       render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
-      expect(screen.getByText("区間 4秒")).toBeInTheDocument();
+      expect(screen.getByText("区間 8カウント")).toBeInTheDocument();
     });
 
     /* **区間の長さを渡し違えていないか。** 4秒の区間の 3/4 の所を
@@ -636,8 +641,7 @@ describe("区間の移動時間", () => {
       fireEvent.pointerUp(bar, { pointerId: 1, clientX: 150 });
 
       // 開いているのは scene-1 だが、書き換わるのは scene-2。
-      // 200px のうち 150px まで待つ → 滞在3秒・移動1秒
-      // 200px のうち 150px まで待つ → 移動1秒 = 2拍
+      // 200px のうち 150px まで待つ → 滞在6・移動2カウント
       expect(spy).toHaveBeenCalledWith(
         expect.anything(),
         "scene-2",
@@ -647,10 +651,10 @@ describe("区間の移動時間", () => {
       );
     });
 
-    /* **刻みを渡し違えていないか。** 1拍が 0.4秒の作品で右キーを1回
-       押すと、滞在 0 → 0.4秒。既定の 120（0.5秒）を直に読んでいたら
-       3.5 になって落ちる */
-    it("矢印キーの刻みは、その作品の1拍ぶんになる", () => {
+    /* **刻みは速さに引きずられない。** カウントは数えるものなので、
+       BPM が何であっても右キー1回は1カウント。以前は
+       `secondsPerBeat(bpm)` を渡していたので、ここを速さに戻すと落ちる */
+    it("矢印キーの刻みは、速さに関わらず1カウント", () => {
       const spy = vi
         .spyOn(scenesApi, "updateSceneMoveBeats")
         .mockResolvedValue(undefined);
@@ -662,12 +666,12 @@ describe("区間の移動時間", () => {
         key: "ArrowRight",
       });
 
-      /* BPM 150（1拍 0.4秒）。右キー1回で滞在が1拍ぶん増えるので、
-         移動は 4 − 0.4 = 3.6秒 = 9拍。**BPM を渡し違えたらここが落ちる** */
+      /* 区間は8カウント。右キー1回で滞在が1カウント増えるので、
+         移動は 8 − 1 = 7。**速さを刻みに混ぜたらここが落ちる** */
       expect(spy).toHaveBeenCalledWith(
         expect.anything(),
         "scene-2",
-        9,
+        7,
         expect.anything(),
         expect.anything(),
       );

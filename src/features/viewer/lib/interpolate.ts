@@ -56,7 +56,10 @@ export function sceneSpanAt(
   const span = to.timeSeconds - from.timeSeconds;
   if (span <= 0) return { from, to, progress: 1 };
 
-  const { holdSeconds, moveSeconds } = splitSegment(span, to.moveSeconds ?? null);
+  const { hold: holdSeconds, move: moveSeconds } = splitSegment(
+    span,
+    to.moveSeconds ?? null,
+  );
   const elapsed = seconds - from.timeSeconds;
   /* 止まっているあいだは 0 のまま。移動が 0秒(一瞬で動く)なら、
      区間の終わりに着くまで 0 で、そこで 1 へ飛ぶ */

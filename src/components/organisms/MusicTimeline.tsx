@@ -32,7 +32,6 @@ import {
   TIMELINE_LAYOUT,
 } from "@/features/music/lib/timelineLayout";
 import { Minus, Plus } from "lucide-react";
-import { snapSeconds } from "@/features/scene/lib/sceneTiming";
 import { DEFAULT_BPM } from "@/features/music/lib/metronomePreference";
 import type { Project } from "@/features/project/types";
 import { useT } from "@/features/i18n/LocaleProvider";
@@ -192,15 +191,6 @@ export function MusicTimeline({ project, audioRef }: Props) {
     );
   };
 
-  /**
-   * コマを置く時刻。
-   *
-   * 曲が無いときは【1拍】に吸着させる。帯のスクロールは8カウント単位、
-   * コマの配置は1拍単位 — 置く場所は細かく、見る場所は大きく飛びたい。
-   * 曲があるときは波形に合わせたいので、0.1秒の刻みだけに丸める。
-   */
-  const placeAt = (seconds: number) =>
-    hasMusic ? snapSeconds(seconds) : snapToBeat(seconds, bpm, beatOrigin);
 
 
   const layerX = useTransform(scrollX, (value) => -value);
@@ -265,8 +255,28 @@ export function MusicTimeline({ project, audioRef }: Props) {
             selectSceneManually(scene.id);
             seekTo(scene.timeSeconds);
           }}
+          /**
+           * 引いて離した先。**曲があってもなくても【1拍】へ吸着させる**
+           * （2026-08-26）。
+           *
+           * 振付はカウントで組むので、置ける場所は拍の上だけでよい。
+           * 以前はここに `hasMusic ? snapSeconds(0.1秒刻み) : snapToBeat`
+           * の三項があった。**0.1秒刻みで置いたコマはどのカウントにも
+           * 乗らず**、あとから曲へ載せ直しても半端さがそのまま残る。
+           *
+           * ⚠️ **分岐そのものを置かない。** 条件を書ける形にしておくと、
+           * 「曲があるときだけ自由に」が戻ってくる。ここは1本道にする。
+           *
+           * ⚠️ **再生ヘッドを動かす操作（seek）はここを通らない。**
+           * あちらは自由に止まれるままにしてある（user の指示 2026-08-24:
+           * 「曲があるときは波形が手がかりになるので、自由に止まれた方が
+           * よい」）。**置くこと**と**聴く場所を選ぶこと**は別の操作。
+           */
           onMoveSeconds={(scene, delta) =>
-            void changeSceneTime(scene, placeAt(scene.timeSeconds + delta))
+            void changeSceneTime(
+              scene,
+              snapToBeat(scene.timeSeconds + delta, bpm, beatOrigin),
+            )
           }
           onZoomCluster={zoomIntoCluster}
         />

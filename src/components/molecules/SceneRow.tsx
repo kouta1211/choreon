@@ -7,8 +7,6 @@ import { Check, Trash2 } from "lucide-react";
 import { SceneThumbnail } from "@/components/molecules/SceneThumbnail";
 import { InlineEditableText } from "@/components/molecules/InlineEditableText";
 import { SceneTimeField } from "@/components/molecules/SceneTimeField";
-import { formatClock } from "@/features/scene/lib/clock";
-import { useOrderOnlyTimeline } from "@/features/scene/hooks/useOrderOnlyTimeline";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { isRowSelectClick } from "@/features/scene/lib/sceneRowSensors";
 import type { Project } from "@/features/project/types";
@@ -16,7 +14,11 @@ import type { Scene } from "@/features/scene/types";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useT } from "@/features/i18n/LocaleProvider";
 import type { OutgoingSegment } from "@/features/scene/lib/outgoingSegment";
-import { secondsPerBeat } from "@/features/music/lib/metronome";
+import {
+  countLabelAtBeat,
+  countLengthLabel,
+} from "@/features/music/lib/counts";
+import { useMusicStore } from "@/features/music/store/useMusicStore";
 
 type Props = {
   scene: Scene;
@@ -34,10 +36,10 @@ type Props = {
   outgoing: OutgoingSegment | null;
   onSelect: () => void;
   onRename: (name: string) => void;
-  onChangeTime: (seconds: number) => void;
+  onChangeBeats: (positionBeats: number) => void;
   /** 出ていく区間の移動時間を変える。null で区間まるごとへ戻す。
    * **書き込む先は次のシーン**（結ぶのは SceneList） */
-  onChangeMoveSeconds: (moveSeconds: number | null) => void;
+  onChangeMoveBeats: (moveBeats: number | null) => void;
   onDelete: () => void;
 };
 
@@ -63,12 +65,12 @@ export function SceneRow({
   outgoing,
   onSelect,
   onRename,
-  onChangeTime,
-  onChangeMoveSeconds,
+  onChangeBeats,
+  onChangeMoveBeats,
   onDelete,
 }: Props) {
   const t = useT();
-  const isOrderOnly = useOrderOnlyTimeline();
+  const hasMusic = useMusicStore((state) => state.objectUrl !== null);
   // attributes(role="button" など)は渡さない。キーボードでの並び替え
   // (KeyboardSensor)を入れていないうえ、ボタンを内包する行を button として
   // 読み上げさせることになるため
@@ -189,23 +191,20 @@ export function SceneRow({
             />
           )}
           {/* 「表示中」の札は出さない(実機の報告 17-4)。選んでいる行は
-              敷き色と番号の色で既に分かるので、文字で言うと二重になる。
-              順番だけで作っているときは、この行ごと出さない
-              （時刻も移動の秒数も無いので、空の行が残るだけになる） */}
-          {!isOrderOnly && (
-            <span
-              className={`mt-1 block font-mono text-caption ${
-                isSelected ? "text-accent-bright" : "text-fg-muted"
-              }`}
-            >
-              {formatClock(scene.timeSeconds)}
-              {/* **出ていく側**の区間を出す（2026-08-25）。
-                  すぐ下の 滞在／移動 と同じ区間でなければ、
-                  1つの行が2つの区間の話をすることになる。
-                  最後のシーンには行き先が無いので出さない */}
-              {outgoing !== null && t.editor.scenes.moveOut(outgoing.segmentSeconds)}
-            </span>
-          )}
+              敷き色と番号の色で既に分かるので、文字で言うと二重になる */}
+          <span
+            className={`mt-1 block font-mono text-caption ${
+              isSelected ? "text-accent-bright" : "text-fg-muted"
+            }`}
+          >
+            {countLabelAtBeat(scene.positionBeats)}
+            {/* **出ていく側**の区間を出す（2026-08-25）。
+                すぐ下の 滞在／移動 と同じ区間でなければ、
+                1つの行が2つの区間の話をすることになる。
+                最後のシーンには行き先が無いので出さない */}
+            {outgoing !== null &&
+              t.editor.scenes.moveOut(countLengthLabel(outgoing.segmentBeats))}
+          </span>
         </div>
       </div>
 
@@ -213,22 +212,17 @@ export function SceneRow({
           全行に並べると一覧として読めなくなる */}
       {isSelected && !isSelecting && (
         <div className="flex flex-col gap-unit px-unit pb-unit">
-          {/* 合わせる相手（曲・拍）が無いときは、時刻も移動時間も出さない。
-              移動はどれも同じ秒数なので、シーンごとに言うことが無い
-              （理由は lib/timelineMode / sceneTiming の uniformTimes） */}
-          {!isOrderOnly && (
-            <SceneTimeField
-              fieldKey={scene.id}
-              timeSeconds={scene.timeSeconds}
-              onCommit={onChangeTime}
-              outgoing={outgoing}
-              /* 秒数の欄は【1拍ずつ】動かす。0.1 刻みで秒を詰めるのは
-                 踊る側の数え方と合っていない（実機の報告・2026-08-24）。
-                 打った数はそのまま通るので、拍から外れた値も置ける */
-              stepSeconds={secondsPerBeat(project.bpm)}
-              onCommitMoveSeconds={onChangeMoveSeconds}
-            />
-          )}
+          <SceneTimeField
+            fieldKey={scene.id}
+            positionBeats={scene.positionBeats}
+            timeSeconds={scene.timeSeconds}
+            /* 秒を添えるのは曲に載せているときだけ。合わせる相手が
+               無い作品で `0:07.0` を出しても、振付として意味を持たない */
+            showSeconds={hasMusic}
+            onCommit={onChangeBeats}
+            outgoing={outgoing}
+            onCommitMoveBeats={onChangeMoveBeats}
+          />
           <div className="flex gap-unit">
             <RowAction
               icon={Trash2}

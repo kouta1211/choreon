@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   BEATS_PER_SET,
-  countAt,
+  countAtBeat,
+  countLabelAtBeat,
+  countLengthLabel,
+  parseCountLabel,
   flickTargetSeconds,
   formatCount,
   MAX_FLICK_SETS,
@@ -13,35 +16,110 @@ import {
 /** BPM 120 なら1拍 0.5秒、1セット(8カウント) 4秒 */
 const BPM = 120;
 
-describe("countAt", () => {
-  it("曲の頭は1セット1カウント", () => {
-    expect(countAt(0, BPM)).toEqual({ set: 1, count: 1 });
+describe("countAtBeat", () => {
+  it("先頭は 1セット目の1カウント", () => {
+    expect(countAtBeat(0)).toEqual({ set: 1, count: 1 });
   });
 
-  it("拍ごとにカウントが進む", () => {
-    expect(countAt(0.5, BPM)).toEqual({ set: 1, count: 2 });
-    expect(countAt(3.5, BPM)).toEqual({ set: 1, count: 8 });
+  /* **8の倍数を選ばない。** セットは8拍なので、8の倍数だけで縛ると
+     割り算の商と余りを取り違えても両方が偶然そろってしまう */
+  it("セットの途中を数える", () => {
+    expect(countAtBeat(5)).toEqual({ set: 1, count: 6 });
+    expect(countAtBeat(13)).toEqual({ set: 2, count: 6 });
+    expect(countAtBeat(27)).toEqual({ set: 4, count: 4 });
   });
 
-  it("8カウントで次のセットへ", () => {
-    expect(countAt(4, BPM)).toEqual({ set: 2, count: 1 });
-    expect(countAt(13, BPM)).toEqual({ set: 4, count: 3 });
+  it("セットの境目", () => {
+    expect(countAtBeat(7)).toEqual({ set: 1, count: 8 });
+    expect(countAtBeat(8)).toEqual({ set: 2, count: 1 });
   });
 
-  // イントロの途中はまだ数え始めていない
-  it("頭出しより手前は1セット1カウント", () => {
-    expect(countAt(0, BPM, 8)).toEqual({ set: 1, count: 1 });
+  it("拍の途中は、その拍として数える（切り上げない）", () => {
+    expect(countAtBeat(5.9)).toEqual({ set: 1, count: 6 });
   });
 
-  it("頭出しを原点にして数える", () => {
-    expect(countAt(8, BPM, 8)).toEqual({ set: 1, count: 1 });
-    expect(countAt(12, BPM, 8)).toEqual({ set: 2, count: 1 });
+  it("振付の頭より手前は 1-1 で止める", () => {
+    expect(countAtBeat(-3)).toEqual({ set: 1, count: 1 });
+  });
+});
+
+describe("formatCount", () => {
+  it("セットとカウントを - でつなぐ", () => {
+    expect(formatCount({ set: 3, count: 5 })).toBe("3-5");
+  });
+});
+
+describe("countLabelAtBeat", () => {
+  it("3セット目の5カウントは 3-5", () => {
+    expect(countLabelAtBeat(20)).toBe("3-5");
   });
 
-  it("読める形にする", () => {
-    expect(
-      formatCount(countAt(13, BPM), (set, count) => `${set}セット ${count}カウント`),
-    ).toBe("4セット 3カウント");
+  it("セットの頭は -1 で終わる", () => {
+    expect(countLabelAtBeat(16)).toBe("3-1");
+  });
+
+  it("**秒ではなく拍**を受ける（BPM を渡す口が無い）", () => {
+    // 13拍は BPM が何であっても 2-6。ここが秒だと BPM で答えが変わる
+    expect(countLabelAtBeat(13)).toBe("2-6");
+  });
+});
+
+describe("parseCountLabel", () => {
+  it("1-1 が 0拍目（カウントは1始まり）", () => {
+    expect(parseCountLabel("1-1")).toBe(0);
+  });
+
+  /* 8の倍数を選ばない。セットとカウントを取り違えても偶然そろわない値で */
+  it("3-5 は 20拍目", () => {
+    expect(parseCountLabel("3-5")).toBe(20);
+  });
+
+  it("countLabelAtBeat と往復する", () => {
+    for (const beat of [0, 5, 13, 20, 27]) {
+      expect(parseCountLabel(countLabelAtBeat(beat))).toBe(beat);
+    }
+  });
+
+  it("空白・全角の区切り・全角の数字でも読む", () => {
+    expect(parseCountLabel("3 5")).toBe(20);
+    expect(parseCountLabel("3－5")).toBe(20);
+    expect(parseCountLabel("３-５")).toBe(20);
+    expect(parseCountLabel("  3-5  ")).toBe(20);
+  });
+
+  it("**丸めずに弾く** — 0 や 9カウントは読めない値", () => {
+    expect(parseCountLabel("0-1")).toBeNull();
+    expect(parseCountLabel("3-0")).toBeNull();
+    expect(parseCountLabel("1-9")).toBeNull();
+    expect(parseCountLabel("-1-2")).toBeNull();
+  });
+
+  it("数が2つでなければ読まない", () => {
+    expect(parseCountLabel("3")).toBeNull();
+    expect(parseCountLabel("3-5-1")).toBeNull();
+    expect(parseCountLabel("")).toBeNull();
+    expect(parseCountLabel("abc")).toBeNull();
+    expect(parseCountLabel("3-x")).toBeNull();
+  });
+
+  it("小数は読まない（カウントは数えるもの）", () => {
+    expect(parseCountLabel("3-5.5")).toBeNull();
+  });
+});
+
+describe("countLengthLabel", () => {
+  it("区間の長さは、位置と違って素の数で書く", () => {
+    expect(countLengthLabel(2)).toBe("2");
+    expect(countLengthLabel(0)).toBe("0");
+  });
+
+  it("拍の途中は小数2桁まで（割り方の途中に出る）", () => {
+    expect(countLengthLabel(1.5)).toBe("1.5");
+    expect(countLengthLabel(1.336)).toBe("1.34");
+  });
+
+  it("負は 0 で止める", () => {
+    expect(countLengthLabel(-3)).toBe("0");
   });
 });
 

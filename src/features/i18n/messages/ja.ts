@@ -249,10 +249,8 @@ export const ja = {
       /** シーンがまだ無いとき。進む先が無いので「最後のシーンまで」は嘘になる */
       playMusicOnly: "曲を流す",
       sceneSettings: (name: string) => `「${name}」の設定を開く`,
-      moveSeconds: (seconds: number) => ` · ${seconds}秒で移動`,
-      /** 順番だけで作っているとき。時計の代わりに「何番目か」を出す */
-      scenePosition: (index: number, total: number) =>
-        `シーン ${index} / ${total}`,
+      /** カウントで数えた移動の長さ。位置（3-5）とは別の形で書く */
+      moveCounts: (counts: string) => ` · ${counts}カウントで移動`,
       addScene: "シーンを追加",
       /** 曲があるときは鳴らしている最中しか増やせない（canAddScene） */
       addSceneNeedsPlayback: "曲を流しながら押すと、その位置にコマができます",
@@ -263,32 +261,30 @@ export const ja = {
     },
 
     scenes: {
-      timeInSong: "曲のこの位置",
+      /** 位置の欄の見出し。打つのはカウント（3-5）で、秒ではない */
+      countPosition: "カウント",
+      counts: "カウント",
       seconds: "秒",
       title: "シーン",
       dancers: "ダンサー",
       sceneName: "シーン名",
-      summary: (count: number, seconds: number) =>
-        `${count}件 · 合計 ${seconds}s`,
-      /** 順番だけで作っているとき。合計の秒数は出さない */
-      summaryCount: (count: number) => `${count}件`,
+      summary: (count: number, counts: string) =>
+        `${count}件 · 通し ${counts}カウント`,
       /** 一覧の行に出す、**次のシーンへ出ていく**区間の秒数。
        *  下に出している滞在／移動と同じ区間でなければならない
        *  （2026-08-25 まで、ここだけ入ってくる側を出していた） */
-      moveOut: (seconds: number) => ` · 次へ ${seconds}s`,
-      /** 等間隔の帯で、コマとコマの間に出す区間の秒数 */
-      segment: (seconds: number) => `→ ${seconds}s`,
+      moveOut: (counts: string) => ` · 次へ ${counts}`,
       /** 区間を2つに割る欄の見出し。どちらにも打てる */
       hold: "滞在",
-      holdLabel: "この隊形のまま止まっている秒数",
+      holdLabel: "この隊形のまま止まっているカウント数",
       move: "移動",
-      moveSecondsLabel: "次のシーンへ動くのに使う秒数",
+      moveCountsLabel: "次のシーンへ動くのに使うカウント数",
       /** 割っている区間の長さ。バーの上に添える */
-      segmentTotal: (seconds: number) => `区間 ${seconds}秒`,
+      segmentTotalCounts: (counts: string) => `区間 ${counts}カウント`,
       /** 区間バー本体。左が滞在、右が移動 */
       splitBar: "滞在と移動の境目",
       splitBarValue: (hold: number, move: number) =>
-        `滞在 ${hold}秒、移動 ${move}秒`,
+        `滞在 ${hold}カウント、移動 ${move}カウント`,
       delete: "削除",
       /** まとめて消すための「選ぶ」モード（一覧の見出しの右） */
       select: "選ぶ",
@@ -497,17 +493,12 @@ export const ja = {
       "ステージの上下に、バックステージと客席側の札が出ています。丸がダンサーで、掴んで動かせます。目盛りはセンターからの位置です。",
     /** 曲もメトロノームも無いときは【順番だけ】になる（timelineMode）。
         **初めて開く人は必ずそちら**なので、両方の言い方を持つ */
-    timelineOrderTitle: "横の並びが、隊形の順番です",
-    timelineOrderBody:
-      "コマは左から順に並びます。数字は、そのコマへ入るまでにかける秒数です。曲を入れると、横の位置が曲の時間に変わります。",
-    timelineTitle: "横の位置が、曲の時間です",
+    timelineTitle: "横の位置が、カウントです",
     timelineBody:
-      "コマは「曲の何秒目の隊形か」の位置に並びます。コマを横に引くとその時刻が動き、間隔がそのまま移動にかけられる時間になります。",
+      "コマは「何セット目の何カウントか」の位置に並びます（3-5 は3セット目の5カウント）。コマを横に引くとその位置が動き、間隔がそのまま次の隊形へ移るカウント数になります。",
     addTitle: "隊形を足す",
-    addOrderBody:
-      "選んでいるシーンの隣に、いまの配置をコピーした隊形を作ります。作ってから動かす、が基本の流れです。",
     addBody:
-      "いま聞いている位置に、いまの配置をコピーした隊形を作ります。作ってから動かす、が基本の流れです。",
+      "選んでいるシーンの隣に、いまの配置をコピーした隊形を作ります。作ってから動かす、が基本の流れです。曲を鳴らしているときは、聞いている位置にできます。",
     viewTitle: "メニュー",
     viewBody:
       "目盛り・導線・顔被りの警告などの切り替えと、曲・動画・設定への入口がここにあります。この案内をもう一度見るのもここから。",
@@ -612,16 +603,15 @@ export const ja = {
       all: "全て",
       summary: (scenes: number, total: string) =>
         `${scenes} シーン · 通し ${total}`,
-      summaryNoTime: (scenes: number) => `${scenes} シーン`,
       lastFormation: "ここが最後の隊形です",
       /** 道順の一覧の1行目。最初のシーンには「移動」が無い */
       startHere: "ここから始まります",
       stepsNote: "歩数は 1歩 60cm・1マス 90cm で計算した目安です。",
       sidesNote: "上手／下手は客席から見た向きです。",
       fast: " — 速め",
-      travelSeconds: (seconds: string) => `${seconds}秒かけて`,
+      travelCounts: (counts: string) => `${counts}カウントかけて`,
       /** 道順の1行の後ろに添える形。括弧の形は言語で変わる */
-      travelSecondsAside: (seconds: string) => `（${seconds}秒かけて）`,
+      travelCountsAside: (counts: string) => `（${counts}カウントかけて）`,
       hereNow: " · 現時点",
       tooFast: "歩いて間に合わない速さです",
       reselect: "ポジションを選び直す",
@@ -643,9 +633,6 @@ export const ja = {
       /** 作品の見出しに添える規模。見る人が最初に読む1行 */
       counts: (scenes: number, dancers: number, total: string) =>
         `${scenes} シーン · ${dancers} 人 · ${total}`,
-      /** 順番だけで組まれた作品。通しの時刻は意味を持たないので出さない */
-      countsNoTime: (scenes: number, dancers: number) =>
-        `${scenes} シーン · ${dancers} 人`,
       pick: "自分を選んでください",
       pickNamed: (name: string) => `「${name}」で見る`,
       skip: "選ばずに全員を見る",

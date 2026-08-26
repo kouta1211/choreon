@@ -42,25 +42,30 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 /**
- * 並び替えたときの時刻の直し方は2通りある（features/scene/lib/timelineMode）。
- * **どちらが選ばれるか**はこの1箇所で決まるので、ここで縛る。
+ * 並び替えたときの直し方は**1通りだけ**（2026-08-26）。
+ *
+ * 以前は「合わせる相手が無い作品」だけ全部を積み直していた。
+ * カウントで組むようになって **`3-5` に置いたこと自体が振付の意図**に
+ * なったので、触っていないシーンを動かさない側へ一本化した。
+ *
+ * **曲やクリックの有無で答えが分かれないこと**を縛る — 分岐を戻すと
+ * 片方が落ちる。
  */
 describe("useSceneActions の並び替え", () => {
-  it("曲も拍も無いときは、全部を同じ秒数で積み直す", async () => {
-    const { result } = setup({ isMetronomeEnabled: false });
+  it("動かした1つを、新しい隣同士の中間へ置く", async () => {
+    const { result } = setup({ isMetronomeEnabled: true });
 
     await act(async () => {
       await result.current.reorderTo(["a", "c", "b"]);
     });
 
-    // 並びは a → c → b。間隔はどれも既定の 4秒
-    await waitFor(() => expect(timesById()).toEqual({ a: 0, c: 4, b: 8 }));
+    await waitFor(() => expect(timesById()).toEqual({ a: 0, c: 2, b: 4 }));
   });
 
-  /* 拍という物差しがあるときは、触っていないシーンを動かさないのが正しい
-     （曲やクリックに合わせて置いた隊形を守る） */
-  it("拍があるときは、動かした1つを新しい隣同士の中間へ置く", async () => {
-    const { result } = setup({ isMetronomeEnabled: true });
+  /* **曲もクリックも無くても、答えは同じ。** 積み直す枝を戻すと、
+     ここが { a: 0, c: 4, b: 8 } になって落ちる */
+  it("曲もクリックも無いときも、同じ直し方をする", async () => {
+    const { result } = setup({ isMetronomeEnabled: false });
 
     await act(async () => {
       await result.current.reorderTo(["a", "c", "b"]);

@@ -9,15 +9,15 @@ import type { Messages } from "@/features/i18n/messages";
  * 存在する属性を別に付けて、消してよいものと区別する。
  *
  * ■ 案内は、いま目の前にあるものを言う
- * 下の帯は、曲もメトロノームも無いと【順番だけ】になる
- * (features/scene/lib/timelineMode.ts)。**初めて開く人は必ずそちら**
- * ―― 作りたての作品に曲は入っていない ―― なので、時刻の話をすると
- * **初回に必ず食い違う**。物差しを見て言い分ける。
+ * **どの作品でもカウントで組む**ようになった（2026-08-26）ので、
+ * 曲の有無で言い分ける必要が無くなった。以前は曲もメトロノームも無い
+ * 作品だけ別の文にしていて、**初めて開く人は必ずそちら**（作りたての
+ * 作品に曲は入っていない）だった。いまはどちらも同じ文で正しい。
  *
  * ここを純粋関数にしてあるのは、**案内が実物とずれていないかを
  * テストで縛るため**。ずれても画面は正しく動くので、人は気づけない。
  */
-export function tourSteps(t: Messages, isOrderOnly: boolean): Step[] {
+export function tourSteps(t: Messages): Step[] {
   return [
     {
       target: '[data-tour="stage"]',
@@ -27,14 +27,14 @@ export function tourSteps(t: Messages, isOrderOnly: boolean): Step[] {
     },
     {
       target: '[data-tour="timeline"]',
-      title: isOrderOnly ? t.tour.timelineOrderTitle : t.tour.timelineTitle,
-      content: isOrderOnly ? t.tour.timelineOrderBody : t.tour.timelineBody,
+      title: t.tour.timelineTitle,
+      content: t.tour.timelineBody,
       placement: "top",
     },
     {
       target: '[data-tour="add-scene"]',
       title: t.tour.addTitle,
-      content: isOrderOnly ? t.tour.addOrderBody : t.tour.addBody,
+      content: t.tour.addBody,
       placement: "top",
     },
     {

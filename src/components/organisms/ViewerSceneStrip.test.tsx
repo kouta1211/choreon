@@ -68,11 +68,12 @@ describe("ViewerSceneStrip", () => {
     expect(here).toHaveAccessibleName("3 シーン3");
   });
 
-  it("秒数を数字で出す（長さでは表さない）", () => {
+  it("カウントを数字で出す（長さでは表さない）", () => {
     hydrate();
     render(<ViewerSceneStrip />);
 
-    expect(screen.getByText("0:30")).toBeInTheDocument();
+    // 30秒 = 60拍（BPM 120）= 8セット目の5カウント
+    expect(screen.getByText("8-5")).toBeInTheDocument();
   });
 
   it("順番だけで組まれた作品では、時刻を出さない", () => {

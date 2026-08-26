@@ -8,9 +8,9 @@ import { outgoingSegment } from "./outgoingSegment";
  * 壊れ方をする。画面は動いて見えるので、目では気づけない。
  */
 const scenes = [
-  { id: "a" },
-  { id: "b", moveSeconds: 1 },
-  { id: "c", moveSeconds: null },
+  { id: "a", positionBeats: 0 },
+  { id: "b", positionBeats: 8, moveBeats: 2, moveSeconds: 1 },
+  { id: "c", positionBeats: 20, moveBeats: null, moveSeconds: null },
 ];
 /** durations[i] は i 番へ入ってくる秒数。先頭は 0 */
 const durations = [0, 4, 6];
@@ -18,6 +18,8 @@ const durations = [0, 4, 6];
 describe("outgoingSegment", () => {
   it("先頭にも出る（次があるため）。区間は次の行から読む", () => {
     expect(outgoingSegment(scenes, durations, 0)).toEqual({
+      segmentBeats: 8,
+      moveBeats: 2,
       segmentSeconds: 4,
       moveSeconds: 1,
       targetSceneId: "b",
@@ -42,10 +44,21 @@ describe("outgoingSegment", () => {
   });
 
   it("シーンが1つだけなら、どこにも出ない", () => {
-    expect(outgoingSegment([{ id: "a" }], [0], 0)).toBeNull();
+    expect(outgoingSegment([{ id: "a", positionBeats: 0 }], [0], 0)).toBeNull();
   });
 
   it("区間の数が足りなくても、秒数として意味のない値を返さない", () => {
     expect(outgoingSegment(scenes, [0], 0)?.segmentSeconds).toBe(0);
+  });
+
+  /* **拍は秒とは別の道で出す。** 秒は durations（載せ方を通した派生値）から
+     来るが、拍は位置の差そのもの。秒が欠けていても拍は正しく出る */
+  it("区間の拍は、位置の差から出す（秒の配列に頼らない）", () => {
+    expect(outgoingSegment(scenes, [0], 0)?.segmentBeats).toBe(8);
+    expect(outgoingSegment(scenes, durations, 1)?.segmentBeats).toBe(12);
+  });
+
+  it("次が決めていなければ移動の拍も null（区間まるごと）", () => {
+    expect(outgoingSegment(scenes, durations, 1)?.moveBeats).toBeNull();
   });
 });

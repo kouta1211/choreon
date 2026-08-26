@@ -4,12 +4,14 @@ import { useMemo, useState } from "react";
 import { ArrowRight, TriangleAlert } from "lucide-react";
 import { BottomSheet } from "@/components/molecules/BottomSheet";
 import { PressableButton } from "@/components/atoms/PressableButton";
-import { formatClock, formatMinutes } from "@/features/scene/lib/clock";
+import {
+  countLabelAtBeat,
+  countLengthLabel,
+} from "@/features/music/lib/counts";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { describeMove } from "@/features/viewer/lib/describeMove";
 import { sceneSpanAt } from "@/features/viewer/lib/interpolate";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
-import { useViewerOrderOnly } from "@/features/viewer/hooks/useViewerOrderOnly";
 import { useT } from "@/features/i18n/LocaleProvider";
 import { moveText } from "@/features/i18n/lib/moveText";
 
@@ -18,6 +20,10 @@ type Step = {
   number: number;
   name: string;
   timeSeconds: number;
+  /** このシーンが頭から何拍目か。行に出すのはこちら（2026-08-26） */
+  positionBeats: number;
+  /** 前のシーンから何カウントかけて来るか。先頭は 0 */
+  beats: number;
   text: string;
   turn: string | null;
   isFast: boolean;
@@ -44,7 +50,6 @@ export function ViewerRoute() {
   /* 一覧から飛ぶときも再生を止める。帯・シーン一覧と同じ作法にする
      — 3つのうち1つだけ止まらないと、止まらない方を不具合と読む */
   const jumpToSeconds = useViewerStore((state) => state.jumpToSeconds);
-  const isOrderOnly = useViewerOrderOnly();
   const [isSheetOpen, setSheetOpen] = useState(false);
 
   const steps = useMemo<Step[]>(() => {
@@ -62,6 +67,8 @@ export function ViewerRoute() {
         number: 1,
         name: first.name,
         timeSeconds: first.timeSeconds,
+        positionBeats: first.positionBeats,
+        beats: 0,
         text: t.viewer.route.startHere,
         turn: null,
         isFast: false,
@@ -83,6 +90,8 @@ export function ViewerRoute() {
         number: index + 1,
         name: scene.name,
         timeSeconds: scene.timeSeconds,
+        positionBeats: scene.positionBeats,
+        beats: Math.max(0, scene.positionBeats - previous.positionBeats),
         isFast: move.isFast,
         seconds: move.seconds,
         // 差分の読み取りと文の組み立ては別。語順は言語で変わる
@@ -101,8 +110,12 @@ export function ViewerRoute() {
     ? steps.find((step) => step.sceneId === span.to?.id)
     : steps[steps.length - 1];
 
-  const totalSeconds =
-    scenes.length > 0 ? scenes[scenes.length - 1].timeSeconds : 0;
+  /* 通しの長さもカウントで。**並び順の正は位置**なので、
+     最後の要素ではなくいちばん大きい拍を取る */
+  const totalBeats = scenes.reduce(
+    (max, scene) => Math.max(max, scene.positionBeats),
+    0,
+  );
 
   return (
     <>
@@ -120,7 +133,9 @@ export function ViewerRoute() {
                 <span className="text-fg-sub"> {current.turn}</span>
               )}
               <span className="text-fg-muted">
-                {t.viewer.route.travelSecondsAside(current.seconds.toFixed(1))}
+                {t.viewer.route.travelCountsAside(
+                  countLengthLabel(current.beats),
+                )}
               </span>
             </>
           ) : (
@@ -142,9 +157,10 @@ export function ViewerRoute() {
         onClose={() => setSheetOpen(false)}
         title={t.viewer.route.title(dancer?.name ?? t.viewer.route.me)}
         titleRight={
-          isOrderOnly
-            ? t.viewer.route.summaryNoTime(scenes.length)
-            : t.viewer.route.summary(scenes.length, formatMinutes(totalSeconds))
+          t.viewer.route.summary(
+            scenes.length,
+            countLengthLabel(totalBeats),
+          )
         }
         isTall
       >
@@ -198,12 +214,12 @@ export function ViewerRoute() {
                         </span>
                       )}
                     </span>
-                    {/* 順番だけで組まれた作品では、時刻を出さない。
-                        合わせる相手が居ないので「0:12」は何の意味も
-                        持たない（作る側の一覧と同じ扱い／規約 state.md 6節）*/}
+                    {/* 位置はカウントで出す（2026-08-26）。作る側の一覧と
+                        同じ数でなければならない（規約 state.md 6節 —
+                        作る側と見る側は別の道で描いている）*/}
                     <span className="mt-0.5 block font-mono text-caption text-fg-muted">
-                      {!isOrderOnly && `${formatClock(step.timeSeconds)} · `}
-                      {t.viewer.route.travelSeconds(step.seconds.toFixed(1))}
+                      {`${countLabelAtBeat(step.positionBeats)} · `}
+                      {t.viewer.route.travelCounts(countLengthLabel(step.beats))}
                       {isHere && t.viewer.route.hereNow}
                     </span>
                   </span>

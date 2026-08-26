@@ -3,24 +3,25 @@
 import { useState, type KeyboardEvent, type PointerEvent } from "react";
 import {
   holdRatio,
-  moveSecondsAfterNudge,
-  moveSecondsAtRatio,
+  moveAfterNudge,
+  moveAtRatio,
 } from "@/features/scene/lib/segmentBar";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 type Props = {
-  /** 割る区間の長さ（このシーン → 次のシーン）。時刻の差から出たもの */
-  segmentSeconds: number;
-  /** いまの滞在（区間 − 移動）。表示に使う */
-  holdSeconds: number;
-  /** いまの移動。保存されているのはこちら1つだけ */
-  moveSeconds: number;
-  /** 境目が寄る刻み。**1拍ぶん**を渡す（`secondsPerBeat(bpm)`） */
-  stepSeconds: number;
+  /** 割る区間の長さを**拍で**（このシーン → 次のシーン）。位置の差 */
+  segmentBeats: number;
+  /** いまの滞在（区間 − 移動）を拍で。表示に使う */
+  holdBeats: number;
+  /** いまの移動を拍で。保存されているのはこちら1つだけ */
+  moveBeats: number;
   /** 境目が決まったときに呼ばれる。**離した瞬間に1回だけ**。
    * 呼び出し側が【楽観的に画面を変える → 保存する】を受け持つ */
-  onCommit: (moveSeconds: number) => void;
+  onCommit: (moveBeats: number) => void;
 };
+
+/** 境目が寄る刻み。**1カウント**（2026-08-26 から画面は拍で打つ） */
+const STEP_BEATS = 1;
 
 /**
  * 区間を【滞在】と【移動】に割るバー。**左が滞在、右が移動**。
@@ -41,33 +42,32 @@ type Props = {
  * どちらから打っても保存されるのは移動の側1つだけ。
  */
 export function SegmentSplitBar({
-  segmentSeconds,
-  holdSeconds,
-  moveSeconds,
-  stepSeconds,
+  segmentBeats,
+  holdBeats,
+  moveBeats,
   onCommit,
 }: Props) {
   const t = useT();
   /* 引いている最中の値。離すまで呼び出し側へは渡さない */
   const [liveMove, setLiveMove] = useState<number | null>(null);
 
-  if (segmentSeconds <= 0) return null;
+  if (segmentBeats <= 0) return null;
 
-  const shownMove = liveMove ?? moveSeconds;
-  const shownHold = round(segmentSeconds - shownMove);
-  const percent = holdRatio(segmentSeconds, shownHold) * 100;
+  const shownMove = liveMove ?? moveBeats;
+  const shownHold = round(segmentBeats - shownMove);
+  const percent = holdRatio(segmentBeats, shownHold) * 100;
 
-  /** 押した位置・引いた位置から、境目の移動時間を出す */
+  /** 押した位置・引いた位置から、境目の移動（拍）を出す */
   const moveAtPointer = (
     element: HTMLElement,
     clientX: number,
   ): number => {
     const rect = element.getBoundingClientRect();
     if (rect.width === 0) return shownMove;
-    return moveSecondsAtRatio(
-      segmentSeconds,
+    return moveAtRatio(
+      segmentBeats,
       (clientX - rect.left) / rect.width,
-      stepSeconds,
+      STEP_BEATS,
     );
   };
 
@@ -89,7 +89,7 @@ export function SegmentSplitBar({
     if (liveMove === null) return;
     const next = moveAtPointer(event.currentTarget, event.clientX);
     setLiveMove(null);
-    if (next !== moveSeconds) onCommit(next);
+    if (next !== moveBeats) onCommit(next);
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -97,13 +97,13 @@ export function SegmentSplitBar({
       event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : null;
     if (direction === null) return;
     event.preventDefault();
-    const next = moveSecondsAfterNudge(
-      segmentSeconds,
-      holdSeconds,
+    const next = moveAfterNudge(
+      segmentBeats,
+      holdBeats,
       direction,
-      stepSeconds,
+      STEP_BEATS,
     );
-    if (next !== moveSeconds) onCommit(next);
+    if (next !== moveBeats) onCommit(next);
   };
 
   return (
@@ -112,7 +112,7 @@ export function SegmentSplitBar({
       tabIndex={0}
       aria-label={t.editor.scenes.splitBar}
       aria-valuemin={0}
-      aria-valuemax={segmentSeconds}
+      aria-valuemax={segmentBeats}
       aria-valuenow={shownHold}
       aria-valuetext={t.editor.scenes.splitBarValue(shownHold, shownMove)}
       data-testid="segment-split-bar"
@@ -137,7 +137,7 @@ export function SegmentSplitBar({
   );
 }
 
-/** 0.1 + 0.2 の誤差を落とす（`lib/segmentSplit` の round と同じ考え方） */
+/** 3桁より細かい差は出てこない（`lib/segmentSplit` の round と同じ） */
 function round(value: number): number {
   return Math.round(value * 1000) / 1000;
 }

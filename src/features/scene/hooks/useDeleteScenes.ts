@@ -4,15 +4,8 @@ import { useCallback } from "react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { persist } from "@/features/project/lib/persistence";
-import { deleteScenes, updateSceneBeats } from "@/features/scene/api/scenes";
-import {
-  beatsForTimes,
-  DEFAULT_PLACEMENTS,
-} from "@/features/music/lib/placement";
+import { deleteScenes } from "@/features/scene/api/scenes";
 import { sceneAfterDelete } from "@/features/scene/lib/sceneAfterDelete";
-import { uniformTimes } from "@/features/scene/lib/sceneTiming";
-import { useOrderOnlyTimeline } from "@/features/scene/hooks/useOrderOnlyTimeline";
-import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { useT } from "@/features/i18n/LocaleProvider";
 
@@ -30,18 +23,15 @@ import { useT } from "@/features/i18n/LocaleProvider";
  * 履歴が持っているのは立ち位置・時刻・ステージの広さで、シーンの増減は
  * 入らない。だから確認を挟む。確認の文にも「元に戻せません」と書いてある。
  *
- * ■ 穴を詰めるのは、**全部消してから1回**
- * 順番だけで作っているとき（曲も拍も無い作品）は、消したぶんの穴を
- * 詰め直さないとそこだけ移動に倍の時間がかかる。**画面には秒数が
- * 出ない**ので、再生してみるまで気づけない。1件ずつ詰めると件数ぶん
- * 往復することになるので、まとめて消してから1回だけ流す。
+ * ■ **穴は詰めない**（2026-08-26）
+ * 以前は「合わせる相手が無い作品」だけ、消したぶんを詰め直していた。
+ * その概念ごと畳んで**常にカウントで見せる**ようにしたので、
+ * `3-5` に置いたこと自体が振付の意図になった。勝手に埋めると、
+ * 消していないシーンまで別のカウントへ動くことになる。
+ * 空いたカウントは、帯でコマを掴んで動かせば手で詰められる。
  */
 export function useDeleteScenes() {
   const t = useT();
-  const isOrderOnly = useOrderOnlyTimeline();
-  const defaultSegmentSeconds = useSettingsStore(
-    (state) => state.defaultSegmentSeconds,
-  );
 
   return useCallback(
     (sceneIds: string[]) => {
@@ -82,30 +72,11 @@ export function useDeleteScenes() {
             useUIStore.getState().selectScene(nextSceneId);
             useUIStore.getState().setSceneSelectMode(false);
 
-            if (!isOrderOnly) return;
-            const remaining = useProjectStore.getState().scenes;
-            if (remaining.length === 0) return;
-            const times = uniformTimes(
-              remaining.map((scene) => scene.id),
-              defaultSegmentSeconds,
-            );
-            /* **拍へ直してから流す。** 秒のまま送ると、載せ方の外の値が
-               DB へ入り、次に読んだときに拍と食い違う */
-            const placements =
-              useProjectStore.getState().project?.musicPlacements ??
-              DEFAULT_PLACEMENTS;
-            const beats = beatsForTimes(times, placements);
-            useProjectStore.getState().applySceneBeats(beats);
-            await persist((supabase) =>
-              updateSceneBeats(
-                supabase,
-                remaining.map((scene) => ({
-                  id: scene.id,
-                  positionBeats: beats.get(scene.id) ?? scene.positionBeats,
-                })),
-                placements,
-              ),
-            );
+            /* **残ったシーンは詰めない**（2026-08-26）。
+               以前は「合わせる相手が無い作品」だけ全部を積み直していたが、
+               カウントで組むようになって **`3-5` に置いたこと自体が振付の
+               意図**になったので、消したぶんの穴を勝手に埋めない。
+               空いたカウントは、掴んで動かせば手で詰められる */
           } catch (error) {
             useUIStore.getState().showToast({
               message: toUserMessage(error, t.sceneActions.deleteFailed),
@@ -115,6 +86,6 @@ export function useDeleteScenes() {
         },
       });
     },
-    [t, isOrderOnly, defaultSegmentSeconds],
+    [t],
   );
 }

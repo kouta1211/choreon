@@ -17,15 +17,27 @@
  * 行き先が無いので `null`。先頭には**ある**（次があるため）。
  */
 export type OutgoingSegment = {
-  /** 区間の長さ（このシーン → 次のシーン）。時刻の差から出したもの */
+  /** 区間の長さ（このシーン → 次のシーン）を**拍で**。位置の差そのもの。
+   * 画面に出すのはこちら（2026-08-26 からカウントで見せている） */
+  segmentBeats: number;
+  /** いま決めている移動時間を**拍で**。**null なら区間まるごと**。
+   * `scenes.move_beats` が保存の正 */
+  moveBeats: number | null;
+  /** 区間の長さ（秒）。⚠️ **派生値** — 拍から導いたもの。
+   * 曲へ載せたときの実際の長さが要る所（速すぎる移動の警告など）で使う */
   segmentSeconds: number;
-  /** いま決めている移動時間。**null なら区間まるごと** */
+  /** いま決めている移動時間（秒）。⚠️ **派生値** */
   moveSeconds: number | null;
   /** 値を書き込む先のシーン。**次のシーン**であって、このシーンではない */
   targetSceneId: string;
 };
 
-type OutgoingScene = { id: string; moveSeconds?: number | null };
+type OutgoingScene = {
+  id: string;
+  positionBeats: number;
+  moveBeats?: number | null;
+  moveSeconds?: number | null;
+};
 
 /**
  * @param scenes 並んでいるシーン
@@ -40,9 +52,14 @@ export function outgoingSegment(
   index: number,
 ): OutgoingSegment | null {
   if (index < 0) return null;
+  const current = scenes[index];
   const next = scenes[index + 1];
-  if (!next) return null;
+  if (!current || !next) return null;
   return {
+    /* 拍は**位置の差**そのもの。秒のように載せ方を挟まないので、
+       テンポの変わる曲でも「何カウントの区間か」は変わらない */
+    segmentBeats: Math.max(0, next.positionBeats - current.positionBeats),
+    moveBeats: next.moveBeats ?? null,
     segmentSeconds: durations[index + 1] ?? 0,
     moveSeconds: next.moveSeconds ?? null,
     targetSceneId: next.id,

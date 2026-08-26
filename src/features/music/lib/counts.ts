@@ -26,29 +26,93 @@ export type CountPosition = {
   count: number;
 };
 
-/** その秒数が何セットの何カウントにあたるか。曲の頭出し位置を原点にする */
-export function countAt(
-  seconds: number,
-  bpm: number,
-  originSeconds = 0,
-): CountPosition {
-  const beat = Math.floor((seconds - originSeconds) / secondsPerBeat(bpm));
-  // 頭出しより手前(イントロの途中)は、1セット目の1カウントとして扱う
-  if (beat < 0) return { set: 1, count: 1 };
+/**
+ * その**拍**が何セットの何カウントにあたるか。
+ *
+ * ⚠️ **秒を経由しない**（2026-08-26）。以前は `countAt(秒, bpm, 原点)` で
+ * 秒から拍を逆算していたが、
+ *
+ *  - 拍 → 秒 → 拍 の往復で**丸めがずれる**
+ *  - **テンポの変わる曲**（placement が複数）では bpm 1つでは戻せない
+ *
+ * `positionBeats` が保存の正になった（2026-08-25）ので、
+ * 拍をそのまま受ければ割り算1つで済む。
+ *
+ * 負の拍は 1セット目の1カウントとして扱う（振付の頭より手前を指した
+ * ときで、画面に `0-0` と出しても読む人には何の情報も無い）。
+ */
+export function countAtBeat(beat: number): CountPosition {
+  const whole = Math.floor(beat);
+  if (whole < 0) return { set: 1, count: 1 };
 
   return {
-    set: Math.floor(beat / BEATS_PER_SET) + 1,
-    count: (beat % BEATS_PER_SET) + 1,
+    set: Math.floor(whole / BEATS_PER_SET) + 1,
+    count: (whole % BEATS_PER_SET) + 1,
   };
 }
 
-/** 「4セット 2カウント」の形。操作行に出す。
- * 文そのものは辞書が持つ — セットとカウントの並び順は言語で変わる */
-export function formatCount(
-  position: CountPosition,
-  format: (set: number, count: number) => string,
-): string {
-  return format(position.set, position.count);
+/**
+ * `3-5` の形。**3セット目の5カウント**。
+ *
+ * ■ なぜ記号で書くのか（2026-08-26）
+ * 以前は辞書が「4セット 2カウント」という文を持っていた。読みやすいが
+ * **下のバーにも一覧の行にも収まらない**（そこは幅が決まっている）。
+ * 稽古場で口に出すのも「3の5」で、語は付けない。
+ *
+ * 区切りは言語で変わらないので、**辞書には持たせない** — 3言語ぶんの
+ * 同じ文字列が増えるだけで、片方だけ直る事故の口になる。
+ */
+export function formatCount(position: CountPosition): string {
+  return `${position.set}-${position.count}`;
+}
+
+/** 拍から直接 `3-5` を作る近道。読む側はほとんどこれ1つで足りる */
+export function countLabelAtBeat(beat: number): string {
+  return formatCount(countAtBeat(beat));
+}
+
+/**
+ * `3-5` を**拍**へ戻す。読めなければ `null`（呼ぶ側が前の値へ戻す）。
+ *
+ * ■ 受ける形をゆるくする理由
+ * 打つのは稽古中の人で、記号を正確に選べる状況ではない。
+ * `3-5` `3 5` `3－5`（全角）`3ー5` を同じものとして受ける。
+ * **区切りが1つある2つの数**なら通す、という線で引いている。
+ *
+ * ■ カウントは1始まり
+ * `1-1` が 0拍目。**`0-0` や `3-0` は読めない値として弾く** —
+ * 丸めて受けると、打った数と画面の数が食い違う。
+ * カウントが8を超える値（`1-9`）も弾く（1セットは8カウント）。
+ */
+export function parseCountLabel(text: string): number | null {
+  // 全角の数字を半角へ寄せてから見る
+  const normalized = text
+    .trim()
+    .replace(/[０-９]/g, (char) =>
+      String.fromCharCode(char.charCodeAt(0) - 0xfee0),
+    );
+
+  /* **端から端まで当てる。** 区切りで割って数だけ拾うと、`-1-2` の
+     ような打ち間違いから先頭の記号が黙って落ち、`1-2` として通ってしまう */
+  const matched = /^(\d+)\s*[-‐‑–—ー－\s]\s*(\d+)$/.exec(normalized);
+  if (!matched) return null;
+
+  const set = Number(matched[1]);
+  const count = Number(matched[2]);
+  if (set < 1 || count < 1 || count > BEATS_PER_SET) return null;
+
+  return (set - 1) * BEATS_PER_SET + (count - 1);
+}
+
+/**
+ * 何カウントぶんか、を読む形にする。**区間の長さに使う**。
+ *
+ * 位置（`3-5`）とは別の形にしてある。`2` と `2-1` は別のもので、
+ * 同じ書き方にすると「2カウントの区間」と「2セット目の1」が
+ * 見分けられなくなる。
+ */
+export function countLengthLabel(beats: number): string {
+  return String(Math.max(0, Math.round(beats * 100) / 100));
 }
 
 /** いちばん近い拍へ寄せる。コマを置く位置に使う */

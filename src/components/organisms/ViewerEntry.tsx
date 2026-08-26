@@ -5,8 +5,7 @@ import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { DancerMarker } from "@/components/molecules/DancerIcon";
-import { formatMinutes } from "@/features/scene/lib/clock";
-import { useViewerOrderOnly } from "@/features/viewer/hooks/useViewerOrderOnly";
+import { countLengthLabel } from "@/features/music/lib/counts";
 import { useT } from "@/features/i18n/LocaleProvider";
 import { Phrase } from "@/components/atoms/Phrase";
 
@@ -35,7 +34,6 @@ export function ViewerEntry() {
   );
   const focusedDancerId = useViewerStore((state) => state.focusedDancerId);
   const focusDancer = useViewerStore((state) => state.focusDancer);
-  const isOrderOnly = useViewerOrderOnly();
 
   /* **選ぶのと、決めるのを分ける**(2026-08-18、実機の報告 02-1)。
      以前は丸や名前を押した時点で focusDancer を呼んでいたので、
@@ -48,8 +46,12 @@ export function ViewerEntry() {
 
   const firstScene = scenes[0];
   const positions = firstScene ? (positionsBySceneId[firstScene.id] ?? {}) : {};
-  const totalSeconds =
-    scenes.length > 0 ? scenes[scenes.length - 1].timeSeconds : 0;
+  /* 通しの長さはカウントで。**並び順の正は位置**なので、
+     最後の要素ではなくいちばん大きい拍を取る */
+  const totalBeats = scenes.reduce(
+    (max, scene) => Math.max(max, scene.positionBeats),
+    0,
+  );
   const selected = dancers.find((dancer) => dancer.id === pendingId);
 
   return (
@@ -65,13 +67,11 @@ export function ViewerEntry() {
           {project.title}
         </h1>
         <p className="mt-base font-mono text-caption text-fg-muted">
-          {isOrderOnly
-            ? t.viewer.entry.countsNoTime(scenes.length, dancers.length)
-            : t.viewer.entry.counts(
-                scenes.length,
-                dancers.length,
-                formatMinutes(totalSeconds),
-              )}
+          {t.viewer.entry.counts(
+            scenes.length,
+            dancers.length,
+            countLengthLabel(totalBeats),
+          )}
         </p>
       </div>
 

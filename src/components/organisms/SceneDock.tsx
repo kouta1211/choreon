@@ -14,8 +14,6 @@ import {
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { MusicTimeline } from "@/components/organisms/MusicTimeline";
-import { SceneStrip } from "@/components/organisms/SceneStrip";
-import { useOrderOnlyTimeline } from "@/features/scene/hooks/useOrderOnlyTimeline";
 import { PlayheadClock } from "@/components/molecules/PlayheadClock";
 import { CountInOverlay } from "@/components/organisms/CountInOverlay";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
@@ -26,14 +24,13 @@ import {
 import { useSilentClock } from "@/features/music/hooks/useSilentClock";
 import { useMetronome } from "@/features/music/hooks/useMetronome";
 import { playbackStartIndex } from "@/features/music/lib/playbackStart";
-import { beatOriginSeconds } from "@/features/music/lib/placement";
+import { countLengthLabel } from "@/features/music/lib/counts";
 import { useBpm } from "@/features/music/hooks/useBpm";
 import { usePlaybackToggle } from "@/features/music/hooks/usePlaybackToggle";
 import { useToastOffset } from "@/components/hooks/useToastOffset";
 import { SceneListSheet } from "@/components/organisms/SceneListSheet";
 import { useAddScene } from "@/features/scene/hooks/useAddScene";
 import type { Project } from "@/features/project/types";
-import { sceneDurations } from "@/features/scene/lib/sceneTiming";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { useT } from "@/features/i18n/LocaleProvider";
 import { useMetronomeSetting } from "@/features/music/hooks/useMetronomeSetting";
@@ -93,8 +90,6 @@ export function SceneDock({ project }: Props) {
   const { bpm, beatsPerBar } = useBpm();
   /* メトロノームは作品の設定になった(2026-08-18)。端末ごとではない */
   const { isMetronomeEnabled, toggleMetronome } = useMetronomeSetting();
-  /* 時刻という概念を出すかどうか。曲も拍も無いときは出さない */
-  const isOrderOnly = useOrderOnlyTimeline();
   const playbackStartSceneId = useUIStore(
     (state) => state.playbackStartSceneId,
   );
@@ -108,7 +103,14 @@ export function SceneDock({ project }: Props) {
   const audioRef = useMusicPlayback();
   const dockRef = useRef<HTMLDivElement>(null);
 
-  const durations = sceneDurations(scenes);
+  /* 各シーンへ**入ってくる**区間を拍で。`durations` の拍版で、
+     位置の差そのもの（載せ方を挟まないので、テンポが変わっても
+     「何カウントの区間か」は変わらない）。先頭は入ってくる元が無いので 0 */
+  const incomingBeats = scenes.map((scene, index) =>
+    index === 0
+      ? 0
+      : Math.max(0, scene.positionBeats - scenes[index - 1].positionBeats),
+  );
   // 時刻表示の分母。曲が入っていれば曲の長さ、無ければ最後のシーンまで
   const totalSeconds = Math.max(
     musicDuration ?? 0,
@@ -118,16 +120,11 @@ export function SceneDock({ project }: Props) {
   const selectedScene = selectedIndex >= 0 ? scenes[selectedIndex] : null;
   // 曲が無ければカウントで読む。毎レンダー新しい入れ物を作ると
   // PlayheadClock の購読が張り直されるので、中身が同じなら使い回す
-  // 拍の原点は【作品の時間】で測る。`musicOffsetSeconds`(曲の再生開始位置)は
-  // 軸が違うので渡さない。渡すと二重に足すことになる（2026-08-26 に直した）
-  const beatOrigin = beatOriginSeconds(
-    useProjectStore(
-      (state) => state.project?.musicPlacements ?? project.musicPlacements,
-    ),
-  );
-  const countSetting = useMemo(
-    () => (hasMusic ? null : { bpm, originSeconds: beatOrigin }),
-    [hasMusic, bpm, beatOrigin],
+  /* 拍↔秒の写像。カウントの表示はここから出す（`countAtBeat`）。
+     store を優先して読むのは、曲のシートで速さを変えた直後にも
+     追従させるため（props の project はページが取ってきたときのまま） */
+  const placements = useProjectStore(
+    (state) => state.project?.musicPlacements ?? project.musicPlacements,
   );
 
   // 曲が無いときの時計。曲があるときは<audio>が時刻の正になる
@@ -277,19 +274,18 @@ export function SceneDock({ project }: Props) {
                   「何番目か」**を置く — この行を空にすると、再生中に
                   どこに居るのかを読む先が無くなる（実機の報告 17-3） */}
               <span className="block truncate font-mono text-mono-s text-fg-muted">
-                {isOrderOnly ? (
-                  t.editor.dock.scenePosition(selectedIndex + 1, scenes.length)
-                ) : (
-                  <>
-                    <PlayheadClock
-                      totalSeconds={totalSeconds > 0 ? totalSeconds : null}
-                      counts={countSetting}
-                    />
-                    {selectedIndex > 0 &&
-                      t.editor.dock.moveSeconds(durations[selectedIndex])}
-                    {musicFileName && ` · ♪ ${musicFileName}`}
-                  </>
-                )}
+                <PlayheadClock
+                  totalSeconds={totalSeconds > 0 ? totalSeconds : null}
+                  placements={placements}
+                  /* 秒を添えるのは曲に載せているときだけ（2026-08-26）。
+                     合わせる相手が無い作品では `0:07.0` に意味が無い */
+                  showSeconds={hasMusic}
+                />
+                {selectedIndex > 0 &&
+                  t.editor.dock.moveCounts(
+                    countLengthLabel(incomingBeats[selectedIndex] ?? 0),
+                  )}
+                {musicFileName && ` · ♪ ${musicFileName}`}
               </span>
             </div>
           </>
@@ -427,10 +423,9 @@ export function SceneDock({ project }: Props) {
         </div>
       </div>
 
-      {/* 下の帯。**合わせる相手があるかどうか**で姿が変わる。
-          - 曲か拍がある … 時間軸（横位置がそのまま時刻）
-          - どちらも無い … 等間隔の帯（時刻という概念を出さない）
-          決めるのは useOrderOnlyTimeline。理由は lib/timelineMode にある。
+      {/* 下の帯。**どの作品でも拍の時間軸**（2026-08-26）。
+          以前は「合わせる相手が無い作品」だけ等間隔の帯に差し替えて
+          いたが、カウントがどの作品でも物差しになったので畳んだ。
 
           畳んでいるときは【描かない】 — 高さ0で隠すだけだと、中の
           時間軸が毎フレーム測り直しに走る */}
@@ -438,14 +433,10 @@ export function SceneDock({ project }: Props) {
         /* 上の余白は、カードの下の余白（pb-gutter）と**同じ段**にする。
            以前は mt-2.5（10px）で、下が 16px だったので帯が上に寄って
            見えていた（2026-08-24 に user の指摘で実測）。
-           帯の側はさらに上下 4px を自分で持っている（SceneStrip の
-           pt-1 / pb-1）ので、そちらも足し引きが揃う */
+           帯の側はさらに上下 4px を自分で持っているので、
+           そちらも足し引きが揃う */
         <div className="mt-gutter">
-          {isOrderOnly ? (
-            <SceneStrip project={project} />
-          ) : (
-            <MusicTimeline project={project} audioRef={audioRef} />
-          )}
+          <MusicTimeline project={project} audioRef={audioRef} />
         </div>
       )}
 

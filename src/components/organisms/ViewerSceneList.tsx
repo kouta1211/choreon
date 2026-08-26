@@ -10,8 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
-import { formatMinutes } from "@/features/scene/lib/clock";
-import { useViewerOrderOnly } from "@/features/viewer/hooks/useViewerOrderOnly";
+import { countLabelAtBeat } from "@/features/music/lib/counts";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
@@ -34,7 +33,6 @@ export function ViewerSceneList() {
   const t = useT();
   const [isOpen, setOpen] = useState(false);
   const scenes = useViewerStore((state) => state.scenes);
-  const isOrderOnly = useViewerOrderOnly();
   const currentSeconds = useViewerStore((state) => state.currentSeconds);
   /* 飛ぶときは再生を止める（帯と同じ作法） */
   const jumpToSeconds = useViewerStore((state) => state.jumpToSeconds);
@@ -87,11 +85,9 @@ export function ViewerSceneList() {
                   <span className="min-w-0 flex-1 truncate text-label">
                     {scene.name}
                   </span>
-                  {!isOrderOnly && (
-                    <span className="shrink-0 font-mono text-mono-s text-fg-muted">
-                      {formatMinutes(scene.timeSeconds)}
-                    </span>
-                  )}
+                  <span className="shrink-0 font-mono text-mono-s text-fg-muted">
+                    {countLabelAtBeat(scene.positionBeats)}
+                  </span>
                 </PressableButton>
               </li>
             );

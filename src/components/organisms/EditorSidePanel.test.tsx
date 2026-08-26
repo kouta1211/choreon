@@ -51,7 +51,9 @@ describe("EditorSidePanel", () => {
   });
 });
 
-/* 実機の報告 17-3。合計の秒数も「秒数系の情報」で、これが残っていた */
+/* 見出しの通しの長さは**カウント**（2026-08-26）。曲もクリックも無い
+   作品でも意味を持つので、出し分けない。以前は「合計 8s」と秒で出して
+   いて、合わせる相手が無いときは件数だけにしていた */
 describe("EditorSidePanel の見出し", () => {
   function withScenes(isMetronomeEnabled: boolean) {
     useProjectStore.setState({
@@ -63,15 +65,17 @@ describe("EditorSidePanel の見出し", () => {
     });
   }
 
-  it("曲も拍も無ければ、件数だけを出す", () => {
+  /* **どちらの作品でも同じ形**。曲やクリックの有無で出し分けない */
+  it("曲もクリックも無くても、通しのカウントを出す", () => {
     withScenes(false);
     show(true);
-    expect(screen.getByText("2件")).toBeInTheDocument();
+    // 4秒 = 8拍（BPM 120）。最後のシーンの位置がそのまま通しの長さ
+    expect(screen.getByText("2件 · 通し 8カウント")).toBeInTheDocument();
   });
 
-  it("拍があれば、合計の秒数も出す", () => {
+  it("クリックが入っていても、同じ形で出す", () => {
     withScenes(true);
     show(true);
-    expect(screen.getByText(/合計/)).toBeInTheDocument();
+    expect(screen.getByText("2件 · 通し 8カウント")).toBeInTheDocument();
   });
 });

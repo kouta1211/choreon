@@ -69,8 +69,8 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
   const {
     renameSceneTo,
     reorderTo,
-    changeSceneTime,
-    changeMoveSeconds,
+    changeSceneBeats,
+    changeMoveBeats,
     confirmDelete,
     selectSceneManually,
   } = useSceneActions();
@@ -178,9 +178,11 @@ export function SceneList({ project, thumbnailSizePx = 78 }: Props) {
                   : selectSceneManually(scene.id)
               }
               onRename={(name) => renameSceneTo(scene, name)}
-              onChangeTime={(seconds) => changeSceneTime(scene, seconds)}
-              onChangeMoveSeconds={(moveSeconds) => {
-                if (moveTarget) void changeMoveSeconds(moveTarget, moveSeconds);
+              onChangeBeats={(positionBeats) =>
+                changeSceneBeats(scene, positionBeats)
+              }
+              onChangeMoveBeats={(moveBeats) => {
+                if (moveTarget) void changeMoveBeats(moveTarget, moveBeats);
               }}
               onDelete={() => confirmDelete(scene)}
             />

@@ -126,7 +126,7 @@ export function DancerLayer({
      短くすると【この隊形のまま止まってから、最後に動く】になる。
      割り方は features/scene/lib/segmentSplit が1本で持つ */
   const segmentScene = scenes.find((scene) => scene.id === segmentSceneId);
-  const { holdSeconds, moveSeconds } = splitSegment(
+  const { hold: holdSeconds, move: moveSeconds } = splitSegment(
     movingSeconds,
     segmentScene?.moveSeconds ?? null,
   );
@@ -135,7 +135,7 @@ export function DancerLayer({
      区間まるごとではなく、実際に動いている秒数で見ないと、
      キープを長く取った区間で「間に合う」と嘘をつく */
   const nextScene = scenes.find((scene) => scene.id === nextSceneId);
-  const { moveSeconds: nextMoveSeconds } = splitSegment(
+  const { move: nextMoveSeconds } = splitSegment(
     nextSceneSeconds,
     nextScene?.moveSeconds ?? null,
   );

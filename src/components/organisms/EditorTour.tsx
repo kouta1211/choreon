@@ -8,7 +8,6 @@ import {
   hasSeenTutorial,
   markTutorialSeen,
 } from "@/features/tutorial/lib/tutorialPreference";
-import { useOrderOnlyTimeline } from "@/features/scene/hooks/useOrderOnlyTimeline";
 import { tourSteps } from "@/features/tutorial/lib/tourSteps";
 import { useT } from "@/features/i18n/LocaleProvider";
 
@@ -47,9 +46,8 @@ export function EditorTour() {
   /* 曲もメトロノームも無いときは、下の帯が【順番だけ】になる。
      **初めて開く人は必ずそちら**（作りたての作品に曲は入っていない）
      なので、時刻の話をすると、案内の1つが目の前のものと合わない */
-  const isOrderOnly = useOrderOnlyTimeline();
   // 言語と物差しが変わったら作り直す。案内の中身は辞書が持つ
-  const steps = useMemo(() => tourSteps(t, isOrderOnly), [t, isOrderOnly]);
+  const steps = useMemo(() => tourSteps(t), [t]);
   // 初回だけ自動で出す。読み込み直後は指す先がまだ描かれていないので、
   // 少し待ってから始める
   const [isAutoStarted, setAutoStarted] = useState(false);
