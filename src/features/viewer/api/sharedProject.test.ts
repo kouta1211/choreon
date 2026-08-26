@@ -66,7 +66,10 @@ describe("getSharedProject", () => {
 
     expect(rpc).toHaveBeenCalledWith("shared_project", { token: TOKEN });
     expect(shared?.project.title).toBe("発表会A");
-    expect(shared?.project.musicOffsetSeconds).toBe(12.5);
+    /* **頭出しの列は見る側でも読まない**（2026-08-26・第4段）。
+       振付が曲のどこから始まるかは載せ方が持つ。見る側では曲そのものが
+       鳴らないので、載せ方から出る秒だけが要る */
+    expect(shared?.project.musicPlacements[0].secondsPerBeat).toBeGreaterThan(0);
     expect(shared?.project.bpm).toBe(128);
     expect(shared?.dancers[0].name).toBe("うみ");
     expect(shared?.scenes[0].timeSeconds).toBe(4);

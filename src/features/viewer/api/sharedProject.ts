@@ -131,7 +131,6 @@ export async function getSharedProject(
       title: payload.project.title,
       stageWidth: payload.project.stage_width,
       stageHeight: payload.project.stage_height,
-      musicOffsetSeconds: payload.project.music_offset_seconds ?? 0,
       /* 見る側は曲の名前を受け取らない。有無だけを hasMusic で持つ */
       musicTitle: null,
       bpm: payload.project.bpm ?? DEFAULT_BPM,

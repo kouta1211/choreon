@@ -115,14 +115,13 @@ export function ExportVideoSheet({ project, isOpen, onClose }: Props) {
         height,
         fps: 30,
         mimeType: format.mimeType,
-        /* 動画は先頭のシーンから始まるので、曲の頭出しの位置が
-           そのまま鳴らし始めの位置になる */
+        /* 動画は**作品の 0秒**から始まる。曲の秒と作品の秒が同じに
+           なった（2026-08-26・第4段）ので、鳴らし始めも 0 でよい。
+           振付が曲の途中から始まる作品では、その手前の無音も
+           そのまま入る（画面で見えているものと同じ） */
         audio:
           includeAudio && musicUrl
-            ? {
-                objectUrl: musicUrl,
-                songSeconds: project.musicOffsetSeconds,
-              }
+            ? { objectUrl: musicUrl, songSeconds: 0 }
             : undefined,
         onProgress: setProgress,
         signal: controller.signal,

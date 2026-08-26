@@ -747,7 +747,7 @@ export const ko = {
     includeAudioTitle: "소리",
     includeAudio: "곡을 넣기",
     includeAudioNote:
-      "시작 위치부터 동영상 길이만큼 들어갑니다. 내보내는 중에는 울리지 않습니다.",
+      "곡의 처음부터 동영상 길이만큼 들어갑니다. 내보내는 중에는 울리지 않습니다.",
     includeAudioWarning:
       "이 동영상에는 곡이 들어갑니다. 건네는 상대에게 주의해 주세요(공유 링크에는 지금까지처럼 곡이 따라가지 않습니다).",
     saved: "영상을 저장했습니다",
@@ -770,12 +770,7 @@ export const ko = {
     beatsPerBar: "박자",
     beatsPerBarNote:
       "바뀌는 것은 메트로놈의 센 박과 타임라인의 굵은 선뿐입니다(여덟 박 세는 법은 그대로).",
-    offset: "곡의 시작 위치",
     seconds: "초",
-    offsetPreview: (seconds: number) => `여기서부터 ${seconds}초 듣기`,
-    offsetPreviewStop: "멈추기",
-    offsetNote: "인트로를 건너뛰고 곡 중간부터 시작할 때",
-    offsetFailed: "곡의 시작 위치를 저장하지 못했습니다",
     span: (total: number, from: string, to: string) =>
       `전체 ${total}초 · ${from} ~ ${to}`,
     counts: (set: number, count: number) => `${set}세트 ${count}카운트`,

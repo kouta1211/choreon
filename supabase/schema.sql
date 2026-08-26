@@ -19,9 +19,15 @@ create table public.projects (
   title text not null,
   stage_width integer not null default 14,
   stage_height integer not null default 10,
-  -- 曲の何秒目からこの作品が始まるか。振付は曲の頭からではなく
-  -- イントロの後から始まることが多いので、その頭出しの位置を覚えておく。
-  -- 音源そのものは持たない(端末のファイルを選ぶ方式でStorageは使わない)
+  -- ⚠️ **アプリはもう読み書きしない列**(2026-08-26・第4段)。
+  -- 「振付が曲の何秒目から始まるか」は music_placements の atSeconds が
+  -- 持つようになった。同じことを言う口が2つあると、必ず片方が古くなる。
+  --
+  -- **列は残してある。** 古い行にはまだ値が入っていて、アプリは読むときに
+  -- 載せ方へ畳んでいる(projects.ts の foldLegacyOffset)。載せ方を保存する
+  -- たびに 0 が書き戻るので、触った作品から順にそろう。
+  -- **全部の行が 0 になったのを確かめてから**落とすこと:
+  --   select count(*) from public.projects where music_offset_seconds <> 0;
   music_offset_seconds numeric not null default 0
     check (music_offset_seconds::float8 >= 0),
   -- 選んでいる曲の名前(端末で選んだファイル名)。**音源そのものは持たない**
@@ -54,9 +60,9 @@ create table public.projects (
   -- しておく — テンポが変わる曲は「変わり目ごとに1要素」で表す。単数で
   -- 始めると、増やすときに保存済みの全作品を移行することになる。
   --
-  -- atSeconds は【作品の時間】で測る(music_offset_seconds を引いた後)。
-  -- 再生は audio.currentTime = music_offset_seconds + 作品の時間 なので、
-  -- ここを作品の時間に揃えておくと再生の側に一切触らずに済む。
+  -- atSeconds は【作品の時間】で測る。2026-08-26 から**曲の時間と同じ**で、
+  -- 再生は audio.currentTime = 作品の時間。振付が曲の途中から始まる作品は、
+  -- atSeconds がそれを言う(頭出しの列はここへ畳んだ)。
   --
   -- jsonb なので DB は中身を守れない。secondsPerBeat に 0 が1つ入るだけで
   -- アプリ側の全シーンの秒が Infinity になり、**画面はシーンが1つも無い

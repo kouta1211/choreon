@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { MusicSheet } from "./MusicSheet";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
@@ -41,55 +40,26 @@ afterEach(() => {
 });
 
 describe("MusicSheet", () => {
-  it("曲を選ぶ前は、頭出しの欄を出さない", () => {
-    open(makeProject({ musicOffsetSeconds: 0 }), { fileName: null });
+  /* **頭出しの欄は消した**（2026-08-26・第4段）。
+     「振付が曲の何秒目から始まるか」は、時間軸の上のバーが持つ。
+     欄が戻ってくると、同じことを言う口が2つになる */
+  it("頭出しの欄を出さない（時間軸のバーが持つ）", () => {
+    open(makeProject(), { fileName: "song.mp3" });
 
     expect(offsetField()).not.toBeInTheDocument();
+    expect(screen.queryByText(/曲の開始位置/)).not.toBeInTheDocument();
   });
 
-  it("曲があれば頭出しの欄を出す", () => {
-    open(makeProject({ musicOffsetSeconds: 0 }), { fileName: "song.mp3" });
+  it("「ここから◯秒聴く」のボタンも出さない", () => {
+    open(makeProject(), { fileName: "song.mp3" });
 
-    expect(offsetField()).toBeInTheDocument();
-  });
-
-  it("曲が無くても、頭出しの値が入っていれば出す（別の端末で開いたとき）", () => {
-    open(makeProject({ musicOffsetSeconds: 12.5 }), { fileName: null });
-
-    expect(offsetField()).toHaveValue(12.5);
+    expect(screen.queryByRole("button", { name: /秒聴く/ })).toBeNull();
   });
 
   it("曲があるときは、曲がないときの拍を出さない", () => {
     open(makeProject(), { fileName: "song.mp3" });
 
     expect(screen.queryByText("曲がないときの拍")).not.toBeInTheDocument();
-  });
-
-  it("打っただけでは変わらない。「適用」を押して初めて効く", async () => {
-    const user = userEvent.setup();
-    open(makeProject({ musicOffsetSeconds: 0 }), { fileName: "song.mp3" });
-
-    await user.clear(offsetField()!);
-    await user.type(offsetField()!, "12.5");
-    await user.tab();
-
-    expect(useProjectStore.getState().project?.musicOffsetSeconds).toBe(0);
-    expect(screen.getByText(/適用を押すまで変わりません/)).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: /適用/ }));
-
-    expect(useProjectStore.getState().project?.musicOffsetSeconds).toBe(12.5);
-  });
-
-  it("入れられる範囲の外を打っている間は押せない", async () => {
-    const user = userEvent.setup();
-    open(makeProject({ musicOffsetSeconds: 0 }), { fileName: "song.mp3" });
-
-    await user.clear(offsetField()!);
-    await user.type(offsetField()!, "-3");
-
-    expect(screen.getByRole("button", { name: /適用|範囲/ })).toBeDisabled();
-    expect(screen.getByText(/0 より小さくはできません/)).toBeInTheDocument();
   });
 
   it("同じ約束を2度言わない（曲の控えの説明は1行だけ）", () => {

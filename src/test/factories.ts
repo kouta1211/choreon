@@ -46,7 +46,6 @@ export function makeProject(overrides: Partial<Project> = {}): Project {
     title: "発表会A",
     stageWidth: 15,
     stageHeight: 10,
-    musicOffsetSeconds: 0,
     musicTitle: null,
     bpm,
     beatsPerBar: 4,

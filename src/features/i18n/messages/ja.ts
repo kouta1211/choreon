@@ -811,7 +811,7 @@ export const ja = {
     includeAudioTitle: "音",
     includeAudio: "曲を入れる",
     includeAudioNote:
-      "頭出しの位置から、動画の長さぶんだけ入ります。書き出し中は鳴りません。",
+      "曲の頭から、動画の長さぶんだけ入ります。書き出し中は鳴りません。",
     includeAudioWarning:
       "この動画には曲が入ります。渡す相手に気をつけてください（共有リンクには今までどおり曲は付いていきません）。",
     saved: "動画を保存しました",
@@ -834,13 +834,7 @@ export const ja = {
     beatsPerBar: "拍子",
     beatsPerBarNote:
       "変わるのはメトロノームの強い拍と、時間軸の太い線だけです(8カウントの数え方は変わりません)。",
-    offset: "曲の開始位置",
     seconds: "秒",
-    /** 頭出しが効いているかを、耳で確かめる（実機報告 12-3） */
-    offsetPreview: (seconds: number) => `ここから${seconds}秒聴く`,
-    offsetPreviewStop: "止める",
-    offsetNote: "イントロを飛ばして、曲の途中から始めるとき",
-    offsetFailed: "曲の開始位置の保存に失敗しました",
     span: (total: number, from: string, to: string) =>
       `通しで ${total}秒 · ${from} 〜 ${to}`,
     counts: (set: number, count: number) => `${set}セット ${count}カウント`,

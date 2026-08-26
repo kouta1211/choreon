@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
-import { getProject, insertProject, listProjectSummaries } from "./projects";
+import {
+  getProject,
+  insertProject,
+  listProjectSummaries,
+  updateMusicPlacements,
+} from "./projects";
 import { makeProject } from "@/test/factories";
 
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
@@ -50,29 +55,17 @@ function fakeSelectClient(row: unknown) {
 }
 
 /**
- * 曲の頭出し(music_offset_seconds)は後から足した列。
- * その列がまだ無い古いスキーマのDBに対しても、下書きの保存と
- * 読み込みだけは通るようにしてある。
+ * 曲の頭出し(music_offset_seconds)は**2026-08-26 に使うのをやめた列**。
+ * 「振付が曲の何秒目から始まるか」は載せ方の `atSeconds` が持つ。
+ * 列そのものは残っている（DB 側の default が 0）ので、送らないだけ。
  */
 describe("insertProject", () => {
-  it("頭出しが既定(0)なら、その列を送らない", async () => {
+  it("頭出しの列は送らない", async () => {
     const { client, insert } = fakeInsertClient();
 
-    await insertProject(client, makeProject({ musicOffsetSeconds: 0 }));
+    await insertProject(client, makeProject());
 
     expect(insert.mock.calls[0][0]).not.toHaveProperty("music_offset_seconds");
-  });
-
-  // 黙って捨てると、設定したはずの頭出しが次に開いたとき消えている。
-  // 列が無ければ保存が失敗するが、失敗した方が気づける
-  it("頭出しが設定されていれば送る", async () => {
-    const { client, insert } = fakeInsertClient();
-
-    await insertProject(client, makeProject({ musicOffsetSeconds: 12.5 }));
-
-    expect(insert.mock.calls[0][0]).toMatchObject({
-      music_offset_seconds: 12.5,
-    });
   });
 });
 
@@ -132,23 +125,65 @@ describe("listProjectSummaries", () => {
   });
 });
 
+/**
+ * **古い頭出しは、読むときに載せ方へ畳む**（2026-08-26・第4段）。
+ *
+ * SQL を流さずに移行できるようにしてある。畳む元は DB の値だけなので、
+ * 何度読んでも答えは同じ（二重には足さない）。一度でも載せ方を保存すれば、
+ * `updateMusicPlacements` が列に 0 を書き戻して DB の側もそろう。
+ */
 describe("getProject", () => {
-  it("列がまだ無いDBから読んでも、頭出しは0になる", async () => {
-    // 列を足す前の行。music_offset_seconds が存在しない
+  it("列がまだ無いDBから読んでも、載せ方は 0秒 から", async () => {
     const { music_offset_seconds: _omitted, ...legacyRow } = ROW;
     void _omitted;
 
     const project = await getProject(fakeSelectClient(legacyRow), "project-1");
 
-    expect(project?.musicOffsetSeconds).toBe(0);
+    expect(project?.musicPlacements[0].atSeconds).toBe(0);
   });
 
-  it("保存されている頭出しをそのまま読む", async () => {
+  it("古い頭出しは、載せ方の頭へ足して読む", async () => {
     const project = await getProject(
       fakeSelectClient({ ...ROW, music_offset_seconds: 12.5 }),
       "project-1",
     );
 
-    expect(project?.musicOffsetSeconds).toBe(12.5);
+    /* **ここが移行の要**。12.5 を捨てると、頭出しを入れてあった作品の
+       振付が曲の頭へずり上がる */
+    expect(project?.musicPlacements[0].atSeconds).toBe(12.5);
+    // 1拍の長さは変えない（動かすのは置き所だけ）
+    expect(project?.musicPlacements[0].secondsPerBeat).toBe(0.5);
+  });
+
+  it("載せ方に既に頭がある作品では、そこへ足す", async () => {
+    const project = await getProject(
+      fakeSelectClient({
+        ...ROW,
+        music_offset_seconds: 4,
+        music_placements: [{ fromBeat: 0, atSeconds: 3, secondsPerBeat: 0.5 }],
+      }),
+      "project-1",
+    );
+
+    expect(project?.musicPlacements[0].atSeconds).toBe(7);
+  });
+});
+
+describe("updateMusicPlacements", () => {
+  /* **保存のたびに古い列を 0 へ戻す。** 戻さないと、次に読んだとき
+     もう一度足されて**二重にずれる** */
+  it("載せ方と一緒に、古い頭出しの列を 0 にする", async () => {
+    const update = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: null }),
+    });
+    const client = {
+      from: vi.fn().mockReturnValue({ update }),
+    } as unknown as Parameters<typeof updateMusicPlacements>[0];
+
+    await updateMusicPlacements(client, "project-1", [
+      { fromBeat: 0, atSeconds: 12.5, secondsPerBeat: 0.5 },
+    ]);
+
+    expect(update.mock.calls[0][0]).toMatchObject({ music_offset_seconds: 0 });
   });
 });

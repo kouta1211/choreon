@@ -1,38 +1,25 @@
 "use client";
 
 import { useRef } from "react";
-import { Music, Play, Square, Upload, X } from "lucide-react";
+import { Music, Upload, X } from "lucide-react";
 import { BottomSheet } from "@/components/molecules/BottomSheet";
-import {
-  useOffsetPreview,
-  PREVIEW_SECONDS,
-} from "@/features/music/hooks/useOffsetPreview";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { persist } from "@/features/project/lib/persistence";
-import {
-  updateMusicOffset,
-  updateMusicTitle,
-} from "@/features/project/api/projects";
+import { updateMusicTitle } from "@/features/project/api/projects";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { totalTransitionSeconds } from "@/features/scene/lib/playback";
+import {
+  DEFAULT_PLACEMENTS,
+  placedSpan,
+} from "@/features/music/lib/placement";
 import { MetronomeControls } from "@/components/molecules/MetronomeControls";
 import { BeatsPerBarSegment } from "@/components/molecules/BeatsPerBarSegment";
 import type { Project } from "@/features/project/types";
 import { PressableButton } from "@/components/atoms/PressableButton";
-import { NumberField } from "@/components/molecules/NumberField";
 import { formatMinutes } from "@/features/scene/lib/clock";
 import { useT } from "@/features/i18n/LocaleProvider";
-
-/**
- * 曲の頭出しの範囲(秒)。
- *
- * 上限が無いと、指が滑って 100000 と入れた人の曲が二度と鳴らない
- * (再生位置が曲の終わりより後ろになる)。1時間ぶんあれば足りる。
- */
-const MIN_MUSIC_OFFSET = 0;
-const MAX_MUSIC_OFFSET = 3600;
 
 type Props = {
   project: Project;
@@ -61,14 +48,17 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
   const loadMusic = useMusicStore((state) => state.load);
   const clearMusic = useMusicStore((state) => state.clear);
   const scenes = useProjectStore((state) => state.scenes);
+  /* 振付が曲のどこに載っているか。決めるのは時間軸のバーで、
+     ここは読むだけ（同じ数を2箇所で組み立てない） */
+  const placements = useProjectStore(
+    (state) => state.project?.musicPlacements ?? DEFAULT_PLACEMENTS,
+  );
+  const span = placedSpan(
+    placements,
+    scenes.reduce((max, scene) => Math.max(max, scene.positionBeats), 0),
+  );
   const showToast = useUIStore((state) => state.showToast);
   // 保存済みの値はstoreを唯一の置き場にする(プロジェクト名と同じ考え方)
-  const storedOffset = useProjectStore((state) =>
-    state.project?.id === project.id
-      ? state.project.musicOffsetSeconds
-      : project.musicOffsetSeconds,
-  );
-  const setMusicOffset = useProjectStore((state) => state.setMusicOffset);
   const setProjectMusicTitle = useProjectStore((state) => state.setMusicTitle);
 
   /* 曲の【名前だけ】を作品へ覚えさせる。音源は端末に置いたまま
@@ -89,27 +79,6 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
     }
   };
 
-  const preview = useOffsetPreview();
-
-  const commitOffset = async (value: number) => {
-    const previous = storedOffset;
-    setMusicOffset(value);
-
-    try {
-      await persist((supabase) =>
-        updateMusicOffset(supabase, project.id, value),
-      );
-    } catch (error) {
-      setMusicOffset(previous);
-      showToast({
-        message: toUserMessage(error, t.music.offsetFailed),
-        type: "error",
-      });
-    }
-  };
-
-  /* 曲が無くても、値が入っていれば出す（理由は下のコメント） */
-  const showOffset = Boolean(fileName) || storedOffset > 0;
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title={t.music.title}>
@@ -177,52 +146,16 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
           )}
         </div>
 
-        {/* 曲があるときだけ出す。**ただし値が入っていれば、曲が無くても
-            出す** — 頭出しはクラウドに残る作品の一部で、別の端末で開くと
-            音源だけが無い。ここで隠すと「なぜ途中から鳴るのか」を
-            確かめる手段が消える（入口を塞ぐと、奥にある物が黙って死ぬ） */}
-        {showOffset && (
-          <div className="flex flex-col gap-unit">
-            <NumberField
-              size="sheet"
-              label={t.music.offset}
-              description={t.music.offsetNote}
-              value={storedOffset}
-              min={MIN_MUSIC_OFFSET}
-              max={MAX_MUSIC_OFFSET}
-              step={0.1}
-              unit={t.music.seconds}
-              onChange={(next) => void commitOffset(next)}
-            />
+        {/* **「曲の開始位置」の欄は消した**（2026-08-26・第4段）。
+            「振付が曲の何秒目から始まるか」は、時間軸の上の**バー**が
+            持つようになった（掴んで動かせば、聞きながら決められる）。
+            数字を打って「ここから4秒聴く」で確かめる、という回り道が
+            要らなくなったので、欄ごと畳んでいる。
 
-            {/* 数字を打つだけでは**効いているかを確かめられない**（実機報告 12-3）。
-                その位置から数秒だけ鳴らす。曲が入っていないときは出さない —
-                押しても無音のボタンは、壊れているのと区別が付かない */}
-            {preview.canPreview && (
-              <PressableButton
-                kind="secondary"
-                onClick={() =>
-                  preview.isPlaying ? preview.stop() : preview.play(storedOffset)
-                }
-                className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-line-strong text-label text-fg-sub"
-              >
-                {preview.isPlaying ? (
-                  <>
-                    <Square size={13} />
-                    {t.music.offsetPreviewStop}
-                  </>
-                ) : (
-                  <>
-                    <Play size={13} />
-                    {t.music.offsetPreview(PREVIEW_SECONDS)}
-                  </>
-                )}
-              </PressableButton>
-            )}
-          </div>
-        )}
+            古い作品の値は、読むときに載せ方へ畳んである
+            （`projects.ts` の `foldLegacyOffset`）。 */}
 
-{/* 拍子は**曲が入っていないときだけ**（user の指示 2026-08-22:
+        {/* 拍子は**曲が入っていないときだけ**（user の指示 2026-08-22:
             「曲を導入している際の拍子の概念、機能は消してOK」）。
 
             曲があるときに残っていたのは【時間軸の拍線のどれを太く引くか】
@@ -254,13 +187,13 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
 
         <div className="rounded-xl border border-line px-3 py-2.5">
           <p className="font-mono text-caption text-fg-muted">
+            {/* 載っている区間は**載せ方が持つ**（2026-08-26）。
+                以前は頭出しの秒から出していたが、その列は畳んだ */}
             {t.music.span(
               totalTransitionSeconds(scenes),
-              formatMinutes(storedOffset),
-              formatMinutes(storedOffset + totalTransitionSeconds(scenes)),
+              formatMinutes(span.fromSeconds),
+              formatMinutes(span.toSeconds),
             )}
-
-
           </p>
         </div>
       </div>

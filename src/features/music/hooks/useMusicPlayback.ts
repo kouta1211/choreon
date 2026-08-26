@@ -69,9 +69,10 @@ export function useMusicPlayback() {
       frame = requestAnimationFrame(step);
 
       const { scenes } = useProjectStore.getState();
-      const offset =
-        useProjectStore.getState().project?.musicOffsetSeconds ?? 0;
-      const elapsed = audio.currentTime - offset;
+      /* **曲の秒 ＝ 作品の秒**（2026-08-26・第4段）。以前はここで
+         頭出しの秒を引いていたが、その列は畳んだ。振付が曲の途中から
+         始まるときは、載せ方の `atSeconds` がそれを言う */
+      const elapsed = audio.currentTime;
 
       // 曲があるときも「いま何秒目か」を1箇所へ書き出す。時間軸(MusicTimeline)の
       // 再生ヘッドはここを読む。曲の有無で読み先が変わらないようにするため、
@@ -111,14 +112,14 @@ export function useMusicPlayback() {
   return audioRef;
 }
 
-/** 選択中のシーンが曲の何秒目にあたるか(頭出しのオフセットを足したもの) */
+/** 選択中のシーンが曲の何秒目にあたるか。**作品の秒がそのまま曲の秒** */
 function songSecondsForSelectedScene(): number {
-  const { scenes, project } = useProjectStore.getState();
+  const { scenes } = useProjectStore.getState();
   const { selectedSceneId } = useUIStore.getState();
   const index = scenes.findIndex((scene) => scene.id === selectedSceneId);
   const starts = sceneStartSeconds(scenes);
 
-  return (project?.musicOffsetSeconds ?? 0) + (index >= 0 ? starts[index] : 0);
+  return index >= 0 ? starts[index] : 0;
 }
 
 /**

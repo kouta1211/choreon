@@ -58,7 +58,6 @@ type ProjectState = {
 
   /** 曲の開始位置(秒)の変更。プロジェクト名と同じく、表示中の値の置き場を
    * storeに一本化するために持たせている */
-  setMusicOffset: (seconds: number) => void;
   /** 選んでいる曲の名前。**音源は端末に置いたまま**で、名前だけが作品に付く */
   setMusicTitle: (musicTitle: string | null) => void;
 
@@ -259,12 +258,6 @@ export const useProjectStore = create<ProjectState>((set) => ({
       state.project ? { project: { ...state.project, musicTitle } } : {},
     ),
 
-  setMusicOffset: (musicOffsetSeconds) =>
-    set((state) =>
-      state.project
-        ? { project: { ...state.project, musicOffsetSeconds } }
-        : {},
-    ),
 
   // 既にtrueなら書き換えない。この関数は編集のたびに呼ばれるので、毎回
   // set()すると購読しているコンポーネント(離脱ガード)が無駄に再レンダーされる

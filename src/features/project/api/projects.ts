@@ -6,6 +6,7 @@ import { totalSeconds } from "@/features/scene/lib/sceneTiming";
 import { DEFAULT_BPM } from "@/features/music/lib/metronomePreference";
 import {
   normalizePlacements,
+  reanchor,
   type Placement,
 } from "@/features/music/lib/placement";
 import { nextAvailableTitle } from "@/features/project/lib/projectTitle";
@@ -19,10 +20,6 @@ function toProject(row: ProjectRow): Project {
     title: row.title,
     stageWidth: row.stage_width,
     stageHeight: row.stage_height,
-    // 頭出しの列を足す前のスキーマのままのDBには、この列がまだ無い。undefinedのまま
-    // 通すと秒数の計算がNaNになり、曲を鳴らしていなくてもシーンの選択が
-    // おかしくなる。既定値(0)はDB側のdefaultと同じなので、無ければ0に落とす
-    musicOffsetSeconds: row.music_offset_seconds ?? 0,
     musicTitle: row.music_title ?? null,
     // 速さ・拍子を足す前のスキーマのままのDBには、この2つの列がまだ無い。
     // 既定値はDB側のdefaultと同じ
@@ -32,9 +29,21 @@ function toProject(row: ProjectRow): Project {
     isMetronomeEnabled: row.is_metronome_enabled ?? false,
     // 拍→秒の写像。**壊れた値をここで弾く** — jsonb なので DB は中身を
     // 守らない。列がまだ無い DB では、その作品の bpm から作る
-    musicPlacements: normalizePlacements(
-      row.music_placements,
-      row.bpm ?? DEFAULT_BPM,
+    /* 拍→秒の写像。**壊れた値をここで弾く** — jsonb なので DB は中身を
+       守らない。列がまだ無い DB では、その作品の bpm から作る。
+
+       ⚠️ **古い `music_offset_seconds` は、ここで載せ方へ畳む**
+       （2026-08-26・第4段）。以前は「振付が曲の何秒目から始まるか」を
+       言う口が2つあった — この列（曲の時間）と placement の `atSeconds`
+       （作品の時間）。第3段のバーが後者を持ったので、前者は要らない。
+
+       畳むのは**読むときだけ**で、SQL は要らない。列はそのまま残るが、
+       `updateMusicPlacements` が保存のたびに 0 を書き戻すので、
+       一度でもバーを触れば DB の側もそろう（それまで何度読んでも
+       同じ答えになる — 畳む元が DB の値だけだから）。 */
+    musicPlacements: foldLegacyOffset(
+      normalizePlacements(row.music_placements, row.bpm ?? DEFAULT_BPM),
+      row.music_offset_seconds ?? 0,
     ),
     // 共有リンクを足す前のスキーマのままのDBには、この2つの列がまだ無い。
     // トークンが無ければ共有の口は出せないので null / false に落とす
@@ -117,6 +126,40 @@ export async function updateProjectBpm(
  * （曲へ載せ直したとき）。逆に BPM スライダーは秒を動かさない側で、
  * あちらは拍を数え直す（`placement.ts` の `regrid` / `restretch`）。
  */
+/**
+ * 選んでいる曲の名前を覚える。**音源は上げない**（方針は変えていない）。
+ * 一覧のカードに「どの曲で組んだ作品か」を出すためだけの1列。
+ */
+export async function updateMusicTitle(
+  supabase: SupabaseClient<Database>,
+  projectId: string,
+  musicTitle: string | null,
+): Promise<void> {
+  const { error } = await supabase
+    .from("projects")
+    .update({ music_title: musicTitle })
+    .eq("id", projectId);
+
+  if (error) throw error;
+}
+
+/**
+ * 古い `music_offset_seconds` を、載せ方の `atSeconds` へ畳む。
+ *
+ * どちらも「振付が曲の何秒目から始まるか」を言っていたが、測っている
+ * 時計が違った（列は曲の時間、`atSeconds` は作品の時間）。第3段で
+ * バーが後者を持ったので、読むときにここで1つへまとめる。
+ */
+function foldLegacyOffset(
+  placements: Placement[],
+  legacyOffsetSeconds: number,
+): Placement[] {
+  if (!Number.isFinite(legacyOffsetSeconds) || legacyOffsetSeconds <= 0) {
+    return placements;
+  }
+  return reanchor(placements, placements[0].atSeconds + legacyOffsetSeconds);
+}
+
 export async function updateMusicPlacements(
   supabase: SupabaseClient<Database>,
   projectId: string,
@@ -124,7 +167,14 @@ export async function updateMusicPlacements(
 ): Promise<void> {
   const { error } = await supabase
     .from("projects")
-    .update({ music_placements: placements })
+    .update({
+      music_placements: placements,
+      /* **古い頭出しの列を 0 へ戻す**（2026-08-26・第4段）。
+         読むときに載せ方へ畳んでいるので、ここで 0 にしておかないと
+         次に読んだときもう一度足されて**二重にずれる**。
+         一度でもバーを触れば、その作品は DB の側もそろう */
+      music_offset_seconds: 0,
+    })
     .eq("id", projectId);
 
   if (error && error.code !== "PGRST204") throw error;
@@ -201,35 +251,6 @@ export async function updateStageSize(
   if (error) throw error;
 }
 
-/**
- * 選んでいる曲の名前を覚える。**音源は上げない**（方針は変えていない）。
- * 一覧のカードに「どの曲で組んだ作品か」を出すためだけの1列。
- */
-export async function updateMusicTitle(
-  supabase: SupabaseClient<Database>,
-  projectId: string,
-  musicTitle: string | null,
-): Promise<void> {
-  const { error } = await supabase
-    .from("projects")
-    .update({ music_title: musicTitle })
-    .eq("id", projectId);
-
-  if (error) throw error;
-}
-
-export async function updateMusicOffset(
-  supabase: SupabaseClient<Database>,
-  projectId: string,
-  musicOffsetSeconds: number,
-): Promise<void> {
-  const { error } = await supabase
-    .from("projects")
-    .update({ music_offset_seconds: musicOffsetSeconds })
-    .eq("id", projectId);
-
-  if (error) throw error;
-}
 
 /**
  * 一覧のカードに出す要約つきでプロジェクトを取得する。
@@ -403,14 +424,8 @@ export async function insertProject(
       title: project.title,
       stage_width: project.stageWidth,
       stage_height: project.stageHeight,
-      // 頭出しが既定(0)のままなら、この列を送らない。DB側のdefaultも0なので
-      // 保存される値は変わらず、頭出しの列が無い古いDBでも
-      // 下書きの保存が通る。頭出しを設定した下書きを保存する場合だけは
-      // 列が要るので、そのときは素直に送って失敗させる
-      // (黙って捨てると、設定したはずの位置が次に開いたとき消えている)
-      ...(project.musicOffsetSeconds > 0
-        ? { music_offset_seconds: project.musicOffsetSeconds }
-        : {}),
+      /* `music_offset_seconds` は送らない（2026-08-26 に使うのをやめた）。
+         DB 側の default が 0 なので、列がある DB でも無い DB でも通る */
     })
     .select()
     .single();

@@ -6,10 +6,6 @@ export type Project = {
   title: string;
   stageWidth: number;
   stageHeight: number;
-  /** 曲の何秒目からこの作品が始まるか。振付は曲の頭ではなくイントロの
-   * 後から始まることが多いので、その頭出しの位置を覚えておく。
-   * 音源そのものは保存していない(開くたびに端末のファイルを選ぶ) */
-  musicOffsetSeconds: number;
   /** 選んでいる曲の名前。**音源そのものは端末にしか無い**ので、
    * 別の端末で開くと「名前は分かるが鳴らない」ことがある */
   musicTitle: string | null;

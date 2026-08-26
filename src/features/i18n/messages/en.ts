@@ -757,7 +757,7 @@ export const en = {
     includeAudioTitle: "Sound",
     includeAudio: "Include the track",
     includeAudioNote:
-      "It starts from the offset you set and runs for the length of the video. Nothing plays while exporting.",
+      "It starts from the beginning of the track and runs for the length of the video. Nothing plays while exporting.",
     includeAudioWarning:
       "This video will contain the track. Be careful who you hand it to (share links still never carry the track).",
     saved: "Video saved",
@@ -780,12 +780,7 @@ export const en = {
     beatsPerBar: "Time signature",
     beatsPerBarNote:
       "Only changes which beat the metronome accents and which timeline lines are thick (the eight-count is unaffected).",
-    offset: "Start position in the track",
     seconds: "s",
-    offsetPreview: (seconds: number) => `Play ${seconds}s from here`,
-    offsetPreviewStop: "Stop",
-    offsetNote: "For skipping the intro and starting partway in",
-    offsetFailed: "Could not save the start position",
     span: (total: number, from: string, to: string) =>
       `${total}s end to end · ${from} – ${to}`,
     counts: (set: number, count: number) => `set ${set}, count ${count}`,

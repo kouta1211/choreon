@@ -92,13 +92,11 @@ export function MusicTimeline({ project, audioRef }: Props) {
   // 別々の場所に散って必ずずれる
   const layout = TIMELINE_LAYOUT[useScreenKind()];
 
-  const offsetSeconds = project.musicOffsetSeconds ?? 0;
   /**
-   * 拍の原点。**軸の秒（＝作品の時間）で測る。**
+   * 拍の原点＝**振付の1拍目が作品の何秒目か**。載せ方が持つ。
    *
-   * `offsetSeconds` と取り違えない — あちらは「曲の何秒目から鳴らすか」で、
-   * 軸そのものが既にそれを引いた後（`seekTo` / `useMusicPlayback`）。
-   * 渡すと二重に足すことになる（2026-08-26 に直した）。
+   * 曲へ載せるバーを引くとここが動き、拍線もセット番号も一緒に動く
+   * （第3段）。頭出しの秒という別の口は、第4段でここへ畳んだ。
    */
   const beatOrigin = beatOriginSeconds(
     useProjectStore(
@@ -141,7 +139,9 @@ export function MusicTimeline({ project, audioRef }: Props) {
   const seekTo = (seconds: number) => {
     const clamped = Math.max(0, seconds);
     const audio = audioRef.current;
-    if (audio) audio.currentTime = offsetSeconds + clamped;
+    /* **曲の秒 ＝ 作品の秒**（2026-08-26・第4段）。頭出しの列を畳んだので、
+       足す相手がもう無い */
+    if (audio) audio.currentTime = clamped;
     setCurrentTime(clamped);
     playheadSeconds.set(clamped);
   };
@@ -227,7 +227,6 @@ export function MusicTimeline({ project, audioRef }: Props) {
           playheadSeconds={playheadSeconds}
           bpm={bpm}
           originSeconds={beatOrigin}
-          songOffsetSeconds={offsetSeconds}
           /* 曲があるときは拍子を持たないので、太い線も引かない */
           beatsPerBar={hasMusic ? null : beatsPerBar}
           showSetNumbers
@@ -367,7 +366,6 @@ export function MusicTimeline({ project, audioRef }: Props) {
           sceneTimes={scenes.map((scene) => scene.timeSeconds)}
           bpm={bpm}
           originSeconds={beatOrigin}
-          songOffsetSeconds={offsetSeconds}
         />
       )}
     </div>

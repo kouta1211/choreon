@@ -25,10 +25,28 @@ import {
   beatAtSeconds,
   durationBeats,
   normalizePlacements,
+  reanchor,
   type Placement,
 } from "@/features/music/lib/placement";
 
 export const BACKUP_VERSION = 1;
+
+/**
+ * 古い書き出しの `musicOffsetSeconds` を、載せ方の `atSeconds` へ畳む。
+ *
+ * どちらも「振付が曲の何秒目から始まるか」を言っていたが、測っている
+ * 時計が違った（前者は曲の時間、後者は作品の時間）。第4段で1つへ
+ * まとめたので、取り込むときにここで足す。
+ */
+function foldLegacyOffset(
+  placements: Placement[],
+  legacyOffsetSeconds: number,
+): Placement[] {
+  if (!Number.isFinite(legacyOffsetSeconds) || legacyOffsetSeconds <= 0) {
+    return placements;
+  }
+  return reanchor(placements, placements[0].atSeconds + legacyOffsetSeconds);
+}
 
 export type Backup = {
   version: number;
@@ -39,7 +57,6 @@ export type Backup = {
     | "title"
     | "stageWidth"
     | "stageHeight"
-    | "musicOffsetSeconds"
     | "bpm"
     | "beatsPerBar"
     | "isMetronomeEnabled"
@@ -84,7 +101,6 @@ export function buildBackup(input: {
       isMetronomeEnabled: input.project.isMetronomeEnabled,
       stageWidth: input.project.stageWidth,
       stageHeight: input.project.stageHeight,
-      musicOffsetSeconds: input.project.musicOffsetSeconds,
       bpm: input.project.bpm,
       beatsPerBar: input.project.beatsPerBar,
       musicPlacements: input.project.musicPlacements,
@@ -149,6 +165,9 @@ export function parseBackup(raw: string, words: BackupWords): Backup {
   }
 
   const project = record.project as Backup["project"] | undefined;
+  /* **古い書き出しにしか無い項目**は、型から消えている。素の記録として
+     読み直す（外部入力なので、どのみち Number() で門番を通す） */
+  const legacy = (record.project ?? {}) as Record<string, unknown>;
   if (!project || typeof project.title !== "string") {
     throw new BackupFormatError(words.noProject);
   }
@@ -171,13 +190,22 @@ export function parseBackup(raw: string, words: BackupWords): Backup {
       isMetronomeEnabled: project.isMetronomeEnabled === true,
       stageWidth: Number(project.stageWidth) || 14,
       stageHeight: Number(project.stageHeight) || 10,
-      musicOffsetSeconds: Number(project.musicOffsetSeconds) || 0,
       bpm: Number(project.bpm) || 120,
       beatsPerBar: Number(project.beatsPerBar) || 4,
-      /* 書き換えられたファイルも来る外部入力。門番を通す */
-      musicPlacements: normalizePlacements(
-        project.musicPlacements,
-        Number(project.bpm) || 120,
+      /* 書き換えられたファイルも来る外部入力。門番を通す。
+
+         ⚠️ **古い書き出しの `musicOffsetSeconds` は、ここで載せ方へ畳む**
+         （2026-08-26・第4段）。項目を減らしただけで **`BACKUP_VERSION` は
+         上げない** — 上げると `parseBackup` が古いファイルで例外を投げ、
+         `loadGuestDraft` がそれを受けて**未ログインの下書きを全員ぶん
+         消す**（2026-08-25 に一度踏んだ道）。
+         古い項目は「読めたら畳む、無ければ 0」で足りる。 */
+      musicPlacements: foldLegacyOffset(
+        normalizePlacements(
+          project.musicPlacements,
+          Number(project.bpm) || 120,
+        ),
+        Number(legacy.musicOffsetSeconds) || 0,
       ),
     },
     dancers: record.dancers as Backup["dancers"],
