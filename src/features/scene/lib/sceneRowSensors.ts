@@ -92,22 +92,3 @@ export class SceneRowTouchSensor extends TouchSensor {
     },
   ];
 }
-
-/**
- * 帯（SceneStrip）のコマ用。指でもボタンの上から掴める。
- *
- * 一覧の行と違って、**コマの中にあるボタンは「このシーンを選ぶ」1つだけ**。
- * 長押しに別の意味が無いので、除く理由が無い。除いたままにすると
- * コマ全体がボタンなので、指では並び替えが**どこからも始められない**。
- *
- * マウスの側は行と同じで足りる（距離で見分けるので、除くのは入力欄だけ）。
- */
-export class SceneStripTouchSensor extends TouchSensor {
-  static activators = [
-    {
-      eventName: "onTouchStart" as const,
-      handler: ({ nativeEvent }: ReactTouchEvent) =>
-        !closest(nativeEvent.target, "input"),
-    },
-  ];
-}

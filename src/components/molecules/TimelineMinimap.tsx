@@ -19,7 +19,7 @@ import type { BeatOriginSeconds } from "@/features/music/lib/placement";
 
 /** 常にこの高さ。倍率を変えても段の高さが動かないようにする
  * (縦の余白がいちばん貴重なので、可変にすると帯が上下する) */
-export const MINIMAP_HEIGHT = 14;
+const MINIMAP_HEIGHT = 14;
 
 type Props = {
   waveform: Waveform | null;
