@@ -138,7 +138,7 @@ export function snapToSet(
 }
 
 /** 惰性を見込む時間。指を離したあと、この長さぶん進んだ先を止まり先にする */
-export const MOMENTUM_SECONDS = 0.3;
+const MOMENTUM_SECONDS = 0.3;
 
 /** 1回のフリックで飛べるセット数の上限。
  * これが無いと、勢いよく払ったときに曲の終わりまで飛んでしまう */
@@ -177,7 +177,7 @@ export function flickTargetSeconds(
  * 見える。そうなると「拍がある」ことすら伝わらないので、いっそ描かない。
  * 既定倍率(24px/秒)なら BPM 180 からがこれに当たる。
  */
-export const MIN_BEAT_LINE_GAP_PX = 8;
+const MIN_BEAT_LINE_GAP_PX = 8;
 
 export function shouldDrawBeatLines(bpm: number, pxPerSecond: number): boolean {
   return secondsPerBeat(bpm) * pxPerSecond > MIN_BEAT_LINE_GAP_PX;

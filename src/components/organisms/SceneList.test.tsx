@@ -224,8 +224,8 @@ describe("SceneList", () => {
 });
 
 /**
- * 合わせる相手（曲・拍）が1つも無いときは、時刻という概念を出さない
- * （実機の要望 2026-08-19）。理由は features/scene/lib/timelineMode。
+ * 曲が無いときは、カウントの副表示である秒を出さない
+ * （実機の要望 2026-08-19。`showSeconds` は `hasMusic` で決まる）。
  */
 describe("SceneList（曲もメトロノームも無いとき）", () => {
   beforeEach(() => {
