@@ -8,6 +8,16 @@ type Args = {
   /** 隣り合うシーン同士の移動か。飛んだなら跡は出さない */
   isAdjacentStep: boolean;
   isPathVisible: boolean;
+  /**
+   * 再生しているか。
+   *
+   * ⚠️ **再生を押した時点でも跡を出す**（2026-08-31）。
+   * 跡は「シーンが変わった」ときだけ出していたが、
+   * **再生中は押した瞬間から今の区間を動き始める**（`lib/stageStep`）ので、
+   * 最初の1区間だけ跡が出ず、区間の線が**丸ごと残り続けて**いた
+   * （user の報告「完全に移動しきるまで、すべて残り続けてる」）。
+   */
+  isPlaying: boolean;
 };
 
 type TrailPhase = {
@@ -35,15 +45,26 @@ export function useTrailPhase({
   selectedSceneId,
   isAdjacentStep,
   isPathVisible,
+  isPlaying,
 }: Args): TrailPhase {
   const [animatingSceneId, setAnimatingSceneId] = useState<string | null>(null);
   const [renderedSceneId, setRenderedSceneId] = useState(selectedSceneId);
+  const [wasPlaying, setWasPlaying] = useState(isPlaying);
 
   if (renderedSceneId !== selectedSceneId) {
     setRenderedSceneId(selectedSceneId);
     setAnimatingSceneId(
       isAdjacentStep && isPathVisible ? selectedSceneId : null,
     );
+  }
+
+  /* 再生の入り切り。**始めた時点で、いまの区間の跡を出す** —
+     再生中の移動はシーンが変わるのを待たずに始まるため。
+     止めたときは畳む（止まっているのに跡が消えていくのはおかしい）。
+     隣かどうかは見ない — 再生で向かう先は必ず次のシーン */
+  if (wasPlaying !== isPlaying) {
+    setWasPlaying(isPlaying);
+    setAnimatingSceneId(isPlaying && isPathVisible ? selectedSceneId : null);
   }
 
   // 移動の途中で導線表示を切ると、PathTrail は描き終わりを知らせないまま

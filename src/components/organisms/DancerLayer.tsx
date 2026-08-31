@@ -172,6 +172,7 @@ export function DancerLayer({
     selectedSceneId,
     isAdjacentStep,
     isPathVisible,
+    isPlaying,
   });
 
   // ダンサーに付ける3つの印(速すぎる移動・顔被り・衝突)。
