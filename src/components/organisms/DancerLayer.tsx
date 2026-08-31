@@ -14,6 +14,11 @@ import {
 import { resolvePathSegment } from "@/features/canvas/lib/pathSegment";
 import { splitSegment } from "@/features/scene/lib/segmentSplit";
 import { stepTiming } from "@/features/canvas/lib/stepTiming";
+import {
+  DancerNamesOverlay,
+  type OverlayName,
+} from "@/components/molecules/DancerNamesOverlay";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { useTrailPhase } from "@/features/canvas/hooks/useTrailPhase";
 import { useGroupDrag } from "@/features/canvas/hooks/useGroupDrag";
 import { movingWith } from "@/features/canvas/lib/groupMove";
@@ -89,6 +94,8 @@ export function DancerLayer({
     () => movingWith(grabbedDancerId, selectedDancerIds),
     [grabbedDancerId, selectedDancerIds],
   );
+  const isAudienceOnTop = useSettingsStore((state) => state.isAudienceOnTop);
+  const nameDisplay = useSettingsStore((state) => state.dancerNameDisplay);
   const isPathVisible = useUIStore((state) => state.isPathVisible);
   const isStageMarksVisible = useUIStore((state) => state.isStageMarksVisible);
   const isBlindSpotCheckVisible = useUIStore(
@@ -174,6 +181,41 @@ export function DancerLayer({
   // 以前はここに「払っている間の移動先にだけ居る人」も足していたが、
   // 払って送る操作ごと畳んだので落とした(2026-08-21)
   const renderedDancerIds = useMemo(() => Object.keys(positions), [positions]);
+
+  /* 丸より上の層で描く名前。
+     - 出すか出さないかは設定のまま（always / selected）
+     - **掴んで動いている人は入れない** — その人の名前はダンサーの中が描く。
+       ここへ入れると、動いている間だけ描き手が入れ替わることになる */
+  const overlayNames = useMemo<OverlayName[]>(() => {
+    if (nameDisplay === "never") return [];
+    return renderedDancerIds.flatMap((dancerId) => {
+      const dancer = dancers[dancerId];
+      const anchor = positions[dancerId];
+      if (!dancer || !anchor) return [];
+      if (nameDisplay === "selected" && !selectedDancerIds.includes(dancerId)) {
+        return [];
+      }
+      const isMoving =
+        dancerId === grabbedDancerId || movingDancerIds.includes(dancerId);
+      if (isMoving) return [];
+      return [
+        {
+          id: dancer.id,
+          name: dancer.name,
+          xCoordinate: anchor.xCoordinate,
+          yCoordinate: anchor.yCoordinate,
+        },
+      ];
+    });
+  }, [
+    renderedDancerIds,
+    dancers,
+    positions,
+    nameDisplay,
+    selectedDancerIds,
+    grabbedDancerId,
+    movingDancerIds,
+  ]);
 
   return (
     <>
@@ -280,6 +322,17 @@ export function DancerLayer({
           />
         );
       })}
+      {/* **名前は丸より上の層へ。**1人ずつの中に描くと、隣の人の丸に
+          隠れる（実機の報告 2026-08-31「名前とアイコンが被っていたら
+          名前を優先して」）。**丸を全部描いたあとの兄弟**として置くので、
+          必ず上に出る。掴んで動いている人はここには居ない — その人の名前は
+          ダンサーの中が描く（理由は DancerNamesOverlay の doc） */}
+      <DancerNamesOverlay
+        names={overlayNames}
+        stageWidthUnits={stageWidthUnits}
+        stageHeightUnits={stageHeightUnits}
+        isAudienceOnTop={isAudienceOnTop}
+      />
     </>
   );
 }

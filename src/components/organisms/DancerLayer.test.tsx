@@ -3,6 +3,7 @@ import { render, screen, act } from "@testing-library/react";
 import { DancerLayer } from "./DancerLayer";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
+import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import {
   makeDancer,
   makePosition,
@@ -358,5 +359,72 @@ describe("再生と編集で、動きの長さが変わる", () => {
     expect(
       lastPropsFor("dancer-1").transitionDurationSeconds,
     ).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * 名前が、丸より上の層に出ること。
+ *
+ * ■ ここで縛るのは【描く順】
+ * 名前が丸に隠れないのは、**丸を全部描いたあとの兄弟**として置いてある
+ * から（実機の報告 2026-08-31）。ダンサーは1人ずつが独立した重なりの
+ * 単位なので、z-index では越えられない。**順番が仕組みそのもの**なので、
+ * そこを見る。
+ */
+describe("名前は丸より上の層に出る", () => {
+  beforeEach(() => {
+    act(() => {
+      useSettingsStore.setState({ dancerNameDisplay: "always" });
+    });
+  });
+
+  it("名前の層は、ダンサーの丸より【あと】に置かれる", () => {
+    hydrate();
+    goTo("scene-1");
+    const { container } = renderLayer();
+
+    const icon = container.querySelector('[data-testid="dancer-icon"]');
+    const overlay = container.querySelector(
+      '[data-testid="dancer-names-overlay"]',
+    );
+    expect(icon).not.toBeNull();
+    expect(overlay).not.toBeNull();
+    // 「あとに続く」= 後から描かれる = 上に出る
+    expect(
+      icon!.compareDocumentPosition(overlay!) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("止まっている人の名前は、その層に出る", () => {
+    hydrate();
+    goTo("scene-1");
+    renderLayer();
+
+    const overlay = screen.getByTestId("dancer-names-overlay");
+    expect(overlay.textContent).toContain("あいり");
+  });
+
+  it("名前を出さない設定なら、層そのものを出さない", () => {
+    act(() => {
+      useSettingsStore.setState({ dancerNameDisplay: "never" });
+    });
+    hydrate();
+    goTo("scene-1");
+    renderLayer();
+
+    expect(screen.queryByTestId("dancer-names-overlay")).toBeNull();
+  });
+
+  it("選んだ人だけ出す設定なら、選んでいない人は出さない", () => {
+    act(() => {
+      useSettingsStore.setState({ dancerNameDisplay: "selected" });
+      useUIStore.setState({ selectedDancerIds: [] });
+    });
+    hydrate();
+    goTo("scene-1");
+    renderLayer();
+
+    expect(screen.queryByTestId("dancer-names-overlay")).toBeNull();
   });
 });

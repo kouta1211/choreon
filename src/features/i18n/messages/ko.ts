@@ -252,9 +252,9 @@ export const ko = {
        *  아래의 유지／이동과 같은 구간이어야 한다 */
       moveOut: (counts: string) => ` · 다음까지 ${counts}`,
       /** 구간을 둘로 나누는 칸의 머리글. 어느 쪽이든 입력할 수 있다 */
-      hold: "유지",
-      holdLabel: "이 대형 그대로 멈춰 있는 카운트",
-      move: "이동",
+      hold: "이 포메이션의 유지",
+      holdLabel: "이 포메이션 그대로 멈춰 있는 카운트",
+      move: "다음 장면으로 이동",
       moveCountsLabel: "다음 장면으로 이동하는 데 쓰는 카운트",
       /** 나누고 있는 구간의 길이. 막대 위에 덧붙인다 */
       segmentTotalCounts: (counts: string) => `구간 ${counts}카운트`,
@@ -509,7 +509,7 @@ export const ko = {
     deleteDescription:
       "이 장면의 위치와, 여기로 들어오는 동선도 함께 사라집니다. 삭제는 되돌릴 수 없습니다(이동과 방향은 되돌릴 수 있습니다).",
     deleteMeta: (dancers: number) => `${dancers}명의 위치`,
-    moveSecondsFailed: "이동 시간을 바꾸지 못했습니다",
+    moveSecondsFailed: "이동 카운트를 바꾸지 못했습니다",
     deleteManyTitle: (count: number) => `장면 ${count}개를 삭제할까요?`,
     deleteFailed: "장면을 삭제하지 못했습니다",
     remove: (name: string) => `'${name}' 삭제`,

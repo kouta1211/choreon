@@ -253,9 +253,9 @@ export const en = {
        *  Must be the same gap as the hold/move fields below it */
       moveOut: (counts: string) => ` · ${counts} to the next`,
       /** Labels for the two halves of the gap. Either one can be typed in */
-      hold: "Hold",
+      hold: "Hold this formation",
       holdLabel: "Counts this formation stays still",
-      move: "Move",
+      move: "Move to next scene",
       moveCountsLabel: "Counts spent moving to the next scene",
       /** The length of the gap being split. Sits above the bar */
       segmentTotalCounts: (counts: string) => `Gap ${counts} counts`,
@@ -511,7 +511,7 @@ export const en = {
     deleteDescription:
       "The positions in this scene go, and so do the paths leading into it. Deleting cannot be undone (moves and facings can be).",
     deleteMeta: (dancers: number) => `positions for ${dancers} dancers`,
-    moveSecondsFailed: "Could not change the move time",
+    moveSecondsFailed: "Could not change the move counts",
     deleteManyTitle: (count: number) => `Delete ${count} scenes?`,
     deleteFailed: "Could not delete the scene",
     remove: (name: string) => `Delete “${name}”`,

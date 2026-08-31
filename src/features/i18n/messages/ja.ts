@@ -275,9 +275,14 @@ export const ja = {
        *  （2026-08-25 まで、ここだけ入ってくる側を出していた） */
       moveOut: (counts: string) => ` · 次へ ${counts}`,
       /** 区間を2つに割る欄の見出し。どちらにも打てる */
-      hold: "滞在",
-      holdLabel: "この隊形のまま止まっているカウント数",
-      move: "移動",
+      /** ⚠️ **どちらも「このシーンから出ていく区間」の話**。
+       *  滞在＝このシーンの隊形のままでいるカウント数、
+       *  移動＝そこから次のシーンへ動くのに使うカウント数。
+       *  短く「滞在」「移動」とだけ出していたが、**どのシーンの何なのかが
+       *  読めなかった**（実機の報告 2026-08-31） */
+      hold: "このフォーメーションの滞在",
+      holdLabel: "このフォーメーションのまま止まっているカウント数",
+      move: "次のシーンへの移動",
       moveCountsLabel: "次のシーンへ動くのに使うカウント数",
       /** 割っている区間の長さ。バーの上に添える */
       segmentTotalCounts: (counts: string) => `区間 ${counts}カウント`,
@@ -553,7 +558,7 @@ export const ja = {
     deleteDescription:
       "このシーンの配置と、ここへ入る導線も一緒に消えます。削除は元に戻せません(移動や向きの変更は戻せます)。",
     deleteMeta: (dancers: number) => `${dancers} 人の配置`,
-    moveSecondsFailed: "移動時間の変更に失敗しました",
+    moveSecondsFailed: "移動カウントの変更に失敗しました",
     deleteManyTitle: (count: number) => `${count} 件のシーンを削除しますか?`,
     deleteFailed: "シーンの削除に失敗しました",
     remove: (name: string) => `「${name}」を削除`,

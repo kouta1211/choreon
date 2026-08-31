@@ -288,6 +288,11 @@ function DraggableDancerIconImpl({
         /* 下端に居る人は名前を上へ返す。下のままだと枠の外の札と重なる
            （実機の報告 06-14）。y は既に画面の向きへ写してある */
         isNameAbove={shouldPlaceNameAbove(y, stageHeightUnits)}
+        /* **動いている最中だけ、名前をここで描く。**
+           止まっている人は DancerNamesOverlay が丸より上の層でまとめて描く
+           （1人ずつの中に描くと隣の人の丸に隠れるため。2026-08-31）。
+           掴んだ人には z-10 が付くので、こちらでも名前は上に出る */
+        showName={isDragging || isFollowingGroup}
         isSelected={isSelected}
         isHovered={isHovered}
         isDragging={isDragging}

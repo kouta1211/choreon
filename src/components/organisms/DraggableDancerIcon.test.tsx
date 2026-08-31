@@ -71,7 +71,18 @@ describe("客席を上にする設定", () => {
 });
 
 describe("DraggableDancerIcon", () => {
-  it("DancerIconと同じ見た目(名前)を表示する", () => {
+  /**
+   * **止まっている人の名前は、ここでは描かない**（2026-08-31）。
+   * 1人ずつの中に描くと、**隣の人の丸に隠れる** — ダンサーは motion が
+   * transform を当てるので1人ずつが独立した重なりの単位になり、
+   * z-index では越えられないため。止まっている人の名前は
+   * DancerNamesOverlay が丸より上の層でまとめて描く
+   * （出ることは DancerLayer.test.tsx が縛っている）。
+   *
+   * ここが描くのは掴んで動いている最中だけ。掴んだ人には z-10 が付くので、
+   * その間は中に描いても上に出る。
+   */
+  it("止まっている間は、名前をここでは描かない（上の層が描く）", () => {
     render(
       <DndContext>
         <DraggableDancerIcon
@@ -84,7 +95,7 @@ describe("DraggableDancerIcon", () => {
         />
       </DndContext>,
     );
-    expect(screen.getByText("あいり")).toBeInTheDocument();
+    expect(screen.queryByText("あいり")).toBeNull();
   });
 
   it("dnd-kitのドラッグ用属性が付与される", () => {

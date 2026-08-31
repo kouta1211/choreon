@@ -59,6 +59,7 @@ function DancerMarkerImpl({
   hasKeyboardFocus = false,
   transitionDurationSeconds = 0.3,
   isNameAbove = false,
+  showName = true,
 }: {
   dancer: Dancer;
   rotationAngle: number;
@@ -96,6 +97,11 @@ function DancerMarkerImpl({
   /** 名前を丸の上へ出すか。ステージの下端に居る人だけ true にする
    *  （下へ出すと枠の外の札と重なる。実機の報告 06-14） */
   isNameAbove?: boolean;
+  /** 名前をここで描くか。既定は描く。
+   *  **止まっている人は false**（DancerNamesOverlay が上の層で描く）。
+   *  出すか出さないかの設定(dancerNameDisplay)とは別の話で、こちらは
+   *  「どの層が描くか」だけを決める */
+  showName?: boolean;
   /** シーン切り替え時、向きの補間アニメーションにかける秒数。省略時は0.3秒 */
   transitionDurationSeconds?: number;
 }) {
@@ -255,9 +261,16 @@ function DancerMarkerImpl({
         {[...dancer.name][0] ?? ""}
       </span>
       {/* 名前の出し方は設定で決める。人数が多いと名前で画面が埋まり、
-          隊形そのものが読めなくなるため */}
-      {(nameDisplay === "always" ||
-        (nameDisplay === "selected" && isSelected)) && (
+          隊形そのものが読めなくなるため。
+
+          ⚠️ **止まっている人の名前は、ここでは描かない**（2026-08-31）。
+          1人ずつの中に描くと、**隣の人の丸に隠れる**（transform で
+          1人ずつが独立した重なりの単位になるため、z-index では越えられない）。
+          止まっている人は DancerNamesOverlay が丸より上の層へまとめて描く。
+          ここが描くのは**掴んで動いている最中の人**だけ。 */}
+      {showName &&
+        (nameDisplay === "always" ||
+          (nameDisplay === "selected" && isSelected)) && (
         <DancerNameLabel name={dancer.name} above={isNameAbove} />
       )}
       {isBlocked && (
