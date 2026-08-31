@@ -54,7 +54,6 @@ export const ASSIST_ACTION_KINDS = [
   "applyFormation",
   "none",
 ] as const;
-export type AssistActionKind = (typeof ASSIST_ACTION_KINDS)[number];
 
 export type AssistAction =
   | { kind: "setGrid"; grid: GridKind }
