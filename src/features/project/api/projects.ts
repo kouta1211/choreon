@@ -5,8 +5,8 @@ import { listPositionsByScenes } from "@/features/scene/api/positions";
 import { totalSeconds } from "@/features/scene/lib/sceneTiming";
 import { DEFAULT_BPM } from "@/features/music/lib/metronomePreference";
 import {
+  foldLegacyOffset,
   normalizePlacements,
-  reanchor,
   type Placement,
 } from "@/features/music/lib/placement";
 import { nextAvailableTitle } from "@/features/project/lib/projectTitle";
@@ -141,23 +141,6 @@ export async function updateMusicTitle(
     .eq("id", projectId);
 
   if (error) throw error;
-}
-
-/**
- * 古い `music_offset_seconds` を、載せ方の `atSeconds` へ畳む。
- *
- * どちらも「振付が曲の何秒目から始まるか」を言っていたが、測っている
- * 時計が違った（列は曲の時間、`atSeconds` は作品の時間）。第3段で
- * バーが後者を持ったので、読むときにここで1つへまとめる。
- */
-function foldLegacyOffset(
-  placements: Placement[],
-  legacyOffsetSeconds: number,
-): Placement[] {
-  if (!Number.isFinite(legacyOffsetSeconds) || legacyOffsetSeconds <= 0) {
-    return placements;
-  }
-  return reanchor(placements, placements[0].atSeconds + legacyOffsetSeconds);
 }
 
 export async function updateMusicPlacements(

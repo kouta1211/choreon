@@ -27,7 +27,8 @@ export type Project = {
    * 画面に出す秒はここから毎回導く（`features/music/lib/placement.ts`）。
    *
    * 要素が1つでも配列。**テンポが変わる曲**は、変わり目ごとに1要素で表す。
-   * `atSeconds` は【作品の時間】で測る（`musicOffsetSeconds` を引いた後）。
+   * `atSeconds` は【作品の時間】で測る。2026-08-26 から**曲の時間と同じ**
+   * （`musicOffsetSeconds` は畳まれた。詳しくは `placement.ts`）。
    *
    * 読むときは必ず `normalizePlacements` を通す — jsonb なので
    * DB は中身を守らない。

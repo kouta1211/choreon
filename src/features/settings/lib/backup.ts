@@ -24,29 +24,12 @@ import type { Position, Scene } from "@/features/scene/types";
 import {
   beatAtSeconds,
   durationBeats,
+  foldLegacyOffset,
   normalizePlacements,
-  reanchor,
   type Placement,
 } from "@/features/music/lib/placement";
 
 export const BACKUP_VERSION = 1;
-
-/**
- * 古い書き出しの `musicOffsetSeconds` を、載せ方の `atSeconds` へ畳む。
- *
- * どちらも「振付が曲の何秒目から始まるか」を言っていたが、測っている
- * 時計が違った（前者は曲の時間、後者は作品の時間）。第4段で1つへ
- * まとめたので、取り込むときにここで足す。
- */
-function foldLegacyOffset(
-  placements: Placement[],
-  legacyOffsetSeconds: number,
-): Placement[] {
-  if (!Number.isFinite(legacyOffsetSeconds) || legacyOffsetSeconds <= 0) {
-    return placements;
-  }
-  return reanchor(placements, placements[0].atSeconds + legacyOffsetSeconds);
-}
 
 export type Backup = {
   version: number;

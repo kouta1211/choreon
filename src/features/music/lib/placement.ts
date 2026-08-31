@@ -12,12 +12,14 @@
  * 増やすときに**保存済みの全作品を移行することになる**。
  *
  * ■ `atSeconds` は【作品の時間】で測る
- * `music_offset_seconds` を引いた後の秒。既存の再生系は
- * `audio.currentTime = music_offset_seconds + 作品の時間` なので、
- * ここを作品の時間に揃えておくと**再生の側に一切触らずに済む**。
+ * 2026-08-26（第4段）から**曲の時間と同じ**。再生は
+ * `audio.currentTime = 作品の時間` で、頭出し（旧 `music_offset_seconds`）
+ * は無くなり、振付が曲の途中から始まる作品はこの `atSeconds` がそれを言う。
  *
- * ⚠️ `music_offset_seconds` は「曲の再生開始位置」の意味だけ持つ。
- * 拍の原点はこちらが引き取る（列を分けたり意味を変えたりしない）。
+ * ⚠️ 古い作品にはまだ DB の `music_offset_seconds` 列に値が残っている。
+ * 読むときに `foldLegacyOffset` でここへ畳む（`project/api/projects.ts`
+ * と `settings/lib/backup.ts` の2箇所から呼ぶ）。列そのものは
+ * `schema.sql` の注記どおり、まだ落とさない。
  */
 
 import {
@@ -368,6 +370,27 @@ export function reanchor(
     ...item,
     atSeconds: roundSeconds(item.atSeconds + shift),
   }));
+}
+
+/**
+ * 古い `music_offset_seconds` を、載せ方の `atSeconds` へ畳む
+ * （2026-08-26・第4段）。
+ *
+ * どちらも「振付が曲の何秒目から始まるか」を言っていたが、測っている
+ * 時計が違った（列は曲の時間、`atSeconds` は作品の時間）。第3段で
+ * バーが後者を持ったので、読むときにここで1つへまとめる。
+ *
+ * 呼ぶのは `project/api/projects.ts`（Supabase から読むとき）と
+ * `settings/lib/backup.ts`（書き出しファイルを取り込むとき）の2箇所。
+ */
+export function foldLegacyOffset(
+  placements: Placement[],
+  legacyOffsetSeconds: number,
+): Placement[] {
+  if (!Number.isFinite(legacyOffsetSeconds) || legacyOffsetSeconds <= 0) {
+    return placements;
+  }
+  return reanchor(placements, placements[0].atSeconds + legacyOffsetSeconds);
 }
 
 /**

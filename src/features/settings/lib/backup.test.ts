@@ -141,3 +141,47 @@ describe("メトロノームの設定", () => {
   });
 });
 
+/**
+ * 頭出しの列は musicPlacements の atSeconds へ畳まれた(2026-08-26・第4段)。
+ * 古い書き出しにはまだ `musicOffsetSeconds` が残っているので、
+ * 取り込むときにここで足し込む(`foldLegacyOffset`)。
+ */
+describe("旧 musicOffsetSeconds の畳み込み", () => {
+  it("古い書き出しの musicOffsetSeconds を、載せ方の atSeconds へ足し込む", () => {
+    const raw = JSON.stringify({
+      version: 1,
+      project: { title: "x", bpm: 120, musicOffsetSeconds: 5 },
+      dancers: [],
+      scenes: [],
+      positions: [],
+    });
+
+    expect(parseBackup(raw, ja.data).project.musicPlacements[0].atSeconds).toBe(
+      5,
+    );
+  });
+
+  it("0 のときは畳まない", () => {
+    const raw = JSON.stringify({
+      version: 1,
+      project: { title: "x", bpm: 120, musicOffsetSeconds: 0 },
+      dancers: [],
+      scenes: [],
+      positions: [],
+    });
+
+    expect(parseBackup(raw, ja.data).project.musicPlacements[0].atSeconds).toBe(
+      0,
+    );
+  });
+
+  it("項目が無い(新しい書き出し)ときは畳まない", () => {
+    const backup = buildBackup(INPUT);
+
+    expect(
+      parseBackup(JSON.stringify(backup), ja.data).project.musicPlacements[0]
+        .atSeconds,
+    ).toBe(INPUT.project.musicPlacements[0].atSeconds);
+  });
+});
+

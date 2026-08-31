@@ -14,6 +14,7 @@ import {
   type Placement,
   beatOriginSeconds,
   DEFAULT_PLACEMENTS,
+  foldLegacyOffset,
   placedSpan,
   reanchor,
   stretchToEnd,
@@ -367,6 +368,41 @@ describe("reanchor", () => {
 
   it("曲が始まる前へは置けない", () => {
     expect(reanchor(placed, -3)[0].atSeconds).toBe(0);
+  });
+});
+
+/**
+ * `project/api/projects.ts` と `settings/lib/backup.ts` の2箇所が呼ぶ、
+ * 旧 `music_offset_seconds`（曲の時間）を `atSeconds`（作品の時間）へ
+ * 畳む処理。2箇所に同じ関数が別々に書かれていたので、ここへまとめた。
+ */
+describe("foldLegacyOffset", () => {
+  const placed: Placement[] = [
+    { fromBeat: 0, atSeconds: 2, secondsPerBeat: 0.5 },
+  ];
+
+  it("旧オフセットぶん、頭出しを後ろへ動かす", () => {
+    expect(foldLegacyOffset(placed, 5)[0].atSeconds).toBe(7);
+  });
+
+  it("0以下のときは畳まない（そのまま返す）", () => {
+    expect(foldLegacyOffset(placed, 0)).toBe(placed);
+    expect(foldLegacyOffset(placed, -1)).toBe(placed);
+  });
+
+  it("数でないときは畳まない", () => {
+    expect(foldLegacyOffset(placed, NaN)).toBe(placed);
+  });
+
+  it("区切りが複数あっても、全部を同じだけずらす", () => {
+    const twoParts: Placement[] = [
+      { fromBeat: 0, atSeconds: 2, secondsPerBeat: 0.5 },
+      { fromBeat: 16, atSeconds: 10, secondsPerBeat: 0.4 },
+    ];
+    const next = foldLegacyOffset(twoParts, 3);
+
+    expect(next[0].atSeconds).toBe(5);
+    expect(next[1].atSeconds).toBe(13);
   });
 });
 
