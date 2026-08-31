@@ -36,19 +36,35 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // createServerClientとgetUser()の間に処理を挟まない(Supabase公式の注意事項。
-  // 挟むとセッションのランダムなログアウトが起きうる)。
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  /* createServerClientと認証の確認の間に処理を挟まない(Supabase公式の
+     注意事項。挟むとセッションのランダムなログアウトが起きうる)。
+
+     ■ getUser() ではなく getClaims() を呼ぶ(2026-08-31)
+     `getUser()` は **毎回 Auth サーバーへ問い合わせる**。この proxy は
+     画像と `_next/static` 以外のすべてのリクエストが通るので、
+     ログインしている人はページを開くたびに、描画が始まる前に
+     往復1回ぶん待たされていた(実機の報告:「ログインや新規作成の
+     ロードが長い」)。
+
+     `getClaims()` は、プロジェクトが**非対称の署名鍵**を使っていれば
+     WebCrypto で**その場で**検証する(通信しない)。このプロジェクトの
+     鍵は ES256 で、確認済み:
+       curl https://<project>.supabase.co/auth/v1/.well-known/jwks.json
+
+     ⚠️ **`getSession()` に替えてはいけない。** あちらは署名を検証せず、
+     cookie の中身を信じるだけ。`getClaims()` は検証する。
+     期限が近ければセッションを更新するので、cookie を配り直す役目も
+     そのまま果たす。 */
+  const { data: claims } = await supabase.auth.getClaims();
+  const isSignedIn = claims !== null;
 
   const { pathname } = request.nextUrl;
 
-  if (!user && pathname.startsWith(OWNER_ONLY_PREFIX)) {
+  if (!isSignedIn && pathname.startsWith(OWNER_ONLY_PREFIX)) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  if (user && AUTH_PATHS.includes(pathname)) {
+  if (isSignedIn && AUTH_PATHS.includes(pathname)) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 

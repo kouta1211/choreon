@@ -88,6 +88,20 @@ function goTo(sceneId: string) {
   });
 }
 
+/**
+ * 再生に入る。
+ *
+ * **区間の長さがそのままダンサーへ渡るのは再生中だけ**（2026-08-31）。
+ * 止めているときにシーンを選ぶのは編集の操作なので、短い一定時間で動く
+ * （判断は features/canvas/lib/stepTiming）。区間の割り当てそのものを
+ * 見たいテストは、ここを通って再生中にする。
+ */
+function play() {
+  act(() => {
+    useUIStore.setState({ isPlaying: true });
+  });
+}
+
 function renderLayer() {
   return render(
     <DancerLayer
@@ -110,12 +124,14 @@ beforeEach(() => {
     isPathVisible: false,
     isStageMarksVisible: false,
     isBlindSpotCheckVisible: false,
+    isPlaying: false,
   });
 });
 
 describe("どの行から区間の情報を読むか", () => {
   it("1つ進んだときは、移動先のシーンの行を読む", () => {
     hydrate();
+    play();
     goTo("scene-1");
     renderLayer();
     goTo("scene-2");
@@ -129,6 +145,7 @@ describe("どの行から区間の情報を読むか", () => {
 
   it("1つ戻ったときも、同じ区間の行(さっきまでいたシーン)を読む", () => {
     hydrate();
+    play();
     goTo("scene-1");
     goTo("scene-2");
     renderLayer();
@@ -154,6 +171,7 @@ describe("どの行から区間の情報を読むか", () => {
 
   it("移動時間は、いま通っている区間の長さになる", () => {
     hydrate();
+    play();
     goTo("scene-2");
     renderLayer();
     goTo("scene-3");
@@ -273,5 +291,72 @@ describe("描く相手", () => {
       />,
     );
     expect(screen.getByTestId("stage-marks")).toBeInTheDocument();
+  });
+});
+
+/**
+ * 再生と編集で、動きの長さが変わること。
+ *
+ * ⚠️ **純粋関数(stepTiming)のテストでは、ここは守れない。**
+ * あちらは「再生中か」を渡されたら正しく答えるだけで、
+ * **DancerLayer が本当に `isPlaying` を渡しているか**は見ていない
+ * （.claude/rules/testing.md 4節「割ったあとの歯」）。
+ * だから答えが**分かれる**場所で縛る — 同じシーン移動を、再生中と
+ * 止めているときの両方で見る。
+ */
+describe("再生と編集で、動きの長さが変わる", () => {
+  /** シーン3へ「1秒で移動」と決める。区間は3秒なので、キープが2秒になる */
+  function setMove(sceneId: string, moveSeconds: number) {
+    act(() => {
+      useProjectStore.setState((state) => ({
+        scenes: state.scenes.map((scene) =>
+          scene.id === sceneId ? { ...scene, moveSeconds } : scene,
+        ),
+      }));
+    });
+  }
+
+  it("再生中は、キープしてから動く(振付の再現)", () => {
+    hydrate();
+    setMove("scene-3", 1);
+    play();
+    goTo("scene-2");
+    renderLayer();
+    goTo("scene-3");
+
+    const props = lastPropsFor("dancer-1");
+    expect(props.holdSeconds).toBe(2);
+    expect(props.transitionDurationSeconds).toBe(1);
+  });
+
+  it("止めているときは、キープを待たずにすぐ動き出す", () => {
+    hydrate();
+    setMove("scene-3", 1);
+    goTo("scene-2");
+    renderLayer();
+    goTo("scene-3");
+
+    expect(lastPropsFor("dancer-1").holdSeconds).toBe(0);
+  });
+
+  it("止めているときは、区間が長くても短く動く(選ぶたびに待たされない)", () => {
+    hydrate();
+    goTo("scene-2");
+    renderLayer();
+    goTo("scene-3");
+
+    // 区間は3秒だが、選ぶのは編集の操作なので待たされない
+    expect(lastPropsFor("dancer-1").transitionDurationSeconds).toBeLessThan(1);
+  });
+
+  it("止めていても、動きそのものは消さない(誰がどこへ動いたか追える)", () => {
+    hydrate();
+    goTo("scene-2");
+    renderLayer();
+    goTo("scene-3");
+
+    expect(
+      lastPropsFor("dancer-1").transitionDurationSeconds,
+    ).toBeGreaterThan(0);
   });
 });

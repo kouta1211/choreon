@@ -21,13 +21,16 @@ import { ThemeButton } from "@/components/organisms/ThemeButton";
  */
 export default async function Home() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  /* **`getUser()` ではなく `getClaims()`**。理由（Auth サーバーへの往復を
+     やめる／それでも署名は検証している）は `lib/supabase/middleware.ts`
+     に書いてある。ここはログイン直後に着く画面なので、proxy と合わせて
+     往復を2回払っていた */
+  const { data } = await supabase.auth.getClaims();
 
-  if (!user) {
+  if (!data) {
     return <WelcomeGate />;
   }
+  const userId = data.claims.sub;
 
   const projects = await listProjectSummaries(supabase);
 
@@ -49,7 +52,7 @@ export default async function Home() {
         </AppHeader>
 
         <div className="mt-gutter-lg flex flex-col gap-gutter">
-          <NewProjectButton userId={user.id} />
+          <NewProjectButton userId={userId} />
           <ProjectList projects={projects} />
         </div>
       </div>

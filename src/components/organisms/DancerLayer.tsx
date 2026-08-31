@@ -13,6 +13,7 @@ import {
 } from "@/features/canvas/store/useUIStore";
 import { resolvePathSegment } from "@/features/canvas/lib/pathSegment";
 import { splitSegment } from "@/features/scene/lib/segmentSplit";
+import { stepTiming } from "@/features/canvas/lib/stepTiming";
 import { useTrailPhase } from "@/features/canvas/hooks/useTrailPhase";
 import { useGroupDrag } from "@/features/canvas/hooks/useGroupDrag";
 import { movingWith } from "@/features/canvas/lib/groupMove";
@@ -71,6 +72,9 @@ export function DancerLayer({
   const scenes = useProjectStore((state) => state.scenes);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const previousSceneId = useUIStore((state) => state.previousSceneId);
+  /* 再生しているか。**動きの長さを決めるのに要る** — 再生は振付の再現、
+     選ぶのは編集の操作で、出すべき時間が違う（stepTiming） */
+  const isPlaying = useUIStore((state) => state.isPlaying);
   // 曲線の制御点は1人ぶんの操作なので、複数選んでいる間は編集させない
   const selectedDancerId = useUIStore(selectPrimaryDancerId);
   /* いま掴んで動いている人たち。導線の始点をその人たちだけ追随させる
@@ -126,9 +130,17 @@ export function DancerLayer({
      短くすると【この隊形のまま止まってから、最後に動く】になる。
      割り方は features/scene/lib/segmentSplit が1本で持つ */
   const segmentScene = scenes.find((scene) => scene.id === segmentSceneId);
-  const { hold: holdSeconds, move: moveSeconds } = splitSegment(
+  const segmentSplit = splitSegment(
     movingSeconds,
     segmentScene?.moveSeconds ?? null,
+  );
+  /* **再生中だけ、キープしてから動く実際のタイミングを出す。**
+     止めているときにシーンを選ぶのは編集の操作なので、すぐ動かす
+     （実機の報告 2026-08-31）。判断は features/canvas/lib/stepTiming の1本 */
+  const { holdSeconds, moveSeconds } = stepTiming(
+    isPlaying,
+    segmentSplit.hold,
+    segmentSplit.move,
   );
 
   /* 【次の】区間の移動時間。速さの警告と衝突の判定はこちらで割る —
