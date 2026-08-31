@@ -13,7 +13,7 @@ import {
 } from "@/features/canvas/store/useUIStore";
 import { resolvePathSegment } from "@/features/canvas/lib/pathSegment";
 import { splitSegment } from "@/features/scene/lib/segmentSplit";
-import { stepTiming } from "@/features/canvas/lib/stepTiming";
+import { stageStep } from "@/features/canvas/lib/stageStep";
 import {
   DancerNamesOverlay,
   type OverlayName,
@@ -137,27 +137,35 @@ export function DancerLayer({
      短くすると【この隊形のまま止まってから、最後に動く】になる。
      割り方は features/scene/lib/segmentSplit が1本で持つ */
   const segmentScene = scenes.find((scene) => scene.id === segmentSceneId);
-  const segmentSplit = splitSegment(
+  /** 選択中のシーンへ**入ってくる**区間 */
+  const incomingSplit = splitSegment(
     movingSeconds,
     segmentScene?.moveSeconds ?? null,
   );
-  /* **再生中だけ、キープしてから動く実際のタイミングを出す。**
-     止めているときにシーンを選ぶのは編集の操作なので、すぐ動かす
-     （実機の報告 2026-08-31）。判断は features/canvas/lib/stepTiming の1本 */
-  const { holdSeconds, moveSeconds } = stepTiming(
-    isPlaying,
-    segmentSplit.hold,
-    segmentSplit.move,
-  );
 
-  /* 【次の】区間の移動時間。速さの警告と衝突の判定はこちらで割る —
+  /* 選択中のシーンから【次へ出ていく】区間。
+     **再生中に動くのはこちら**（シーンの時刻は「着いている時刻」なので、
+     そこから次へ向かう）。速さの警告と衝突の判定も同じ区間で見る —
      区間まるごとではなく、実際に動いている秒数で見ないと、
      キープを長く取った区間で「間に合う」と嘘をつく */
   const nextScene = scenes.find((scene) => scene.id === nextSceneId);
-  const { move: nextMoveSeconds } = splitSegment(
-    nextSceneSeconds,
-    nextScene?.moveSeconds ?? null,
-  );
+  const outgoingSplit = nextSceneId
+    ? splitSegment(nextSceneSeconds, nextScene?.moveSeconds ?? null)
+    : null;
+  const nextMoveSeconds = outgoingSplit?.move ?? 0;
+
+  /* **いま何を見せるか。** 再生中は次のシーンへ向かい、止めているときは
+     選んだシーンへすぐ動く。判断は features/canvas/lib/stageStep の1本
+     （実機の報告 2026-08-31。作る側だけが1区間ぶん遅れていた） */
+  const step = stageStep(isPlaying, incomingSplit, outgoingSplit);
+  const { holdSeconds, moveSeconds } = step;
+  /** 立ち位置を読む先。再生中は【次のシーン】へ向かって動いている */
+  const stepPositions = step.useNextScene ? nextPositions : positions;
+  /* 曲線の制御点が入っている行。区間は**後ろ側**のシーンが持つので、
+     次へ向かっている間は次のシーンの行を読む */
+  const stepSegmentPositions = step.useNextScene
+    ? nextPositions
+    : segmentPositions;
 
   // 移動の最中は「通った跡」だけ、止まっている間は「区間の線」だけを出す
   const { isTrailAnimating, onTrailComplete } = useTrailPhase({
@@ -287,12 +295,14 @@ export function DancerLayer({
         const dancer = dancers[dancerId];
         if (!dancer) return null;
 
-        const anchor = positions[dancerId];
+        /* 行き先。再生中は【次のシーン】の立ち位置へ向かう。
+           次にその人が居ない（消えた）ときは、いまの場所に留まる */
+        const anchor = stepPositions[dancerId] ?? positions[dancerId];
         if (!anchor) return null;
 
         // この区間ぶんの設定(曲線の制御点・ダンサー個別の遷移時間)が入った行。
         // 進むときは選択中シーンの行、戻るときは直前のシーンの行になる
-        const segmentPosition = segmentPositions[dancerId];
+        const segmentPosition = stepSegmentPositions[dancerId];
 
         return (
           <DraggableDancerIcon
@@ -307,11 +317,17 @@ export function DancerLayer({
             onNudge={onNudge}
             transitionDurationSeconds={moveSeconds}
             holdSeconds={holdSeconds}
+            /* 飛んだときは直線（その区間の線は画面に描かれていないため）。
+               再生中は必ず隣へ向かっているので、曲線をそのまま使う */
             curveControlX={
-              isAdjacentStep ? segmentPosition?.curveControlX : null
+              step.useNextScene || isAdjacentStep
+                ? segmentPosition?.curveControlX
+                : null
             }
             curveControlY={
-              isAdjacentStep ? segmentPosition?.curveControlY : null
+              step.useNextScene || isAdjacentStep
+                ? segmentPosition?.curveControlY
+                : null
             }
             excessiveMove={excessiveMoves.get(dancer.id) ?? null}
             isBlocked={blockedDancerIds.has(dancer.id)}

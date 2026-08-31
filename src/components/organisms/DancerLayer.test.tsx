@@ -132,7 +132,6 @@ beforeEach(() => {
 describe("どの行から区間の情報を読むか", () => {
   it("1つ進んだときは、移動先のシーンの行を読む", () => {
     hydrate();
-    play();
     goTo("scene-1");
     renderLayer();
     goTo("scene-2");
@@ -141,12 +140,10 @@ describe("どの行から区間の情報を読むか", () => {
     // シーン1→2 の制御点はシーン2の行にある
     expect(props.curveControlX).toBe(20);
     expect(props.curveControlY).toBe(21);
-    expect(props.transitionDurationSeconds).toBe(2);
   });
 
   it("1つ戻ったときも、同じ区間の行(さっきまでいたシーン)を読む", () => {
     hydrate();
-    play();
     goTo("scene-1");
     goTo("scene-2");
     renderLayer();
@@ -156,7 +153,6 @@ describe("どの行から区間の情報を読むか", () => {
     // 戻り道も同じ区間なので、シーン2の行の制御点で曲がる
     expect(props.curveControlX).toBe(20);
     expect(props.curveControlY).toBe(21);
-    expect(props.transitionDurationSeconds).toBe(2);
   });
 
   it("隣り合わないシーンへ飛んだときは、直線で動かす(制御点を渡さない)", () => {
@@ -170,15 +166,14 @@ describe("どの行から区間の情報を読むか", () => {
     expect(props.curveControlY).toBeNull();
   });
 
-  it("移動時間は、いま通っている区間の長さになる", () => {
+  it("止めているときは、選んだシーンの立ち位置へ動かす", () => {
     hydrate();
-    play();
     goTo("scene-2");
     renderLayer();
     goTo("scene-3");
 
-    // シーン2(2秒)→シーン3(5秒)なので3秒。手前の区間(2秒)ではない
-    expect(lastPropsFor("dancer-1").transitionDurationSeconds).toBe(3);
+    // シーン3の立ち位置は x=3。選んだ先を出すのが編集の操作
+    expect(lastPropsFor("dancer-1").x).toBe(3);
   });
 });
 
@@ -317,17 +312,49 @@ describe("再生と編集で、動きの長さが変わる", () => {
     });
   }
 
-  it("再生中は、キープしてから動く(振付の再現)", () => {
+  /**
+   * ⚠️ **ここが 2026-08-31 まで1区間ぶん遅れていた所。**
+   * シーンの時刻は「そこに**着いている**時刻」なので、その時刻には
+   * もうその隊形に立っていて、そこから**次へ**向かう。
+   * 以前は「シーンNの時刻になってから N-1 → N の移動を始める」形で、
+   * 見る側（viewer/lib/interpolate）とも食い違っていた。
+   */
+  it("再生中は、いま居るシーンから【次のシーン】へ向かって動く", () => {
     hydrate();
     setMove("scene-3", 1);
+    play();
+    goTo("scene-1");
+    renderLayer();
+    goTo("scene-2");
+
+    const props = lastPropsFor("dancer-1");
+    // シーン2に居るなら、行き先はシーン3の立ち位置(x=3)。
+    // **自分の居場所(x=2)へ向かってはいけない** — それが1区間ぶんの遅れ
+    expect(props.x).toBe(3);
+  });
+
+  it("再生中の滞在と移動は、【次へ出ていく】区間の割り方になる", () => {
+    hydrate();
+    setMove("scene-3", 1);
+    play();
+    goTo("scene-1");
+    renderLayer();
+    goTo("scene-2");
+
+    const props = lastPropsFor("dancer-1");
+    // シーン2(2秒)→シーン3(5秒)の区間は3秒。移動を1秒と決めたので滞在は2秒
+    expect(props.holdSeconds).toBe(2);
+    expect(props.transitionDurationSeconds).toBe(1);
+  });
+
+  it("最後のシーンに着いたら、そこで止まる(行き先が無い)", () => {
+    hydrate();
     play();
     goTo("scene-2");
     renderLayer();
     goTo("scene-3");
 
-    const props = lastPropsFor("dancer-1");
-    expect(props.holdSeconds).toBe(2);
-    expect(props.transitionDurationSeconds).toBe(1);
+    expect(lastPropsFor("dancer-1").transitionDurationSeconds).toBe(0);
   });
 
   it("止めているときは、キープを待たずにすぐ動き出す", () => {
