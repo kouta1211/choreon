@@ -24,21 +24,27 @@ type Args = {
    * キープを引いたあとの移動のぶん（`lib/segmentSplit`）。
    * 速さはここで割るので、一瞬で動く指定にすると当然「速すぎます」が出る */
   nextMoveSeconds: number;
-  isPathVisible: boolean;
   isBlindSpotCheckVisible: boolean;
+  isCollisionCheckVisible: boolean;
+  isMoveStrainCheckVisible: boolean;
 };
 
 /**
  * ダンサーに付ける3つの印を、まとめて出す。
  *
- * ■ 出す条件がそれぞれ違う
- * - **速すぎる移動**: 常に調べる。トグルは無い(振付として成立しない速さは、
- *   見えていなくても知らせる)
- * - **顔被り**: スイッチが入っている間だけ、**いま見えている隊形**を調べる。
- *   移動の途中は調べない — 何も起きていない隊形の上に印が出て、画面を見ても
- *   理由が見つからないため
- * - **衝突**: 導線を出している間だけ。ぶつかると言われても、どの線とどの線が
- *   問題なのかが見えていなければ直せない
+ * ■ 3つとも、それぞれのスイッチで出し入れする（2026-09-01）
+ * user の求めで、導線と同じように**警告ごとに切れる**ようにした。
+ *
+ * - **顔被り**: **いま見えている隊形**だけを調べる。移動の途中は調べない —
+ *   何も起きていない隊形の上に印が出て、画面を見ても理由が見つからないため
+ * - **衝突**: ⚠️ **以前は導線(isPathVisible)に相乗りしていた。**
+ *   線を消しただけで警告まで消えるのは説明が付かないので、専用の
+ *   スイッチへ分けた
+ * - **速すぎる移動**: 以前は常時オンで切れなかった
+ *
+ * ⚠️ **切れるのは表示だけ。** 速すぎる移動は AI の講評(features/review)と
+ * アシストの提案(features/assist)も読んでいて、そちらは**この設定を見ない**。
+ * 一緒に切ると、印を消しただけのつもりで AI が問題を見落とす
  *
  * ■ 衝突の判定には【実際の移動】を渡す
  * 曲線の制御点と、ダンサーごとの秒数の上書きを含めて、DraggableDancerIcon が
@@ -50,16 +56,20 @@ export function useSceneWarnings({
   nextPositions,
   nextSceneId,
   nextMoveSeconds,
-  isPathVisible,
   isBlindSpotCheckVisible,
+  isCollisionCheckVisible,
+  isMoveStrainCheckVisible,
 }: Args): {
   excessiveMoves: Map<string, MoveStrain>;
   blockedDancerIds: Set<string>;
   collisions: Map<string, Collision>;
 } {
   const excessiveMoves = useMemo(
-    () => findExcessiveMoves(positions, nextPositions, nextMoveSeconds),
-    [positions, nextPositions, nextMoveSeconds],
+    () =>
+      isMoveStrainCheckVisible
+        ? findExcessiveMoves(positions, nextPositions, nextMoveSeconds)
+        : new Map<string, MoveStrain>(),
+    [isMoveStrainCheckVisible, positions, nextPositions, nextMoveSeconds],
   );
 
   const blockedDancerIds = useMemo(
@@ -71,7 +81,8 @@ export function useSceneWarnings({
   );
 
   const collisions = useMemo(() => {
-    if (!isPathVisible || !nextSceneId) return new Map<string, Collision>();
+    if (!isCollisionCheckVisible || !nextSceneId)
+      return new Map<string, Collision>();
 
     const movers: MoverPath[] = [];
     for (const position of Object.values(positions)) {
@@ -90,7 +101,13 @@ export function useSceneWarnings({
       });
     }
     return findCollisions(movers);
-  }, [isPathVisible, nextSceneId, positions, nextPositions, nextMoveSeconds]);
+  }, [
+    isCollisionCheckVisible,
+    nextSceneId,
+    positions,
+    nextPositions,
+    nextMoveSeconds,
+  ]);
 
   return { excessiveMoves, blockedDancerIds, collisions };
 }

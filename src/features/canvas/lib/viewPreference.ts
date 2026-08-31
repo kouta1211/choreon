@@ -42,6 +42,22 @@ export type ViewPreference = {
   isStageMarksVisible: boolean;
   /** 客席から見えなくなる人(顔被り)を警告するか */
   isBlindSpotCheckVisible: boolean;
+  /**
+   * 移動中にぶつかる組み合わせを警告するか。
+   *
+   * ⚠️ **以前は導線(isPathVisible)に相乗りしていた**（2026-09-01 に分けた）。
+   * 判定は導線と同じ経路を使うが、user から見れば別の機能で、
+   * 「線を消したら警告も消えた」は説明が付かない。
+   */
+  isCollisionCheckVisible: boolean;
+  /**
+   * 歩いて間に合わない速さの移動を警告するか。
+   *
+   * ⚠️ **切るのは表示だけ。** AI の講評(features/review)とアシストの提案
+   * (features/assist)は、この設定に関わらず今までどおり見る。
+   * 一緒に切ると、印を消しただけのつもりで**AI が問題を見落とす**。
+   */
+  isMoveStrainCheckVisible: boolean;
   /** ステージを払ってシーンを送る操作を受け付けるか。
    * マウスでは「掴んで動かす」より場所を取る操作になってしまうので、
    * 指のある端末だけ既定でオンにする(defaultViewPreference参照) */
@@ -60,6 +76,10 @@ export const DEFAULT_VIEW_PREFERENCE: ViewPreference = {
   isPathVisible: false,
   isStageMarksVisible: false,
   isBlindSpotCheckVisible: false,
+  /* **警告は既定で出す。** これまでの見え方をそのまま引き継ぐ
+     （速すぎる移動は常時オンだった）。要らない人が切る、という向き */
+  isCollisionCheckVisible: true,
+  isMoveStrainCheckVisible: true,
   isTimelineVisible: true,
 };
 
@@ -109,6 +129,14 @@ export function parseViewPreference(raw: string | null): ViewPreference {
       typeof record.isBlindSpotCheckVisible === "boolean"
         ? record.isBlindSpotCheckVisible
         : fallback.isBlindSpotCheckVisible,
+    isCollisionCheckVisible:
+      typeof record.isCollisionCheckVisible === "boolean"
+        ? record.isCollisionCheckVisible
+        : fallback.isCollisionCheckVisible,
+    isMoveStrainCheckVisible:
+      typeof record.isMoveStrainCheckVisible === "boolean"
+        ? record.isMoveStrainCheckVisible
+        : fallback.isMoveStrainCheckVisible,
     isTimelineVisible:
       typeof record.isTimelineVisible === "boolean"
         ? record.isTimelineVisible

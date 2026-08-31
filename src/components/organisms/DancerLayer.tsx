@@ -101,6 +101,12 @@ export function DancerLayer({
   const isBlindSpotCheckVisible = useUIStore(
     (state) => state.isBlindSpotCheckVisible,
   );
+  const isCollisionCheckVisible = useUIStore(
+    (state) => state.isCollisionCheckVisible,
+  );
+  const isMoveStrainCheckVisible = useUIStore(
+    (state) => state.isMoveStrainCheckVisible,
+  );
   const positions = useProjectStore(
     (state) =>
       state.positionsBySceneId[selectedSceneId ?? ""] ?? EMPTY_POSITIONS,
@@ -182,8 +188,9 @@ export function DancerLayer({
     nextPositions,
     nextSceneId,
     nextMoveSeconds,
-    isPathVisible,
     isBlindSpotCheckVisible,
+    isCollisionCheckVisible,
+    isMoveStrainCheckVisible,
   });
 
   // 描くのは、選択中シーンに座標を持つ人だけ。

@@ -172,6 +172,14 @@ export const ko = {
         label: "가림 확인",
         description: "앞사람 바로 뒤에 선 사람을 표시합니다",
       },
+      collision: {
+        label: "충돌 확인",
+        description: "이동 중에 부딪히는 조합에 표시를 냅니다",
+      },
+      moveStrain: {
+        label: "너무 빠른 이동",
+        description: "걸어서는 늦는 속도의 이동에 표시를 냅니다",
+      },
       stageMarks: {
         label: "바닥 표시",
         description: "모든 장면의 위치를 바닥에 겹쳐 보여 줍니다",
@@ -954,10 +962,25 @@ export const ko = {
         label: "바닥 표시",
         description: "모든 장면의 위치를 바닥 표시로 겹쳐 보여 줍니다.",
       },
+    },
+
+    warnings: {
+      title: "경고",
+      summary: "가림・충돌・너무 빠른 이동",
+      description:
+        "무대 위 댄서에게 붙는 표시입니다. 꺼도 AI 총평과 어시스트 제안은 지금까지와 같이 확인합니다.",
       blindSpot: {
-        label: "가림 확인",
+        label: "가림",
         description:
           "앞사람 바로 뒤에 서서 객석에서 보이지 않는 사람을 표시합니다.",
+      },
+      collision: {
+        label: "충돌",
+        description: "이동 중에 부딪히는 조합에 표시를 붙입니다.",
+      },
+      moveStrain: {
+        label: "너무 빠른 이동",
+        description: "걸어서는 늦는 속도의 이동에 표시를 붙입니다.",
       },
     },
 

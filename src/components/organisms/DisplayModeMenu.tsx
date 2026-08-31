@@ -11,6 +11,8 @@ import {
   EyeOff,
   Spline,
   Target,
+  TriangleAlert,
+  Gauge,
   HelpCircle,
 } from "lucide-react";
 import { useUIStore, type GridMode } from "@/features/canvas/store/useUIStore";
@@ -88,6 +90,18 @@ export function DisplayModeMenu({
   const isBlindSpotCheckVisible = useUIStore(
     (state) => state.isBlindSpotCheckVisible,
   );
+  const isCollisionCheckVisible = useUIStore(
+    (state) => state.isCollisionCheckVisible,
+  );
+  const toggleCollisionCheck = useUIStore(
+    (state) => state.toggleCollisionCheck,
+  );
+  const isMoveStrainCheckVisible = useUIStore(
+    (state) => state.isMoveStrainCheckVisible,
+  );
+  const toggleMoveStrainCheck = useUIStore(
+    (state) => state.toggleMoveStrainCheck,
+  );
   const toggleBlindSpotCheck = useUIStore(
     (state) => state.toggleBlindSpotCheck,
   );
@@ -129,6 +143,20 @@ export function DisplayModeMenu({
       icon: EyeOff,
       checked: isBlindSpotCheckVisible,
       onChange: toggleBlindSpotCheck,
+    },
+    {
+      label: t.editor.view.collision.label,
+      description: t.editor.view.collision.description,
+      icon: TriangleAlert,
+      checked: isCollisionCheckVisible,
+      onChange: toggleCollisionCheck,
+    },
+    {
+      label: t.editor.view.moveStrain.label,
+      description: t.editor.view.moveStrain.description,
+      icon: Gauge,
+      checked: isMoveStrainCheckVisible,
+      onChange: toggleMoveStrainCheck,
     },
     {
       label: t.editor.view.stageMarks.label,

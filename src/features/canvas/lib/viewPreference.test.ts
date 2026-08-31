@@ -26,6 +26,9 @@ describe("parseViewPreference", () => {
       isPathVisible: true,
       isStageMarksVisible: true,
       isBlindSpotCheckVisible: true,
+      // 保存に入っていない項目は既定で埋まる（下の「増えた項目」のテスト）
+      isCollisionCheckVisible: true,
+      isMoveStrainCheckVisible: true,
       isTimelineVisible: false,
     });
   });
@@ -105,5 +108,49 @@ describe("projectViewKey", () => {
 
   it("作品ごとに違うキーになる", () => {
     expect(projectViewKey("a")).not.toBe(projectViewKey("b"));
+  });
+});
+
+/**
+ * 警告のスイッチ（2026-09-01 に追加）。
+ *
+ * **既定は出す** — これまでの見え方をそのまま引き継ぐ（速すぎる移動は
+ * 常時オンだった）。要らない人が切る、という向きにしてある。
+ * 古い端末に残っている保存（この項目が無い）を読んでも、既定へ落ちること。
+ */
+describe("警告のスイッチ", () => {
+  it("既定では、衝突も速すぎる移動も出す", () => {
+    expect(DEFAULT_VIEW_PREFERENCE.isCollisionCheckVisible).toBe(true);
+    expect(DEFAULT_VIEW_PREFERENCE.isMoveStrainCheckVisible).toBe(true);
+  });
+
+  it("この項目を知らない古い保存を読んでも、既定に落ちる", () => {
+    const old = JSON.stringify({
+      gridMode: "square",
+      isPathVisible: true,
+      isStageMarksVisible: false,
+      isBlindSpotCheckVisible: false,
+      isTimelineVisible: true,
+    });
+
+    const parsed = parseViewPreference(old);
+
+    expect(parsed.isCollisionCheckVisible).toBe(true);
+    expect(parsed.isMoveStrainCheckVisible).toBe(true);
+    // 知っている項目は保存の側が勝つ
+    expect(parsed.isPathVisible).toBe(true);
+  });
+
+  it("切った状態は、読み直しても切れたまま", () => {
+    const saved = JSON.stringify({
+      ...DEFAULT_VIEW_PREFERENCE,
+      isCollisionCheckVisible: false,
+      isMoveStrainCheckVisible: false,
+    });
+
+    const parsed = parseViewPreference(saved);
+
+    expect(parsed.isCollisionCheckVisible).toBe(false);
+    expect(parsed.isMoveStrainCheckVisible).toBe(false);
   });
 });

@@ -172,6 +172,14 @@ export const en = {
         label: "Blocked-view check",
         description: "Marks anyone standing directly behind someone",
       },
+      collision: {
+        label: "Collision check",
+        description: "Marks dancers who would run into each other while moving",
+      },
+      moveStrain: {
+        label: "Move too fast",
+        description: "Marks moves that are too fast to walk in time",
+      },
       stageMarks: {
         label: "Spike marks",
         description: "Lays every scene's positions on the floor",
@@ -964,10 +972,25 @@ export const en = {
         label: "Spike marks",
         description: "Lays every scene's positions on the floor as marks.",
       },
+    },
+
+    warnings: {
+      title: "Warnings",
+      summary: "Blocked view, collisions, moves that are too fast",
+      description:
+        "Badges shown on dancers on stage. Turning these off does not change what the AI review or the assist suggestions look at.",
       blindSpot: {
-        label: "Blocked-view check",
+        label: "Blocked view",
         description:
           "Marks anyone standing directly behind someone, out of sight from the audience.",
+      },
+      collision: {
+        label: "Collision",
+        description: "Marks dancers who would run into each other while moving.",
+      },
+      moveStrain: {
+        label: "Move too fast",
+        description: "Marks moves that are too fast to walk in time.",
       },
     },
 

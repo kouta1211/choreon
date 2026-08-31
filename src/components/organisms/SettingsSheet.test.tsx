@@ -275,13 +275,30 @@ describe("SettingsSheet の並び", () => {
     const { container } = render(<SettingsSheet isOpen onClose={vi.fn()} />);
 
     await user.click(screen.getByText("表示"));
+    /* 顔被りは「警告」へ移した（2026-09-01）。**見せ方と、気づかせる話を
+       分ける** — 切りたいのは後者だけ、という場面が多い */
     const found = orderOf(container, [
       "ダンサー名",
       "導線",
-      "顔被りチェック",
       "バミリ",
       "客席を上にする",
     ]);
+
+    expect(found.every((index) => index >= 0)).toBe(true);
+    expect([...found].sort((a, b) => a - b)).toEqual(found);
+  });
+
+  /**
+   * 警告は3つとも1つずつ切れる（user の求め 2026-09-01）。
+   * ここで見るのは**3つそろって並んでいること** — 1つでも入口が
+   * 無ければ、その警告は切る手段が無い。
+   */
+  it("「警告」に、3つの警告がそろって並ぶ", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<SettingsSheet isOpen onClose={vi.fn()} />);
+
+    await user.click(screen.getByText("警告"));
+    const found = orderOf(container, ["顔被り", "衝突", "速すぎる移動"]);
 
     expect(found.every((index) => index >= 0)).toBe(true);
     expect([...found].sort((a, b) => a - b)).toEqual(found);

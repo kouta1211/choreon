@@ -501,3 +501,44 @@ describe("名前は丸と同じ動き方で付いていく", () => {
     expect(label!.style.left).toBe("25%");
   });
 });
+
+/**
+ * 警告のスイッチ（2026-09-01）。
+ *
+ * ⚠️ **純粋関数（physicalLimits / collisions）のテストでは守れない。**
+ * あちらは「調べろ」と言われたら正しく答えるだけで、
+ * **DancerLayer がスイッチを読んで渡しているか**は見ていない
+ * （.claude/rules/testing.md 4節「割ったあとの歯」）。
+ */
+describe("警告のスイッチ", () => {
+  /** 遠くへ一瞬で動かして、「速すぎる移動」を必ず出す形にする */
+  function makeTooFast() {
+    hydrate([{ sceneId: "scene-3", xCoordinate: 7, yCoordinate: 7 }]);
+    act(() => {
+      useProjectStore.setState((state) => ({
+        scenes: state.scenes.map((scene) =>
+          scene.id === "scene-3" ? { ...scene, moveSeconds: 0.1 } : scene,
+        ),
+      }));
+    });
+  }
+
+  it("入っていれば、速すぎる移動に印が出る", () => {
+    makeTooFast();
+    goTo("scene-2");
+    renderLayer();
+
+    expect(lastPropsFor("dancer-1").excessiveMove).not.toBeNull();
+  });
+
+  it("切れば、速すぎる移動の印は出ない", () => {
+    act(() => {
+      useUIStore.setState({ isMoveStrainCheckVisible: false });
+    });
+    makeTooFast();
+    goTo("scene-2");
+    renderLayer();
+
+    expect(lastPropsFor("dancer-1").excessiveMove).toBeNull();
+  });
+});

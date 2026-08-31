@@ -91,6 +91,11 @@ type UIState = {
   isStageMarksVisible: boolean;
   /** 客席から見えなくなる人(顔被り)を警告するか。移動中も含めて調べる */
   isBlindSpotCheckVisible: boolean;
+  /** 移動中にぶつかる組み合わせを警告するか
+   *  （2026-09-01 に導線から切り離した。理由は lib/viewPreference） */
+  isCollisionCheckVisible: boolean;
+  /** 歩いて間に合わない速さの移動を警告するか。**切るのは表示だけ** */
+  isMoveStrainCheckVisible: boolean;
   /** 下端の時間軸を出すか。畳むとステージがそのぶん広くなる */
   isTimelineVisible: boolean;
   /** シーンのタイムライン再生中かどうか(SceneTimelineの再生シーケンサーが
@@ -185,6 +190,8 @@ type UIState = {
   togglePathVisible: () => void;
   toggleStageMarks: () => void;
   toggleBlindSpotCheck: () => void;
+  toggleCollisionCheck: () => void;
+  toggleMoveStrainCheck: () => void;
   toggleTimelineVisible: () => void;
   setIsPlaying: (isPlaying: boolean) => void;
   /** 再生ボタンを押したのと同じことを頼む(カウントインを含む) */
@@ -258,6 +265,8 @@ function persistFromState(
       isPathVisible: state.isPathVisible,
       isStageMarksVisible: state.isStageMarksVisible,
       isBlindSpotCheckVisible: state.isBlindSpotCheckVisible,
+      isCollisionCheckVisible: state.isCollisionCheckVisible,
+      isMoveStrainCheckVisible: state.isMoveStrainCheckVisible,
       isTimelineVisible: state.isTimelineVisible,
       ...changed,
     },
@@ -292,6 +301,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   isPathVisible: DEFAULT_VIEW_PREFERENCE.isPathVisible,
   isStageMarksVisible: DEFAULT_VIEW_PREFERENCE.isStageMarksVisible,
   isBlindSpotCheckVisible: DEFAULT_VIEW_PREFERENCE.isBlindSpotCheckVisible,
+  isCollisionCheckVisible: DEFAULT_VIEW_PREFERENCE.isCollisionCheckVisible,
+  isMoveStrainCheckVisible: DEFAULT_VIEW_PREFERENCE.isMoveStrainCheckVisible,
   isTimelineVisible: DEFAULT_VIEW_PREFERENCE.isTimelineVisible,
   viewScopeProjectId: null,
   isPlaying: false,
@@ -382,6 +393,18 @@ export const useUIStore = create<UIState>((set, get) => ({
       const isBlindSpotCheckVisible = !state.isBlindSpotCheckVisible;
       persistFromState(state, { isBlindSpotCheckVisible });
       return { isBlindSpotCheckVisible };
+    }),
+  toggleCollisionCheck: () =>
+    set((state) => {
+      const isCollisionCheckVisible = !state.isCollisionCheckVisible;
+      persistFromState(state, { isCollisionCheckVisible });
+      return { isCollisionCheckVisible };
+    }),
+  toggleMoveStrainCheck: () =>
+    set((state) => {
+      const isMoveStrainCheckVisible = !state.isMoveStrainCheckVisible;
+      persistFromState(state, { isMoveStrainCheckVisible });
+      return { isMoveStrainCheckVisible };
     }),
   toggleStageMarks: () =>
     set((state) => {

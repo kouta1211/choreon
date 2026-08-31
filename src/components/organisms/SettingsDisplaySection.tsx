@@ -12,8 +12,8 @@ import { useT } from "@/features/i18n/LocaleProvider";
 /**
  * 設定の「表示」。
  *
- * ■ 下の4つは控えを持たない
- * 導線・バミリ・顔被り・払って送る の状態は viewPreference(useUIStore)が正で、
+ * ■ 下のスイッチは控えを持たない
+ * 導線・バミリの状態は viewPreference(useUIStore)が正で、
  * エディタの「表示とモード」も同じものを指している。ここは**もう一つの入口**
  * として同じスイッチを並べるだけ。設定側に控えを持つと、どちらが正なのか
  * 決まらなくなる。
@@ -30,12 +30,6 @@ export function SettingsDisplaySection() {
   const togglePathVisible = useUIStore((state) => state.togglePathVisible);
   const isStageMarksVisible = useUIStore((state) => state.isStageMarksVisible);
   const toggleStageMarks = useUIStore((state) => state.toggleStageMarks);
-  const isBlindSpotCheckVisible = useUIStore(
-    (state) => state.isBlindSpotCheckVisible,
-  );
-  const toggleBlindSpotCheck = useUIStore(
-    (state) => state.toggleBlindSpotCheck,
-  );
 
   return (
     <SettingsGroup description={t.settings.display.description}>
@@ -55,12 +49,6 @@ export function SettingsDisplaySection() {
         description={t.settings.display.path.description}
         checked={isPathVisible}
         onChange={togglePathVisible}
-      />
-      <SettingsSwitchRow
-        label={t.settings.display.blindSpot.label}
-        description={t.settings.display.blindSpot.description}
-        checked={isBlindSpotCheckVisible}
-        onChange={toggleBlindSpotCheck}
       />
       <SettingsSwitchRow
         label={t.settings.display.stageMarks.label}

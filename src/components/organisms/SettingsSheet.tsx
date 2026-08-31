@@ -10,6 +10,7 @@ import {
   Keyboard,
   Play,
   Settings2,
+  TriangleAlert,
   UserRoundCog,
 } from "lucide-react";
 import { BottomSheet } from "@/components/molecules/BottomSheet";
@@ -20,6 +21,7 @@ import { SettingsStageSection } from "@/components/organisms/SettingsStageSectio
 import { SettingsGridSection } from "@/components/organisms/SettingsGridSection";
 import { SettingsPlaybackSection } from "@/components/organisms/SettingsPlaybackSection";
 import { SettingsDisplaySection } from "@/components/organisms/SettingsDisplaySection";
+import { SettingsWarningsSection } from "@/components/organisms/SettingsWarningsSection";
 import { SettingsAppSection } from "@/components/organisms/SettingsAppSection";
 import { ShortcutList } from "@/components/molecules/ShortcutList";
 import { SettingsAccountSection } from "@/components/organisms/SettingsAccountSection";
@@ -90,6 +92,7 @@ type SectionId =
   | "grid"
   | "playback"
   | "display"
+  | "warnings"
   | "shortcuts"
   | "app"
   | "data"
@@ -174,6 +177,16 @@ export function SettingsSheet({
       summary: t.settings.display.summary,
       icon: <Eye size={20} />,
       body: <SettingsDisplaySection />,
+    },
+    /* 警告は「表示」の次（2026-09-01）。どちらもステージの見え方の話だが、
+       **見せ方と、気づかせる話は分ける** — 切りたいのは後者だけ、という
+       場面が多い（user の求めで警告ごとに切れるようにした） */
+    {
+      id: "warnings",
+      title: t.settings.warnings.title,
+      summary: t.settings.warnings.summary,
+      icon: <TriangleAlert size={20} />,
+      body: <SettingsWarningsSection />,
     },
     {
       id: "grid",
