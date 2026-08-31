@@ -455,3 +455,49 @@ describe("名前は丸より上の層に出る", () => {
     expect(screen.queryByTestId("dancer-names-overlay")).toBeNull();
   });
 });
+
+/**
+ * 名前が、丸と**同じ行き先へ同じ動き方で**付いていくこと。
+ *
+ * ⚠️ 2026-08-31 の報告「名前がついていっていない」は、名前だけを
+ * CSS で直に置いていたのが原因。丸は `useDancerMotion` で滑らかに動くので、
+ * 名前だけが先に行き先へ飛んでいた。**同じフックを同じ引数で**通すことで
+ * 揃えてある。ここでは【行き先が同じか】を見る（動きの滑らかさそのものは
+ * jsdom では測れないので、そこは望まない）。
+ */
+describe("名前は丸と同じ動き方で付いていく", () => {
+  beforeEach(() => {
+    act(() => {
+      useSettingsStore.setState({ dancerNameDisplay: "always" });
+    });
+  });
+
+  /**
+   * ⚠️ 2026-08-31 の報告「名前がついていっていない」。
+   * 名前だけを CSS で直に置いていたので、丸が滑らかに動いている間、
+   * **名前は行き先へ即座に飛んで**いた。いまは丸と同じ `useDancerMotion`
+   * を通すので、名前も**元の位置から動き始める**。
+   *
+   * ここで見ているのは【飛んでいないこと】。シーンを移した直後の名前は、
+   * まだ**移る前の位置**に居るのが正しい（そこから動く）。
+   * 直に置く実装へ戻すと、ここが行き先の値になって落ちる。
+   */
+  it("シーンを移した直後、名前はまだ元の位置に居る（飛ばない）", () => {
+    hydrate();
+    goTo("scene-2");
+    const { container } = renderLayer();
+    goTo("scene-3");
+
+    const target = lastPropsFor("dancer-1").x as number;
+    const label = container.querySelector(
+      '[data-testid="dancer-names-overlay"] > div',
+    ) as HTMLElement | null;
+    expect(label).not.toBeNull();
+
+    // 丸が向かっている先（シーン3・x=3 → 37.5%）とは違う
+    expect(target).toBe(3);
+    expect(label!.style.left).not.toBe(`${(target / 8) * 100}%`);
+    // 移る前（シーン2・x=2 → 25%）に居て、そこから動き出す
+    expect(label!.style.left).toBe("25%");
+  });
+});

@@ -44,6 +44,11 @@ type Props = {
   /** 動き出すまで、この隊形のまま止まっている秒数。
    * 区間のうち移動に使わない余りがここに来る。省略時は0（すぐ動く） */
   holdSeconds?: number;
+  /** 名前をこの中で描くか。**掴んで動いている人だけ true**。
+   *  止まっている人は DancerNamesOverlay が丸より上の層で描く
+   *  （1人ずつの中に描くと隣の人の丸に隠れるため）。
+   *  判断は DancerLayer が持つ */
+  showName?: boolean;
   /** このシーンへ移動してくる際の曲線制御点(ステージ座標系)。
    * PathOverlayが描いている曲線と同じ制御点で、両方揃っている時だけ
    * 曲線に沿って移動する(片方でもnull/undefinedなら直線移動) */
@@ -105,6 +110,7 @@ function DraggableDancerIconImpl({
   onNudge,
   transitionDurationSeconds = DEFAULT_TRANSITION_DURATION_SECONDS,
   holdSeconds = 0,
+  showName = false,
   curveControlX,
   curveControlY: stageCurveControlY,
   excessiveMove = null,
@@ -288,11 +294,11 @@ function DraggableDancerIconImpl({
         /* 下端に居る人は名前を上へ返す。下のままだと枠の外の札と重なる
            （実機の報告 06-14）。y は既に画面の向きへ写してある */
         isNameAbove={shouldPlaceNameAbove(y, stageHeightUnits)}
-        /* **動いている最中だけ、名前をここで描く。**
-           止まっている人は DancerNamesOverlay が丸より上の層でまとめて描く
-           （1人ずつの中に描くと隣の人の丸に隠れるため。2026-08-31）。
-           掴んだ人には z-10 が付くので、こちらでも名前は上に出る */
-        showName={isDragging || isFollowingGroup}
+        /* 名前をここで描くか。**判断は DancerLayer が1箇所で持つ**
+           （掴んで動いている人だけ true）。ここで isDragging から
+           作り直さない — 上の層との条件が食い違うと、その人の名前が
+           どちらからも出なくなる（2026-08-31） */
+        showName={showName}
         isSelected={isSelected}
         isHovered={isHovered}
         isDragging={isDragging}

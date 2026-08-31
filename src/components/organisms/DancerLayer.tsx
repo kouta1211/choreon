@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { motion } from "motion/react";
 import { PathOverlay } from "@/components/molecules/PathOverlay";
 import { StageMarks } from "@/components/molecules/StageMarks";
@@ -188,6 +188,17 @@ export function DancerLayer({
   // 描くのは、選択中シーンに座標を持つ人だけ。
   // 以前はここに「払っている間の移動先にだけ居る人」も足していたが、
   // 払って送る操作ごと畳んだので落とした(2026-08-21)
+  /* **名前をどちらが描くかは、ここだけが決める。**
+     掴んで動いている人はダンサーの中（z-10 が付くので上に出る）、
+     それ以外は上の層（DancerNamesOverlay）。
+     ⚠️ **2箇所で別々に決めない** — 食い違うと、その人の名前が
+     どちらからも出なくなる（見た目は「名前が消えた」になる） */
+  const isNameDrawnByIcon = useCallback(
+    (dancerId: string) =>
+      dancerId === grabbedDancerId || movingDancerIds.includes(dancerId),
+    [grabbedDancerId, movingDancerIds],
+  );
+
   const renderedDancerIds = useMemo(() => Object.keys(positions), [positions]);
 
   /* 丸より上の層で描く名前。
@@ -198,20 +209,26 @@ export function DancerLayer({
     if (nameDisplay === "never") return [];
     return renderedDancerIds.flatMap((dancerId) => {
       const dancer = dancers[dancerId];
-      const anchor = positions[dancerId];
+      const anchor = stepPositions[dancerId] ?? positions[dancerId];
       if (!dancer || !anchor) return [];
       if (nameDisplay === "selected" && !selectedDancerIds.includes(dancerId)) {
         return [];
       }
-      const isMoving =
-        dancerId === grabbedDancerId || movingDancerIds.includes(dancerId);
-      if (isMoving) return [];
+      if (isNameDrawnByIcon(dancerId)) return [];
+      /* 丸とまったく同じ引数を渡す。**片方だけ式を写すと、名前だけが
+         行き先へ飛ぶ**（2026-08-31「名前がついていっていない」） */
+      const segmentPosition = stepSegmentPositions[dancerId];
+      const useCurve = step.useNextScene || isAdjacentStep;
       return [
         {
           id: dancer.id,
           name: dancer.name,
           xCoordinate: anchor.xCoordinate,
           yCoordinate: anchor.yCoordinate,
+          curveControlX: useCurve ? (segmentPosition?.curveControlX ?? null) : null,
+          curveControlY: useCurve ? (segmentPosition?.curveControlY ?? null) : null,
+          holdSeconds,
+          moveSeconds,
         },
       ];
     });
@@ -219,10 +236,15 @@ export function DancerLayer({
     renderedDancerIds,
     dancers,
     positions,
+    stepPositions,
+    stepSegmentPositions,
+    step.useNextScene,
+    isAdjacentStep,
+    holdSeconds,
+    moveSeconds,
     nameDisplay,
     selectedDancerIds,
-    grabbedDancerId,
-    movingDancerIds,
+    isNameDrawnByIcon,
   ]);
 
   return (
@@ -280,9 +302,13 @@ export function DancerLayer({
         <PathTrail
           key={selectedSceneId}
           mode={isBackwardStep ? "draw" : "erase"}
-          fromPositions={previousPositions}
-          toPositions={positions}
-          segmentPositions={segmentPositions}
+          /* **ダンサーが実際に通る区間**を描く。再生中は「今 → 次」、
+             止めているときは「さっきまで居た所 → 選んだ先」。
+             ここを step に合わせないと、**導線だけが別の区間を消していく**
+             （実機の報告 2026-08-31「導線もおかしい」） */
+          fromPositions={step.useNextScene ? positions : previousPositions}
+          toPositions={step.useNextScene ? nextPositions : positions}
+          segmentPositions={stepSegmentPositions}
           sceneDurationSeconds={moveSeconds}
           holdSeconds={holdSeconds}
           dancers={dancers}
@@ -317,6 +343,7 @@ export function DancerLayer({
             onNudge={onNudge}
             transitionDurationSeconds={moveSeconds}
             holdSeconds={holdSeconds}
+            showName={isNameDrawnByIcon(dancerId)}
             /* 飛んだときは直線（その区間の線は画面に描かれていないため）。
                再生中は必ず隣へ向かっているので、曲線をそのまま使う */
             curveControlX={
