@@ -252,9 +252,9 @@ export const ko = {
        *  아래의 유지／이동과 같은 구간이어야 한다 */
       moveOut: (counts: string) => ` · 다음까지 ${counts}`,
       /** 구간을 둘로 나누는 칸의 머리글. 어느 쪽이든 입력할 수 있다 */
-      hold: "이 포메이션의 유지",
-      holdLabel: "이 포메이션 그대로 멈춰 있는 카운트",
-      move: "다음 장면으로 이동",
+      hold: "유지 카운트",
+      holdLabel: "이 대형 그대로 멈춰 있는 카운트",
+      move: "이동 카운트",
       moveCountsLabel: "다음 장면으로 이동하는 데 쓰는 카운트",
       /** 나누고 있는 구간의 길이. 막대 위에 덧붙인다 */
       segmentTotalCounts: (counts: string) => `구간 ${counts}카운트`,

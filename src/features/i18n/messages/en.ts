@@ -253,9 +253,9 @@ export const en = {
        *  Must be the same gap as the hold/move fields below it */
       moveOut: (counts: string) => ` · ${counts} to the next`,
       /** Labels for the two halves of the gap. Either one can be typed in */
-      hold: "Hold this formation",
+      hold: "Hold counts",
       holdLabel: "Counts this formation stays still",
-      move: "Move to next scene",
+      move: "Move counts",
       moveCountsLabel: "Counts spent moving to the next scene",
       /** The length of the gap being split. Sits above the bar */
       segmentTotalCounts: (counts: string) => `Gap ${counts} counts`,

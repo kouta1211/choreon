@@ -491,7 +491,7 @@ describe("区間の割り方（カウント）", () => {
   /* 欄は2つ出るが、**保存しているのは移動の側だけ**。滞在は
      区間から引いて出している（lib/segmentSplit） */
   const holdInput = () =>
-    screen.getByLabelText(/このフォーメーションのまま止まっているカウント数/);
+    screen.getByLabelText(/この隊形のまま止まっているカウント数/);
   const moveInput = () =>
     screen.getByLabelText(/次のシーンへ動くのに使うカウント数/);
 
@@ -526,7 +526,7 @@ describe("区間の割り方（カウント）", () => {
     useUIStore.setState({ selectedSceneId: "scene-2" });
     render(<SceneList project={makeProject({ isMetronomeEnabled: true })} />);
     expect(
-      screen.queryByLabelText(/このフォーメーションのまま止まっているカウント数/),
+      screen.queryByLabelText(/この隊形のまま止まっているカウント数/),
     ).not.toBeInTheDocument();
   });
 
