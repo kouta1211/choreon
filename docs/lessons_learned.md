@@ -935,7 +935,7 @@
   → **middleware で毎回 `getUser()` を呼ばない。** 鍵の種類を先に確かめる。
 
 - **Tailwind 4 のスキャナは、ドキュメントの地の文もクラス名として拾う。**
-  `docs/lessons_learned.md` に書いた `[@media(...)]:flex` が拾われて、
+  `docs/lessons_learned.md` に書いた `[@media(...)]` に `:flex` を続けた例が拾われて、
   ビルドが `Invalid media query` を出し続けていた（`03c4e1c` で解消）。
   → **教訓に「書いてはいけないクラス名」を例として書くときは、
   コードとして成立しない形に崩す**か、バッククォートの外に出さない。
