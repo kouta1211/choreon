@@ -6,7 +6,7 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useMusicPlacement } from "@/features/music/hooks/useMusicPlacement";
 import { NumberField } from "@/components/molecules/NumberField";
 import { PressableButton } from "@/components/atoms/PressableButton";
-import { BEATS_PER_SET, countLabelAtBeat } from "@/features/music/lib/counts";
+import { BEATS_PER_SET } from "@/features/music/lib/counts";
 import { MAX_SECTION_LABEL_LENGTH } from "@/features/music/lib/placement";
 import { MAX_BPM, MIN_BPM } from "@/features/music/lib/metronomePreference";
 import { formatMinutes } from "@/features/scene/lib/clock";
@@ -96,9 +96,9 @@ export function MusicSectionList() {
                 )}
               </div>
 
+              {/* **カウントは出さない**（2026-09-15・第2段）。区切りごとに
+                  数え直すので、ここは必ず `1-1` になる。出しても情報が無い */}
               <p className="font-mono text-mono-s text-fg-muted">
-                {countLabelAtBeat(section.fromBeat)}
-                {" · "}
                 {t.music.sectionStart(formatMinutes(section.fromSeconds))}
               </p>
 

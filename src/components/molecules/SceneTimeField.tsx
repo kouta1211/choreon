@@ -6,11 +6,12 @@ import { useId, type FocusEvent } from "react";
 import { Hash } from "lucide-react";
 import { CountLengthInput } from "@/components/molecules/CountLengthInput";
 import { SegmentSplitBar } from "@/components/atoms/SegmentSplitBar";
+import { countLengthLabel } from "@/features/music/lib/counts";
 import {
-  countLabelAtBeat,
-  countLengthLabel,
-  parseCountLabel,
-} from "@/features/music/lib/counts";
+  bareCountLabelAtBeat,
+  beatFromCountLabel,
+} from "@/features/music/lib/countLabel";
+import type { Placement } from "@/features/music/lib/placement";
 import {
   moveForHold,
   splitSegment,
@@ -21,6 +22,8 @@ import { useT } from "@/features/i18n/LocaleProvider";
 type Props = {
   /** このシーンが頭から何拍目か。**保存の正**（`scenes.position_beats`） */
   positionBeats: number;
+  /** 拍↔秒の写像。**どの区切りの中かを知るために要る**（曲が変わる作品） */
+  placements: readonly Placement[];
   /** 同じ位置を秒で見たもの。⚠️ **派生値**。曲があるときの副表示にだけ使う */
   timeSeconds: number;
   /** 秒を副表示で添えるか。**曲があるときだけ true**（2026-08-26） */
@@ -62,6 +65,7 @@ type Props = {
  */
 export function SceneTimeField({
   positionBeats,
+  placements,
   timeSeconds,
   showSeconds,
   onCommit,
@@ -78,11 +82,16 @@ export function SceneTimeField({
   const split = splitSegment(segmentBeats, outgoing?.moveBeats ?? null);
 
   const commit = (event: FocusEvent<HTMLInputElement>) => {
-    const parsed = parseCountLabel(event.target.value);
+    /* **その区切りの中の** 3-5 として読む。曲をまたいで飛ばさない */
+    const parsed = beatFromCountLabel(
+      event.target.value,
+      positionBeats,
+      placements,
+    );
     /* 読めない値は**丸めずに前の値へ戻す**。丸めて受けると、打った数と
        画面の数が食い違ったまま保存される */
     if (parsed === null || parsed === positionBeats) {
-      event.target.value = countLabelAtBeat(positionBeats);
+      event.target.value = bareCountLabelAtBeat(positionBeats, placements);
       return;
     }
     onCommit(parsed);
@@ -101,7 +110,7 @@ export function SceneTimeField({
             key={fieldKey + positionBeats}
             type="text"
             inputMode="numeric"
-            defaultValue={countLabelAtBeat(positionBeats)}
+            defaultValue={bareCountLabelAtBeat(positionBeats, placements)}
             onBlur={commit}
             onKeyDown={(event) => {
               if (event.key === "Enter") event.currentTarget.blur();

@@ -14,10 +14,8 @@ import type { Scene } from "@/features/scene/types";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useT } from "@/features/i18n/LocaleProvider";
 import type { OutgoingSegment } from "@/features/scene/lib/outgoingSegment";
-import {
-  countLabelAtBeat,
-  countLengthLabel,
-} from "@/features/music/lib/counts";
+import { countLengthLabel } from "@/features/music/lib/counts";
+import { countLabelAtBeat } from "@/features/music/lib/countLabel";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 
 type Props = {
@@ -197,7 +195,11 @@ export function SceneRow({
               isSelected ? "text-accent-bright" : "text-fg-muted"
             }`}
           >
-            {countLabelAtBeat(scene.positionBeats)}
+            {countLabelAtBeat(
+              scene.positionBeats,
+              project.musicPlacements,
+              t.music.sectionDefaultName,
+            )}
             {/* **出ていく側**の区間を出す（2026-08-25）。
                 すぐ下の 滞在／移動 と同じ区間でなければ、
                 1つの行が2つの区間の話をすることになる。
@@ -215,6 +217,7 @@ export function SceneRow({
           <SceneTimeField
             fieldKey={scene.id}
             positionBeats={scene.positionBeats}
+            placements={project.musicPlacements}
             timeSeconds={scene.timeSeconds}
             /* 秒を添えるのは曲に載せているときだけ。合わせる相手が
                無い作品で `0:07.0` を出しても、振付として意味を持たない */

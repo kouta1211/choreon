@@ -40,9 +40,15 @@ export type CountPosition = {
  *
  * 負の拍は 1セット目の1カウントとして扱う（振付の頭より手前を指した
  * ときで、画面に `0-0` と出しても読む人には何の情報も無い）。
+ *
+ * ■ `originBeat` ＝ **どこから数え直すか**（2026-09-15）
+ * ショーケースで曲が変わったら、稽古場では「2曲目の1」から数え直す。
+ * 通しで数えると5分の作品が `68-3` になり、**誰も口に出さない数**になる。
+ * 原点を渡すのは呼ぶ側で、区切りのことは**ここでは知らない**
+ * （`counts.ts` は載せ方に依存しない。繋ぐのは `countLabel.ts`）。
  */
-export function countAtBeat(beat: number): CountPosition {
-  const whole = Math.floor(beat);
+export function countAtBeat(beat: number, originBeat = 0): CountPosition {
+  const whole = Math.floor(beat - originBeat);
   if (whole < 0) return { set: 1, count: 1 };
 
   return {
@@ -66,10 +72,11 @@ export function formatCount(position: CountPosition): string {
   return `${position.set}-${position.count}`;
 }
 
-/** 拍から直接 `3-5` を作る近道。読む側はほとんどこれ1つで足りる */
-export function countLabelAtBeat(beat: number): string {
-  return formatCount(countAtBeat(beat));
-}
+/* **`countLabelAtBeat` はここから消した**（2026-09-15）。
+   曲が変わる作品では「どの区切りの中か」を知らないとカウントを出せない。
+   拍だけ受け取る近道を残すと、**呼ぶ側が載せ方を渡し忘れても通って
+   しまう**（そして2曲目から静かにずれる）。載せ方を必ず受け取る形は
+   `features/music/lib/countLabel.ts` に置いてある。 */
 
 /**
  * `3-5` を**拍**へ戻す。読めなければ `null`（呼ぶ側が前の値へ戻す）。
@@ -84,7 +91,10 @@ export function countLabelAtBeat(beat: number): string {
  * 丸めて受けると、打った数と画面の数が食い違う。
  * カウントが8を超える値（`1-9`）も弾く（1セットは8カウント）。
  */
-export function parseCountLabel(text: string): number | null {
+export function parseCountLabel(
+  text: string,
+  originBeat = 0,
+): number | null {
   // 全角の数字を半角へ寄せてから見る
   const normalized = text
     .trim()
@@ -101,7 +111,9 @@ export function parseCountLabel(text: string): number | null {
   const count = Number(matched[2]);
   if (set < 1 || count < 1 || count > BEATS_PER_SET) return null;
 
-  return (set - 1) * BEATS_PER_SET + (count - 1);
+  /* 打たれた `4-3` は**その区切りの中での** 4-3。曲が変わる作品では
+     原点がずれるので、戻すときに足す（`countAtBeat` の裏） */
+  return originBeat + (set - 1) * BEATS_PER_SET + (count - 1);
 }
 
 /**

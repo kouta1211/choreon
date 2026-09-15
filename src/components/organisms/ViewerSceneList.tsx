@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
-import { countLabelAtBeat } from "@/features/music/lib/counts";
+import { useViewerCountLabel } from "@/features/viewer/hooks/useViewerCountLabel";
 import { useT } from "@/features/i18n/LocaleProvider";
 
 /**
@@ -31,6 +31,7 @@ import { useT } from "@/features/i18n/LocaleProvider";
  */
 export function ViewerSceneList() {
   const t = useT();
+  const countLabel = useViewerCountLabel();
   const [isOpen, setOpen] = useState(false);
   const scenes = useViewerStore((state) => state.scenes);
   const currentSeconds = useViewerStore((state) => state.currentSeconds);
@@ -86,7 +87,7 @@ export function ViewerSceneList() {
                     {scene.name}
                   </span>
                   <span className="shrink-0 font-mono text-mono-s text-fg-muted">
-                    {countLabelAtBeat(scene.positionBeats)}
+                    {countLabel(scene.positionBeats)}
                   </span>
                 </PressableButton>
               </li>

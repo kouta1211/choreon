@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { PressableButton } from "@/components/atoms/PressableButton";
-import { countLabelAtBeat } from "@/features/music/lib/counts";
+import { useViewerCountLabel } from "@/features/viewer/hooks/useViewerCountLabel";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { useSettingsStore } from "@/features/settings/store/useSettingsStore";
 import { themedDancerColor } from "@/features/dancer/lib/themedColor";
@@ -33,6 +33,7 @@ const CARD_WIDTH = 56;
  */
 export function ViewerSceneStrip() {
   const project = useViewerStore((state) => state.project);
+  const countLabel = useViewerCountLabel();
   const scenes = useViewerStore((state) => state.scenes);
   const dancers = useViewerStore((state) => state.dancers);
   const positionsBySceneId = useViewerStore(
@@ -139,7 +140,7 @@ export function ViewerSceneStrip() {
                 {index + 1}
               </span>
               <span className="font-mono text-caption text-fg-muted">
-                {countLabelAtBeat(scene.positionBeats)}
+                {countLabel(scene.positionBeats)}
               </span>
             </PressableButton>
           </li>

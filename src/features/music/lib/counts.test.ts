@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   BEATS_PER_SET,
   countAtBeat,
-  countLabelAtBeat,
   countLengthLabel,
   parseCountLabel,
   flickTargetSeconds,
@@ -49,18 +48,23 @@ describe("formatCount", () => {
   });
 });
 
-describe("countLabelAtBeat", () => {
+/* `countLabelAtBeat` はここから消えた（2026-09-15・第2段）。載せ方を
+   必ず受け取る形は countLabel.ts にある。ここで縛るのは物差しの側だけ */
+const label = (beat: number, originBeat = 0) =>
+  formatCount(countAtBeat(beat, originBeat));
+
+describe("拍からカウントの形を作る", () => {
   it("3セット目の5カウントは 3-5", () => {
-    expect(countLabelAtBeat(20)).toBe("3-5");
+    expect(label(20)).toBe("3-5");
   });
 
   it("セットの頭は -1 で終わる", () => {
-    expect(countLabelAtBeat(16)).toBe("3-1");
+    expect(label(16)).toBe("3-1");
   });
 
   it("**秒ではなく拍**を受ける（BPM を渡す口が無い）", () => {
     // 13拍は BPM が何であっても 2-6。ここが秒だと BPM で答えが変わる
-    expect(countLabelAtBeat(13)).toBe("2-6");
+    expect(label(13)).toBe("2-6");
   });
 });
 
@@ -74,9 +78,9 @@ describe("parseCountLabel", () => {
     expect(parseCountLabel("3-5")).toBe(20);
   });
 
-  it("countLabelAtBeat と往復する", () => {
+  it("出した形と往復する", () => {
     for (const beat of [0, 5, 13, 20, 27]) {
-      expect(parseCountLabel(countLabelAtBeat(beat))).toBe(beat);
+      expect(parseCountLabel(label(beat))).toBe(beat);
     }
   });
 

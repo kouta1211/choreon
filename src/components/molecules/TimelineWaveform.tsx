@@ -154,9 +154,14 @@ export function TimelineWaveform({
         const lastSet = Math.ceil(
           (band.toSeconds - band.originSeconds) / setSeconds,
         );
-        /* 通算のセット番号で偶奇を決める。区間ごとに 0 から数えると、
-           区切りをまたぐ所で縞の明暗が反転して段差に見える */
-        const setOffset = Math.floor(band.fromBeat / BEATS_PER_SET);
+        /* **セット番号は区切りごとに1から数え直す**（2026-09-15・第2段）。
+           稽古場では曲が変わったら「2曲目の1」から数える。通しで数えると
+           5分の作品が `68` になり、誰も口に出さない数になる。
+           縞の明暗も一緒に 0 から始まるので、**区切りの所に段差が出る** —
+           これは曲が変わった印なので、出るのが正しい。
+           札の側（`countLabel.ts`）と同じ数え方でなければ、
+           同じ画面の中で数字が食い違う */
+        const setOffset = 0;
 
         // 1. 8カウントごとの縞。交互に薄く塗る
         context.fillStyle = `rgba(${ink}, ${0.03 * strength})`;

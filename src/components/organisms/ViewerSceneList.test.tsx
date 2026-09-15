@@ -100,3 +100,44 @@ describe("再生中に一覧から飛んだとき", () => {
     expect(useViewerStore.getState().isPlaying).toBe(false);
   });
 });
+
+/* ── 曲の区切り（2026-09-15・第2段）────────────────────────────
+   `countLabelAtBeat` そのものの試験は countLabel.test.ts にある。
+   ここで縛るのは**配線** — 見る側が、その作品の載せ方を渡しているか。
+
+   ⚠️ **ここが歴史的にいちばん落ちる。** 2026-08-19 に時刻の見せ方を
+   変えたとき、作る側の3箇所は数えたのに**閲覧画面の5箇所がまるごと
+   漏れた**（規約 state.md 6節）。作る側と見る側は別の道で描いていて、
+   `git grep` の相手も別なので、片方だけ数えて終わりにできない。 */
+describe("ViewerSceneList — 曲が変わる作品", () => {
+  function hydrateTwoSongs() {
+    useViewerStore.setState({
+      project: makeProject({
+        musicPlacements: [
+          { fromBeat: 0, atSeconds: 0, secondsPerBeat: 0.5 },
+          // 2曲目は 32拍目（16秒）から
+          { fromBeat: 32, atSeconds: 16, secondsPerBeat: 0.5 },
+        ],
+      }),
+      hasMusic: true,
+      scenes: [
+        makeScene({ id: "s1", name: "シーンA", orderIndex: 0, timeSeconds: 0 }),
+        makeScene({ id: "s2", name: "シーンB", orderIndex: 1, timeSeconds: 16 }),
+      ],
+      currentSeconds: 0,
+    });
+  }
+
+  it("2曲目のカウントは、1から数え直して曲名が付く", async () => {
+    const user = userEvent.setup();
+    hydrateTwoSongs();
+    render(<ViewerSceneList />);
+
+    await user.click(screen.getByLabelText("シーン一覧を開く"));
+
+    expect(screen.getByText("1曲目 1-1")).toBeInTheDocument();
+    // 通しで数えると 5-1。曲ごとに数え直すので 2曲目の 1-1
+    expect(screen.getByText("2曲目 1-1")).toBeInTheDocument();
+    expect(screen.queryByText("5-1")).not.toBeInTheDocument();
+  });
+});

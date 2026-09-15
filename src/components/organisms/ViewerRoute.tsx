@@ -4,10 +4,8 @@ import { useMemo, useState } from "react";
 import { ArrowRight, TriangleAlert } from "lucide-react";
 import { BottomSheet } from "@/components/molecules/BottomSheet";
 import { PressableButton } from "@/components/atoms/PressableButton";
-import {
-  countLabelAtBeat,
-  countLengthLabel,
-} from "@/features/music/lib/counts";
+import { countLengthLabel } from "@/features/music/lib/counts";
+import { useViewerCountLabel } from "@/features/viewer/hooks/useViewerCountLabel";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { describeMove } from "@/features/viewer/lib/describeMove";
 import { sceneSpanAt } from "@/features/viewer/lib/interpolate";
@@ -40,6 +38,7 @@ type Step = {
  */
 export function ViewerRoute() {
   const t = useT();
+  const countLabel = useViewerCountLabel();
   const dancers = useViewerStore((state) => state.dancers);
   const scenes = useViewerStore((state) => state.scenes);
   const positionsBySceneId = useViewerStore(
@@ -218,7 +217,7 @@ export function ViewerRoute() {
                         同じ数でなければならない（規約 state.md 6節 —
                         作る側と見る側は別の道で描いている）*/}
                     <span className="mt-0.5 block font-mono text-caption text-fg-muted">
-                      {`${countLabelAtBeat(step.positionBeats)} · `}
+                      {`${countLabel(step.positionBeats)} · `}
                       {t.viewer.route.travelCounts(countLengthLabel(step.beats))}
                       {isHere && t.viewer.route.hereNow}
                     </span>

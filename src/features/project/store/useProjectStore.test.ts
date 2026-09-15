@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { useProjectStore } from "./useProjectStore";
 import { makeProject, makeScene } from "@/test/factories";
-import { countLabelAtBeat } from "@/features/music/lib/counts";
+import { bareCountLabelAtBeat } from "@/features/music/lib/countLabel";
+import { DEFAULT_PLACEMENTS } from "@/features/music/lib/placement";
+
+/** この作品は区切りが1つなので、曲名は付かない（`3-5` のまま） */
+const countLabel = (beat: number) =>
+  bareCountLabelAtBeat(beat, DEFAULT_PLACEMENTS);
 
 /**
  * **速さを変えても、カウントは1つも動かない**（2026-08-26・第4段）。
@@ -28,12 +33,12 @@ describe("useProjectStore の setBpm", () => {
   const second = () => useProjectStore.getState().scenes[1];
 
   it("速さを変えても、カウントは同じまま", () => {
-    expect(countLabelAtBeat(second().positionBeats)).toBe("3-5");
+    expect(countLabel(second().positionBeats)).toBe("3-5");
 
     useProjectStore.getState().setBpm(90);
 
     /* **ここが要**。数え直す側（regrid）に戻すと 2-8 になって落ちる */
-    expect(countLabelAtBeat(second().positionBeats)).toBe("3-5");
+    expect(countLabel(second().positionBeats)).toBe("3-5");
     expect(second().positionBeats).toBe(20);
   });
 
@@ -48,7 +53,7 @@ describe("useProjectStore の setBpm", () => {
     useProjectStore.getState().setBpm(240);
 
     expect(second().timeSeconds).toBeCloseTo(5, 2);
-    expect(countLabelAtBeat(second().positionBeats)).toBe("3-5");
+    expect(countLabel(second().positionBeats)).toBe("3-5");
   });
 
   it("載せ方の速さも、そろって書き換わる", () => {

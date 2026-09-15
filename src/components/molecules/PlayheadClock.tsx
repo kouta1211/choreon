@@ -4,7 +4,11 @@ import { formatClock, formatMinutes } from "@/features/scene/lib/clock";
 
 import { useEffect, useState } from "react";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
-import { countLabelAtBeat } from "@/features/music/lib/counts";
+import {
+  countLabelAtBeat,
+  type SongNamer,
+} from "@/features/music/lib/countLabel";
+import { useT } from "@/features/i18n/LocaleProvider";
 import {
   beatAtSeconds,
   type Placement,
@@ -43,18 +47,26 @@ export function PlayheadClock({
   placements,
   showSeconds,
 }: Props) {
+  /* 曲名の既定（「2曲目」）は言語で変わるので、辞書から渡す。
+     区切りが1つの作品では使われない */
+  const songName = useT().music.sectionDefaultName;
   const [text, setText] = useState(() =>
-    label(useMusicStore.getState().currentTime, placements, showSeconds),
+    label(
+      useMusicStore.getState().currentTime,
+      placements,
+      showSeconds,
+      songName,
+    ),
   );
 
   useEffect(() => {
     const update = (seconds: number) => {
-      const next = label(seconds, placements, showSeconds);
+      const next = label(seconds, placements, showSeconds, songName);
       setText((previous) => (previous === next ? previous : next));
     };
     update(useMusicStore.getState().currentTime);
     return useMusicStore.subscribe((state) => update(state.currentTime));
-  }, [placements, showSeconds]);
+  }, [placements, showSeconds, songName]);
 
   return (
     <>
@@ -66,12 +78,17 @@ export function PlayheadClock({
   );
 }
 
-/** `3-5`、曲があるときは `3-5 · 0:07.0` */
+/** `3-5`、曲があるときは `3-5 · 0:07.0`。区切りが2つ以上なら `2曲目 3-5` */
 function label(
   seconds: number,
   placements: readonly Placement[],
   showSeconds: boolean,
+  songName: SongNamer,
 ): string {
-  const count = countLabelAtBeat(beatAtSeconds(placements, seconds));
+  const count = countLabelAtBeat(
+    beatAtSeconds(placements, seconds),
+    placements,
+    songName,
+  );
   return showSeconds ? `${count} · ${formatClock(seconds)}` : count;
 }
