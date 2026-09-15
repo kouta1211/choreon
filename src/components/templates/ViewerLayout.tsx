@@ -19,7 +19,10 @@ import type { Project } from "@/features/project/types";
 import type { Position, Scene } from "@/features/scene/types";
 import { useT } from "@/features/i18n/LocaleProvider";
 import { useMetronome } from "@/features/music/hooks/useMetronome";
-import { DEFAULT_BPM } from "@/features/music/lib/metronomePreference";
+import {
+  bpmAtSeconds,
+  DEFAULT_PLACEMENTS,
+} from "@/features/music/lib/placement";
 
 type Props = {
   project: Project;
@@ -114,7 +117,13 @@ export function ViewerLayout({
      稽古場では邪魔にしかならない */
   useMetronome({
     isActive: isPlaying && (project?.isMetronomeEnabled ?? false),
-    bpm: project?.bpm ?? DEFAULT_BPM,
+    /* **見る人の側も区切りごとの速さで鳴らす**（2026-09-15）。
+       音源は共有しないが、載せ方（`musicPlacements`）は共有されるので、
+       曲が変わる所でクリックの速さも引き継げる */
+    bpm: bpmAtSeconds(
+      project?.musicPlacements ?? DEFAULT_PLACEMENTS,
+      currentSeconds,
+    ),
     beatsPerBar: project?.beatsPerBar ?? 4,
   });
 

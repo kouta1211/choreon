@@ -793,6 +793,19 @@ export const ko = {
     stacked: (from: number, to: number) =>
       `장면 ${from}~${to}이(가) 겹쳐 있습니다. 누르면 펼쳐서 하나씩 고를 수 있습니다`,
     scenesShort: "장면",
+    /* 곡 구분(2026-09-15). 쇼케이스는 한 무대에서 곡이 바뀐다.
+       박의 열은 끊기지 않고, 끊기는 것은 음원에 얹는 방식뿐 */
+    sectionsTitle: "곡 구분",
+    sectionsNote:
+      "쇼케이스 도중에 곡이 바뀔 때 사용합니다. 구분을 넣어도 대형은 움직이지 않습니다. 넣은 뒤에 그 구간만 빠르기와 시작 위치를 정할 수 있습니다.",
+    sectionDefaultName: (order: number) => `${order}번째 곡`,
+    sectionName: "곡 이름",
+    sectionStart: (clock: string) => `${clock}부터`,
+    sectionSplit: "여기서부터 다른 곡으로",
+    sectionSplitNote: "선택한 장면에서 가장 가까운 8카운트 머리에서 나눕니다.",
+    sectionNeedScene: "나눌 위치를 정하려면 장면을 선택하세요.",
+    sectionRemove: "이 구분 없애기",
+    sectionBpm: "이 구간의 빠르기(BPM)",
   },
 
   dancer: {

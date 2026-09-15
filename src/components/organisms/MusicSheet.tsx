@@ -15,6 +15,7 @@ import {
   placedSpan,
 } from "@/features/music/lib/placement";
 import { MetronomeControls } from "@/components/molecules/MetronomeControls";
+import { MusicSectionList } from "@/components/organisms/MusicSectionList";
 import { BeatsPerBarSegment } from "@/components/molecules/BeatsPerBarSegment";
 import type { Project } from "@/features/project/types";
 import { PressableButton } from "@/components/atoms/PressableButton";
@@ -181,9 +182,16 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
         {!fileName && (
           <div className="flex flex-col gap-2">
             <p className="text-label text-fg">{t.music.metronomeTitle}</p>
-            <MetronomeControls />
+            {/* 区切りが2つ以上あるときは、速さは一覧の側が持つ。
+                ここへ残すと同じ値を変える口が2つになる（2026-09-15） */}
+            <MetronomeControls showSpeed={placements.length === 1} />
           </div>
         )}
+
+        {/* **曲の区切り**（2026-09-15）。ショーケースは1本の中で曲が
+            変わる。振付はカウントで組むので拍の列は切れず、切れるのは
+            載せ方の側だけ — だから区切りを置いても隊形は動かない */}
+        <MusicSectionList />
 
         <div className="rounded-xl border border-line px-3 py-2.5">
           <p className="font-mono text-caption text-fg-muted">

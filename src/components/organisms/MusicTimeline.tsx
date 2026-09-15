@@ -98,11 +98,10 @@ export function MusicTimeline({ project, audioRef }: Props) {
    * 曲へ載せるバーを引くとここが動き、拍線もセット番号も一緒に動く
    * （第3段）。頭出しの秒という別の口は、第4段でここへ畳んだ。
    */
-  const beatOrigin = beatOriginSeconds(
-    useProjectStore(
-      (state) => state.project?.musicPlacements ?? project.musicPlacements,
-    ),
+  const placements = useProjectStore(
+    (state) => state.project?.musicPlacements ?? project.musicPlacements,
   );
+  const beatOrigin = beatOriginSeconds(placements);
   const lastSceneSeconds = scenes[scenes.length - 1]?.timeSeconds ?? 0;
   // 曲より後ろにシーンを置くこともある(曲を差し替える前に組む場合など)。
   // 軸は長い方に合わせないと、置いたシーンへ辿り着けない
@@ -225,8 +224,7 @@ export function MusicTimeline({ project, audioRef }: Props) {
           width={viewport}
           height={layout.bandHeight}
           playheadSeconds={playheadSeconds}
-          bpm={bpm}
-          originSeconds={beatOrigin}
+          placements={placements}
           /* 曲があるときは拍子を持たないので、太い線も引かない */
           beatsPerBar={hasMusic ? null : beatsPerBar}
           showSetNumbers
@@ -240,17 +238,25 @@ export function MusicTimeline({ project, audioRef }: Props) {
 
             **曲があるときだけ出す。** 載せる相手が無ければ、
             決めるものも無い（拍の列がそのまま時間軸になる） */}
-        {hasMusic && placement.lastBeat > 0 && (
-          <TimelineSpanLayer
-            fromSeconds={placement.span.fromSeconds}
-            toSeconds={placement.span.toSeconds}
-            pxPerSecond={pxPerSecond}
-            layerX={layerX}
-            heightPx={SPAN_HEIGHT_PX}
-            onMoveTo={(seconds) => void placement.moveTo(seconds)}
-            onStretchTo={(seconds) => void placement.stretchTo(seconds)}
-          />
-        )}
+        {hasMusic &&
+          placement.lastBeat > 0 &&
+          placement.sections.map((section) => (
+            <TimelineSpanLayer
+              key={section.index}
+              label={section.label}
+              fromSeconds={section.fromSeconds}
+              toSeconds={section.toSeconds}
+              pxPerSecond={pxPerSecond}
+              layerX={layerX}
+              heightPx={SPAN_HEIGHT_PX}
+              onMoveTo={(seconds) =>
+                void placement.moveSectionTo(section.index, seconds)
+              }
+              onStretchTo={(seconds) =>
+                void placement.stretchSectionTo(section.index, seconds)
+              }
+            />
+          ))}
 
         {/* **中央の幕は置かない**（user の指示 2026-08-22:「波形の真ん中が
             黒くなっていますが、普通に戻してほしい。シーンを追加した際は、
@@ -364,8 +370,7 @@ export function MusicTimeline({ project, audioRef }: Props) {
           scrollX={scrollX}
           pxPerSecond={pxPerSecond}
           sceneTimes={scenes.map((scene) => scene.timeSeconds)}
-          bpm={bpm}
-          originSeconds={beatOrigin}
+          placements={placements}
         />
       )}
     </div>

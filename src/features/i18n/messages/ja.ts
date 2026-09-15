@@ -866,6 +866,22 @@ export const ja = {
     stacked: (from: number, to: number) =>
       `シーン${from}〜${to}が重なっています。押すと広げて、1つずつ選びます`,
     scenesShort: "シーン",
+    /* -- 曲の区切り（曲の変わり目）・2026-09-15 --
+       ショーケースは1本の中で曲が変わる。振付はカウントで組むので
+       拍の列は切れない — 切れるのは載せ方の側だけ */
+    sectionsTitle: "曲の区切り",
+    sectionsNote:
+      "ショーケースの途中で曲が変わるときに使います。区切りを置いても隊形は動きません。置いたあと、その先だけ速さと頭出しを決められます。",
+    /** 名前を付けていない区切りの見出し。1始まり */
+    sectionDefaultName: (order: number) => `${order}曲目`,
+    sectionName: "曲名",
+    sectionStart: (clock: string) => `${clock} から`,
+    sectionSplit: "ここから別の曲にする",
+    sectionSplitNote:
+      "選んでいるシーンの、いちばん近い8カウントの頭で区切ります。",
+    sectionNeedScene: "区切る場所を決めるために、シーンを選んでください。",
+    sectionRemove: "この区切りを外す",
+    sectionBpm: "この区間の速さ(BPM)",
   },
 
   dancer: {

@@ -3,7 +3,8 @@ import { render } from "@testing-library/react";
 import { motionValue } from "motion/react";
 import { TimelineWaveform } from "./TimelineWaveform";
 import type { Waveform } from "@/features/music/lib/waveformPeaks";
-import { beatOriginSeconds } from "@/features/music/lib/placement";
+import type { Placement } from "@/features/music/lib/placement";
+
 
 /**
  * **軸の秒は【作品の時間】。曲の秒とは頭出しのぶんずれる。**
@@ -59,7 +60,11 @@ function makeWaveform(): Waveform {
   return { peaks, durationSeconds: 30 };
 }
 
-function draw(props: { songOffsetSeconds?: number; originSeconds?: number }) {
+function draw(props: {
+  songOffsetSeconds?: number;
+  originSeconds?: number;
+  placements?: Placement[];
+}) {
   const calls = stubCanvas();
   render(
     <TimelineWaveform
@@ -70,14 +75,15 @@ function draw(props: { songOffsetSeconds?: number; originSeconds?: number }) {
       width={WIDTH}
       height={40}
       playheadSeconds={null}
-      bpm={BPM}
-      originSeconds={beatOriginSeconds([
-        {
-          fromBeat: 0,
-          atSeconds: props.originSeconds ?? 0,
-          secondsPerBeat: 60 / BPM,
-        },
-      ])}
+      placements={
+        props.placements ?? [
+          {
+            fromBeat: 0,
+            atSeconds: props.originSeconds ?? 0,
+            secondsPerBeat: 60 / BPM,
+          },
+        ]
+      }
       songOffsetSeconds={props.songOffsetSeconds ?? 0}
     />,
   );
@@ -131,5 +137,35 @@ describe("TimelineWaveform に渡す、2つの原点", () => {
     const shifted = beatLineXs(draw({ originSeconds: 0.25 }));
     // 0.25秒 = 10px ぶん右へ
     expect(shifted.slice(0, 3)).toEqual([10, 30, 50]);
+  });
+});
+
+
+/* ── 曲の区切り（2026-09-15）──
+   `beatWindows` そのものの試験は beatWindows.test.ts にある。ここで縛るのは
+   **配線** — 描く側が窓を割らずに1つの速さで引き通していないか。
+   純粋関数が正しくても、呼び出し側が先頭の区間だけ渡せば2曲目から全部
+   ずれる（`.claude/rules/testing.md` 4節「移した先を潰すまでやる」）。 */
+describe("区切りをまたぐと、拍線の間隔が変わる", () => {
+  /** 0〜3秒は BPM120（1拍20px）、3秒から BPM240（1拍10px） */
+  const TWO_SONGS: Placement[] = [
+    { fromBeat: 0, atSeconds: 0, secondsPerBeat: 0.5 },
+    { fromBeat: 6, atSeconds: 3, secondsPerBeat: 0.25 },
+  ];
+
+  it("区切りより手前は 20px 刻み、その先は 10px 刻みになる", () => {
+    const xs = beatLineXs(draw({ placements: TWO_SONGS }));
+
+    // 手前（0〜120px）は1拍20px
+    expect(xs.filter((x) => x < 120)).toEqual([0, 20, 40, 60, 80, 100]);
+    // 区切り（3秒＝120px）から先は1拍10px
+    expect(xs.filter((x) => x >= 120).slice(0, 4)).toEqual([
+      120, 130, 140, 150,
+    ]);
+  });
+
+  it("区切りが1つのときは、今までどおり等間隔のまま", () => {
+    const xs = beatLineXs(draw({}));
+    expect(xs.slice(0, 4)).toEqual([0, 20, 40, 60]);
   });
 });

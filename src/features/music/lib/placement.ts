@@ -29,7 +29,7 @@ import {
 } from "@/features/music/lib/metronomePreference";
 import { secondsPerBeat } from "@/features/music/lib/metronome";
 
-/** 拍→秒の写像。1つの区間ぶん */
+/** 拍→秒の写像。1つの区間ぶん。**画面では「区切り」と呼ぶ** */
 export type Placement = {
   /** この載せ方が効き始める拍。最初の要素は 0 */
   fromBeat: number;
@@ -37,7 +37,23 @@ export type Placement = {
   atSeconds: number;
   /** 1拍の長さ（秒）。**0以下は許さない** */
   secondsPerBeat: number;
+  /**
+   * その区間の名前（曲名・「Bメロ」など）。**無くてよい**。
+   *
+   * 画面に出すときの既定（「2曲目」）は**ここへ書かない** — 言語ごとに
+   * 変わるので、文言の側（`useT()`）が番号から作る。ここに既定を入れると
+   * 日本語が3言語をすり抜けて焼き付く。
+   */
+  label?: string;
 };
+
+/**
+ * 区切りの名前の長さの上限。時間軸のラベルに収まる範囲で切る。
+ *
+ * 長さを縛るのは見た目のためだけではない。`music_placements` は jsonb で、
+ * 区切りの数だけ行に積もる。歯止めが無いと1行が青天井に育つ。
+ */
+export const MAX_SECTION_LABEL_LENGTH = 40;
 
 /** 曲を入れていない作品の既定。BPM 120 = 1拍 0.5秒 */
 export const DEFAULT_PLACEMENTS: readonly Placement[] = [
@@ -84,8 +100,20 @@ export function normalizePlacements(
     .sort((a, b) => a.fromBeat - b.fromBeat);
 
   if (parsed.length === 0) return fallback;
+
+  /* **同じ拍から始まる区間を2つ残さない。** `placementAtBeat` は後ろを
+     採るので、手前の1つは**誰にも読まれないまま**残る。壊れて見えないので
+     気づけない（`.claude/rules/testing.md` の「後ろが勝って前が消える」と
+     同じ形）。読まれない方を落とす */
+  const deduped: Placement[] = [];
+  for (const item of parsed) {
+    const last = deduped[deduped.length - 1];
+    if (last && sameBeat(last.fromBeat, item.fromBeat)) deduped.pop();
+    deduped.push(item);
+  }
+
   // 先頭は必ず 0 から。手前に隙間があると、そこの拍を写せない
-  return [{ ...parsed[0], fromBeat: 0 }, ...parsed.slice(1)];
+  return [{ ...deduped[0], fromBeat: 0 }, ...deduped.slice(1)];
 }
 
 function toPlacement(raw: unknown): Placement | null {
@@ -97,7 +125,23 @@ function toPlacement(raw: unknown): Placement | null {
   if (fromBeat === null || atSeconds === null || perBeat === null) return null;
   // 1拍の長さが0以下だと、拍と秒の対応が付かない
   if (perBeat <= 0) return null;
-  return { fromBeat, atSeconds, secondsPerBeat: perBeat };
+
+  const label = normalizeLabel(item.label);
+  return label === null
+    ? { fromBeat, atSeconds, secondsPerBeat: perBeat }
+    : { fromBeat, atSeconds, secondsPerBeat: perBeat, label };
+}
+
+/**
+ * 区切りの名前を整える。**空白だけの名前は「無い」と同じ**にする。
+ *
+ * 空文字を持たせると、画面側で「名前がある」と判定されて空のラベルが
+ * 描かれる。持たせないのが正。
+ */
+export function normalizeLabel(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim().slice(0, MAX_SECTION_LABEL_LENGTH);
+  return trimmed.length > 0 ? trimmed : null;
 }
 
 function finite(value: unknown): number | null {
@@ -277,10 +321,32 @@ export function sameBeat(a: number, b: number): boolean {
   return Math.abs(a - b) < 1e-6;
 }
 
-/** いまの物差しを BPM で読む。**古い列や、音を鳴らす側へ渡すため** */
-export function bpmOf(placements: readonly Placement[]): number {
+/**
+ * その拍の速さを BPM で読む。**音を鳴らす側と、拍の線を引く側へ渡す。**
+ *
+ * ⚠️ **拍を受け取る形にしてある**（2026-09-15）。以前は `bpmOf(placements)` で
+ * **先頭の区間**の速さだけを返していた。区切りが1つのうちは正しかったが、
+ * 曲が変わる作品では**2曲目でも1曲目の速さを答える** — メトロノームも
+ * 拍の線も、途中から静かにずれる。画面は動いて見えるので気づけない。
+ */
+export function bpmAt(placements: readonly Placement[], beat: number): number {
   const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
-  return clampBpm(60 / list[0].secondsPerBeat);
+  return clampBpm(60 / placementAtBeat(list, beat).secondsPerBeat);
+}
+
+/**
+ * その**秒**の速さを BPM で読む。**時計を持っている側から呼ぶ。**
+ *
+ * メトロノームと予備拍は「いま何拍目か」ではなく「いま何秒目か」しか
+ * 持っていない（音そのものが時計）。拍へ直してから引くと、区切りの
+ * 境目で往復の丸めがぶつかるので、秒のまま引く。
+ */
+export function bpmAtSeconds(
+  placements: readonly Placement[],
+  seconds: number,
+): number {
+  const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
+  return clampBpm(60 / placementAtSeconds(list, seconds).secondsPerBeat);
 }
 
 /**
@@ -393,31 +459,328 @@ export function foldLegacyOffset(
   return reanchor(placements, placements[0].atSeconds + legacyOffsetSeconds);
 }
 
-/**
- * **振付の終わりを、曲のこの秒へ合わせる。** 頭は動かさない。
- *
- * バーの右の取っ手を掴んで引く操作がこれ。頭（`atSeconds`）を軸に、
- * 最後の拍が `endSeconds` に来るような1拍の長さを出して伸縮させる。
- *
- * ⚠️ **速さには上限と下限がある**（`MIN_BPM` 〜 `MAX_BPM`）。
- * 縮めすぎ・伸ばしすぎは、そこで止まる — 止めないと1拍が0秒になり、
- * **全シーンの秒が同じ値に潰れる**。
- *
- * @param lastBeat いちばん後ろのシーンの拍。0以下なら伸縮しようがない
- */
-export function stretchToEnd(
+/* ────────────────────────────────────────────────────────────
+   区切り（曲の変わり目）・2026-09-15
+
+   ショーケースは1本の中で曲が変わる。振付はカウントで組むので
+   **拍の列は切れない** — 切れるのは載せ方の側だけ。
+
+     区切りを増やす  splitAt         （秒は1つも動かない）
+     区切りを外す    mergeAt
+     その区間の速さ  restretchAt / stretchSectionToEnd
+     その区間の頭    moveSectionTo
+
+   ⚠️ **区間どうしを越境させない。** ある区間の最後の拍が次の区切りの秒を
+   追い越すと、拍に対する秒が**そこで逆走する**。シーンは `sortScenes` が
+   `timeSeconds` で並べているので、**隊形の並びそのものが入れ替わる**。
+   警告では済まないので、操作の側で止める（速さの方が頭打ちになる）。
+   ──────────────────────────────────────────────────────────── */
+
+/** その拍を含む区間の番号 */
+export function sectionIndexAtBeat(
   placements: readonly Placement[],
+  beat: number,
+): number {
+  const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
+  let found = 0;
+  for (let i = 0; i < list.length; i += 1) {
+    if (list[i].fromBeat <= beat) found = i;
+    else break;
+  }
+  return found;
+}
+
+/**
+ * その区間が終わる拍。次の区切りがあればそこ、無ければ振付の最後。
+ *
+ * @param lastBeat いちばん後ろのシーンの拍
+ */
+export function sectionEndBeat(
+  placements: readonly Placement[],
+  index: number,
+  lastBeat: number,
+): number {
+  const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
+  const next = list[index + 1];
+  if (next) return next.fromBeat;
+
+  const from = list[index]?.fromBeat ?? 0;
+  // 最後のシーンより後ろに区切りを置くと、拍数は0（伸縮しようがない）
+  return Number.isFinite(lastBeat) ? Math.max(from, lastBeat) : from;
+}
+
+/**
+ * その区間の最後の拍が鳴る秒。
+ *
+ * ⚠️ **`secondsAtBeat` を通さない。** あちらは区間の境目の拍を**次の区間**で
+ * 写す（`fromBeat <= beat` で後ろを採る）ので、境目では常に次の区切りの秒を
+ * 返してしまう。ここが知りたいのは「この区間自身の速さで測ると、どこまで
+ * 伸びているか」の方。
+ */
+export function sectionEndSeconds(
+  placements: readonly Placement[],
+  index: number,
+  lastBeat: number,
+): number {
+  const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
+  const current = list[index];
+  if (!current) return 0;
+
+  const beats = Math.max(
+    0,
+    sectionEndBeat(list, index, lastBeat) - current.fromBeat,
+  );
+  return current.atSeconds + beats * current.secondsPerBeat;
+}
+
+/**
+ * その区間で許される1拍の最大の長さ。**次の区切りへ食い込ませないため。**
+ *
+ * 最後の区間には次が無いので上限は無い（`null`）。拍が1つも入っていない
+ * 区間も、どんな速さでも食い込まないので `null`。
+ */
+export function maxSecondsPerBeatAt(
+  placements: readonly Placement[],
+  index: number,
+  lastBeat: number,
+): number | null {
+  const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
+  const current = list[index];
+  const next = list[index + 1];
+  if (!current || !next) return null;
+
+  const beats = sectionEndBeat(list, index, lastBeat) - current.fromBeat;
+  if (beats <= 0) return null;
+  return (next.atSeconds - current.atSeconds) / beats;
+}
+
+/** 速さを、上限・下限と「次の区切りへ食い込まない所」の両方で丸める */
+function fitSecondsPerBeat(
+  list: readonly Placement[],
+  index: number,
+  lastBeat: number,
+  wanted: number,
+): number {
+  /* 速さの形（BPM）に直してから丸める。秒のまま丸めると、上限・下限の
+     すぐ内側で「押しても動かない」帯ができる */
+  const bounded = 60 / clampBpm(60 / Math.max(1e-6, wanted));
+  const max = maxSecondsPerBeatAt(list, index, lastBeat);
+  if (max !== null && max > 0 && bounded > max) return max;
+  return bounded;
+}
+
+/**
+ * **区切りを増やす。置いた瞬間、秒は1つも動かない。**
+ *
+ * 新しい区間の頭の秒は「いまの式で出した秒」そのもの、1拍の長さは直前と
+ * 同じ。代入すると `at + (b − from) × spb` が前後で完全に一致するので、
+ * **どのシーンも動かない**。動かすのはこの後、その区間だけ速さや頭を
+ * 引いたとき。1曲目には波及しない。
+ *
+ * ⚠️ **ここでは丸めない。** `moveSectionTo` が丸めるのは人が引いた秒を
+ * 受けるから。こちらは既にある値から掛けて足しただけで、丸めると
+ * 「置くだけでは動かない」という約束が最大0.5ミリ秒ぶん崩れる。
+ */
+export function splitAt(
+  placements: readonly Placement[],
+  beat: number,
+): Placement[] {
+  const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
+  if (!Number.isFinite(beat)) return [...list];
+  // 先頭は必ず拍0から始まっている。そこは既に区切り
+  if (beat <= 0) return [...list];
+  // 同じ拍に2つ置かない（`normalizePlacements` と同じ理由）
+  if (list.some((item) => sameBeat(item.fromBeat, beat))) return [...list];
+
+  const index = sectionIndexAtBeat(list, beat);
+  const added: Placement = {
+    fromBeat: beat,
+    atSeconds: secondsAtBeat(list, beat),
+    secondsPerBeat: list[index].secondsPerBeat,
+  };
+  return [...list.slice(0, index + 1), added, ...list.slice(index + 1)];
+}
+
+/**
+ * **区切りを外す。** 後ろの区間は手前の式に吸収されるので、**そこの秒は
+ * 動く**（それが「2つを1つの曲に戻す」ということ）。
+ *
+ * 先頭（拍0）は外せない。外すと写せない拍ができる。
+ *
+ * ⚠️ 吸収した結果、手前の区間が**その次の区切りへ食い込む**ことがある。
+ * そのときだけ、手前の速さを食い込まない所まで詰める。
+ */
+export function mergeAt(
+  placements: readonly Placement[],
+  index: number,
+  lastBeat: number,
+): Placement[] {
+  const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
+  if (!Number.isInteger(index) || index <= 0 || index >= list.length) {
+    return [...list];
+  }
+
+  const merged = [...list.slice(0, index), ...list.slice(index + 1)];
+  return restretchAt(
+    merged,
+    index - 1,
+    merged[index - 1].secondsPerBeat,
+    lastBeat,
+  );
+}
+
+/** 区間に名前を付ける。空白だけなら名前を外す */
+export function renameSection(
+  placements: readonly Placement[],
+  index: number,
+  label: string,
+): Placement[] {
+  const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
+  if (!list[index]) return [...list];
+
+  const next = normalizeLabel(label);
+  return list.map((item, i) => {
+    if (i !== index) return item;
+    const renamed: Placement = {
+      fromBeat: item.fromBeat,
+      atSeconds: item.atSeconds,
+      secondsPerBeat: item.secondsPerBeat,
+    };
+    return next === null ? renamed : { ...renamed, label: next };
+  });
+}
+
+/**
+ * **その区間だけ速さを変える。** 他の区間の頭の秒は動かさない。
+ *
+ * 次の区切りの `atSeconds` は「次の曲が鳴り始める秒」＝**曲の側の事実**な
+ * ので、手前の速さをいじって動いてはいけない。動かすと、直した覚えの無い
+ * 2曲目が音からずれる。代わりに**速さの方が止まる**。
+ */
+export function restretchAt(
+  placements: readonly Placement[],
+  index: number,
+  nextSecondsPerBeat: number,
+  lastBeat: number,
+): Placement[] {
+  const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
+  if (!list[index]) return [...list];
+  if (!Number.isFinite(nextSecondsPerBeat) || nextSecondsPerBeat <= 0) {
+    return [...list];
+  }
+
+  const fitted = fitSecondsPerBeat(list, index, lastBeat, nextSecondsPerBeat);
+  return list.map((item, i) =>
+    i === index ? { ...item, secondsPerBeat: fitted } : item,
+  );
+}
+
+/**
+ * **その区間の頭を、曲のこの秒へ置く。** 速さと、他の区間は動かさない。
+ *
+ * 動ける範囲は両隣で決まる。
+ *   手前 … 手前の区間の最後の拍が鳴り終わる秒（そこより前へは行けない）
+ *   後ろ … 自分の最後の拍が、次の区切りに届く所まで
+ *
+ * 先頭の区間は負の秒へ置けない（曲が始まる前に振付は始まらない）。
+ */
+export function moveSectionTo(
+  placements: readonly Placement[],
+  index: number,
+  atSeconds: number,
+  lastBeat: number,
+): Placement[] {
+  const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
+  const current = list[index];
+  if (!current || !Number.isFinite(atSeconds)) return [...list];
+
+  const lower = index > 0 ? sectionEndSeconds(list, index - 1, lastBeat) : 0;
+
+  const next = list[index + 1];
+  const beats = Math.max(
+    0,
+    sectionEndBeat(list, index, lastBeat) - current.fromBeat,
+  );
+  const upper = next
+    ? next.atSeconds - beats * current.secondsPerBeat
+    : Number.POSITIVE_INFINITY;
+
+  const clamped = Math.min(Math.max(atSeconds, lower), Math.max(lower, upper));
+  return list.map((item, i) =>
+    i === index ? { ...item, atSeconds: roundSeconds(clamped) } : item,
+  );
+}
+
+/**
+ * **その区間の終わりを、この秒へ合わせる。** 頭は動かさない。
+ *
+ * バーの右の取っ手を引く操作。区間の最後の拍が `endSeconds` に来るような
+ * 1拍の長さを出して伸縮させる。上限・下限と、次の区切りで止まる。
+ */
+export function stretchSectionToEnd(
+  placements: readonly Placement[],
+  index: number,
   lastBeat: number,
   endSeconds: number,
 ): Placement[] {
   const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
-  if (!Number.isFinite(lastBeat) || lastBeat <= 0) return [...list];
-  if (!Number.isFinite(endSeconds)) return [...list];
+  const current = list[index];
+  if (!current || !Number.isFinite(endSeconds)) return [...list];
 
-  const from = list[0].atSeconds;
-  const wanted = (endSeconds - from) / lastBeat;
-  /* 速さの形に直してから丸める。秒のまま丸めると、上限・下限の
-     すぐ内側で「押しても動かない」帯ができる */
-  const nextSecondsPerBeat = 60 / clampBpm(60 / Math.max(1e-6, wanted));
-  return restretch(list, nextSecondsPerBeat);
+  const beats = sectionEndBeat(list, index, lastBeat) - current.fromBeat;
+  // 拍が1つも入っていない区間は伸縮しようがない
+  if (beats <= 0) return [...list];
+
+  /* **頭より左へ引いても潰さない。** 取っ手を頭より前まで引くのは
+     「できるだけ短く」という手つきなので、いちばん速い所で止める。
+
+     ⚠️ ここで底を入れるのは、`restretchAt` が 0以下の速さを
+     **何もしない**で弾くため。あちらは「速さ」を受け取る口で、0 は
+     打ち間違いとして無視するのが正しい。こちらは「引いた位置」を
+     受け取る口なので、同じ値でも意味が違う。 */
+  const wanted = (endSeconds - current.atSeconds) / beats;
+  return restretchAt(list, index, Math.max(1e-6, wanted), lastBeat);
+}
+
+/** 画面へ出すための、区間ひとつぶんのまとめ */
+export type Section = {
+  index: number;
+  /** 始まりの拍 */
+  fromBeat: number;
+  /** 終わりの拍（次の区切り、無ければ振付の最後） */
+  toBeat: number;
+  /** 始まりの秒（＝その曲が鳴り始める秒） */
+  fromSeconds: number;
+  /** 最後の拍が鳴る秒。**次の区切りより手前で終わることがある**（間奏） */
+  toSeconds: number;
+  secondsPerBeat: number;
+  bpm: number;
+  label?: string;
+};
+
+/**
+ * 区間の一覧。**時間軸へバーを描く側と、一覧に並べる側が同じものを読む。**
+ *
+ * 各画面で条件を書き直すと、必ずどこかが取り残される
+ * （`.claude/rules/state.md` 6節）。
+ */
+export function sections(
+  placements: readonly Placement[],
+  lastBeat: number,
+): Section[] {
+  const list = placements.length > 0 ? placements : DEFAULT_PLACEMENTS;
+  return list.map((item, index) => {
+    const section: Section = {
+      index,
+      fromBeat: item.fromBeat,
+      toBeat: sectionEndBeat(list, index, lastBeat),
+      fromSeconds: item.atSeconds,
+      toSeconds: sectionEndSeconds(list, index, lastBeat),
+      secondsPerBeat: item.secondsPerBeat,
+      bpm: clampBpm(60 / item.secondsPerBeat),
+    };
+    return item.label === undefined
+      ? section
+      : { ...section, label: item.label };
+  });
 }

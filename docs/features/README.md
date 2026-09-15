@@ -26,4 +26,5 @@
 触った機能の分だけ、[_template.md](_template.md) の型で書く
 （先に全部そろえると、触っていないファイルから先に古くなる）。
 
-いま実物があるのは [canvas.md](canvas.md) だけ。これが書き方の見本。
+いま実物があるのは [canvas.md](canvas.md) と [music.md](music.md) の2つ。
+前者が書き方の見本。

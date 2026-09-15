@@ -13,7 +13,8 @@ import {
   shouldDrawBeatLines,
 } from "@/features/music/lib/counts";
 import { peakBetween, type Waveform } from "@/features/music/lib/waveformPeaks";
-import type { BeatOriginSeconds } from "@/features/music/lib/placement";
+import { beatWindows } from "@/features/music/lib/beatWindows";
+import type { Placement } from "@/features/music/lib/placement";
 
 type Props = {
   /** 曲の山の列。読み込み中や曲が無いときは null */
@@ -29,12 +30,19 @@ type Props = {
   height: number;
   /** ここより手前を「再生済み」の色で塗る。塗らないなら null */
   playheadSeconds: MotionValue<number> | null;
-  /** 曲が無いときに敷く拍のグリッド。曲があるなら null */
-  bpm: number | null;
-  /** 1拍目が【軸の秒＝作品の時間の】何秒目か。
-   * 出どころは `beatOriginSeconds(placements)` **の1つだけ**
-   * （素の number を受けないので、`musicOffsetSeconds` は型で弾かれる） */
-  originSeconds: BeatOriginSeconds;
+  /**
+   * 拍のグリッドの物差し。**速さと原点の両方がここから出る。**
+   * 敷かないなら null。
+   *
+   * ⚠️ **速さ（BPM）と原点を別々に受けない**（2026-09-15）。曲が変わる
+   * 作品では両方が区切りごとに変わるので、1組で受けると2曲目から
+   * 縞も拍線もずれる。しかも等間隔のまま出るので**画面では読めない**。
+   * 区間ごとに割るのは `beatWindows` の仕事。
+   *
+   * 参照が毎回変わると Canvas を描き直し続けるので、**ストアから
+   * そのまま渡す**（`sections()` の戻り値のような作り直す配列を渡さない）。
+   */
+  placements: readonly Placement[] | null;
   /** **軸の秒 → 曲の秒**の差。`musicOffsetSeconds` そのもの。
    * 波形は曲の頭から復号してあるので、引くときだけこれを足す。
    * **拍の側には一切効かせない**(拍は作品の時間で数える) */
@@ -84,8 +92,7 @@ export function TimelineWaveform({
   width,
   height,
   playheadSeconds,
-  bpm,
-  originSeconds,
+  placements,
   songOffsetSeconds = 0,
   beatsPerBar = null,
   showSetNumbers = false,
@@ -115,80 +122,89 @@ export function TimelineWaveform({
     const ink = parseInk(styles.getPropertyValue("--texture-ink"));
 
     /**
-     * 拍線。曲があってもこれだけは引く。
-     *
-     * BPMが入っているなら、波形と拍を重ねて見られる方が良い
-     * (どの山が何拍目に当たるかが読める)。潰れて灰色の面になる
-     * 細かさでは描かない。
-     */
-    const drawBeatLines = (
-      context: CanvasRenderingContext2D,
-      { fromSeconds, toSeconds }: { fromSeconds: number; toSeconds: number },
-      strength: number,
-    ) => {
-      if (!bpm || !shouldDrawBeatLines(bpm, pxPerSecond)) return;
-      const x = (seconds: number) => (seconds - fromSeconds) * pxPerSecond;
-
-      for (const beat of beatTimesInWindow(
-        bpm,
-        Math.max(0, fromSeconds),
-        toSeconds,
-        originSeconds,
-      )) {
-        const isBar =
-          beatsPerBar !== null &&
-          isDownbeat(beat, bpm, originSeconds, beatsPerBar);
-        context.fillStyle = `rgba(${ink}, ${(isBar ? 0.13 : 0.05) * strength})`;
-        context.fillRect(
-          Math.round(x(beat)),
-          isBar ? 0 : height * 0.25,
-          1,
-          isBar ? height : height * 0.5,
-        );
-      }
-    };
-
-    /**
      * カウントの地。8カウントごとの縞・拍線・セット番号の3層。
      *
      * ■ 縞がいちばん大事
      * これが無いと無地の帯を指で払うことになり、【どれだけ動いたか】が
      * 分からない。波形が担っていた手がかりの役目を、ここが引き継ぐ。
+     *
+     * ■ 区切りごとに引き直す（2026-09-15）
+     * 曲が変わると「1拍が何秒か」と「1拍目がどこか」の両方が変わる。
+     * 窓を `beatWindows` で割り、区間ごとにその物差しで描く。
+     * **縞は窓の内側で切る** — 切らないと次の曲の地へはみ出す。
      */
     const drawCounts = (
       context: CanvasRenderingContext2D,
-      { fromSeconds, toSeconds }: { fromSeconds: number; toSeconds: number },
+      view: { fromSeconds: number; toSeconds: number },
       /** 濃さ。波形の上に敷くときは薄くする（主役は波形） */
       strength: number,
     ) => {
-      if (!bpm) return;
-      const setSeconds = secondsPerBeat(bpm) * BEATS_PER_SET;
-      const x = (seconds: number) => (seconds - fromSeconds) * pxPerSecond;
+      if (!placements) return;
+      const x = (seconds: number) => (seconds - view.fromSeconds) * pxPerSecond;
 
-      // 1. 8カウントごとの縞。交互に薄く塗る
-      const firstSet = Math.floor(
-        Math.max(0, fromSeconds - originSeconds) / setSeconds,
-      );
-      const lastSet = Math.ceil((toSeconds - originSeconds) / setSeconds);
-      context.fillStyle = `rgba(${ink}, ${0.03 * strength})`;
-      for (let set = firstSet; set <= lastSet; set += 1) {
-        if (set % 2 !== 0) continue;
-        const start = originSeconds + set * setSeconds;
-        context.fillRect(x(start), 0, setSeconds * pxPerSecond, height);
-      }
+      for (const band of beatWindows(
+        placements,
+        view.fromSeconds,
+        view.toSeconds,
+      )) {
+        const setSeconds = secondsPerBeat(band.bpm) * BEATS_PER_SET;
+        const firstSet = Math.floor(
+          Math.max(0, band.fromSeconds - band.originSeconds) / setSeconds,
+        );
+        const lastSet = Math.ceil(
+          (band.toSeconds - band.originSeconds) / setSeconds,
+        );
+        /* 通算のセット番号で偶奇を決める。区間ごとに 0 から数えると、
+           区切りをまたぐ所で縞の明暗が反転して段差に見える */
+        const setOffset = Math.floor(band.fromBeat / BEATS_PER_SET);
 
-      // 2. 拍線
-      drawBeatLines(context, { fromSeconds, toSeconds }, strength);
+        // 1. 8カウントごとの縞。交互に薄く塗る
+        context.fillStyle = `rgba(${ink}, ${0.03 * strength})`;
+        for (let set = firstSet; set <= lastSet; set += 1) {
+          if ((setOffset + set) % 2 !== 0) continue;
+          const start = band.originSeconds + set * setSeconds;
+          const left = Math.max(start, band.fromSeconds);
+          const right = Math.min(start + setSeconds, band.toSeconds);
+          if (right <= left) continue;
+          context.fillRect(x(left), 0, (right - left) * pxPerSecond, height);
+        }
 
-      // 3. セット番号。小節番号ではなく、稽古場で数える単位の番号
-      if (showSetNumbers && setSeconds * pxPerSecond >= 34) {
-        context.fillStyle = `rgba(${ink}, ${0.34 * strength})`;
-        context.font = '9px ui-monospace, SFMono-Regular, Menlo, monospace';
-        context.textBaseline = "top";
-        for (let set = Math.max(0, firstSet); set <= lastSet; set += 1) {
-          const start = originSeconds + set * setSeconds;
-          if (start < 0) continue;
-          context.fillText(String(set + 1), Math.round(x(start)) + 3, 3);
+        // 2. 拍線。潰れて灰色の面になる細かさでは描かない
+        if (shouldDrawBeatLines(band.bpm, pxPerSecond)) {
+          for (const beat of beatTimesInWindow(
+            band.bpm,
+            Math.max(0, band.fromSeconds),
+            band.toSeconds,
+            band.originSeconds,
+          )) {
+            const isBar =
+              beatsPerBar !== null &&
+              isDownbeat(beat, band.bpm, band.originSeconds, beatsPerBar);
+            context.fillStyle = `rgba(${ink}, ${(isBar ? 0.13 : 0.05) * strength})`;
+            context.fillRect(
+              Math.round(x(beat)),
+              isBar ? 0 : height * 0.25,
+              1,
+              isBar ? height : height * 0.5,
+            );
+          }
+        }
+
+        // 3. セット番号。小節番号ではなく、稽古場で数える単位の番号
+        if (showSetNumbers && setSeconds * pxPerSecond >= 34) {
+          context.fillStyle = `rgba(${ink}, ${0.34 * strength})`;
+          context.font = '9px ui-monospace, SFMono-Regular, Menlo, monospace';
+          context.textBaseline = "top";
+          for (let set = Math.max(0, firstSet); set <= lastSet; set += 1) {
+            const start = band.originSeconds + set * setSeconds;
+            if (start < 0 || start < band.fromSeconds) continue;
+            if (start >= band.toSeconds) continue;
+            context.fillText(
+              String(setOffset + set + 1),
+              Math.round(x(start)) + 3,
+              3,
+            );
+          }
         }
       }
 
@@ -215,7 +231,7 @@ export function TimelineWaveform({
       // 曲が無いときはカウントの地。波形の代わりに置くもので、
       // 「機能が欠けた画面」ではなく「カウントで組む画面」にする
       if (!waveform) {
-        if (bpm) drawCounts(context, window, 1);
+        drawCounts(context, window, 1);
         return;
       }
 
@@ -223,7 +239,7 @@ export function TimelineWaveform({
          振付はカウントで組むので、波形の上でも「いま何セット目か」が
          読めなければならない。ただし主役は波形なので薄くして、
          波形より先に(下に)描く */
-      if (bpm) drawCounts(context, window, 0.5);
+      drawCounts(context, window, 0.5);
 
       const center = height / 2;
       // 上下いっぱいまで振らせない。帯の縁で頭打ちになると、
@@ -265,8 +281,7 @@ export function TimelineWaveform({
     width,
     height,
     playheadSeconds,
-    bpm,
-    originSeconds,
+    placements,
     songOffsetSeconds,
     beatsPerBar,
     showSetNumbers,

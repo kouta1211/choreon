@@ -21,8 +21,19 @@ const PRESETS = [90, 110, 128, 140];
  *
  * 曲が入っている間は出さない。2つの拍が同時に鳴っても、どちらに
  * 合わせればよいのか分からなくなる。
+ *
+ * ■ 速さの欄を引っ込めることがある（2026-09-15）
+ * 曲の区切りを2つ以上置くと、速さは**区間ごと**になる。そこへこの
+ * スライダーを残すと、**同じことを言う口が2つ**できて、片方が必ず
+ * 古くなる（`.claude/rules/state.md` 7節）。区切りが2つ以上あるときは
+ * 一覧の側だけが速さを持ち、ここには鳴らすスイッチだけが残る。
  */
-export function MetronomeControls() {
+type Props = {
+  /** 速さの欄を出すか。**区切りが2つ以上あるときは出さない** */
+  showSpeed?: boolean;
+};
+
+export function MetronomeControls({ showSpeed = true }: Props) {
   const t = useT();
   const { bpm, setBpm } = useBpm();
   /* メトロノームは作品の設定になった(2026-08-18)。端末ごとではない */
@@ -46,6 +57,7 @@ export function MetronomeControls() {
           {t.music.metronome}
         </PressableButton>
 
+        {showSpeed && (
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <Slider
             aria-label="BPM"
@@ -61,9 +73,11 @@ export function MetronomeControls() {
             <span className="ml-0.5 text-caption text-fg-muted">BPM</span>
           </span>
         </div>
+        )}
       </div>
 
       {/* 数字だけだと、速いのか遅いのかの見当が付かない。よく使う値を置く */}
+      {showSpeed && (
       <div className="flex flex-wrap items-center gap-1.5">
         {PRESETS.map((preset) => (
           <PressableButton
@@ -81,6 +95,7 @@ export function MetronomeControls() {
           </PressableButton>
         ))}
       </div>
+      )}
     </div>
   );
 }

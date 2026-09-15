@@ -26,6 +26,7 @@ import { useMetronome } from "@/features/music/hooks/useMetronome";
 import { playbackStartIndex } from "@/features/music/lib/playbackStart";
 import { countLengthLabel } from "@/features/music/lib/counts";
 import { useBpm } from "@/features/music/hooks/useBpm";
+import { useActiveBpm } from "@/features/music/hooks/useActiveBpm";
 import { usePlaybackToggle } from "@/features/music/hooks/usePlaybackToggle";
 import { useToastOffset } from "@/components/hooks/useToastOffset";
 import { SceneListSheet } from "@/components/organisms/SceneListSheet";
@@ -87,7 +88,10 @@ export function SceneDock({ project }: Props) {
   // 速さ・拍子・拍の原点は【storeから読む】。props の project は
   // ページが取ってきたときのままで、シートで変えても更新されない。
   // props を読んでいると、鳴っているメトロノームだけが古い速さのままになる
-  const { bpm, beatsPerBar } = useBpm();
+  const { beatsPerBar } = useBpm();
+  /* **鳴らす速さは、いま居る区切りのもの**（2026-09-15）。作品に1つの
+     `bpm` を読むと、曲が変わる作品で2曲目もクリックが1曲目の速さになる */
+  const bpm = useActiveBpm();
   /* メトロノームは作品の設定になった(2026-08-18)。端末ごとではない */
   const { isMetronomeEnabled, toggleMetronome } = useMetronomeSetting();
   const playbackStartSceneId = useUIStore(

@@ -803,6 +803,19 @@ export const en = {
     stacked: (from: number, to: number) =>
       `Scenes ${from}–${to} sit on top of each other. Tap to spread them out and pick one.`,
     scenesShort: "scenes",
+    /* Song sections (2026-09-15). A showcase runs through several songs;
+       the beats never break, only the way they are laid onto the audio */
+    sectionsTitle: "Song sections",
+    sectionsNote:
+      "Use this when the song changes partway through the showcase. Adding a section moves nothing — afterwards you can set the tempo and the start of that part on its own.",
+    sectionDefaultName: (order: number) => `Song ${order}`,
+    sectionName: "Song name",
+    sectionStart: (clock: string) => `from ${clock}`,
+    sectionSplit: "Start a new song here",
+    sectionSplitNote: "Splits at the nearest count of 8 to the selected scene.",
+    sectionNeedScene: "Select a scene to choose where to split.",
+    sectionRemove: "Remove this section",
+    sectionBpm: "Tempo of this part (BPM)",
   },
 
   dancer: {

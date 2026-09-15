@@ -18,6 +18,8 @@ type Props = {
   /** 引き終わったとき。**離した瞬間に1回だけ** */
   onMoveTo: (fromSeconds: number) => void;
   onStretchTo: (toSeconds: number) => void;
+  /** 区間の名前（曲名）。付いていれば時刻の手前に出す */
+  label?: string | undefined;
 };
 
 /** 右の取っ手の幅。指でも掴める大きさ */
@@ -52,6 +54,7 @@ export function TimelineSpanLayer({
   heightPx,
   onMoveTo,
   onStretchTo,
+  label,
 }: Props) {
   const t = useT();
   /* 引いている最中の区間。離すまで呼び出し側へは渡さない */
@@ -126,6 +129,7 @@ export function TimelineSpanLayer({
           }`}
         >
           <span className="pointer-events-none absolute left-1.5 top-1/2 -translate-y-1/2 truncate font-mono text-mono-s text-fg-sub">
+            {label ? `${label} · ` : ""}
             {t.music.placeSpan(formatClock(shownFrom), formatClock(shownTo))}
           </span>
         </button>

@@ -3,7 +3,7 @@ import { MAX_BPM, MIN_BPM } from "@/features/music/lib/metronomePreference";
 import {
   beatAtSeconds,
   beatsForTimes,
-  bpmOf,
+  bpmAt,
   durationBeats,
   durationSeconds,
   normalizePlacements,
@@ -17,7 +17,16 @@ import {
   foldLegacyOffset,
   placedSpan,
   reanchor,
-  stretchToEnd,
+  MAX_SECTION_LABEL_LENGTH,
+  maxSecondsPerBeatAt,
+  mergeAt,
+  moveSectionTo,
+  renameSection,
+  restretchAt,
+  sectionEndSeconds,
+  sections,
+  splitAt,
+  stretchSectionToEnd,
 } from "./placement";
 
 /**
@@ -162,7 +171,7 @@ describe("壊れた載せ方を通さない（門番）", () => {
   });
 
   it("何も取れなければ、渡された速さへ落ちる", () => {
-    expect(bpmOf(normalizePlacements(null, 140))).toBeCloseTo(140, 6);
+    expect(bpmAt(normalizePlacements(null, 140), 0)).toBeCloseTo(140, 6);
   });
 });
 
@@ -406,46 +415,296 @@ describe("foldLegacyOffset", () => {
   });
 });
 
-describe("stretchToEnd", () => {
+describe("区間の終わりを合わせる（stretchSectionToEnd）", () => {
   const placed: Placement[] = [
     { fromBeat: 0, atSeconds: 4, secondsPerBeat: 0.5 },
   ];
 
   it("終わりを合わせると、1拍の長さがそこから決まる", () => {
     // 16拍を 4秒 → 12秒 に載せる。8秒 ÷ 16拍 = 0.5秒/拍
-    expect(stretchToEnd(placed, 16, 12)[0].secondsPerBeat).toBeCloseTo(0.5);
+    expect(stretchSectionToEnd(placed, 0, 16, 12)[0].secondsPerBeat).toBeCloseTo(0.5);
     // 伸ばす: 16拍を 4 → 20秒。16秒 ÷ 16拍 = 1秒/拍
-    expect(stretchToEnd(placed, 16, 20)[0].secondsPerBeat).toBeCloseTo(1);
+    expect(stretchSectionToEnd(placed, 0, 16, 20)[0].secondsPerBeat).toBeCloseTo(1);
   });
 
   it("頭は動かない", () => {
-    expect(stretchToEnd(placed, 16, 20)[0].atSeconds).toBe(4);
+    expect(stretchSectionToEnd(placed, 0, 16, 20)[0].atSeconds).toBe(4);
   });
 
   /* **拍は動かない。** 伸ばしても、20拍目は20拍目のまま */
   it("伸ばしても、シーンの拍は変わらない", () => {
-    const next = stretchToEnd(placed, 16, 20);
+    const next = stretchSectionToEnd(placed, 0, 16, 20);
     expect(beatAtSeconds(next, secondsAtBeat(next, 13))).toBeCloseTo(13);
   });
 
   /* **潰させない。** 1拍が0秒になると、全シーンの秒が同じ値へ潰れる */
   it("縮めすぎは、いちばん速い所で止まる", () => {
     // 16拍を 0.01秒 に押し込もうとする
-    const next = stretchToEnd(placed, 16, 4.01);
+    const next = stretchSectionToEnd(placed, 0, 16, 4.01);
     expect(next[0].secondsPerBeat).toBeCloseTo(60 / MAX_BPM);
   });
 
   it("伸ばしすぎは、いちばん遅い所で止まる", () => {
-    const next = stretchToEnd(placed, 16, 4000);
+    const next = stretchSectionToEnd(placed, 0, 16, 4000);
     expect(next[0].secondsPerBeat).toBeCloseTo(60 / MIN_BPM);
   });
 
   it("頭より前へ引いても、潰れずに止まる", () => {
-    const next = stretchToEnd(placed, 16, 0);
+    const next = stretchSectionToEnd(placed, 0, 16, 0);
     expect(next[0].secondsPerBeat).toBeCloseTo(60 / MAX_BPM);
   });
 
   it("拍が1つも無ければ、何も変えない", () => {
-    expect(stretchToEnd(placed, 0, 99)).toEqual(placed);
+    expect(stretchSectionToEnd(placed, 0, 0, 99)).toEqual(placed);
+  });
+});
+
+/* ────────────────────────────────────────────────────────────
+   区切り（曲の変わり目）・2026-09-15
+
+   ショーケースは1本の中で曲が変わる。振付はカウントで組むので拍の列は
+   切れない — 切れるのは載せ方の側だけ。
+   ──────────────────────────────────────────────────────────── */
+
+/** 2曲入り。1曲目は BPM120 が 0秒から、2曲目は BPM150 が 40秒から */
+const TWO_SONGS: Placement[] = [
+  { fromBeat: 0, atSeconds: 0, secondsPerBeat: 0.5, label: "1曲目" },
+  { fromBeat: 64, atSeconds: 40, secondsPerBeat: 0.4, label: "2曲目" },
+];
+
+/**
+ * **拍が進めば秒も進む**ことを確かめる。
+ *
+ * ここが破れると、シーンの `timeSeconds` が境目で逆走する。シーンは
+ * `sortScenes` が `timeSeconds` で並べるので、**隊形の順番そのものが
+ * 入れ替わる** — 画面は普通に動いて見えるのに、振付が別物になる。
+ * だから越境は「警告」では済まず、操作の側で止めている。
+ */
+function expectMonotonic(placements: Placement[], lastBeat: number) {
+  let previous = Number.NEGATIVE_INFINITY;
+  for (let beat = 0; beat <= lastBeat; beat += 0.25) {
+    const seconds = secondsAtBeat(placements, beat);
+    expect(seconds).toBeGreaterThanOrEqual(previous);
+    previous = seconds;
+  }
+}
+
+describe("区切りを増やす（splitAt）", () => {
+  const one: Placement[] = [{ fromBeat: 0, atSeconds: 3, secondsPerBeat: 0.5 }];
+
+  /* **これがこの機能の芯。** 置いただけで隊形が動くなら、
+     区切りを置くこと自体が怖くなって使われない */
+  it("置いても、どの拍の秒も1つも動かない", () => {
+    const next = splitAt(one, 20);
+    for (const beat of [0, 8, 19.5, 20, 20.25, 64, 128]) {
+      expect(secondsAtBeat(next, beat)).toBe(secondsAtBeat(one, beat));
+    }
+  });
+
+  it("区間が2つになり、新しい区間の速さは直前と同じ", () => {
+    const next = splitAt(one, 20);
+    expect(next).toHaveLength(2);
+    expect(next[1]).toEqual({
+      fromBeat: 20,
+      atSeconds: 13,
+      secondsPerBeat: 0.5,
+    });
+  });
+
+  /* 区切りを置く意味がここにある。**後ろだけ速さを変えられる** */
+  it("後ろの速さを変えても、手前の秒は動かない", () => {
+    const next = restretchAt(splitAt(one, 20), 1, 0.4, 200);
+    expect(secondsAtBeat(next, 8)).toBe(secondsAtBeat(one, 8));
+    expect(secondsAtBeat(next, 20)).toBe(13);
+    // 後ろだけが詰まる。40拍目は 13 + 20×0.4 = 21秒
+    expect(secondsAtBeat(next, 40)).toBeCloseTo(21);
+  });
+
+  it("拍0・負の拍・既に区切りのある拍では増えない", () => {
+    expect(splitAt(one, 0)).toEqual(one);
+    expect(splitAt(one, -4)).toEqual(one);
+    expect(splitAt(one, Number.NaN)).toEqual(one);
+    expect(splitAt(splitAt(one, 20), 20)).toHaveLength(2);
+  });
+});
+
+describe("区切りを外す（mergeAt）", () => {
+  it("外すと1つになり、後ろは手前の式で引き直される", () => {
+    const next = mergeAt(TWO_SONGS, 1, 128);
+    expect(next).toHaveLength(1);
+    // 2曲目の頭（64拍）は 40秒だった → 手前の 0.5秒/拍 で 32秒へ戻る
+    expect(secondsAtBeat(next, 64)).toBe(32);
+  });
+
+  it("先頭は外せない（写せない拍ができる）", () => {
+    expect(mergeAt(TWO_SONGS, 0, 128)).toEqual(TWO_SONGS);
+    expect(mergeAt(TWO_SONGS, 9, 128)).toEqual(TWO_SONGS);
+  });
+
+  /* 吸収した結果、手前が【その次の区切り】へ食い込むことがある */
+  it("吸収して食い込むなら、手前の速さが詰む", () => {
+    const three: Placement[] = [
+      { fromBeat: 0, atSeconds: 0, secondsPerBeat: 1 },
+      { fromBeat: 8, atSeconds: 8, secondsPerBeat: 0.5 },
+      { fromBeat: 24, atSeconds: 20, secondsPerBeat: 0.5 },
+    ];
+    // 真ん中を外すと 0〜24拍を 1秒/拍 = 24秒 かかり、20秒の区切りを越える
+    const next = mergeAt(three, 1, 64);
+    expect(next).toHaveLength(2);
+    expect(sectionEndSeconds(next, 0, 64)).toBeCloseTo(20);
+    expectMonotonic(next, 64);
+  });
+});
+
+describe("区間ごとの速さ（restretchAt）", () => {
+  it("その区間だけ変わり、次の区切りの頭は動かない", () => {
+    const next = restretchAt(TWO_SONGS, 0, 0.45, 128);
+    expect(next[0].secondsPerBeat).toBeCloseTo(0.45);
+    // 2曲目は速さも頭もそのまま。**頭は「曲が鳴り始める秒」＝曲の側の事実**
+    expect(next[1].secondsPerBeat).toBe(0.4);
+    expect(next[1].atSeconds).toBe(40);
+  });
+
+  /* **越境させない。** 越えると拍に対する秒が逆走し、
+     `sortScenes` が `timeSeconds` で並べるのでシーンの並びが崩れる */
+  it("次の区切りへ食い込む手前で止まる", () => {
+    const next = restretchAt(TWO_SONGS, 0, 5, 128);
+    // 64拍を 40秒までに収める上限 = 0.625秒/拍
+    expect(next[0].secondsPerBeat).toBeCloseTo(0.625);
+    expect(sectionEndSeconds(next, 0, 128)).toBeCloseTo(40);
+    expectMonotonic(next, 128);
+  });
+
+  it("最後の区間には上限が無い（食い込む相手が居ない）", () => {
+    expect(maxSecondsPerBeatAt(TWO_SONGS, 1, 128)).toBeNull();
+    expect(restretchAt(TWO_SONGS, 1, 1, 128)[1].secondsPerBeat).toBeCloseTo(1);
+  });
+
+  it("上限と下限は、区切りが無いときと同じに効く", () => {
+    expect(restretchAt(TWO_SONGS, 1, 99, 128)[1].secondsPerBeat).toBeCloseTo(
+      60 / MIN_BPM,
+    );
+    expect(
+      restretchAt(TWO_SONGS, 1, 0.0001, 128)[1].secondsPerBeat,
+    ).toBeCloseTo(60 / MAX_BPM);
+  });
+
+  it("無い区間・0以下の速さでは、何も変えない", () => {
+    expect(restretchAt(TWO_SONGS, 9, 0.5, 128)).toEqual(TWO_SONGS);
+    expect(restretchAt(TWO_SONGS, 0, 0, 128)).toEqual(TWO_SONGS);
+    expect(restretchAt(TWO_SONGS, 0, Number.NaN, 128)).toEqual(TWO_SONGS);
+  });
+});
+
+describe("区間の頭を動かす（moveSectionTo）", () => {
+  it("手前の区間が鳴り終わる前へは戻れない", () => {
+    // 1曲目は 0〜64拍を 0.5秒/拍 ＝ 32秒まで使っている
+    const next = moveSectionTo(TWO_SONGS, 1, 10, 128);
+    expect(next[1].atSeconds).toBe(32);
+    expectMonotonic(next, 128);
+  });
+
+  it("自分の最後の拍が次の区切りへ届く所で止まる", () => {
+    const three = splitAt(TWO_SONGS, 96);
+    // 2曲目は 64〜96拍（32拍 × 0.4 ＝ 12.8秒）。3曲目は 52.8秒から
+    const next = moveSectionTo(three, 1, 999, 128);
+    expect(next[1].atSeconds).toBeCloseTo(40);
+    expectMonotonic(next, 128);
+  });
+
+  it("先頭は、曲が始まる前へは置けない", () => {
+    expect(moveSectionTo(TWO_SONGS, 0, -5, 128)[0].atSeconds).toBe(0);
+  });
+
+  it("速さは変えない", () => {
+    expect(moveSectionTo(TWO_SONGS, 1, 50, 128)[1].secondsPerBeat).toBe(0.4);
+  });
+});
+
+describe("その拍の速さ（bpmAt）", () => {
+  /* **区間ごとに答える。** 以前の `bpmOf` は先頭の速さしか返せず、
+     2曲目でもメトロノームと拍の線が1曲目の速さで動いていた */
+  it("2曲目の拍では、2曲目の速さを返す", () => {
+    expect(bpmAt(TWO_SONGS, 0)).toBeCloseTo(120);
+    expect(bpmAt(TWO_SONGS, 63)).toBeCloseTo(120);
+    expect(bpmAt(TWO_SONGS, 64)).toBeCloseTo(150);
+    expect(bpmAt(TWO_SONGS, 200)).toBeCloseTo(150);
+  });
+});
+
+describe("区間の一覧（sections）", () => {
+  it("終わりの拍と秒を出す。間奏があれば次の区切りより手前で終わる", () => {
+    const list = sections(TWO_SONGS, 128);
+    expect(list[0].toBeat).toBe(64);
+    // 1曲目の拍は32秒で終わる。次の区切りは40秒なので、8秒は間奏
+    expect(list[0].toSeconds).toBe(32);
+    expect(list[0].label).toBe("1曲目");
+    expect(list[0].bpm).toBeCloseTo(120);
+    expect(list[1].toBeat).toBe(128);
+    expect(list[1].toSeconds).toBeCloseTo(65.6);
+  });
+
+  it("最後のシーンより後ろに区切りがあっても、拍数は負にならない", () => {
+    const list = sections(TWO_SONGS, 10);
+    expect(list[1].toBeat).toBe(64);
+    expect(list[1].toSeconds).toBe(40);
+  });
+});
+
+describe("区切りの名前", () => {
+  it("空白だけの名前は持たない", () => {
+    const [first] = normalizePlacements([
+      { fromBeat: 0, atSeconds: 0, secondsPerBeat: 0.5, label: "   " },
+    ]);
+    expect(first.label).toBeUndefined();
+  });
+
+  it("長すぎる名前は切る", () => {
+    const [first] = normalizePlacements([
+      {
+        fromBeat: 0,
+        atSeconds: 0,
+        secondsPerBeat: 0.5,
+        label: "あ".repeat(80),
+      },
+    ]);
+    expect(first.label).toHaveLength(MAX_SECTION_LABEL_LENGTH);
+  });
+
+  it("付け直せる。空白だけなら外れる", () => {
+    expect(renameSection(TWO_SONGS, 0, " 序章 ")[0].label).toBe("序章");
+    expect(renameSection(TWO_SONGS, 0, "  ")[0].label).toBeUndefined();
+  });
+});
+
+describe("同じ拍から始まる区間", () => {
+  /* `placementAtBeat` は後ろを採るので、手前の1つは**誰にも読まれない**。
+     壊れて見えないので気づけない */
+  it("読まれない方を落とす", () => {
+    const placements = normalizePlacements([
+      { fromBeat: 0, atSeconds: 0, secondsPerBeat: 0.5 },
+      { fromBeat: 16, atSeconds: 8, secondsPerBeat: 0.5 },
+      { fromBeat: 16, atSeconds: 9, secondsPerBeat: 0.4 },
+    ]);
+    expect(placements).toHaveLength(2);
+    expect(placements[1].atSeconds).toBe(9);
+  });
+});
+
+describe("区切りを置いても丸めない", () => {
+  /* **`splitAt` は丸めない**（`moveSectionTo` は丸める）。
+     丸めると「置くだけでは動かない」という約束が、割り切れない速さの
+     作品でだけ静かに崩れる — ミリ秒の桁なので画面を見ても分からない。 */
+  it("割り切れない速さでも、置いた前後で秒が変わらない", () => {
+    const odd: Placement[] = [
+      { fromBeat: 0, atSeconds: 0.1, secondsPerBeat: 1 / 3 },
+    ];
+    const next = splitAt(odd, 7);
+    for (const beat of [0, 3, 7, 10, 64]) {
+      expect(secondsAtBeat(next, beat)).toBeCloseTo(
+        secondsAtBeat(odd, beat),
+        6,
+      );
+    }
   });
 });
