@@ -132,3 +132,57 @@ describe("MusicSheet（音源がこの端末に無いとき）", () => {
     expect(screen.queryByText(/音源はこの端末にありません/)).toBeNull();
   });
 });
+
+/**
+ * **速さを数字で決める口は、いつでもちょうど1つ。**
+ *
+ * 曲を入れるとメトロノームの束ごと閉じるので、以前は
+ * 「曲あり・区切り1つ」のときだけ**どこにも無くなって**いた
+ * （残るのは時間軸のバーの取っ手だけ）。
+ * 逆に、区切りが2つ以上あるときに出すと、区間ごとの欄と
+ * **同じ値を変える口が2つ**になる。
+ */
+/* **完全一致で引く。** 区切り一覧の「この区間の速さ(BPM)」も
+   部分一致では当たってしまう（別の口なので混ぜない） */
+const speedField = () =>
+  screen.queryByRole("spinbutton", { name: "速さ(BPM)" });
+
+describe("MusicSheet（速さの欄）", () => {
+  it("曲があって区切りが1つなら、速さを数字で決められる", () => {
+    open(makeProject({ bpm: 120 }), { fileName: "song.mp3" });
+
+    expect(speedField()).toBeInTheDocument();
+  });
+
+  /* 曲が無いときは「曲がないときの拍」のスライダーが持つ。
+     両方出すと口が2つになる */
+  it("曲が無いときは出さない（スライダーの側が持つ）", () => {
+    open(makeProject({ bpm: 120 }), { fileName: null });
+
+    expect(speedField()).toBeNull();
+    expect(screen.getByText("曲がないときの拍")).toBeInTheDocument();
+  });
+
+  /* 答えが分かれる値で書く。区切りが2つあるかどうかで出し分けが変わる */
+  it("区切りが2つ以上あるときは出さない（区間ごとの欄が持つ）", () => {
+    open(
+      makeProject({
+        bpm: 120,
+        musicPlacements: [
+          { fromBeat: 0, atSeconds: 0, secondsPerBeat: 0.5 },
+          { fromBeat: 16, atSeconds: 12, secondsPerBeat: 0.5 },
+        ],
+      }),
+      { fileName: "song.mp3" },
+    );
+
+    expect(speedField()).toBeNull();
+  });
+
+  /** バーの取っ手と同じ値だと分かるように、一言添える */
+  it("バーの取っ手と同じ値であることを書いてある", () => {
+    open(makeProject({ bpm: 120 }), { fileName: "song.mp3" });
+
+    expect(screen.getByText(/取っ手を引いても、同じ速さ/)).toBeInTheDocument();
+  });
+});

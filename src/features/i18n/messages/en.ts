@@ -787,6 +787,9 @@ export const en = {
     metronome: "Metronome",
     click: "Sound the click",
     bpm: "Tempo (BPM)",
+    bpmUnit: "BPM",
+    bpmNote:
+      "Dragging the handle on the timeline bar changes the same tempo",
     beatsPerBar: "Time signature",
     beatsPerBarNote:
       "Only changes which beat the metronome accents and which timeline lines are thick (the eight-count is unaffected).",

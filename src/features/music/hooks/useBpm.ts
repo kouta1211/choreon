@@ -5,6 +5,7 @@ import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { persist } from "@/features/project/lib/persistence";
 import { toUserMessage } from "@/lib/supabase/errors";
 import {
+  updateMusicPlacements,
   updateProjectBeatsPerBar,
   updateProjectBpm,
 } from "@/features/project/api/projects";
@@ -40,6 +41,7 @@ export function useBpm(): {
 } {
   const bpm = useProjectStore((state) => state.project?.bpm ?? DEFAULT_BPM);
   const applyBpm = useProjectStore((state) => state.setBpm);
+  const applyPlacements = useProjectStore((state) => state.applyPlacements);
   const beatsPerBar = useProjectStore(
     (state) => state.project?.beatsPerBar ?? DEFAULT_BEATS_PER_BAR,
   );
@@ -56,12 +58,31 @@ export function useBpm(): {
     // 楽観的更新。スライダーは指の動きに追いつく必要があるので、
     // 保存の往復を待たせない
     const previous = project.bpm;
+    const previousPlacements = project.musicPlacements;
     applyBpm(clamped);
 
-    void persist((supabase) =>
-      updateProjectBpm(supabase, project.id, clamped),
-    ).catch((error) => {
+    /* **載せ方も一緒に保存する**（2026-09-25）。
+
+       時間の物差しの正は `music_placements` で、`projects.bpm` の列は
+       **同じことを言うもう1つの口**（.claude/rules/state.md 7節）。
+       ストアの `setBpm` は載せ方を引き直しているのに、ここが `bpm` 列
+       しか書いていなかったので、**開き直すと秒だけ古い速さへ戻って**
+       いた。画面は「90」と出したまま、コマの間隔は 120 のもの、という
+       壊れ方になる。
+
+       **載せ方を先に書く。** 途中で落ちたときに、正である側が残る方を
+       選ぶ（`bpm` 列だけ古いなら、次に速さを変えた時点でそろう）。 */
+    const placements =
+      useProjectStore.getState().project?.musicPlacements ?? previousPlacements;
+
+    void persist(async (supabase) => {
+      await updateMusicPlacements(supabase, project.id, placements);
+      await updateProjectBpm(supabase, project.id, clamped);
+    }).catch((error) => {
       applyBpm(previous);
+      // 引き直しでは戻らない形（区間ごとに速さが違う作品）もあるので、
+      // 手元に控えた側で正確に戻す
+      applyPlacements([...previousPlacements]);
       showToast({
         message: toUserMessage(error, "速さの変更に失敗しました"),
         type: "error",

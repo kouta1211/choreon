@@ -777,6 +777,8 @@ export const ko = {
     metronome: "메트로놈",
     click: "클릭음 켜기",
     bpm: "속도(BPM)",
+    bpmUnit: "BPM",
+    bpmNote: "타임라인 바의 손잡이를 끌어도 같은 빠르기가 바뀝니다",
     beatsPerBar: "박자",
     beatsPerBarNote:
       "바뀌는 것은 메트로놈의 센 박과 타임라인의 굵은 선뿐입니다(여덟 박 세는 법은 그대로).",

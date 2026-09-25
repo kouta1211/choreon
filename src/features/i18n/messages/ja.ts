@@ -848,6 +848,9 @@ export const ja = {
     metronome: "メトロノーム",
     click: "クリックを鳴らす",
     bpm: "速さ(BPM)",
+    /** 数の右に添える単位。ラベルと二重に「速さ(BPM)」と出さない */
+    bpmUnit: "BPM",
+    bpmNote: "時間軸のバーの取っ手を引いても、同じ速さが変わります",
     beatsPerBar: "拍子",
     beatsPerBarNote:
       "変わるのはメトロノームの強い拍と、時間軸の太い線だけです(8カウントの数え方は変わりません)。",

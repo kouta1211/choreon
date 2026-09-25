@@ -16,6 +16,9 @@ import {
   placedSpan,
 } from "@/features/music/lib/placement";
 import { MetronomeControls } from "@/components/molecules/MetronomeControls";
+import { NumberField } from "@/components/molecules/NumberField";
+import { useBpm } from "@/features/music/hooks/useBpm";
+import { MAX_BPM, MIN_BPM } from "@/features/music/lib/metronomePreference";
 import { MusicSectionList } from "@/components/organisms/MusicSectionList";
 import { BeatsPerBarSegment } from "@/components/molecules/BeatsPerBarSegment";
 import type { Project } from "@/features/project/types";
@@ -59,6 +62,7 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
      **名前ではなく音の有無**で決める — 名前で出し分けると、
      鳴らせない端末で仮の物差しまで消える */
   const hasDeviceAudio = presence.kind === "ready";
+  const { bpm, setBpm } = useBpm();
   const durationSeconds = useMusicStore((state) => state.durationSeconds);
   const loadMusic = useMusicStore((state) => state.load);
   const clearMusic = useMusicStore((state) => state.clear);
@@ -209,6 +213,34 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
                 ここへ残すと同じ値を変える口が2つになる（2026-09-15） */}
             <MetronomeControls showSpeed={placements.length === 1} />
           </div>
+        )}
+
+        {/* **曲があるときの速さ**（2026-09-25）。
+
+            曲を入れるとメトロノームの束ごと閉じるので、**速さを数字で
+            決める場所がどこにも無くなっていた** — 残るのは時間軸のバーの
+            取っ手を引く操作だけで、「120 にしたい」という決め方ができない。
+            台本にも、その欄を前提にした項目が残っていた。
+
+            **区切りが2つ以上あるときは出さない。** あちらは区間ごとに
+            速さを持つので、全体に効く欄を並べると
+            **同じ値を変える口が2つ**になる（`MusicSectionList` の
+            「区切りが1つのときは一覧を出さない」と対になる決まり）。
+
+            書き込む先はスライダーと同じ `useBpm` で、**口は1つ**。
+            バーの取っ手はこの値を直に引くもう1つの手つきで、
+            同じ1つの値を指している */}
+        {hasDeviceAudio && placements.length === 1 && (
+          <NumberField
+            label={t.music.bpm}
+            description={t.music.bpmNote}
+            value={Math.round(bpm)}
+            min={MIN_BPM}
+            max={MAX_BPM}
+            unit={t.music.bpmUnit}
+            size="sheet"
+            onChange={setBpm}
+          />
         )}
 
         {/* **曲の区切り**（2026-09-15）。ショーケースは1本の中で曲が

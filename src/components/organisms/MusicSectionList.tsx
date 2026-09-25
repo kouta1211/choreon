@@ -107,7 +107,7 @@ export function MusicSectionList() {
                 value={Math.round(section.bpm)}
                 min={MIN_BPM}
                 max={MAX_BPM}
-                unit={t.music.bpm}
+                unit={t.music.bpmUnit}
                 size="sheet"
                 onChange={(next) =>
                   void placement.setSectionBpm(section.index, next)
