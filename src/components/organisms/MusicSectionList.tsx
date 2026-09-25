@@ -3,6 +3,7 @@
 import { Scissors, Trash2 } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
+import { useMusicStore } from "@/features/music/store/useMusicStore";
 import { useMusicPlacement } from "@/features/music/hooks/useMusicPlacement";
 import { NumberField } from "@/components/molecules/NumberField";
 import { TapTempoButton } from "@/components/molecules/TapTempoButton";
@@ -34,6 +35,10 @@ export function MusicSectionList() {
   const scenes = useProjectStore((state) => state.scenes);
   const selectedSceneId = useUIStore((state) => state.selectedSceneId);
   const placement = useMusicPlacement();
+  /* 叩く相手を、この板の中で鳴らせるようにする。曲が無ければ出さない */
+  const hasMusic = useMusicStore((state) => state.objectUrl !== null);
+  const isPlaying = useUIStore((state) => state.isPlaying);
+  const requestTogglePlay = useUIStore((state) => state.requestTogglePlay);
 
   const selected = scenes.find((scene) => scene.id === selectedSceneId);
   /* いちばん近い8カウントの頭。拍で持っているので割り算1つで出る
@@ -133,6 +138,8 @@ export function MusicSectionList() {
                 onMeasured={(next) =>
                   void placement.setSectionBpm(section.index, next)
                 }
+                isPlaying={isPlaying}
+                onTogglePlay={hasMusic ? requestTogglePlay : undefined}
               />
             </li>
           ))}

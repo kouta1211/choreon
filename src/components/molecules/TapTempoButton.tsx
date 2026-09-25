@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Hand } from "lucide-react";
+import { Hand, Pause, Play } from "lucide-react";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { tapTempo } from "@/features/music/lib/tapTempo";
 import { TAP_PATTERN, vibrate } from "@/lib/haptics";
@@ -21,6 +21,14 @@ type Props = {
    * 区別が付かない**ので、どの区間のものかをここで足す。
    */
   ariaLabel?: string;
+  /**
+   * 曲を鳴らす / 止める。**渡さなければボタンを出さない**。
+   *
+   * ここは molecule なのでストアに触らない（`.claude/rules/frontend.md`
+   * 1節）。再生しているかどうかは、呼び出し側（organism）が渡す。
+   */
+  isPlaying?: boolean;
+  onTogglePlay?: () => void;
 };
 
 /**
@@ -42,7 +50,12 @@ type Props = {
  * 止めないと1回の打鍵で2つ起きる。**曲を流しながら叩けること自体は
  * 残したい**ので、塞ぐのはこのボタンの上だけ。
  */
-export function TapTempoButton({ onMeasured, ariaLabel }: Props) {
+export function TapTempoButton({
+  onMeasured,
+  ariaLabel,
+  isPlaying = false,
+  onTogglePlay,
+}: Props) {
   const t = useT();
   const [taps, setTaps] = useState<number[]>([]);
   const [reading, setReading] = useState<{
@@ -64,6 +77,30 @@ export function TapTempoButton({ onMeasured, ariaLabel }: Props) {
 
   return (
     <div className="flex items-center gap-unit">
+      {/* **板の中で曲を鳴らせるようにする**（2026-09-25）。
+
+          曲のシートは画面全体を覆う板（`aria-modal`）なので、開いている
+          間は下のバーの再生ボタンが押せない。「曲に合わせて叩く」と
+          書いてあるのに**叩く相手を鳴らせなかった**（user の報告
+          「いまいち使い方がわかりません」）。
+
+          押しているのは**下のバーと同じ1つの口**（`requestTogglePlay`）で、
+          再生の仕組みは増えていない */}
+      {onTogglePlay && (
+        <PressableButton
+          type="button"
+          aria-label={isPlaying ? t.music.tapPause : t.music.tapPlay}
+          onClick={onTogglePlay}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line text-fg-strong"
+        >
+          {isPlaying ? (
+            <Pause size={15} aria-hidden />
+          ) : (
+            <Play size={15} aria-hidden />
+          )}
+        </PressableButton>
+      )}
+
       <PressableButton
         type="button"
         aria-label={ariaLabel}

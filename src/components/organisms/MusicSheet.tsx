@@ -64,6 +64,10 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
      鳴らせない端末で仮の物差しまで消える */
   const hasDeviceAudio = presence.kind === "ready";
   const { bpm, setBpm } = useBpm();
+  /* 曲を鳴らす/止める。**下のバーと同じ1つの口**を押すだけで、
+     再生の仕組みは増えていない（キーボードの Space も同じ所へ来る） */
+  const isPlaying = useUIStore((state) => state.isPlaying);
+  const requestTogglePlay = useUIStore((state) => state.requestTogglePlay);
   const durationSeconds = useMusicStore((state) => state.durationSeconds);
   const loadMusic = useMusicStore((state) => state.load);
   const clearMusic = useMusicStore((state) => state.clear);
@@ -253,7 +257,16 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
 
             書き込む先は欄・スライダーと同じ `useBpm`。手つきが3つに
             なっただけで、**変えている値は1つ** */}
-        {placements.length === 1 && <TapTempoButton onMeasured={setBpm} />}
+        {placements.length === 1 && (
+          <TapTempoButton
+            onMeasured={setBpm}
+            isPlaying={isPlaying}
+            /* 曲が無いときは出さない。鳴らす相手が居ないので、
+               押しても何も起きないボタンになる（スピーカーの音に
+               合わせて叩く使い方は、それで塞がらない） */
+            onTogglePlay={hasDeviceAudio ? requestTogglePlay : undefined}
+          />
+        )}
 
         {/* **曲の区切り**（2026-09-15）。ショーケースは1本の中で曲が
             変わる。振付はカウントで組むので拍の列は切れず、切れるのは

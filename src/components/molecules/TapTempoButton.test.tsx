@@ -96,7 +96,7 @@ describe("TapTempoButton", () => {
     open();
 
     expect(
-      screen.getByText("曲に合わせて4回ほど叩いてください"),
+      screen.getByText("曲を流して、合わせて4回ほど叩いてください"),
     ).toBeInTheDocument();
 
     fireEvent.click(button());
@@ -118,5 +118,72 @@ describe("TapTempoButton", () => {
     expect(
       screen.getByRole("button", { name: "叩いて測る" }),
     ).toBeInTheDocument();
+  });
+});
+
+/**
+ * **叩く相手を、その場で鳴らせるか。**
+ *
+ * 曲のシートは画面全体を覆う板なので、開いている間は下のバーの再生
+ * ボタンが押せない。「曲に合わせて叩く」と書いてあるのに鳴らせない、
+ * というのが user の詰まり所だった（2026-09-25）。
+ */
+describe("TapTempoButton（曲を鳴らす）", () => {
+  it("鳴らす手立てを渡さなければ、ボタンを出さない", () => {
+    useFakeClock();
+    render(
+      <LocaleProvider locale="ja">
+        <TapTempoButton onMeasured={vi.fn()} />
+      </LocaleProvider>,
+    );
+
+    expect(screen.queryByRole("button", { name: "曲を流す" })).toBeNull();
+  });
+
+  it("渡せば出て、押すとその手立てを呼ぶ", () => {
+    useFakeClock();
+    const onTogglePlay = vi.fn();
+    render(
+      <LocaleProvider locale="ja">
+        <TapTempoButton onMeasured={vi.fn()} onTogglePlay={onTogglePlay} />
+      </LocaleProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "曲を流す" }));
+
+    expect(onTogglePlay).toHaveBeenCalledTimes(1);
+  });
+
+  /* 答えが分かれる形で書く。鳴っているかどうかで名前が変わる */
+  it("鳴っている間は「止める」側の名前になる", () => {
+    useFakeClock();
+    render(
+      <LocaleProvider locale="ja">
+        <TapTempoButton onMeasured={vi.fn()} isPlaying onTogglePlay={vi.fn()} />
+      </LocaleProvider>,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "曲を止める" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "曲を流す" })).toBeNull();
+  });
+
+  /** 鳴らすボタンを押しても、叩いた回数には入れない */
+  it("鳴らすボタンは、叩いた回数に数えない", () => {
+    const clock = useFakeClock();
+    const onMeasured = vi.fn();
+    render(
+      <LocaleProvider locale="ja">
+        <TapTempoButton onMeasured={onMeasured} onTogglePlay={vi.fn()} />
+      </LocaleProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "曲を流す" }));
+    clock.now += 500;
+    fireEvent.click(screen.getByRole("button", { name: "叩いて測る" }));
+
+    // 叩いたのは1回だけなので、まだ速さは出ない
+    expect(onMeasured).not.toHaveBeenCalled();
   });
 });
