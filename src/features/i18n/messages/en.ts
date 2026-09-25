@@ -779,6 +779,8 @@ export const en = {
     file: "Music file",
     remove: "Remove the track",
     titleFailed: "Could not save the track name",
+    missingOnDevice:
+      "The audio is not on this device (the project still remembers the track). Choose the same track again to hear it.",
     notShared:
       "Kept on this device, so it plays when you come back — but it does not travel to the people you share with (only the start position does).",
     metronomeTitle: "A beat when there is no music",

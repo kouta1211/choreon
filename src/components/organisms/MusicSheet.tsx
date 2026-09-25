@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { Music, Upload, X } from "lucide-react";
 import { BottomSheet } from "@/components/molecules/BottomSheet";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
+import { trackPresence } from "@/features/music/lib/trackPresence";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { persist } from "@/features/project/lib/persistence";
@@ -45,6 +46,19 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
   const t = useT();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileName = useMusicStore((state) => state.fileName);
+  /* 作品が覚えている曲名。**props ではなくストアから読む** — 名前を
+     変えた直後は props が古い（.claude/rules/state.md 2節） */
+  const rememberedTitle = useProjectStore(
+    (state) => state.project?.musicTitle ?? null,
+  );
+  /* 「曲なし / この端末にある / 名前だけある」の3つへ畳む。
+     **`hasMusic`（objectUrl）とは別物**で、あちらは音が要る挙動
+     （再生・波形・コマ追加）が読む。ここは見せ方だけ */
+  const presence = trackPresence(fileName, rememberedTitle);
+  /* この端末で鳴らせるか。拍子とメトロノームの出し分けは、
+     **名前ではなく音の有無**で決める — 名前で出し分けると、
+     鳴らせない端末で仮の物差しまで消える */
+  const hasDeviceAudio = presence.kind === "ready";
   const durationSeconds = useMusicStore((state) => state.durationSeconds);
   const loadMusic = useMusicStore((state) => state.load);
   const clearMusic = useMusicStore((state) => state.clear);
@@ -90,7 +104,7 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
             className="flex h-20 w-full flex-col items-center justify-center gap-base rounded-xl border border-dashed border-line-strong bg-surface text-label text-fg-sub"
           >
             <Upload size={15} className="shrink-0" />
-            {fileName ? t.music.pickAnother : t.music.pick}
+            {hasDeviceAudio ? t.music.pickAnother : t.music.pick}
           </PressableButton>
           {/* Android の一部端末は audio/* だけだと .wav を選ばせない
               (端末側が wav に MIME を割り当てていないことがあり、
@@ -113,14 +127,14 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
             }}
           />
 
-          {fileName && (
+          {presence.kind !== "none" && (
             <div className="mt-2 flex flex-col gap-1.5 rounded-xl border border-line bg-surface-raised px-3 py-2.5">
               <div className="flex items-center gap-2">
                 <Music size={15} className="shrink-0 text-accent-soft" />
                 <span className="min-w-0 flex-1 truncate text-label text-fg-strong">
-                  {fileName}
+                  {presence.fileName}
                 </span>
-                {durationSeconds !== null && (
+                {hasDeviceAudio && durationSeconds !== null && (
                   <span className="shrink-0 font-mono text-caption text-fg-muted">
                     {formatMinutes(durationSeconds)}
                   </span>
@@ -140,6 +154,15 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
               {/* 「この端末に控える」と「相手には付いていかない」は、同じ
                   1つの約束の裏表。2行に割ると同じ話を2回読ませることになる。
                   **曲が入っていないときは出さない** — まだ誰の話でもない */}
+              {/* **鳴らせないことを、その場で言う**（2026-09-25）。
+                  音源は端末にしか置かないので、別のブラウザで開くと
+                  必ずここへ来る。以前は名前ごと出していなかったので、
+                  「曲が消えた」と読めていた（user の報告） */}
+              {presence.kind === "missing" && (
+                <p className="text-caption leading-snug text-accent-soft">
+                  {t.music.missingOnDevice}
+                </p>
+              )}
               <p className="text-caption leading-snug text-fg-muted">
                 {t.music.notShared}
               </p>
@@ -163,7 +186,7 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
             だけで、合わせる相手は曲そのもの。数え方（8カウント）も変わら
             ないので、決める意味のある場面が無かった。
             曲が無いときは、メトロノームの強い拍がこの値で決まる */}
-        {!fileName && (
+        {!hasDeviceAudio && (
           <div>
             <div className="flex items-center gap-2.5">
               <span className="flex-1 text-label text-fg">
@@ -179,7 +202,7 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
 
         {/* 曲を用意する前の、仮の物差し。曲があるときは出さない —
             2つの拍が同時に鳴ると、合わせる先が分からなくなる */}
-        {!fileName && (
+        {!hasDeviceAudio && (
           <div className="flex flex-col gap-2">
             <p className="text-label text-fg">{t.music.metronomeTitle}</p>
             {/* 区切りが2つ以上あるときは、速さは一覧の側が持つ。

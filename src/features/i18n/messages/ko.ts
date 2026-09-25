@@ -769,6 +769,8 @@ export const ko = {
     file: "음악 파일",
     remove: "곡 빼기",
     titleFailed: "곡 이름을 저장하지 못했습니다",
+    missingOnDevice:
+      "음원이 이 기기에 없습니다(곡은 작품에 기억되어 있습니다). 같은 곡을 다시 고르면 들을 수 있습니다.",
     notShared:
       "이 기기에 보관하므로 다시 열어도 들리지만, 공유한 상대에게는 따라가지 않습니다(시작 위치만 공유됩니다).",
     metronomeTitle: "곡이 없을 때의 박",

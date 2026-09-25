@@ -71,3 +71,64 @@ describe("MusicSheet", () => {
     expect(screen.queryByText(/開き直しても入ったままです/)).toBeNull();
   });
 });
+
+/**
+ * **音源はこの端末にしか無い**（`musicStorage.ts`・IndexedDB）。
+ * 別のブラウザで開けば必ず消えるが、曲名は作品に残っている
+ * （`projects.music_title`）。
+ *
+ * 純粋関数（`trackPresence`）は3つの状態を分けるところまでしか
+ * 守っていない。**そこへ何を渡すか**と**返り値をどこへ出すか**は
+ * ここで縛る（.claude/rules/testing.md「純粋関数のテストは、
+ * そこへ何を渡すかを守っていない」）。
+ */
+describe("MusicSheet（音源がこの端末に無いとき）", () => {
+  it("覚えている曲名を出す（曲なしと同じ顔にしない）", () => {
+    open(makeProject({ musicTitle: "本番音源.mp3" }), { fileName: null });
+
+    expect(screen.getByText("本番音源.mp3")).toBeInTheDocument();
+  });
+
+  it("鳴らせない理由を、その場で言う", () => {
+    open(makeProject({ musicTitle: "本番音源.mp3" }), { fileName: null });
+
+    expect(
+      screen.getByText(/音源はこの端末にありません/),
+    ).toBeInTheDocument();
+  });
+
+  /* **仮の物差しは残す。** 名前で出し分けると、鳴らせない端末で
+     メトロノームまで消える（音が無いのに拍も取れなくなる） */
+  it("鳴らせないときは、曲がないときの拍を出したままにする", () => {
+    open(makeProject({ musicTitle: "本番音源.mp3" }), { fileName: null });
+
+    expect(screen.getByText("曲がないときの拍")).toBeInTheDocument();
+  });
+
+  /* 答えが分かれる形で書く。ready と missing で出す物が違う */
+  it("この端末に音源があるときは、その注意を出さない", () => {
+    open(makeProject({ musicTitle: "本番音源.mp3" }), {
+      fileName: "本番音源.mp3",
+    });
+
+    expect(screen.queryByText(/音源はこの端末にありません/)).toBeNull();
+    // 鳴らせるときは仮の物差しを出さない（音が2つ重ならないように）
+    expect(screen.queryByText("曲がないときの拍")).toBeNull();
+  });
+
+  it("端末と作品で名前が違うときは、いま鳴っている方を出す", () => {
+    open(makeProject({ musicTitle: "古い名前.mp3" }), {
+      fileName: "いま鳴っている.mp3",
+    });
+
+    expect(screen.getByText("いま鳴っている.mp3")).toBeInTheDocument();
+    expect(screen.queryByText("古い名前.mp3")).toBeNull();
+  });
+
+  it("どちらも無ければ、曲の行そのものを出さない", () => {
+    open(makeProject({ musicTitle: null }), { fileName: null });
+
+    expect(screen.queryByText(/共有した相手には付いていきません/)).toBeNull();
+    expect(screen.queryByText(/音源はこの端末にありません/)).toBeNull();
+  });
+});
