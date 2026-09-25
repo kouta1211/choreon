@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import type { Scene } from "@/features/scene/types";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { useT } from "@/features/i18n/LocaleProvider";
+import { SCENE_CARD_ATTRIBUTE } from "@/features/music/lib/bandTapTarget";
 
 type Props = {
   scene: Scene;
@@ -59,7 +60,7 @@ export function SceneThumbnail({
 
   return (
     <div
-      data-scene-id={scene.id}
+      {...{ [SCENE_CARD_ATTRIBUTE]: scene.id }}
       style={{ width: sizePx }}
       className="relative shrink-0"
     >
