@@ -1,9 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { ShareSheet } from "./ShareSheet";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import * as projectsApi from "@/features/project/api/projects";
+import * as sharedTrackApi from "@/features/music/api/sharedTrack";
+import * as musicStorage from "@/features/music/lib/musicStorage";
+import { MAX_SHARED_TRACK_BYTES } from "@/features/music/lib/sharedTrack";
 import { makeDancer, makeProject } from "@/test/factories";
 import type { Project } from "@/features/project/types";
 
@@ -174,5 +177,108 @@ describe("ShareSheet（曲は付いていかない）", () => {
     open(SHARED);
 
     expect(screen.queryByText(/曲は相手に届きません/)).toBeNull();
+  });
+});
+
+/**
+ * **曲も一緒に配る**（2026-09-25）。
+ *
+ * 音源は端末の IndexedDB にしか無いので、**共有のときだけ**サーバーへ置く。
+ * ここで縛るのは「押せるかどうか」と、**消すときの順番**。
+ * 順番を取り違えても画面は普通に動いて見えるが、消し損ねたときに
+ * 前の曲が鳴り続ける。
+ */
+describe("ShareSheet（曲も一緒に配る）", () => {
+  const WITH_MUSIC = makeProject({
+    isShared: true,
+    shareToken: "tok-123",
+    musicTitle: "song.mp3",
+  });
+
+  /** この端末に、その大きさの音源があることにする */
+  function deviceHas(bytes: number) {
+    vi.spyOn(musicStorage, "loadTrack").mockResolvedValue({
+      file: new File(["x"], "song.mp3", { type: "audio/mpeg" }),
+      fileName: "song.mp3",
+    });
+    // File の size は読み取り専用なので、大きさだけ差し替える
+    vi.spyOn(File.prototype, "size", "get").mockReturnValue(bytes);
+  }
+
+  it("端末に音源があれば、配るスイッチが出る", async () => {
+    deviceHas(8_000_000);
+    open(WITH_MUSIC);
+
+    expect(
+      await screen.findByRole("switch", { name: /曲も一緒に配る/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("どれだけ上がるかを添える", async () => {
+    deviceHas(8_200_000);
+    open(WITH_MUSIC);
+
+    expect(await screen.findByText(/7\.8MB を上げます/)).toBeInTheDocument();
+  });
+
+  /* 上限を超えたら、押せる的そのものを出さない */
+  it("大きすぎる曲は、理由を出してスイッチを出さない", async () => {
+    deviceHas(MAX_SHARED_TRACK_BYTES + 1);
+    open(WITH_MUSIC);
+
+    expect(await screen.findByText(/20MB を超える曲は配れません/)).toBeInTheDocument();
+    expect(screen.queryByRole("switch", { name: /曲も一緒に配る/ })).toBeNull();
+  });
+
+  /* 別の端末で入れた曲。上げる実体が手元に無い */
+  it("この端末に音源が無ければ、そう言う", async () => {
+    vi.spyOn(musicStorage, "loadTrack").mockResolvedValue(null);
+    open(WITH_MUSIC);
+
+    expect(
+      await screen.findByText(/この端末に音源がありません/),
+    ).toBeInTheDocument();
+  });
+
+  it("押すと、上げてから道を覚える", async () => {
+    deviceHas(8_000_000);
+    const upload = vi
+      .spyOn(sharedTrackApi, "uploadSharedTrack")
+      .mockResolvedValue("p1/abc.mp3");
+    const setPath = vi
+      .spyOn(projectsApi, "updateMusicPath")
+      .mockResolvedValue(undefined);
+    open(WITH_MUSIC);
+
+    fireEvent.click(await screen.findByRole("switch", { name: /曲も一緒に配る/ }));
+
+    await waitFor(() => expect(upload).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(setPath).toHaveBeenCalledWith(expect.anything(), "project-1", "p1/abc.mp3"),
+    );
+  });
+
+  /**
+   * **ここが要。** やめるときは【先に列を null にしてから】実体を消す。
+   *
+   * 判定（`is_shared_music_object`）は列と道を突き合わせているので、
+   * 列さえ変われば消し損ねても届かない。逆順だと、消せなかったときに
+   * 前の曲が鳴り続ける — しかも作った人は自分の端末で聞いているので
+   * 気づけない。
+   */
+  it("やめるときは、実体より先に道を消す", async () => {
+    deviceHas(8_000_000);
+    const order: string[] = [];
+    vi.spyOn(projectsApi, "updateMusicPath").mockImplementation(async () => {
+      order.push("列");
+    });
+    vi.spyOn(sharedTrackApi, "removeSharedTrack").mockImplementation(async () => {
+      order.push("実体");
+    });
+    open({ ...WITH_MUSIC, musicPath: "p1/abc.mp3" });
+
+    fireEvent.click(await screen.findByRole("switch", { name: /曲も一緒に配る/ }));
+
+    await waitFor(() => expect(order).toEqual(["列", "実体"]));
   });
 });

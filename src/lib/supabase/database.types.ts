@@ -15,6 +15,8 @@ export type Database = {
           stage_height: number;
           music_offset_seconds: number;
           music_title: string | null;
+          /** 共有するときだけ置く音源の道。null = サーバーには無い */
+          music_path: string | null;
           bpm: number;
           beats_per_bar: number;
           is_metronome_enabled: boolean;
@@ -36,6 +38,7 @@ export type Database = {
           stage_height?: number;
           music_offset_seconds?: number;
           music_title?: string | null;
+          music_path?: string | null;
           bpm?: number;
           beats_per_bar?: number;
           is_metronome_enabled?: boolean;
@@ -53,6 +56,7 @@ export type Database = {
           stage_height?: number;
           music_offset_seconds?: number;
           music_title?: string | null;
+          music_path?: string | null;
           bpm?: number;
           beats_per_bar?: number;
           is_metronome_enabled?: boolean;

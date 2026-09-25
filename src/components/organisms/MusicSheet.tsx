@@ -8,7 +8,12 @@ import { trackPresence } from "@/features/music/lib/trackPresence";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { persist } from "@/features/project/lib/persistence";
-import { updateMusicTitle } from "@/features/project/api/projects";
+import {
+  updateMusicPath,
+  updateMusicTitle,
+} from "@/features/project/api/projects";
+import { removeSharedTrack } from "@/features/music/api/sharedTrack";
+import { createClient } from "@/lib/supabase/client";
 import { toUserMessage } from "@/lib/supabase/errors";
 import { totalTransitionSeconds } from "@/features/scene/lib/playback";
 import {
@@ -99,11 +104,39 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
   const showToast = useUIStore((state) => state.showToast);
   // 保存済みの値はstoreを唯一の置き場にする(プロジェクト名と同じ考え方)
   const setProjectMusicTitle = useProjectStore((state) => state.setMusicTitle);
+  const setProjectMusicPath = useProjectStore((state) => state.setMusicPath);
+
+  /**
+   * ⚠️ **曲が変わったら、配っている音源を外す**（2026-09-25）。
+   *
+   * サーバーに置いた音源（`music_path`）は**前の曲**なので、外さないと
+   * 見る人の端末では【前の曲】が鳴りながら【新しい振付】が動く。
+   * 作った人は自分の端末で新しい曲を聞いているので、**その食い違いに
+   * 気づけない**。配り直すかどうかは、共有のシートでもう一度決める。
+   *
+   * 消し損ねても、列が null になった時点で誰にも届かない
+   * （`is_shared_music_object` が列と道を突き合わせている）。
+   */
+  const detachSharedTrack = async () => {
+    const path = useProjectStore.getState().project?.musicPath ?? null;
+    if (!path || useProjectStore.getState().isGuest) return;
+
+    setProjectMusicPath(null);
+    try {
+      const supabase = createClient();
+      await updateMusicPath(supabase, project.id, null);
+      await removeSharedTrack(supabase, path);
+    } catch {
+      /* 外せなくても、画面の側では既に外れている。次に共有のシートを
+         開けば、そこから配り直せる */
+    }
+  };
 
   /* 曲の【名前だけ】を作品へ覚えさせる。音源は端末に置いたまま
-     （方針は変えていない）。一覧のカードに「どの曲で組んだ作品か」を
-     出すために要る。失敗しても再生には響かないので、画面は止めずに
-     知らせるだけ（ゲストのときは persist が握りつぶす） */
+     （配るのは共有のシートで押したときだけ）。一覧のカードに
+     「どの曲で組んだ作品か」を出すために要る。失敗しても再生には
+     響かないので、画面は止めずに知らせるだけ（ゲストのときは
+     persist が握りつぶす） */
   const rememberTitle = async (musicTitle: string | null) => {
     setProjectMusicTitle(musicTitle);
     try {
@@ -145,6 +178,8 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
               if (file) {
                 loadMusic(file, project.id);
                 void rememberTitle(file.name);
+                // 前の曲を配ったままにしない
+                void detachSharedTrack();
               }
               // 同じファイルをもう一度選んでもchangeが飛ぶようにする
               event.target.value = "";
@@ -168,6 +203,7 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
                   onClick={() => {
                     clearMusic(project.id);
                     void rememberTitle(null);
+                    void detachSharedTrack();
                   }}
                   aria-label={t.music.remove}
                   className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-muted"

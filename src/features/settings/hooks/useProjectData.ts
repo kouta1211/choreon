@@ -85,6 +85,7 @@ export function useProjectData(project: Project) {
           // 取り込んだ形には曲の名前が入っていない（音源を書き出さない
           // ので、名前だけ残しても鳴らせる相手が居ない）
           musicTitle: null,
+          musicPath: null,
           shareToken: null,
           isShared: false,
           createdAt: now,

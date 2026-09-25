@@ -625,6 +625,16 @@ export const ko = {
       "곡은 상대에게 전달되지 않습니다. 음원은 이 기기에만 있습니다. 메뉴 → 곡 에서 클릭을 켜 두면 보는 사람의 기기에서도 박자만은 울립니다.",
     musicNoteWithClick:
       "곡은 상대에게 전달되지 않습니다. 음원은 이 기기에만 있습니다. 클릭이 켜져 있으므로 보는 사람의 기기에서 박자가 울립니다.",
+    shareMusic: "곡도 함께 보내기",
+    shareMusicSize: (size: string) => `${size} 를 올립니다`,
+    shareMusicOn:
+      "보는 사람의 기기에서도 곡이 재생됩니다. 공유를 멈추면 그 자리에서 들을 수 없게 됩니다.",
+    shareMusicWorking: "처리 중…",
+    musicUploadFailed: "곡을 보내지 못했습니다",
+    musicBlockedGuest: "작품을 먼저 저장하면 곡도 보낼 수 있습니다",
+    musicBlockedMissing: "이 기기에 음원이 없습니다. 곡을 다시 고르면 보낼 수 있습니다",
+    musicBlockedTooLarge: (max: string) =>
+      `${max} 를 넘는 곡은 보낼 수 없습니다. 더 작은 파일을 사용하세요`,
   },
 
   assist: {

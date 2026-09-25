@@ -47,6 +47,7 @@ export function makeProject(overrides: Partial<Project> = {}): Project {
     stageWidth: 15,
     stageHeight: 10,
     musicTitle: null,
+    musicPath: null,
     bpm,
     beatsPerBar: 4,
     isMetronomeEnabled: false,

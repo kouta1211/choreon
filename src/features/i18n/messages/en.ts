@@ -630,6 +630,17 @@ export const en = {
       "The song does not reach the people you share with. The audio file stays on this device only. Turn the click on from Menu → Music and at least the beat will play on their device.",
     musicNoteWithClick:
       "The song does not reach the people you share with. The audio file stays on this device only. The click is on, so the beat will play on their device.",
+    shareMusic: "Send the song too",
+    shareMusicSize: (size: string) => `Uploads ${size}`,
+    shareMusicOn:
+      "The song will play on their device. Stop sharing and it stops playing right away.",
+    shareMusicWorking: "Working…",
+    musicUploadFailed: "Could not send the song",
+    musicBlockedGuest: "Save the project first, then you can send the song",
+    musicBlockedMissing:
+      "The audio file is not on this device. Pick the song again to send it",
+    musicBlockedTooLarge: (max: string) =>
+      `Songs over ${max} cannot be sent. Please use a smaller file`,
   },
 
   assist: {

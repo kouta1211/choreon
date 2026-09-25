@@ -25,6 +25,7 @@ function makeProject(overrides: Partial<ProjectSummary> = {}): ProjectSummary {
     stageWidth: 8,
     stageHeight: 8,
     musicTitle: null,
+    musicPath: null,
     isMetronomeEnabled: false,
     musicPlacements: [{ fromBeat: 0, atSeconds: 0, secondsPerBeat: 0.5 }],
     bpm: 120,

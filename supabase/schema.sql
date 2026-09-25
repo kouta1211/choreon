@@ -74,6 +74,15 @@ create table public.projects (
   -- トークンは常に持っているが、is_shared が false の間はどのリンクでも
   -- 開けない。閲覧は public.shared_project(token) 経由で、テーブルそのものは
   -- 持ち主にしか開いていない(migration 0007 の説明を参照)
+  -- 共有するときだけサーバーへ置く音源の場所(バケット music の中の道)。
+  -- **曲の名前(music_title)とは別の問い**。名前は「何の曲か」、こちらは
+  -- 「サーバーに実体があるか」。null = 置いていない(端末にしか無い)という
+  -- 意味で、これが既定。
+  --
+  -- ⚠️ **曲を選び直す・外したら、必ず null へ戻す**。ここが古いままだと、
+  -- 見る人の端末では【前の曲】が鳴りながら【新しい振付】が動く。
+  -- 作った人は自分の端末で聞いているので、その食い違いに気づけない。
+  music_path text,
   share_token uuid not null default gen_random_uuid() unique,
   is_shared boolean not null default false,
   created_at timestamptz not null default now(),
@@ -350,6 +359,121 @@ revoke all on function public.shared_project(uuid) from public;
 grant execute on function public.shared_project(uuid) to anon, authenticated;
 
 -- =========================================
+-- 5. Storage: 共有する曲の置き場(バケット music)
+-- =========================================
+-- 音源そのものを初めてサーバーへ置く(2026-09-25)。それまでは端末の
+-- IndexedDB にしか無く、共有リンクを開いた人には曲が鳴らなかった。
+--
+-- **自動では上げない**。共有のシートで「曲も一緒に配る」を押したときだけ。
+--
+-- 置き場は <projectId>/<ランダム>.<拡張子>。**ファイル名は使わない** —
+-- 名前には個人名や公演名が入るので、shared_project が music_title を
+-- 返さないのと同じ理由で、経路にも入れない。
+--
+-- ⚠️ **ここは backend.md 3節「anon からは剥奪する」の例外**。
+-- storage.objects の table 権限は Supabase が既定で anon へ渡しており、
+-- 剥奪するとバケットそのものが使えなくなる。**門番は下の RLS だけ**。
+
+-- バケット。非公開・20MB まで・音声だけ。何度流しても同じ状態になる
+insert into storage.buckets
+  (id, name, public, file_size_limit, allowed_mime_types)
+values
+  ('music', 'music', false, 20971520, array['audio/mpeg','audio/mp4','audio/aac','audio/wav','audio/x-wav','audio/flac','audio/ogg','audio/opus','audio/webm'])
+on conflict (id) do update
+set public             = excluded.public,
+    file_size_limit    = excluded.file_size_limit,
+    allowed_mime_types = excluded.allowed_mime_types;
+
+-- 道の1つ目のフォルダ = 作品のid。
+-- ⚠️ **壊れた名前で落ちないようにする**。ここで ::uuid が例外を投げると
+-- ポリシーの評価ごと落ちて、**バケット全体が読めなくなる**。
+-- uuid の形をしていなければ null を返す。
+create or replace function public.music_object_project_id(object_name text)
+returns uuid
+language sql
+immutable
+as $$
+  select case
+    when (storage.foldername(object_name))[1] ~*
+         '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    then ((storage.foldername(object_name))[1])::uuid
+  end;
+$$;
+
+-- 持ち主か。
+-- ⚠️ **security definer でなければならない**。RLS のポリシーの式は
+-- 【呼んだ人の権限】で走るので、ここで素直に public.projects を見ると
+-- anon では `42501 permission denied for table projects` で落ちる
+-- (上で revoke してあるため)。仮に grant しても projects 側の RLS が
+-- authenticated 向けなので 0行になり、今度は常に false になる。
+-- shared_project が security definer なのと同じ理由。
+create or replace function public.owns_music_object(object_name text)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from public.projects p
+    where p.id = public.music_object_project_id(object_name)
+      and p.user_id = (select auth.uid())
+  );
+$$;
+
+-- 共有中の作品が【いま使っている1つ】か。
+-- `p.music_path = object_name` まで見るのが肝 — 差し替えの消し漏れや
+-- 昔の置き土産が同じフォルダに残っていても、そちらは読めない。
+-- 列を先に書き換えれば、実体を消す前から古い音は届かなくなる。
+create or replace function public.is_shared_music_object(object_name text)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from public.projects p
+    where p.id = public.music_object_project_id(object_name)
+      and p.is_shared
+      and p.music_path = object_name
+  );
+$$;
+
+revoke all on function public.music_object_project_id(text) from public;
+revoke all on function public.owns_music_object(text) from public;
+revoke all on function public.is_shared_music_object(text) from public;
+grant execute on function public.music_object_project_id(text) to anon, authenticated;
+grant execute on function public.owns_music_object(text) to authenticated;
+grant execute on function public.is_shared_music_object(text) to anon, authenticated;
+
+-- ポリシーには create or replace が無いので、落としてから作る(何度でも流せる)
+drop policy if exists "Owners manage their project music" on storage.objects;
+create policy "Owners manage their project music"
+on storage.objects
+for all
+to authenticated
+using      (bucket_id = 'music' and public.owns_music_object(name))
+with check (bucket_id = 'music' and public.owns_music_object(name));
+
+-- 見る人(ログインしていない)にも読ませる。**共有をやめた瞬間に読めなくなる**
+drop policy if exists "Shared project music is readable" on storage.objects;
+create policy "Shared project music is readable"
+on storage.objects
+for select
+to anon, authenticated
+using (bucket_id = 'music' and public.is_shared_music_object(name));
+
+-- ⚠️ **分かったうえで残している穴**(2026-09-25)。
+-- select は download と list で同じ権限なので、anon の鍵(JSの束に入って
+-- いる＝公開されている)を持つ人は、**いま共有中の作品の音源を一覧して
+-- 落とせる**。振付そのものはトークンで守られているが、音源はこの1枚だけ。
+-- 上の `music_path = object_name` で「共有中の作品につき1つ」には
+-- 絞ってあり、共有をやめれば即座に消える。
+-- これ以上締めるなら、Route Handler で token を検かめてから
+-- service_role で署名URLを作る形(鍵が1本増える)。
+
+-- =========================================
 -- 適用後の確認クエリ(個人ルール: 必ず実行して確認する)
 -- =========================================
 
@@ -362,6 +486,33 @@ where table_name in ('projects', 'dancers', 'scenes', 'positions');
 select schemaname, tablename, policyname, cmd, roles
 from pg_policies
 where tablename in ('projects', 'dancers', 'scenes', 'positions');
+
+-- 3. バケットの設定(public が false であること)
+select id, public, file_size_limit, allowed_mime_types
+from storage.buckets where id = 'music';
+
+-- 4. storage のポリシー(上の2本が出る)
+select policyname, cmd, roles
+from pg_policies
+where schemaname = 'storage' and tablename = 'objects';
+
+-- 5. 判定そのものを、アプリを書く前に試す(<...>は実物に置き換える)
+-- select public.owns_music_object('<projectId>/<file>.mp3');       -- 持ち主なら t
+-- select public.is_shared_music_object('<projectId>/<file>.mp3');  -- 共有中なら t
+
+-- 6. anon になりきって数える(共有中の作品のぶんだけ出るのが正しい)
+-- begin;
+--   select set_config('request.jwt.claims', '{"role":"anon"}', true);
+--   set local role anon;
+--   select count(*) from storage.objects where bucket_id = 'music';
+-- rollback;
+
+-- 7. 迷子の音源(作品が消えた後に残ったもの)。
+--    ⚠️ **行を消しても実体は消えない**。出た name は Storage の画面から消すこと
+-- select o.name, o.created_at, (o.metadata->>'size')::bigint as bytes
+-- from storage.objects o
+-- where o.bucket_id = 'music'
+--   and not exists (select 1 from public.projects p where p.music_path = o.name);
 
 -- =========================================
 -- 既存プロジェクトへの追いつきについて
@@ -449,3 +600,25 @@ where tablename in ('projects', 'dancers', 'scenes', 'positions');
 --    or exists (select 1 from jsonb_array_elements(music_placements) e
 --               where (e->>'secondsPerBeat') is null
 --                  or (e->>'secondsPerBeat')::float8 <= 0);
+
+-- -----------------------------------------
+-- 2026-09-25 曲そのものを共有できるようにする
+-- -----------------------------------------
+-- それまで音源は作った人の端末(IndexedDB)にしか無く、共有リンクを開いた
+-- 人には曲が鳴らなかった。**共有のシートで押したときだけ**サーバーへ置く。
+--
+-- 共有用の関数 shared_project は to_jsonb(p) で作品の列をまるごと返すので、
+-- **関数側の変更は要らない**(music_path がそのまま乗る)。
+--
+-- 下は【上の「5. Storage」の節をそのまま流す】のに加えて、列を足すだけ。
+-- どれも何度実行しても安全。
+--
+-- alter table public.projects
+--   add column if not exists music_path text;
+--
+-- そのうえで、上の「5. Storage: 共有する曲の置き場」の節を丸ごと流す
+-- (insert ... on conflict / create or replace function / drop policy if
+--  exists → create policy の形にしてあるので、再実行できる)。
+--
+-- 確認は「適用後の確認クエリ」の 3〜6。**6 の anon の数え上げまで通す** —
+-- ここが 0 のままなら、見る人には曲が届かない。

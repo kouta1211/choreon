@@ -40,6 +40,10 @@ type SharedPayload = {
     has_music?: boolean;
     /** 関数を入れ替える前の環境から来る形。名前は使わず、有無だけ見る */
     music_title?: string | null;
+    /** サーバーに置いてある音源の道（共有するときだけ入る）。
+     *  **これは名前ではない**ので、渡しても個人名や公演名は漏れない。
+     *  列を足す前の環境からは来ないので `?` */
+    music_path?: string | null;
     bpm?: number;
     beats_per_bar?: number;
     is_metronome_enabled?: boolean;
@@ -133,6 +137,10 @@ export async function getSharedProject(
       stageHeight: payload.project.stage_height,
       /* 見る側は曲の名前を受け取らない。有無だけを hasMusic で持つ */
       musicTitle: null,
+      /* **道は渡す。** 名前と違って、ランダムな文字列なので何も漏れない。
+         これが入っている作品だけ、見る人の端末から音源を落とせる
+         （落とせるかどうかは Storage の RLS が決める） */
+      musicPath: payload.project.music_path ?? null,
       bpm: payload.project.bpm ?? DEFAULT_BPM,
       beatsPerBar: payload.project.beats_per_bar ?? 4,
       isMetronomeEnabled: payload.project.is_metronome_enabled ?? false,

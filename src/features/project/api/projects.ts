@@ -21,6 +21,7 @@ function toProject(row: ProjectRow): Project {
     stageWidth: row.stage_width,
     stageHeight: row.stage_height,
     musicTitle: row.music_title ?? null,
+    musicPath: row.music_path ?? null,
     // 速さ・拍子を足す前のスキーマのままのDBには、この2つの列がまだ無い。
     // 既定値はDB側のdefaultと同じ
     bpm: row.bpm ?? DEFAULT_BPM,
@@ -138,6 +139,26 @@ export async function updateMusicTitle(
   const { error } = await supabase
     .from("projects")
     .update({ music_title: musicTitle })
+    .eq("id", projectId);
+
+  if (error) throw error;
+}
+
+/**
+ * **サーバーに置いた音源の場所**を覚える（2026-09-25）。
+ *
+ * ⚠️ **音源を消す前に、ここを null にする**。順番が逆だと、実体を
+ * 消し損ねたときに古い音が読めるまま残る（`is_shared_music_object` は
+ * この列と突き合わせているので、列さえ変われば即座に届かなくなる）。
+ */
+export async function updateMusicPath(
+  supabase: SupabaseClient<Database>,
+  projectId: string,
+  musicPath: string | null,
+): Promise<void> {
+  const { error } = await supabase
+    .from("projects")
+    .update({ music_path: musicPath })
     .eq("id", projectId);
 
   if (error) throw error;

@@ -1,9 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Copy, RefreshCw } from "lucide-react";
+import { Check, Copy, Music4, RefreshCw } from "lucide-react";
 import { BottomSheet } from "@/components/molecules/BottomSheet";
 import { PressableButton } from "@/components/atoms/PressableButton";
+import { Switch } from "@/components/atoms/Switch";
+import { useSharedTrack } from "@/features/music/hooks/useSharedTrack";
+import {
+  formatBytes,
+  MAX_SHARED_TRACK_BYTES,
+} from "@/features/music/lib/sharedTrack";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { persist } from "@/features/project/lib/persistence";
@@ -68,6 +74,14 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
   const setShareToken = useProjectStore((state) => state.setShareToken);
 
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const track = useSharedTrack(project.id);
+
+  /* 音源の大きさは実体を見ないと分からない（IndexedDB の中）。
+     開いたときに1回だけ読む */
+  const { refreshLocalSize } = track;
+  useEffect(() => {
+    if (isOpen) void refreshLocalSize();
+  }, [isOpen, refreshLocalSize]);
 
   const origin = typeof window === "undefined" ? "" : window.location.origin;
   const link = stored.shareToken
@@ -147,17 +161,53 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
         <p className="text-label leading-relaxed text-fg-sub">
           {stored.isShared ? t.share.enabledNote : t.share.disabledNote}
         </p>
-        {/* **曲は付いていかない**（2026-09-25）。この板の説明には前から
-            「一行書いておかないと『壊れている』と受け取られる」と書いて
-            あったのに、**その一行が無かった**。実際に user から
-            「共有をしたのですが、曲が聞こえません」と報告が来た。
-            音源をサーバーへ上げない方針そのものは変えていない */}
+        {/* **曲も一緒に配れる**（2026-09-25）。
+            それまでは音源が端末にしか無く、共有しても鳴らなかった
+            （user の報告「共有をしたのですが、曲が聞こえません」）。
+            **押したときだけ**上げる — 配らない作品の音源をサーバーに
+            置かないため。配れないときは、理由と代わりの手を出す */}
         {stored.musicTitle !== null && (
-          <p className="rounded-lg border border-line px-gutter py-unit text-caption leading-snug text-accent-soft">
-            {stored.isMetronomeEnabled
-              ? t.share.musicNoteWithClick
-              : t.share.musicNote}
-          </p>
+          <div className="flex flex-col gap-unit rounded-lg border border-line px-gutter py-unit">
+            {track.blocker === null ? (
+              <Switch
+                fullWidth
+                icon={Music4}
+                label={t.share.shareMusic}
+                description={
+                  track.isWorking
+                    ? t.share.shareMusicWorking
+                    : track.isShared
+                      ? t.share.shareMusicOn
+                      : t.share.shareMusicSize(
+                          formatBytes(track.localBytes ?? 0),
+                        )
+                }
+                checked={track.isShared}
+                onChange={() => {
+                  if (track.isWorking) return;
+                  void (track.isShared ? track.detach() : track.attach());
+                }}
+              />
+            ) : (
+              <>
+                <p className="text-caption leading-snug text-fg-muted">
+                  {track.blocker === "guest"
+                    ? t.share.musicBlockedGuest
+                    : track.blocker === "missing"
+                      ? t.share.musicBlockedMissing
+                      : t.share.musicBlockedTooLarge(
+                          formatBytes(MAX_SHARED_TRACK_BYTES),
+                        )}
+                </p>
+                {/* 配れないときだけ、クリックという代わりの手を出す */}
+                <p className="text-caption leading-snug text-accent-soft">
+                  {stored.isMetronomeEnabled
+                    ? t.share.musicNoteWithClick
+                    : t.share.musicNote}
+                </p>
+              </>
+            )}
+          </div>
         )}
         {!stored.shareToken && (
           <p className="rounded-lg border border-line px-gutter py-unit text-caption leading-snug text-fg-muted">

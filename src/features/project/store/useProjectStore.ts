@@ -60,6 +60,9 @@ type ProjectState = {
    * storeに一本化するために持たせている */
   /** 選んでいる曲の名前。**音源は端末に置いたまま**で、名前だけが作品に付く */
   setMusicTitle: (musicTitle: string | null) => void;
+  /** **サーバーに置いた音源の場所**（共有するときだけ入る）。
+   *  `null` へ戻すことが「配るのをやめる」の意味になる */
+  setMusicPath: (musicPath: string | null) => void;
 
   /** プロジェクト名の変更。ゲストの下書きをそのままクラウドへ保存するとき、
    * 名前も含めて送れるようにここへ持たせている */
@@ -256,6 +259,11 @@ export const useProjectStore = create<ProjectState>((set) => ({
   setMusicTitle: (musicTitle) =>
     set((state) =>
       state.project ? { project: { ...state.project, musicTitle } } : {},
+    ),
+
+  setMusicPath: (musicPath) =>
+    set((state) =>
+      state.project ? { project: { ...state.project, musicPath } } : {},
     ),
 
 
