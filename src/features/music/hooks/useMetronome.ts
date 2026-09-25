@@ -31,6 +31,19 @@ const BEAT_HZ = 660;
  * 「まだ始まっていない」ことを音でも分ける */
 const COUNT_IN_HZ = 520;
 
+/**
+ * **曲に重ねて鳴らすときの音量**（ふだんの何倍か）。
+ *
+ * 答え合わせ（測った速さが合っているか聴く）では、曲と同時に鳴らす。
+ * ふだんの音量は**静かな画面で単独に鳴る**前提なので、曲に混ぜると
+ * 負けて聞こえない（user の報告 2026-09-25「音源に負けている」）。
+ *
+ * ⚠️ **ふだんの音量そのものを上げない。** あちらには予備拍が乗っていて、
+ * 「怖い」という指摘を受けてわざと柔らかくした経緯がある
+ * （`CLICK_SECONDS` の注記）。上げると、その直しを黙って戻すことになる。
+ */
+export const OVER_MUSIC_VOLUME = 1.8;
+
 type Params = {
   /** 鳴らすかどうか。再生中かつメトロノームONのときだけ true */
   isActive: boolean;
@@ -40,6 +53,12 @@ type Params = {
   beatsPerBar?: number;
   /** いま鳴らしているのが予備拍か。低い音に切り替える */
   isCountIn?: boolean;
+  /**
+   * 音量。**1 がふだんの音量**で、曲に重ねるときだけ上げる
+   * （`OVER_MUSIC_VOLUME`）。既定を変えないのは、予備拍の
+   * 「柔らかくした」直しを巻き込まないため。
+   */
+  volume?: number;
 };
 
 /**
@@ -60,6 +79,7 @@ export function useMetronome({
   bpm,
   beatsPerBar = 4,
   isCountIn = false,
+  volume = 1,
 }: Params) {
   const contextRef = useRef<AudioContext | null>(null);
   /** どこまで予約し終えたか(AudioContextの時計) */
@@ -83,6 +103,13 @@ export function useMetronome({
   useEffect(() => {
     isCountInRef.current = isCountIn;
   }, [isCountIn]);
+
+  /* 音量も**効果の作り直しに使わない**（予備拍と同じ理由）。
+     鳴っている最中に変えても、次の予約から自然に効く */
+  const volumeRef = useRef(volume);
+  useEffect(() => {
+    volumeRef.current = volume;
+  }, [volume]);
 
   useEffect(() => {
     wantsSoundRef.current = isActive;
@@ -121,7 +148,7 @@ export function useMetronome({
       // きつかったので 8ms かけて上げ、減衰も長めに取る
       gain.gain.setValueAtTime(0, time);
       gain.gain.linearRampToValueAtTime(
-        isFirstOfBar && !isCountingIn ? 0.34 : 0.24,
+        (isFirstOfBar && !isCountingIn ? 0.34 : 0.24) * volumeRef.current,
         time + 0.008,
       );
       gain.gain.exponentialRampToValueAtTime(0.0001, time + CLICK_SECONDS);

@@ -5,7 +5,10 @@ import { Scissors, Trash2 } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
-import { useMetronome } from "@/features/music/hooks/useMetronome";
+import {
+  OVER_MUSIC_VOLUME,
+  useMetronome,
+} from "@/features/music/hooks/useMetronome";
 import { useMusicPlacement } from "@/features/music/hooks/useMusicPlacement";
 import { NumberField } from "@/components/molecules/NumberField";
 import { TapTempoButton } from "@/components/molecules/TapTempoButton";
@@ -78,6 +81,9 @@ export function MusicSectionList() {
     isActive: checking !== null,
     bpm: checking?.bpm ?? DEFAULT_BPM,
     beatsPerBar,
+    /* 曲に重ねて聴くものなので、ふだんより大きく鳴らす。
+       ふだんの音量を上げると予備拍まで大きくなる */
+    volume: OVER_MUSIC_VOLUME,
   });
 
   /* **その区間の頭から鳴らす**（2026-09-25）。
