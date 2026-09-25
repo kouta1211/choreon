@@ -187,6 +187,28 @@ export function SceneDock({ project }: Props) {
     seekToSelectedScene(audioRef.current);
   }, [isPlaying, selectedSceneId, audioRef]);
 
+  /* **離れた板からの「この秒へ送って」を受ける**（2026-09-25）。
+
+     送る先の `<audio>` を持っているのはここで、時間軸は畳むと外れる
+     （`isTimelineVisible`）。曲のシートは画面全体を覆うので、あちらから
+     直に秒を動かす道が無い。ストアへ置いてもらって、持ち主が動かす
+     （`requestTogglePlay` と同じ作法）。
+
+     縦線は `currentTime` を購読して追うので（`useTimelinePlayhead`）、
+     ここで動かすのは**音と時計の2つだけ**でよい。 */
+  const seekRequest = useUIStore((state) => state.seekRequest);
+  const handledSeekAtRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!seekRequest) return;
+    // 同じ頼みを2度やらない（再描画のたびに送り直さない）
+    if (handledSeekAtRef.current === seekRequest.at) return;
+    handledSeekAtRef.current = seekRequest.at;
+
+    const audio = audioRef.current;
+    if (audio) audio.currentTime = seekRequest.seconds;
+    useMusicStore.getState().setCurrentTime(seekRequest.seconds);
+  }, [seekRequest, audioRef]);
+
   return (
     <div
       ref={dockRef}

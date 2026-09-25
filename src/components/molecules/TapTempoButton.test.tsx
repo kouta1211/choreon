@@ -35,7 +35,7 @@ function open() {
   return { onMeasured };
 }
 
-const button = () => screen.getByRole("button", { name: "叩いて測る" });
+const button = () => screen.getByRole("button", { name: "クリックして測る" });
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -96,7 +96,7 @@ describe("TapTempoButton", () => {
     open();
 
     expect(
-      screen.getByText("曲を流して、合わせて4回ほど叩いてください"),
+      screen.getByText("▶ で流して、曲に合わせて4回ほどクリックしてください"),
     ).toBeInTheDocument();
 
     fireEvent.click(button());
@@ -116,7 +116,7 @@ describe("TapTempoButton", () => {
     fireEvent.click(button());
 
     expect(
-      screen.getByRole("button", { name: "叩いて測る" }),
+      screen.getByRole("button", { name: "クリックして測る" }),
     ).toBeInTheDocument();
   });
 });
@@ -137,7 +137,7 @@ describe("TapTempoButton（曲を鳴らす）", () => {
       </LocaleProvider>,
     );
 
-    expect(screen.queryByRole("button", { name: "曲を流す" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "この区間を流す" })).toBeNull();
   });
 
   it("渡せば出て、押すとその手立てを呼ぶ", () => {
@@ -149,7 +149,7 @@ describe("TapTempoButton（曲を鳴らす）", () => {
       </LocaleProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "曲を流す" }));
+    fireEvent.click(screen.getByRole("button", { name: "この区間を流す" }));
 
     expect(onTogglePlay).toHaveBeenCalledTimes(1);
   });
@@ -164,9 +164,9 @@ describe("TapTempoButton（曲を鳴らす）", () => {
     );
 
     expect(
-      screen.getByRole("button", { name: "曲を止める" }),
+      screen.getByRole("button", { name: "止める" }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "曲を流す" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "この区間を流す" })).toBeNull();
   });
 
   /** 鳴らすボタンを押しても、叩いた回数には入れない */
@@ -179,9 +179,9 @@ describe("TapTempoButton（曲を鳴らす）", () => {
       </LocaleProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "曲を流す" }));
+    fireEvent.click(screen.getByRole("button", { name: "この区間を流す" }));
     clock.now += 500;
-    fireEvent.click(screen.getByRole("button", { name: "叩いて測る" }));
+    fireEvent.click(screen.getByRole("button", { name: "クリックして測る" }));
 
     // 叩いたのは1回だけなので、まだ速さは出ない
     expect(onMeasured).not.toHaveBeenCalled();

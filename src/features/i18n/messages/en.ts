@@ -790,11 +790,12 @@ export const en = {
     bpmUnit: "BPM",
     bpmNote:
       "Dragging the handle on the timeline bar changes the same tempo",
-    tapTempo: "Tap to measure",
-    tapTempoNote: "Play the track, then tap about four times along with it",
-    tapPlay: "Play the track",
-    tapPause: "Stop the track",
-    tapTempoFor: (name: string) => `Tap to measure “${name}”`,
+    tapTempo: "Click to measure",
+    tapTempoNote:
+      "Press ▶, then click about four times along with the track",
+    tapPlay: "Play this part",
+    tapPause: "Stop",
+    tapTempoFor: (name: string) => `Click to measure “${name}”`,
     tapTempoCount: (count: number) =>
       `${count} taps · pause to start over`,
     beatsPerBar: "Time signature",

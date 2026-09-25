@@ -196,6 +196,17 @@ type UIState = {
   setIsPlaying: (isPlaying: boolean) => void;
   /** 再生ボタンを押したのと同じことを頼む(カウントインを含む) */
   requestTogglePlay: () => void;
+  /**
+   * **この秒へ送ってほしい**と頼む。
+   *
+   * 送る先の `<audio>` を持っているのは SceneDock で、時間軸は畳むと
+   * 外れる。離れた板（曲のシート）から秒を動かしたいときは、ここへ
+   * 置いて持ち主にやってもらう（`requestTogglePlay` と同じ作法）。
+   *
+   * **同じ秒をもう一度頼んでも効く**よう、時刻を添える。
+   */
+  seekRequest: { seconds: number; at: number } | null;
+  requestSeek: (seconds: number) => void;
   setPlaybackStartScene: (sceneId: string | null) => void;
   /** 足したことを知らせる。同じシーンをもう一度渡せば光り直す */
   markSceneAdded: (sceneId: string | null) => void;
@@ -456,6 +467,9 @@ export const useUIStore = create<UIState>((set, get) => ({
   },
   setIsPlaying: (isPlaying) => set({ isPlaying }),
   requestTogglePlay: () => set({ playToggleRequestedAt: Date.now() }),
+  seekRequest: null,
+  requestSeek: (seconds) =>
+    set({ seekRequest: { seconds: Math.max(0, seconds), at: Date.now() } }),
   setPlaybackStartScene: (sceneId) => set({ playbackStartSceneId: sceneId }),
   markSceneAdded: (sceneId) => set({ justAddedSceneId: sceneId }),
   setSceneSheetOpen: (isOpen) => set({ isSceneSheetOpen: isOpen }),

@@ -851,11 +851,11 @@ export const ja = {
     /** 数の右に添える単位。ラベルと二重に「速さ(BPM)」と出さない */
     bpmUnit: "BPM",
     bpmNote: "時間軸のバーの取っ手を引いても、同じ速さが変わります",
-    tapTempo: "叩いて測る",
-    tapTempoNote: "曲を流して、合わせて4回ほど叩いてください",
-    tapPlay: "曲を流す",
-    tapPause: "曲を止める",
-    tapTempoFor: (name: string) => `「${name}」を叩いて測る`,
+    tapTempo: "クリックして測る",
+    tapTempoNote: "▶ で流して、曲に合わせて4回ほどクリックしてください",
+    tapPlay: "この区間を流す",
+    tapPause: "止める",
+    tapTempoFor: (name: string) => `「${name}」をクリックして測る`,
     tapTempoCount: (count: number) => `${count}回ぶん・手を止めると測り直し`,
     beatsPerBar: "拍子",
     beatsPerBarNote:

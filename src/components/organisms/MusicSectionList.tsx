@@ -39,6 +39,20 @@ export function MusicSectionList() {
   const hasMusic = useMusicStore((state) => state.objectUrl !== null);
   const isPlaying = useUIStore((state) => state.isPlaying);
   const requestTogglePlay = useUIStore((state) => state.requestTogglePlay);
+  const requestSeek = useUIStore((state) => state.requestSeek);
+
+  /* **その区間の頭から鳴らす**（2026-09-25）。
+
+     ただ再生するだけだと、縦線の居る所から鳴る — 2曲目の行を押したのに
+     1曲目が鳴る、ということが起きる。測りたいのは**その行の曲**なので、
+     先に頭へ送ってから鳴らす。
+
+     止めるときは送らない。押した所で止まるのが再生の約束
+     （user の指示 2026-08-22）で、そこを崩さない */
+  const playSection = (fromSeconds: number) => {
+    if (!isPlaying) requestSeek(fromSeconds);
+    requestTogglePlay();
+  };
 
   const selected = scenes.find((scene) => scene.id === selectedSceneId);
   /* いちばん近い8カウントの頭。拍で持っているので割り算1つで出る
@@ -139,7 +153,9 @@ export function MusicSectionList() {
                   void placement.setSectionBpm(section.index, next)
                 }
                 isPlaying={isPlaying}
-                onTogglePlay={hasMusic ? requestTogglePlay : undefined}
+                onTogglePlay={
+                  hasMusic ? () => playSection(section.fromSeconds) : undefined
+                }
               />
             </li>
           ))}

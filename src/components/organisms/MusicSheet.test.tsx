@@ -191,7 +191,7 @@ describe("MusicSheet（速さの欄）", () => {
  * **叩いて測る**（2026-09-25）。書き込む先は欄・スライダーと同じなので、
  * 出し分けの決まりも同じ — 速さの口が1つのときだけ出す。
  */
-const tapButton = () => screen.queryByRole("button", { name: "叩いて測る" });
+const tapButton = () => screen.queryByRole("button", { name: "クリックして測る" });
 
 const TWO_SECTIONS = [
   { fromBeat: 0, atSeconds: 0, secondsPerBeat: 0.5 },

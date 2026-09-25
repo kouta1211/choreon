@@ -68,6 +68,7 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
      再生の仕組みは増えていない（キーボードの Space も同じ所へ来る） */
   const isPlaying = useUIStore((state) => state.isPlaying);
   const requestTogglePlay = useUIStore((state) => state.requestTogglePlay);
+  const requestSeek = useUIStore((state) => state.requestSeek);
   const durationSeconds = useMusicStore((state) => state.durationSeconds);
   const loadMusic = useMusicStore((state) => state.load);
   const clearMusic = useMusicStore((state) => state.clear);
@@ -264,7 +265,16 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
             /* 曲が無いときは出さない。鳴らす相手が居ないので、
                押しても何も起きないボタンになる（スピーカーの音に
                合わせて叩く使い方は、それで塞がらない） */
-            onTogglePlay={hasDeviceAudio ? requestTogglePlay : undefined}
+            onTogglePlay={
+              hasDeviceAudio
+                ? () => {
+                    /* 区切りが1つなら「その区間」＝振付の載っている所。
+                       縦線がどこに居ても、頭から聴けるようにする */
+                    if (!isPlaying) requestSeek(placements[0].atSeconds);
+                    requestTogglePlay();
+                  }
+                : undefined
+            }
           />
         )}
 
