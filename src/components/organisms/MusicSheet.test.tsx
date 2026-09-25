@@ -186,3 +186,39 @@ describe("MusicSheet（速さの欄）", () => {
     expect(screen.getByText(/取っ手を引いても、同じ速さ/)).toBeInTheDocument();
   });
 });
+
+/**
+ * **叩いて測る**（2026-09-25）。書き込む先は欄・スライダーと同じなので、
+ * 出し分けの決まりも同じ — 速さの口が1つのときだけ出す。
+ */
+const tapButton = () => screen.queryByRole("button", { name: "叩いて測る" });
+
+const TWO_SECTIONS = [
+  { fromBeat: 0, atSeconds: 0, secondsPerBeat: 0.5 },
+  { fromBeat: 16, atSeconds: 12, secondsPerBeat: 0.5 },
+];
+
+describe("MusicSheet（叩いて測る）", () => {
+  it("曲があるときに出る", () => {
+    open(makeProject(), { fileName: "song.mp3" });
+
+    expect(tapButton()).toBeInTheDocument();
+  });
+
+  /* 曲が無くても使える。スピーカーから流れている音でも測れるのが
+     この手つきの利点で、そこを塞がない */
+  it("曲が無くても出る（スピーカーの音でも測れる）", () => {
+    open(makeProject(), { fileName: null });
+
+    expect(tapButton()).toBeInTheDocument();
+  });
+
+  /* 答えが分かれる値で書く。区切りの数で出し分けが変わる */
+  it("区切りが2つ以上あるときは出さない（どの区間か読めない）", () => {
+    open(makeProject({ musicPlacements: TWO_SECTIONS }), {
+      fileName: "song.mp3",
+    });
+
+    expect(tapButton()).toBeNull();
+  });
+});

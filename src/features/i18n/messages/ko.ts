@@ -779,6 +779,9 @@ export const ko = {
     bpm: "속도(BPM)",
     bpmUnit: "BPM",
     bpmNote: "타임라인 바의 손잡이를 끌어도 같은 빠르기가 바뀝니다",
+    tapTempo: "두드려서 재기",
+    tapTempoNote: "곡에 맞춰 네 번쯤 두드려 주세요",
+    tapTempoCount: (count: number) => `${count}번 · 손을 멈추면 다시 재기`,
     beatsPerBar: "박자",
     beatsPerBarNote:
       "바뀌는 것은 메트로놈의 센 박과 타임라인의 굵은 선뿐입니다(여덟 박 세는 법은 그대로).",

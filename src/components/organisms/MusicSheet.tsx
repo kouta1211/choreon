@@ -17,6 +17,7 @@ import {
 } from "@/features/music/lib/placement";
 import { MetronomeControls } from "@/components/molecules/MetronomeControls";
 import { NumberField } from "@/components/molecules/NumberField";
+import { TapTempoButton } from "@/components/molecules/TapTempoButton";
 import { useBpm } from "@/features/music/hooks/useBpm";
 import { MAX_BPM, MIN_BPM } from "@/features/music/lib/metronomePreference";
 import { MusicSectionList } from "@/components/organisms/MusicSectionList";
@@ -242,6 +243,17 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
             onChange={setBpm}
           />
         )}
+
+        {/* **叩いて測る**（2026-09-25）。曲に合わせて数回叩くと、
+            その速さが入る。
+
+            **速さの口が1つのときだけ出す。** 区切りが2つ以上あると
+            速さは区間ごとになり、「どの区間を測ったのか」が画面から
+            読めなくなる（上の欄・スライダーと同じ決まり）。
+
+            書き込む先は欄・スライダーと同じ `useBpm`。手つきが3つに
+            なっただけで、**変えている値は1つ** */}
+        {placements.length === 1 && <TapTempoButton onMeasured={setBpm} />}
 
         {/* **曲の区切り**（2026-09-15）。ショーケースは1本の中で曲が
             変わる。振付はカウントで組むので拍の列は切れず、切れるのは

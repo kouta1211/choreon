@@ -790,6 +790,10 @@ export const en = {
     bpmUnit: "BPM",
     bpmNote:
       "Dragging the handle on the timeline bar changes the same tempo",
+    tapTempo: "Tap to measure",
+    tapTempoNote: "Tap about four times along with the track",
+    tapTempoCount: (count: number) =>
+      `${count} taps · pause to start over`,
     beatsPerBar: "Time signature",
     beatsPerBarNote:
       "Only changes which beat the metronome accents and which timeline lines are thick (the eight-count is unaffected).",
