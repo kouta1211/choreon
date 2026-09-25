@@ -764,6 +764,39 @@ export type Section = {
  * 各画面で条件を書き直すと、必ずどこかが取り残される
  * （`.claude/rules/state.md` 6節）。
  */
+/**
+ * その秒が入っている区間の番号。
+ *
+ * ■ 何に要るか（2026-09-25）
+ * 区切りごとに再生ボタンを置くと、**どの行がいま鳴っているのか**を
+ * 行ごとに言えなければならない。作品全体の `isPlaying` を配ると、
+ * **どの行のボタンも一斉に「止める」に変わる**（user の報告
+ * 「どちらのボタンも反応してしまう」）。
+ *
+ * ■ 端の扱い
+ * - 最初の区間より**手前**（音先で、まだ振付が始まっていない間）… `0`。
+ *   向かっている先がその区間なので、そこが「いまの行」でよい
+ * - 最後の区間より**後ろ**（振付が終わっても曲が続く間）… 最後の番号。
+ *   `toSeconds` で切ると、**どの行でもない時間**ができてボタンが
+ *   ちらつく
+ *
+ * だから見るのは `fromSeconds` だけ。**区間は隙間なく並んでいる**ので、
+ * 「その秒を過ぎた最後の区間」で必ず1つに決まる。
+ */
+export function sectionIndexAtSeconds(
+  list: readonly Section[],
+  seconds: number,
+): number {
+  if (list.length === 0) return 0;
+
+  let index = 0;
+  for (let i = 1; i < list.length; i += 1) {
+    if (list[i].fromSeconds <= seconds) index = i;
+    else break;
+  }
+  return index;
+}
+
 export function sections(
   placements: readonly Placement[],
   lastBeat: number,

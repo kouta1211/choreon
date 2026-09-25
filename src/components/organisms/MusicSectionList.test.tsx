@@ -121,8 +121,14 @@ describe("MusicSectionList", () => {
 });
 
 /** ▶ は曲があるときだけ出る。鳴らす相手を先に入れておく */
-function withMusic({ isPlaying }: { isPlaying: boolean }) {
-  useMusicStore.setState({ objectUrl: "blob:song" });
+function withMusic({
+  isPlaying,
+  currentTime = 0,
+}: {
+  isPlaying: boolean;
+  currentTime?: number;
+}) {
+  useMusicStore.setState({ objectUrl: "blob:song", currentTime });
   useUIStore.setState({ seekRequest: null, isPlaying });
 }
 
@@ -160,12 +166,45 @@ describe("MusicSectionList（その区間を流す）", () => {
 
   /* 止めるときは送らない。押した所で止まるのが再生の約束
      （user の指示 2026-08-22）で、そこを崩さない */
-  it("鳴っている間に押したときは、送らずに止めるだけ", () => {
-    withMusic({ isPlaying: true });
+  it("その行が鳴っている間に押したときは、送らずに止めるだけ", () => {
+    // 2つ目の区間（12秒〜）を鳴らしている
+    withMusic({ isPlaying: true, currentTime: 20 });
     open();
 
-    fireEvent.click(screen.getAllByRole("button", { name: "止める" })[1]);
+    fireEvent.click(screen.getByRole("button", { name: "止める" }));
 
     expect(useUIStore.getState().seekRequest).toBeNull();
+  });
+
+  /* **ここが user の報告そのもの。** 全体の isPlaying を配っていたので、
+     どの行のボタンも一斉に「止める」へ変わっていた */
+  it("鳴っているのは1行だけ。他の行は「流す」のまま", () => {
+    withMusic({ isPlaying: true, currentTime: 20 });
+    open();
+
+    expect(screen.getAllByRole("button", { name: "止める" })).toHaveLength(1);
+    expect(
+      screen.getAllByRole("button", { name: "この区間を流す" }),
+    ).toHaveLength(1);
+  });
+
+  it("鳴っていない行を押したら、鳴ったままその区間の頭へ送る", () => {
+    // 2つ目を鳴らしている状態で、1つ目を押す
+    withMusic({ isPlaying: true, currentTime: 20 });
+    open();
+
+    fireEvent.click(screen.getByRole("button", { name: "この区間を流す" }));
+
+    expect(useUIStore.getState().seekRequest?.seconds).toBe(0);
+  });
+
+  it("止まっているときは、どの行も「流す」", () => {
+    withMusic({ isPlaying: false, currentTime: 20 });
+    open();
+
+    expect(
+      screen.getAllByRole("button", { name: "この区間を流す" }),
+    ).toHaveLength(2);
+    expect(screen.queryByRole("button", { name: "止める" })).toBeNull();
   });
 });

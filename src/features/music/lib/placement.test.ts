@@ -25,6 +25,7 @@ import {
   restretchAt,
   sectionEndSeconds,
   sections,
+  sectionIndexAtSeconds,
   splitAt,
   stretchSectionToEnd,
 } from "./placement";
@@ -706,5 +707,42 @@ describe("区切りを置いても丸めない", () => {
         6,
       );
     }
+  });
+});
+
+describe("その秒がどの区間か（sectionIndexAtSeconds）", () => {
+  /** 0〜12秒が1つ目、12秒〜が2つ目 */
+  const LIST = sections(TWO_SONGS, 128);
+
+  it("最初の区間の中なら 0", () => {
+    expect(sectionIndexAtSeconds(LIST, 5)).toBe(0);
+  });
+
+  /* 境目の両側で書く。片側だけだと、比較を < に変えても緑のまま */
+  it("境目ちょうどは、次の区間に入ったとみなす", () => {
+    expect(sectionIndexAtSeconds(LIST, LIST[1].fromSeconds)).toBe(1);
+    expect(sectionIndexAtSeconds(LIST, LIST[1].fromSeconds - 0.001)).toBe(0);
+  });
+
+  /* 音先の作品。まだ振付が始まっていない間も、向かっている先の行を指す */
+  it("最初の区間より手前でも 0（どの行でもない時間を作らない）", () => {
+    expect(sectionIndexAtSeconds(LIST, -5)).toBe(0);
+  });
+
+  /* 振付が終わっても曲は続く。ここで「どの行でもない」にすると
+     ボタンがちらつく */
+  it("最後の区間より後ろは、最後の番号のまま", () => {
+    expect(sectionIndexAtSeconds(LIST, 99_999)).toBe(1);
+  });
+
+  it("区間が1つなら、いつでも 0", () => {
+    const one = sections([{ fromBeat: 0, atSeconds: 0, secondsPerBeat: 0.5 }], 32);
+
+    expect(sectionIndexAtSeconds(one, 0)).toBe(0);
+    expect(sectionIndexAtSeconds(one, 500)).toBe(0);
+  });
+
+  it("空の一覧を渡されても落ちない", () => {
+    expect(sectionIndexAtSeconds([], 10)).toBe(0);
   });
 });

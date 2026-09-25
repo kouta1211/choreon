@@ -9,7 +9,10 @@ import { NumberField } from "@/components/molecules/NumberField";
 import { TapTempoButton } from "@/components/molecules/TapTempoButton";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { BEATS_PER_SET } from "@/features/music/lib/counts";
-import { MAX_SECTION_LABEL_LENGTH } from "@/features/music/lib/placement";
+import {
+  MAX_SECTION_LABEL_LENGTH,
+  sectionIndexAtSeconds,
+} from "@/features/music/lib/placement";
 import { MAX_BPM, MIN_BPM } from "@/features/music/lib/metronomePreference";
 import { formatMinutes } from "@/features/scene/lib/clock";
 import { useT } from "@/features/i18n/LocaleProvider";
@@ -41,6 +44,19 @@ export function MusicSectionList() {
   const requestTogglePlay = useUIStore((state) => state.requestTogglePlay);
   const requestSeek = useUIStore((state) => state.requestSeek);
 
+  /* **いま鳴っているのはどの行か。**
+
+     作品全体の `isPlaying` を行ごとに配ると、**どの行のボタンも一斉に
+     「止める」へ変わる**（user の報告 2026-09-25
+     「どちらのボタンも反応してしまう」）。
+
+     秒そのものを読むと毎フレーム描き直しになるので、**区間の番号へ
+     畳んでから**読む。番号は境目をまたいだときしか変わらないので、
+     再描画もそのときだけになる */
+  const playingIndex = useMusicStore((state) =>
+    sectionIndexAtSeconds(placement.sections, state.currentTime),
+  );
+
   /* **その区間の頭から鳴らす**（2026-09-25）。
 
      ただ再生するだけだと、縦線の居る所から鳴る — 2曲目の行を押したのに
@@ -49,9 +65,18 @@ export function MusicSectionList() {
 
      止めるときは送らない。押した所で止まるのが再生の約束
      （user の指示 2026-08-22）で、そこを崩さない */
-  const playSection = (fromSeconds: number) => {
-    if (!isPlaying) requestSeek(fromSeconds);
-    requestTogglePlay();
+  const playSection = (section: { index: number; fromSeconds: number }) => {
+    /* いま鳴っているのがこの行なら、押したのは「止める」。
+       押した所で止まるのが再生の約束（user の指示 2026-08-22）なので、
+       秒は動かさない */
+    if (isPlaying && playingIndex === section.index) {
+      requestTogglePlay();
+      return;
+    }
+
+    // 別の行（または止まっている）なら、その区間の頭から聴かせる
+    requestSeek(section.fromSeconds);
+    if (!isPlaying) requestTogglePlay();
   };
 
   const selected = scenes.find((scene) => scene.id === selectedSceneId);
@@ -152,10 +177,9 @@ export function MusicSectionList() {
                 onMeasured={(next) =>
                   void placement.setSectionBpm(section.index, next)
                 }
-                isPlaying={isPlaying}
-                onTogglePlay={
-                  hasMusic ? () => playSection(section.fromSeconds) : undefined
-                }
+                /* **その行が鳴っているか**。全体の isPlaying ではない */
+                isPlaying={isPlaying && playingIndex === section.index}
+                onTogglePlay={hasMusic ? () => playSection(section) : undefined}
               />
             </li>
           ))}
