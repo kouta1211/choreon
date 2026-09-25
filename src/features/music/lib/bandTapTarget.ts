@@ -27,3 +27,26 @@ export function startedOnSceneCard(target: EventTarget | null): boolean {
     target.closest(`[${SCENE_CARD_ATTRIBUTE}]`) !== null
   );
 }
+
+/**
+ * 引いたのか、**トンと押しただけ**なのかの境目（px）。
+ *
+ * ここに1つしか置かないのが肝心で、**帯のシークと区間バーが同じ数を読む**。
+ * 別々に持つと、帯では「押した」と判じた指の動きが区間バーでは「引いた」に
+ * なり、同じ手つきで違うことが起きる（`.claude/rules/state.md` 7節）。
+ */
+export const TAP_SLOP_PX = 6;
+
+/**
+ * その指の動きは【押しただけ】か。
+ *
+ * **厳密な 0 で見ない。** 指もトラックパッドも 1〜2px は必ず動くので、
+ * 0 と比べると「押しただけ」がほぼ成立しない。区間バーではそれが
+ * **微小な移動の保存**として表に出ていた（押すたびに atSeconds が
+ * 何十ミリ秒か動き、通信も飛ぶ）。
+ *
+ * @param movedPx 押してから離すまでに動いた横の距離。符号はどちらでもよい
+ */
+export function isTap(movedPx: number): boolean {
+  return Math.abs(movedPx) < TAP_SLOP_PX;
+}

@@ -855,7 +855,7 @@ export const ja = {
     counts: (set: number, count: number) => `${set}セット ${count}カウント`,
     /* ── 曲へ載せる（第3段・2026-08-26）。バーの本体と両端の取っ手 ── */
     placeBar: "振付を曲のどこへ載せるか",
-    placeMove: "振付ぜんぶを前後へ動かす",
+    placeMove: "押すとこの曲の頭へ、引くと振付ぜんぶを前後へ動かす",
     placeStretch: "振付の終わりを合わせる",
     /** バーの上に添える。載っている区間の長さ */
     placeSpan: (from: string, to: string) => `振付 ${from} 〜 ${to}`,

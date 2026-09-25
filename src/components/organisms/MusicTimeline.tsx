@@ -255,6 +255,12 @@ export function MusicTimeline({ project, audioRef }: Props) {
               onStretchTo={(seconds) =>
                 void placement.stretchSectionTo(section.index, seconds)
               }
+              /* **渡すのは頭（fromSeconds）。** 終わりを渡すと、押すたびに
+                 次の曲の頭へ飛んで「この曲の頭を確かめる」ができなくなる。
+                 秒を動かすのは `seekTo` 1本（<audio>・ストア・縦線の3つを
+                 まとめて合わせる）。ここで setCurrentTime だけ呼ぶと
+                 ストアと音がずれる */
+              onJumpToHead={() => seekTo(section.fromSeconds)}
             />
           ))}
 

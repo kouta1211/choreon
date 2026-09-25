@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { motionValue } from "motion/react";
 import { TimelineSpanLayer } from "./TimelineSpanLayer";
 import { LocaleProvider } from "@/features/i18n/LocaleProvider";
+import { TAP_SLOP_PX } from "@/features/music/lib/bandTapTarget";
 
 /**
  * **バーの2つの操作が入れ替わっていないか。**
@@ -20,6 +21,7 @@ const PX_PER_SECOND = 20;
 function renderBar() {
   const onMoveTo = vi.fn();
   const onStretchTo = vi.fn();
+  const onJumpToHead = vi.fn();
   render(
     <LocaleProvider locale="ja">
       <TimelineSpanLayer
@@ -30,10 +32,11 @@ function renderBar() {
         heightPx={12}
         onMoveTo={onMoveTo}
         onStretchTo={onStretchTo}
+        onJumpToHead={onJumpToHead}
       />
     </LocaleProvider>,
   );
-  return { onMoveTo, onStretchTo };
+  return { onMoveTo, onStretchTo, onJumpToHead };
 }
 
 function drag(element: HTMLElement, deltaPx: number) {
@@ -43,7 +46,10 @@ function drag(element: HTMLElement, deltaPx: number) {
   fireEvent.pointerUp(element, { pointerId: 1, clientX: 100 + deltaPx });
 }
 
-const body = () => screen.getByRole("button", { name: "振付ぜんぶを前後へ動かす" });
+const body = () =>
+  screen.getByRole("button", {
+    name: "押すとこの曲の頭へ、引くと振付ぜんぶを前後へ動かす",
+  });
 const handle = () => screen.getByRole("button", { name: "振付の終わりを合わせる" });
 
 describe("曲へ載せるバー", () => {
@@ -69,11 +75,46 @@ describe("曲へ載せるバー", () => {
     expect(onMoveTo).not.toHaveBeenCalled();
   });
 
-  it("動かさずに離したら、何も保存しない", () => {
-    const { onMoveTo, onStretchTo } = renderBar();
+  it("動かさずに離したら、保存はせずにこの区間の頭へ飛ぶ", () => {
+    const { onMoveTo, onStretchTo, onJumpToHead } = renderBar();
 
     drag(body(), 0);
 
+    expect(onJumpToHead).toHaveBeenCalledTimes(1);
+    expect(onMoveTo).not.toHaveBeenCalled();
+    expect(onStretchTo).not.toHaveBeenCalled();
+  });
+
+  /* **ここが歯。** 以前は `moved === 0` で見ていたので、指が1px 動いた
+     タップが**微小な移動として保存**されていた（atSeconds が数十ミリ秒
+     動き、通信も飛ぶ）。0 ではなく「しきい値未満」で書く */
+  it("指が少しぶれても、保存せずに頭へ飛ぶ", () => {
+    const { onMoveTo, onJumpToHead } = renderBar();
+
+    drag(body(), TAP_SLOP_PX - 1);
+
+    expect(onJumpToHead).toHaveBeenCalledTimes(1);
+    expect(onMoveTo).not.toHaveBeenCalled();
+  });
+
+  /** 境目の向こうは今までどおりの移動。飛ばない */
+  it("しきい値ぶん引いたら、飛ばずに移動として保存する", () => {
+    const { onMoveTo, onJumpToHead } = renderBar();
+
+    drag(body(), TAP_SLOP_PX);
+
+    expect(onMoveTo).toHaveBeenCalledWith(4 + TAP_SLOP_PX / PX_PER_SECOND);
+    expect(onJumpToHead).not.toHaveBeenCalled();
+  });
+
+  /* 取っ手にも意味を乗せない。**押しても頭へ飛ばない** —
+     「終わりを合わせる」所で頭が動くと、何が起きたか読めなくなる */
+  it("取っ手を押しただけでは、何も起きない", () => {
+    const { onMoveTo, onStretchTo, onJumpToHead } = renderBar();
+
+    drag(handle(), 0);
+
+    expect(onJumpToHead).not.toHaveBeenCalled();
     expect(onMoveTo).not.toHaveBeenCalled();
     expect(onStretchTo).not.toHaveBeenCalled();
   });

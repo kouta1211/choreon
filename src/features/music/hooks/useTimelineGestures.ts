@@ -9,13 +9,11 @@ import {
   scrollForSeconds,
 } from "@/features/music/lib/timelineScale";
 import { flickTargetSeconds } from "@/features/music/lib/counts";
-import { startedOnSceneCard } from "@/features/music/lib/bandTapTarget";
+import { isTap, startedOnSceneCard } from "@/features/music/lib/bandTapTarget";
 import { capturePointer, releasePointer } from "@/lib/pointerCapture";
 import { TAP_PATTERN, vibrate } from "@/lib/haptics";
 import type { BeatOriginSeconds } from "@/features/music/lib/placement";
 
-/** これ未満の移動はタップ。それ以上は軸を引っ張る操作 */
-const PAN_THRESHOLD_PX = 6;
 /** 押しっぱなしにすると、拍への吸着をやめて自由に置けるようになる */
 const FREEHAND_HOLD_MS = 450;
 
@@ -211,7 +209,7 @@ export function useTimelineGestures({
 
     const pan = panRef.current;
     const delta = event.clientX - pan.startX;
-    if (!pan.moved && Math.abs(delta) < PAN_THRESHOLD_PX) return;
+    if (!pan.moved && isTap(delta)) return;
     pan.moved = true;
     // ここからは帯を引く操作。指が帯の外へ出ても追い続けたいので捕まえる
     holdPointer(event);

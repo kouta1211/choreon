@@ -793,7 +793,8 @@ export const en = {
       `${total}s end to end · ${from} – ${to}`,
     counts: (set: number, count: number) => `set ${set}, count ${count}`,
     placeBar: "Where the choreography sits in the track",
-    placeMove: "Move the whole choreography",
+    placeMove:
+      "Tap to jump to this song's start, drag to move the whole choreography",
     placeStretch: "Set where the choreography ends",
     placeSpan: (from: string, to: string) => `Choreography ${from} – ${to}`,
     placeFailed: "Could not save how the choreography sits on the track",

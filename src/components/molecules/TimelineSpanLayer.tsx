@@ -3,6 +3,7 @@
 import { useState, type PointerEvent } from "react";
 import { motion, type MotionValue } from "motion/react";
 import { axisX } from "@/features/music/lib/timelineScale";
+import { isTap } from "@/features/music/lib/bandTapTarget";
 import { formatClock } from "@/features/scene/lib/clock";
 import { useT } from "@/features/i18n/LocaleProvider";
 
@@ -18,6 +19,14 @@ type Props = {
   /** 引き終わったとき。**離した瞬間に1回だけ** */
   onMoveTo: (fromSeconds: number) => void;
   onStretchTo: (toSeconds: number) => void;
+  /**
+   * 本体を**引かずに押した**とき。この区間の頭へ縦線を移す（試し聴き）。
+   *
+   * 鳴らす所までここではやらない。再生は「いま縦線が立っている所から」
+   * 始まる約束なので（`usePlaybackToggle`・user の指示 2026-08-22）、
+   * 縦線を移せば既にある再生がそこから鳴る。**再生の口を増やさない。**
+   */
+  onJumpToHead: () => void;
   /** 区間の名前（曲名）。付いていれば時刻の手前に出す */
   label?: string | undefined;
 };
@@ -37,6 +46,12 @@ const HANDLE_PX = 14;
  * の2つだけ。**拍は1つも動かない**ので、何度引き直しても振付の中身
  * （何カウント目にどの隊形か）は変わらない。
  *
+ * ■ 引かずに押すと、その頭へ縦線が飛ぶ（2026-09-25）
+ * 1本の音源に何曲も入っているとき、決めるのは「2曲目が音源の何秒目か」。
+ * 引いて決めたあと、**そこが本当に2曲目の頭かを確かめる手立てが無かった**
+ * （頭から流して待つしかない）。押すと縦線がその頭へ移るので、
+ * あとは再生を押せばそこから鳴る。**鳴らすのはここの仕事ではない。**
+ *
  * ■ 左に取っ手を置かない
  * 頭を動かすのは「本体を引く」でできる。左端にも取っ手を置くと
  * 「頭を動かす」と「終わりを固定して伸ばす」が同じ場所に2つ乗り、
@@ -54,6 +69,7 @@ export function TimelineSpanLayer({
   heightPx,
   onMoveTo,
   onStretchTo,
+  onJumpToHead,
   label,
 }: Props) {
   const t = useT();
@@ -96,9 +112,25 @@ export function TimelineSpanLayer({
     if (!live) return;
     event.stopPropagation();
     const kind = live.kind;
-    const moved = (event.clientX - live.startX) / pxPerSecond;
+    const movedPx = event.clientX - live.startX;
     setLive(null);
-    if (moved === 0) return;
+
+    /* **押しただけなら、動かさずに聴く方へ回す。**
+
+       以前はここを `moved === 0` で見ていた。指もトラックパッドも
+       1〜2px は必ず動くので、**押したつもりが微小な移動として保存**
+       されていた（atSeconds が何十ミリ秒か動き、通信も飛ぶ）。
+       境目は帯のシークと同じ `isTap` が持つ（口を2つ置かない）。
+
+       取っ手の側は今までどおり何もしない。頭へ飛ぶのは本体だけで、
+       「終わりを合わせる」取っ手に別の意味を乗せると、どちらが
+       起きたのか画面から読めなくなる（左に取っ手を置かないのと同じ話） */
+    if (isTap(movedPx)) {
+      if (kind === "move") onJumpToHead();
+      return;
+    }
+
+    const moved = movedPx / pxPerSecond;
     if (kind === "move") onMoveTo(Math.max(0, fromSeconds + moved));
     else onStretchTo(Math.max(fromSeconds, toSeconds + moved));
   };
@@ -120,6 +152,9 @@ export function TimelineSpanLayer({
         <button
           type="button"
           aria-label={t.music.placeMove}
+          /* hover でも読めるように。**押せると見て分からない**操作なので、
+             読み上げだけに置くと目で使う人へ届かない */
+          title={t.music.placeMove}
           onPointerDown={begin("move")}
           onPointerMove={move}
           onPointerUp={end}
