@@ -45,10 +45,14 @@ const POSITIONS = [
   }),
 ];
 
-function renderViewer(requestedDancerId: string | null = null) {
+function renderViewer(
+  requestedDancerId: string | null = null,
+  overrides: { project?: typeof PROJECT; hasMusic?: boolean } = {},
+) {
   return render(
     <ViewerLayout
-      project={PROJECT}
+      project={overrides.project ?? PROJECT}
+      hasMusic={overrides.hasMusic}
       dancers={DANCERS}
       scenes={SCENES}
       positions={POSITIONS}
@@ -221,5 +225,54 @@ describe("ViewerLayout", () => {
 
     fireEvent.click(toggle);
     expect(useViewerStore.getState().isPathVisible).toBe(false);
+  });
+});
+
+/**
+ * **鳴らない理由を、画面で言う**（user の報告 2026-09-25
+ * 「共有をしたのですが、曲が聞こえません」）。
+ *
+ * 音源を共有しないのは決めたとおり（端末の IndexedDB にしか無い）。
+ * defect はそこではなく、**画面が何も言わなかった**こと。
+ * `hasMusic` はストアまで来ていたのに、**読み手が1人も居なかった** —
+ * 読んでいた `useViewerOrderOnly` を畳んだときに取り残されていた。
+ */
+describe("ViewerLayout（曲は共有されない）", () => {
+  const withMusic = makeProject({
+    id: "p1",
+    stageWidth: 12,
+    stageHeight: 9,
+    musicTitle: "song.mp3",
+  });
+
+  it("曲に載せた作品なら、鳴らないことを書く", () => {
+    renderViewer("d1", { project: withMusic, hasMusic: true });
+
+    expect(screen.getByText("曲は流れません")).toBeInTheDocument();
+  });
+
+  /* クリックが入っていれば拍は鳴る。「何も鳴らない」と書くと嘘になる */
+  it("クリックが入っているなら、拍は鳴ると書く", () => {
+    renderViewer("d1", {
+      project: makeProject({
+        id: "p1",
+        stageWidth: 12,
+        stageHeight: 9,
+        musicTitle: "song.mp3",
+        isMetronomeEnabled: true,
+      }),
+      hasMusic: true,
+    });
+
+    expect(screen.getByText("拍だけ鳴ります")).toBeInTheDocument();
+    expect(screen.queryByText("曲は流れません")).toBeNull();
+  });
+
+  /* 曲を使っていない作品に出すと、読む人には意味の無い一行になる */
+  it("曲を使っていない作品には、何も書かない", () => {
+    renderViewer("d1", { hasMusic: false });
+
+    expect(screen.queryByText("曲は流れません")).toBeNull();
+    expect(screen.queryByText("拍だけ鳴ります")).toBeNull();
   });
 });

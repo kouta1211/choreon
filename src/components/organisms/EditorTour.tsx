@@ -115,7 +115,7 @@ export function EditorTour() {
         backgroundColor: "var(--overlay-bg)",
         overlayColor: "color-mix(in oklab, var(--scrim) 60%, transparent)",
         primaryColor: "var(--accent)",
-        textColor: "var(--fg)",
+        textColor: "var(--text)",
         zIndex: 70,
       }}
       styles={{
@@ -140,9 +140,9 @@ export function EditorTour() {
         tooltipTitle: {
           fontSize: 13.5,
           fontWeight: 600,
-          color: "var(--fg-strong)",
+          color: "var(--text-strong)",
         },
-        tooltipContent: { lineHeight: 1.7, color: "var(--fg-sub)" },
+        tooltipContent: { lineHeight: 1.7, color: "var(--text-sub)" },
         buttonPrimary: {
           borderRadius: 8,
           fontSize: 12.5,
@@ -150,8 +150,8 @@ export function EditorTour() {
           color: "var(--accent-fg)",
           padding: "9px 14px",
         },
-        buttonBack: { fontSize: 12.5, color: "var(--fg-sub)" },
-        buttonSkip: { fontSize: 12, color: "var(--fg-muted)" },
+        buttonBack: { fontSize: 12.5, color: "var(--text-sub)" },
+        buttonSkip: { fontSize: 12, color: "var(--text-muted)" },
       }}
     />
   );

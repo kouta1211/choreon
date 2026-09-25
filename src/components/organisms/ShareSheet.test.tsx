@@ -138,3 +138,41 @@ describe("ShareSheet", () => {
   });
 
 });
+
+/**
+ * **配る側にも、曲が付いていかないことを言う**（user の報告 2026-09-25
+ * 「共有をしたのですが、曲が聞こえません」）。
+ *
+ * この板の説明には前から「一行書いておかないと『壊れている』と
+ * 受け取られる」と書いてあったが、**その一行は画面に無かった**。
+ * 説明に書いた約束は、画面に出して初めて守ったことになる。
+ */
+describe("ShareSheet（曲は付いていかない）", () => {
+  it("曲を入れた作品なら、届かないことを書く", () => {
+    open(makeProject({ isShared: true, shareToken: "tok-123", musicTitle: "song.mp3" }));
+
+    expect(screen.getByText(/曲は相手に届きません/)).toBeInTheDocument();
+    expect(screen.getByText(/クリック を入れておくと/)).toBeInTheDocument();
+  });
+
+  /* クリックが入っていれば拍は鳴る。入れろと促すのは嘘になる */
+  it("クリックが入っているなら、拍が鳴ると書く", () => {
+    open(
+      makeProject({
+        isShared: true,
+        shareToken: "tok-123",
+        musicTitle: "song.mp3",
+        isMetronomeEnabled: true,
+      }),
+    );
+
+    expect(screen.getByText(/クリックは入っているので/)).toBeInTheDocument();
+  });
+
+  /* 曲を使っていない作品には、読む意味が無い */
+  it("曲を入れていない作品には、何も書かない", () => {
+    open(SHARED);
+
+    expect(screen.queryByText(/曲は相手に届きません/)).toBeNull();
+  });
+});

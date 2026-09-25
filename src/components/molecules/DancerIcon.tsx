@@ -250,12 +250,16 @@ function DancerMarkerImpl({
       <span
         aria-hidden
         className="pointer-events-none absolute left-0 top-0 flex items-center justify-center text-caption font-bold text-[var(--marker-initial)]"
-        /* ずらしをクラス(-translate-x-1/2)ではなくここに書いているのは、
-           上下反転の打ち消し(var(--upright))と1つのtransformに並べるため */
+        /* ⚠️ **`--upright` を外した**（2026-09-25）。どこからも定義されて
+           いない変数で、**transform ごと無効**になっていた（＝中央寄せが
+           効かず、頭文字が右下へずれる）。暗い系は `--marker-initial` が
+           transparent で見えないので、輪郭表示のテーマでだけ出ていた。
+           入れ物を `scaleY(-1)` で反転させる案は採らなかった
+           （`lib/stageFlip.ts` の注記）ので、打ち消す相手はもう居ない */
         style={{
           width: MARKER_SIZE,
           height: MARKER_SIZE,
-          transform: "translate(-50%, -50%) var(--upright)",
+          transform: "translate(-50%, -50%)",
         }}
       >
         {[...dancer.name][0] ?? ""}

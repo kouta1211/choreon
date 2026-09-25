@@ -584,6 +584,8 @@ export const ko = {
       play: "통으로 재생",
       stop: "정지",
       paths: "동선",
+      noMusic: "곡은 재생되지 않습니다",
+      clickOnly: "박자만 울립니다",
     },
     entry: {
       question: "본인은 누구인가요?",
@@ -619,6 +621,10 @@ export const ko = {
     regenerateFailed: "링크를 새로 만들지 못했습니다",
     copyFailed: "복사하지 못했습니다",
     saveFailed: "공유 설정을 바꾸지 못했습니다",
+    musicNote:
+      "곡은 상대에게 전달되지 않습니다. 음원은 이 기기에만 있습니다. 메뉴 → 곡 에서 클릭을 켜 두면 보는 사람의 기기에서도 박자만은 울립니다.",
+    musicNoteWithClick:
+      "곡은 상대에게 전달되지 않습니다. 음원은 이 기기에만 있습니다. 클릭이 켜져 있으므로 보는 사람의 기기에서 박자가 울립니다.",
   },
 
   assist: {

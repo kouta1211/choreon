@@ -119,10 +119,23 @@ export function ViewerSceneStrip() {
                         }%`,
                         width: isOwn ? 6 : 4,
                         height: isOwn ? 6 : 4,
+                        /* ⚠️ **`--fg` というトークンは無い**（2026-09-25 に
+                           user の報告「コマが全て真っ暗」で判明）。
+                           Tailwind の `text-fg` は `--color-fg` → `--text` と
+                           辿るので効くが、**生の `var(--fg)` は空**になる。
+                           空を混ぜた `color-mix()` は値として無効なので、
+                           background ごと落ちて **rgba(0,0,0,0)** になっていた
+                           （＝どの点も描かれない）。
+                           「選ばずに全員を見る」だと自分の点も無いので、
+                           24コマが全部まっさらな黒板になっていた。
+
+                           濃さは数で決めず、**その用の名前を持つトークン**
+                           （`--text-muted` ＝ 読めるが主役ではない）を使う。
+                           テーマごとに調整済みの値が入っている */
                         background:
                           isOwn && dancer
                             ? themedDancerColor(dancer.color)
-                            : "color-mix(in oklab, var(--fg) 25%, transparent)",
+                            : "var(--text-muted)",
                       }}
                       className="absolute block -translate-x-1/2 -translate-y-1/2 rounded-full"
                     />

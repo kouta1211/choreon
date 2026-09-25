@@ -73,6 +73,12 @@ export function ViewerLayout({
      ここに閉じ込めていると止められない（実機の要望 2026-08-19） */
   const isPlaying = useViewerStore((state) => state.isPlaying);
   const setIsPlaying = useViewerStore((state) => state.setIsPlaying);
+  /* **曲に載せて組まれた作品か。** 音源そのものは共有しないので、
+     ここが true でも何も鳴らない。**その事実を画面で言う**ための値
+     （user の報告 2026-09-25「共有をしたのですが、曲が聞こえません」）。
+     ⚠️ 以前はストアへ入れるだけで**誰も読んでいなかった** —
+     読み手だった `useViewerOrderOnly` を畳んだときに取り残された */
+  const hasMusicTrack = useViewerStore((state) => state.hasMusic);
 
   useEffect(() => {
     hydrate({
@@ -239,6 +245,16 @@ export function ViewerLayout({
             <Spline size={13} />
             {t.viewer.route.paths}
           </PressableButton>
+        )}
+
+        {/* **鳴らない理由を、鳴らすボタンの隣に置く。**
+            別の画面に書いても、押して無音だった人には届かない */}
+        {hasMusicTrack && (
+          <span className="min-w-0 flex-1 truncate text-right text-caption text-fg-muted">
+            {project?.isMetronomeEnabled
+              ? t.viewer.route.clickOnly
+              : t.viewer.route.noMusic}
+          </span>
         )}
       </div>
 

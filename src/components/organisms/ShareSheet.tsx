@@ -31,11 +31,16 @@ type Props = {
  * 編集のアクションを持たない別のストアで動いています)。
  *
  * ■ 曲は付いていかない
- * 音源はサーバーへ上げない方針なので、共有した相手の画面では
- * 8カウントの縞が地になります。相手が同じ曲を自分の端末で選べば
- * 波形になり、開始位置(music_offset_seconds)は共有されるので合います。
- * ここに一行書いておかないと、相手の画面で曲が鳴らないことを
- * 「壊れている」と受け取られる。
+ * 音源はサーバーへ上げない方針なので、共有した相手の画面では**何も
+ * 鳴りません**（クリックを入れてあれば拍だけは鳴ります。あれは速さと
+ * 拍子から合成できるので共有できる）。載せ方(`music_placements`)も
+ * 共有されるので、曲が変わる所でクリックの速さまで引き継がれます。
+ *
+ * ⚠️ **その一行を、ここにずっと書き忘れていた**（2026-09-25）。
+ * この説明には前から「一行書いておかないと『壊れている』と受け取られる」
+ * と書いてあったのに、**画面には出していなかった** — そして実際に
+ * user から「共有をしたのですが、曲が聞こえません」と報告が来た。
+ * 説明に書いた約束は、**画面に出して初めて守ったことになる**。
  *
  * ■ 個別リンクは権限ではない
  * `?p=` はポジションを選ぶ手間を省くだけで、書き換えれば他の人の道順も
@@ -142,6 +147,18 @@ export function ShareSheet({ project, isOpen, onClose }: Props) {
         <p className="text-label leading-relaxed text-fg-sub">
           {stored.isShared ? t.share.enabledNote : t.share.disabledNote}
         </p>
+        {/* **曲は付いていかない**（2026-09-25）。この板の説明には前から
+            「一行書いておかないと『壊れている』と受け取られる」と書いて
+            あったのに、**その一行が無かった**。実際に user から
+            「共有をしたのですが、曲が聞こえません」と報告が来た。
+            音源をサーバーへ上げない方針そのものは変えていない */}
+        {stored.musicTitle !== null && (
+          <p className="rounded-lg border border-line px-gutter py-unit text-caption leading-snug text-accent-soft">
+            {stored.isMetronomeEnabled
+              ? t.share.musicNoteWithClick
+              : t.share.musicNote}
+          </p>
+        )}
         {!stored.shareToken && (
           <p className="rounded-lg border border-line px-gutter py-unit text-caption leading-snug text-fg-muted">
             {t.share.noKey}

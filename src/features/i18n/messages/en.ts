@@ -589,6 +589,8 @@ export const en = {
       play: "Play it through",
       stop: "Stop",
       paths: "Paths",
+      noMusic: "The song will not play",
+      clickOnly: "Only the beat plays",
     },
     entry: {
       question: "Which one are you?",
@@ -624,6 +626,10 @@ export const en = {
     regenerateFailed: "Could not make a new link",
     copyFailed: "Could not copy",
     saveFailed: "Could not change the sharing setting",
+    musicNote:
+      "The song does not reach the people you share with. The audio file stays on this device only. Turn the click on from Menu → Music and at least the beat will play on their device.",
+    musicNoteWithClick:
+      "The song does not reach the people you share with. The audio file stays on this device only. The click is on, so the beat will play on their device.",
   },
 
   assist: {
