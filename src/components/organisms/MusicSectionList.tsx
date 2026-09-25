@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { Scissors, Trash2 } from "lucide-react";
 import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
+import { useMetronome } from "@/features/music/hooks/useMetronome";
 import { useMusicPlacement } from "@/features/music/hooks/useMusicPlacement";
 import { NumberField } from "@/components/molecules/NumberField";
 import { TapTempoButton } from "@/components/molecules/TapTempoButton";
@@ -13,7 +15,11 @@ import {
   MAX_SECTION_LABEL_LENGTH,
   sectionIndexAtSeconds,
 } from "@/features/music/lib/placement";
-import { MAX_BPM, MIN_BPM } from "@/features/music/lib/metronomePreference";
+import {
+  DEFAULT_BPM,
+  MAX_BPM,
+  MIN_BPM,
+} from "@/features/music/lib/metronomePreference";
 import { formatMinutes } from "@/features/scene/lib/clock";
 import { useT } from "@/features/i18n/LocaleProvider";
 
@@ -56,6 +62,23 @@ export function MusicSectionList() {
   const playingIndex = useMusicStore((state) =>
     sectionIndexAtSeconds(placement.sections, state.currentTime),
   );
+
+  /* **測った速さで鳴らす**（答え合わせ）。
+
+     鳴らすのは**一度に1行だけ**。行ごとにフックは呼べない（配列の中）し、
+     2行ぶん重なって鳴ると、どちらの速さを聴いているのか分からなくなる。
+     板を閉じると外れるので、鳴りっぱなしにはならない */
+  const [checkingIndex, setCheckingIndex] = useState<number | null>(null);
+  const beatsPerBar = useProjectStore(
+    (state) => state.project?.beatsPerBar ?? 4,
+  );
+  const checking =
+    checkingIndex === null ? null : placement.sections[checkingIndex];
+  useMetronome({
+    isActive: checking !== null,
+    bpm: checking?.bpm ?? DEFAULT_BPM,
+    beatsPerBar,
+  });
 
   /* **その区間の頭から鳴らす**（2026-09-25）。
 
@@ -180,6 +203,12 @@ export function MusicSectionList() {
                 /* **その行が鳴っているか**。全体の isPlaying ではない */
                 isPlaying={isPlaying && playingIndex === section.index}
                 onTogglePlay={hasMusic ? () => playSection(section) : undefined}
+                isMetronomeOn={checkingIndex === section.index}
+                onToggleMetronome={() =>
+                  setCheckingIndex((prev) =>
+                    prev === section.index ? null : section.index,
+                  )
+                }
               />
             </li>
           ))}

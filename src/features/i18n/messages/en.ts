@@ -795,6 +795,8 @@ export const en = {
       "Press ▶, then click about four times along with the track",
     tapPlay: "Play this part",
     tapPause: "Stop",
+    checkBeat: "Click at the measured tempo",
+    checkBeatOn: "Stop the click",
     tapTempoFor: (name: string) => `Click to measure “${name}”`,
     tapTempoCount: (count: number) =>
       `${count} taps · pause to start over`,

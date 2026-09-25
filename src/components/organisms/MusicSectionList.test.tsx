@@ -208,3 +208,58 @@ describe("MusicSectionList（その区間を流す）", () => {
     expect(screen.queryByRole("button", { name: "止める" })).toBeNull();
   });
 });
+
+/**
+ * **鳴らすのは一度に1行だけ。** 2行ぶん重なって鳴ると、どちらの速さを
+ * 聴いているのか分からなくなる（答え合わせにならない）。
+ */
+describe("MusicSectionList（測った速さで鳴らす）", () => {
+  const checkButtons = () =>
+    screen.queryAllByRole("button", { name: "測った速さで鳴らす" });
+
+  it("はじめは、どの行も鳴っていない", () => {
+    withMusic({ isPlaying: false });
+    open();
+
+    expect(checkButtons()).toHaveLength(2);
+    expect(
+      screen.queryByRole("button", { name: "鳴らすのをやめる" }),
+    ).toBeNull();
+  });
+
+  it("2つ目を押すと、2つ目だけが鳴る", () => {
+    withMusic({ isPlaying: false });
+    open();
+
+    fireEvent.click(checkButtons()[1]);
+
+    expect(
+      screen.getAllByRole("button", { name: "鳴らすのをやめる" }),
+    ).toHaveLength(1);
+    expect(checkButtons()).toHaveLength(1);
+  });
+
+  it("同じ行をもう一度押すと、止まる", () => {
+    withMusic({ isPlaying: false });
+    open();
+
+    fireEvent.click(checkButtons()[1]);
+    fireEvent.click(screen.getByRole("button", { name: "鳴らすのをやめる" }));
+
+    expect(checkButtons()).toHaveLength(2);
+  });
+
+  /* 2行ぶん重ねない。押した方へ移る */
+  it("別の行を押すと、そちらへ移る（重ならない）", () => {
+    withMusic({ isPlaying: false });
+    open();
+
+    fireEvent.click(checkButtons()[1]);
+    // 残っている「鳴らす」は1つ目のぶん
+    fireEvent.click(checkButtons()[0]);
+
+    expect(
+      screen.getAllByRole("button", { name: "鳴らすのをやめる" }),
+    ).toHaveLength(1);
+  });
+});

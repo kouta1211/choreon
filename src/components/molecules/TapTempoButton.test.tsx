@@ -187,3 +187,59 @@ describe("TapTempoButton（曲を鳴らす）", () => {
     expect(onMeasured).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * **測った値が合っているかは、耳でしか確かめられない。**
+ * 曲を流したまま重ねて鳴らせば、ずれていれば必ず離れていく。
+ */
+describe("TapTempoButton（測った速さで鳴らす）", () => {
+  it("鳴らす手立てを渡さなければ、ボタンを出さない", () => {
+    useFakeClock();
+    render(
+      <LocaleProvider locale="ja">
+        <TapTempoButton onMeasured={vi.fn()} />
+      </LocaleProvider>,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "測った速さで鳴らす" }),
+    ).toBeNull();
+  });
+
+  it("押すと、その手立てを呼ぶ", () => {
+    useFakeClock();
+    const onToggleMetronome = vi.fn();
+    render(
+      <LocaleProvider locale="ja">
+        <TapTempoButton
+          onMeasured={vi.fn()}
+          onToggleMetronome={onToggleMetronome}
+        />
+      </LocaleProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "測った速さで鳴らす" }));
+
+    expect(onToggleMetronome).toHaveBeenCalledTimes(1);
+  });
+
+  /* 答えが分かれる形で書く。鳴っているかで名前と押下状態が変わる */
+  it("鳴っている間は、名前と押されている印が変わる", () => {
+    useFakeClock();
+    render(
+      <LocaleProvider locale="ja">
+        <TapTempoButton
+          onMeasured={vi.fn()}
+          isMetronomeOn
+          onToggleMetronome={vi.fn()}
+        />
+      </LocaleProvider>,
+    );
+
+    const button = screen.getByRole("button", { name: "鳴らすのをやめる" });
+    expect(button).toHaveAttribute("aria-pressed", "true");
+    expect(
+      screen.queryByRole("button", { name: "測った速さで鳴らす" }),
+    ).toBeNull();
+  });
+});

@@ -855,6 +855,9 @@ export const ja = {
     tapTempoNote: "▶ で流して、曲に合わせて4回ほどクリックしてください",
     tapPlay: "この区間を流す",
     tapPause: "止める",
+    /** 測った速さが合っているかを、耳で確かめるためのクリック */
+    checkBeat: "測った速さで鳴らす",
+    checkBeatOn: "鳴らすのをやめる",
     tapTempoFor: (name: string) => `「${name}」をクリックして測る`,
     tapTempoCount: (count: number) => `${count}回ぶん・手を止めると測り直し`,
     beatsPerBar: "拍子",

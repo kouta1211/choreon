@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Hand, Pause, Play } from "lucide-react";
+import { Hand, Music4, Pause, Play } from "lucide-react";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { tapTempo } from "@/features/music/lib/tapTempo";
 import { TAP_PATTERN, vibrate } from "@/lib/haptics";
@@ -29,6 +29,14 @@ type Props = {
    */
   isPlaying?: boolean;
   onTogglePlay?: () => void;
+  /**
+   * **測った速さで鳴らす**（答え合わせ）。渡さなければボタンを出さない。
+   *
+   * 鳴らすのは organism の仕事（`useMetronome`）。ここは押されたことを
+   * 伝えるだけで、音そのものは持たない。
+   */
+  isMetronomeOn?: boolean;
+  onToggleMetronome?: () => void;
 };
 
 /**
@@ -55,6 +63,8 @@ export function TapTempoButton({
   ariaLabel,
   isPlaying = false,
   onTogglePlay,
+  isMetronomeOn = false,
+  onToggleMetronome,
 }: Props) {
   const t = useT();
   const [taps, setTaps] = useState<number[]>([]);
@@ -116,6 +126,31 @@ export function TapTempoButton({
         <Hand size={15} aria-hidden />
         {t.music.tapTempo}
       </PressableButton>
+
+      {/* **測った速さで鳴らす**（2026-09-25）。
+
+          測れても、それが曲と合っているかは**耳でしか確かめられない**
+          （user の報告「実際に正しいかどうかわかりません」）。
+          曲を流したまま重ねて鳴らせば、ずれていれば必ず離れていく。
+
+          曲があるときは拍を鳴らさない、という決まりの**例外**。
+          あちらは「2つの拍が同時に鳴ると、合わせる先が分からなくなる」
+          ためだが、ここは**合っているかを確かめるために重ねる**もの */}
+      {onToggleMetronome && (
+        <PressableButton
+          type="button"
+          aria-label={isMetronomeOn ? t.music.checkBeatOn : t.music.checkBeat}
+          aria-pressed={isMetronomeOn}
+          onClick={onToggleMetronome}
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${
+            isMetronomeOn
+              ? "border-accent bg-accent/14 text-accent-soft"
+              : "border-line text-fg-strong"
+          }`}
+        >
+          <Music4 size={15} aria-hidden />
+        </PressableButton>
+      )}
 
       {/* 回数と、いま出ている速さ。**ボタンの名前には入れない** —
           読み上げの名前が押すたびに変わると、何のボタンか分からなくなる */}

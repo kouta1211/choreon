@@ -783,6 +783,8 @@ export const ko = {
     tapTempoNote: "▶ 로 틀고, 곡에 맞춰 네 번쯤 클릭해 주세요",
     tapPlay: "이 구간 틀기",
     tapPause: "멈추기",
+    checkBeat: "잰 빠르기로 소리내기",
+    checkBeatOn: "소리 멈추기",
     tapTempoFor: (name: string) => `'${name}' 클릭해서 재기`,
     tapTempoCount: (count: number) => `${count}번 · 손을 멈추면 다시 재기`,
     beatsPerBar: "박자",

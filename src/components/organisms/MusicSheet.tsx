@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Music, Upload, X } from "lucide-react";
 import { BottomSheet } from "@/components/molecules/BottomSheet";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
@@ -19,6 +19,7 @@ import { MetronomeControls } from "@/components/molecules/MetronomeControls";
 import { NumberField } from "@/components/molecules/NumberField";
 import { TapTempoButton } from "@/components/molecules/TapTempoButton";
 import { useBpm } from "@/features/music/hooks/useBpm";
+import { useMetronome } from "@/features/music/hooks/useMetronome";
 import { MAX_BPM, MIN_BPM } from "@/features/music/lib/metronomePreference";
 import { MusicSectionList } from "@/components/organisms/MusicSectionList";
 import { BeatsPerBarSegment } from "@/components/molecules/BeatsPerBarSegment";
@@ -69,6 +70,11 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
   const isPlaying = useUIStore((state) => state.isPlaying);
   const requestTogglePlay = useUIStore((state) => state.requestTogglePlay);
   const requestSeek = useUIStore((state) => state.requestSeek);
+
+  /* 測った速さで鳴らす（答え合わせ）。板を閉じれば外れて止まる */
+  const [isChecking, setIsChecking] = useState(false);
+  const { beatsPerBar } = useBpm();
+  useMetronome({ isActive: isChecking, bpm, beatsPerBar });
   const durationSeconds = useMusicStore((state) => state.durationSeconds);
   const loadMusic = useMusicStore((state) => state.load);
   const clearMusic = useMusicStore((state) => state.clear);
@@ -275,6 +281,8 @@ export function MusicSheet({ project, isOpen, onClose }: Props) {
                   }
                 : undefined
             }
+            isMetronomeOn={isChecking}
+            onToggleMetronome={() => setIsChecking((prev) => !prev)}
           />
         )}
 
