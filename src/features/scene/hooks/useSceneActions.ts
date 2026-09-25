@@ -14,11 +14,11 @@ import {
   beatsForTimes,
   DEFAULT_PLACEMENTS,
   sameBeat,
-  secondsAtBeat,
 } from "@/features/music/lib/placement";
 import type { Scene } from "@/features/scene/types";
 import {
   moveSceneTo,
+  moveSceneToBeat,
   retimeForOrder,
   retimeScene,
 } from "@/features/scene/lib/sceneTiming";
@@ -98,12 +98,16 @@ export function useSceneActions() {
   /**
    * 位置を**拍で**変える。カウントの欄から呼ぶ（2026-08-26）。
    *
-   * 画面はカウントで打つので、ここで秒へ直してから既存の道へ流す。
-   * 直す口を1つに閉じ込めておかないと、**打った所ごとに換算が散る**
-   * （第1段で `updateSceneBeats` を拍だけにしたのと同じ理由）。
+   * ⚠️ **秒へ直さない**（2026-09-25）。以前はここで `secondsAtBeat` を
+   * 通して秒の道（`moveSceneTo`）へ流していたが、あちらは1ミリ秒の格子へ
+   * 丸めるので、拍へ割り戻したときに 88 が 87.99916… になる。
+   * カウントは切り捨てで出すため、打った `12-1` が **11-8 と表示された**
+   * （user の報告 2026-09-25）。拍で受けたものは拍のまま確定する。
    */
   const changeSceneBeats = async (scene: Scene, positionBeats: number) => {
-    await changeSceneTime(scene, secondsAtBeat(placements, positionBeats));
+    const index = scenes.findIndex((s) => s.id === scene.id);
+    if (index === -1) return;
+    await commitBeats(moveSceneToBeat(scenes, index, positionBeats));
   };
 
   /** 「このシーンへ入ってくる時間」を変える。
@@ -123,19 +127,27 @@ export function useSceneActions() {
     );
   };
 
-  /** 楽観的更新 → 保存 → 失敗したら元の時刻へ戻す。
-   * 動いたシーンだけを送る(全件送ると、触っていない行まで書き換わる) */
+  /** 秒で決まった操作（引いて動かす・間隔を変える）の入口。
+   *
+   * **拍へ直してから確定する。** 秒は拍から導いた派生値なので、丸めの
+   * 都合で `4.000000000000001` のような値になりうる。秒で比べると
+   * 「動かしていない行まで変わった」と判定して書き込んでしまう */
   const commitTimes = async (
     timesById: Map<string, number>,
+    recordHistory = false,
+  ) => {
+    await commitBeats(beatsForTimes(timesById, placements), recordHistory);
+  };
+
+  /** 楽観的更新 → 保存 → 失敗したら元の拍へ戻す。
+   * 動いたシーンだけを送る(全件送ると、触っていない行まで書き換わる) */
+  const commitBeats = async (
+    beatsById: Map<string, number>,
     /** 履歴へ積むか。**提案をボタンで当てたときだけ true。**
-     * 手で時刻の欄を打つ操作は、打った本人が打ち直せるので積まない
+     * 手で欄を打つ操作は、打った本人が打ち直せるので積まない
      * (積むと、数字を1つ直すたびに履歴が1段増える) */
     recordHistory = false,
   ) => {
-    /* **拍で比べる。** 秒は拍から導いた派生値なので、丸めの都合で
-       `4.000000000000001` のような値になりうる。秒で比べると
-       「動かしていない行まで変わった」と判定して書き込んでしまう */
-    const beatsById = beatsForTimes(timesById, placements);
     const changed = scenes
       .filter((scene) => {
         const next = beatsById.get(scene.id);

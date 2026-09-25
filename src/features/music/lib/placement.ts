@@ -202,6 +202,27 @@ export function beatAtSeconds(
 }
 
 /**
+ * その秒に**いちばん近い拍**。コマを置く先を決めるのに使う。
+ *
+ * ■ なぜ `counts.ts` の `snapToBeat`（秒→秒）を置き換えたのか（2026-09-25）
+ * あちらは【秒のまま】いちばん近い拍の秒へ寄せる。寄せた先は正しいのに、
+ * そこから拍へ割り戻す所で 88 が 87.99916… になり、カウントが
+ * **1つ手前に表示された**（user の報告 2026-09-25、カウントの欄と同じ穴）。
+ * **拍で答えれば、割り戻す工程そのものが無くなる。**
+ *
+ * ■ 載せ方を受け取る
+ * `snapToBeat` は BPM 1つと原点1つで寄せていたので、**曲が変わる作品では
+ * 2曲目以降が1曲目の格子へ吸着**していた。区切りごとに速さが違っても、
+ * ここは正しい格子を選ぶ。
+ */
+export function nearestBeatAtSeconds(
+  placements: readonly Placement[],
+  seconds: number,
+): number {
+  return Math.max(0, Math.round(beatAtSeconds(placements, seconds)));
+}
+
+/**
  * 拍で測った長さを、秒の長さへ直す。
  *
  * **差で定義する。** 区間の途中で載せ方が変わると「1拍が何秒か」は

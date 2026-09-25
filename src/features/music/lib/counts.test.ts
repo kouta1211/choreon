@@ -8,7 +8,6 @@ import {
   formatCount,
   MAX_FLICK_SETS,
   shouldDrawBeatLines,
-  snapToBeat,
   snapToSet,
 } from "./counts";
 
@@ -127,20 +126,9 @@ describe("countLengthLabel", () => {
   });
 });
 
-describe("snapToBeat", () => {
-  it("いちばん近い拍へ寄せる", () => {
-    expect(snapToBeat(0.6, BPM)).toBeCloseTo(0.5);
-    expect(snapToBeat(0.8, BPM)).toBeCloseTo(1);
-  });
-
-  it("曲の頭より手前へは行かない", () => {
-    expect(snapToBeat(-3, BPM)).toBe(0);
-  });
-
-  it("頭出しの位置を原点にする", () => {
-    expect(snapToBeat(8.2, BPM, 8)).toBeCloseTo(8);
-  });
-});
+/* `snapToBeat` の試験はここから消した（2026-09-25）。
+   秒で答える口を畳んだため。移り先は `placement.test.ts` の
+   `nearestBeatAtSeconds`（秒→**拍**） */
 
 describe("snapToSet", () => {
   it("いちばん近い8カウントの頭へ寄せる", () => {

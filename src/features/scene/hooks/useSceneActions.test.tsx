@@ -7,6 +7,8 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useMusicStore } from "@/features/music/store/useMusicStore";
 import * as scenesApi from "@/features/scene/api/scenes";
 import { makeProject, makeScene } from "@/test/factories";
+import { bareCountLabelAtBeat } from "@/features/music/lib/countLabel";
+import { withDerivedTimes } from "@/features/music/lib/placement";
 
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({}) }));
 
@@ -72,5 +74,81 @@ describe("useSceneActions の並び替え", () => {
     });
 
     await waitFor(() => expect(timesById()).toEqual({ a: 0, c: 2, b: 4 }));
+  });
+});
+
+/**
+ * **打った数と、画面に出る数を食い違わせない**
+ * （user の報告 2026-09-25「12-1 にしても 11-8 になってしまうことがある」）。
+ *
+ * 原因は **拍 → 秒 → 拍 の往復**。欄は `12-1` を拍 88（整数）まで読めて
+ * いるのに、確定の道が一度**秒へ直し、1ミリ秒の格子へ丸めて**から拍へ
+ * 割り戻していた。BPM 130 なら 88拍 = 40.615秒 で、割り戻すと
+ * 87.99916… になる。`countAtBeat` は切り捨てるので **11-8** になる。
+ *
+ * 曲が無いときは 1拍 0.5秒ちょうどなので往復しても戻る。だから
+ * **曲を入れて速さを決めたあとだけ**起きた。整数の BPM 261通りのうち
+ * 111通りがこれに当たる（`counts.ts` が「秒を経由しない」と書いた理由）。
+ *
+ * **札の側まで見る。** 拍が 87.99916 でも「ほぼ 88」なので、数の比較だけ
+ * だと近似で通してしまいたくなる。user が見ているのは札なので、
+ * そこを縛る。
+ */
+describe("useSceneActions のカウントの打ち込み", () => {
+  /** 88拍 = 40.615秒。割り戻すと 87.99916… で、切り捨てると 87拍 */
+  const BROKEN_BPM = 130;
+  /** 12セット目の1カウント = (12-1) * 8 = 88拍 */
+  const BEAT_12_1 = 88;
+
+  function setupCounts() {
+    const project = makeProject({ bpm: BROKEN_BPM });
+    useProjectStore.setState({
+      project,
+      scenes: withDerivedTimes(
+        [
+          { ...makeScene({ id: "a", orderIndex: 0 }), positionBeats: 0 },
+          { ...makeScene({ id: "b", orderIndex: 1 }), positionBeats: 8 },
+        ],
+        project.musicPlacements,
+      ),
+    });
+    useMusicStore.setState({ objectUrl: "blob:song" });
+
+    return renderHook(() => useSceneActions(), {
+      wrapper: ({ children }: { children: ReactNode }) => (
+        <LocaleProvider locale="ja">{children}</LocaleProvider>
+      ),
+    });
+  }
+
+  const sceneB = () =>
+    useProjectStore.getState().scenes.find((s) => s.id === "b")!;
+
+  it("打った 12-1 が、拍のまま残る", async () => {
+    const { result } = setupCounts();
+
+    await act(async () => {
+      await result.current.changeSceneBeats(sceneB(), BEAT_12_1);
+    });
+
+    await waitFor(() => expect(sceneB().positionBeats).toBe(BEAT_12_1));
+  });
+
+  /* **user が見ているのはここ。** 拍が 87.99916 だと 11-8 と出る */
+  it("画面に出る札も 12-1 のまま", async () => {
+    const { result } = setupCounts();
+
+    await act(async () => {
+      await result.current.changeSceneBeats(sceneB(), BEAT_12_1);
+    });
+
+    await waitFor(() =>
+      expect(
+        bareCountLabelAtBeat(
+          sceneB().positionBeats,
+          useProjectStore.getState().project!.musicPlacements,
+        ),
+      ).toBe("12-1"),
+    );
   });
 });

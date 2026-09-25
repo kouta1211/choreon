@@ -19,6 +19,7 @@ import {
   reanchor,
   MAX_SECTION_LABEL_LENGTH,
   maxSecondsPerBeatAt,
+  nearestBeatAtSeconds,
   mergeAt,
   moveSectionTo,
   renameSection,
@@ -744,5 +745,50 @@ describe("その秒がどの区間か（sectionIndexAtSeconds）", () => {
 
   it("空の一覧を渡されても落ちない", () => {
     expect(sectionIndexAtSeconds([], 10)).toBe(0);
+  });
+});
+
+/**
+ * **コマを置く先は拍で答える**（2026-09-25）。
+ *
+ * 以前は `counts.ts` の `snapToBeat` が【秒→秒】で寄せていた。寄せた先は
+ * 正しいのに、そこから拍へ割り戻す工程で 88 が 87.99916… になり、
+ * カウントが**1つ手前に表示された**（user の報告）。拍で答えれば、
+ * 割り戻す工程そのものが無い。
+ */
+describe("nearestBeatAtSeconds", () => {
+  it("いちばん近い拍を答える", () => {
+    // BPM 120 = 1拍 0.5秒
+    expect(nearestBeatAtSeconds(DEFAULT_PLACEMENTS, 0.6)).toBe(1);
+    expect(nearestBeatAtSeconds(DEFAULT_PLACEMENTS, 1.8)).toBe(4);
+  });
+
+  /* **ここが要。** 秒で寄せて割り戻していたときは 87.999… だった */
+  it("半端な速さでも、整数の拍を答える", () => {
+    const bpm130: Placement[] = [
+      { fromBeat: 0, atSeconds: 0, secondsPerBeat: 60 / 130 },
+    ];
+    // 88拍 = 40.6153…秒。その周りを指しても 88 に落ちる
+    expect(nearestBeatAtSeconds(bpm130, 40.615)).toBe(88);
+    expect(nearestBeatAtSeconds(bpm130, 40.7)).toBe(88);
+    expect(nearestBeatAtSeconds(bpm130, 40.5)).toBe(88);
+  });
+
+  it("振付の頭より手前へは行かない", () => {
+    expect(nearestBeatAtSeconds(DEFAULT_PLACEMENTS, -3)).toBe(0);
+  });
+
+  /* **曲が変わる作品では、その区切りの格子へ寄せる。**
+     `snapToBeat` は BPM 1つで寄せていたので、2曲目が1曲目の格子に乗った */
+  it("2曲目は、2曲目の速さの格子へ寄せる", () => {
+    const twoSongs: Placement[] = [
+      { fromBeat: 0, atSeconds: 0, secondsPerBeat: 0.5 },
+      // 16拍（8秒）から、1拍 0.25秒
+      { fromBeat: 16, atSeconds: 8, secondsPerBeat: 0.25 },
+    ];
+    // 8秒から 4拍ぶん（1秒）先 = 20拍
+    expect(nearestBeatAtSeconds(twoSongs, 9)).toBe(20);
+    // 1曲目の格子（0.5秒刻み）で数えていたら 18拍になる
+    expect(nearestBeatAtSeconds(twoSongs, 9)).not.toBe(18);
   });
 });

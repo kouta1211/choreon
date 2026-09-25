@@ -127,16 +127,15 @@ export function countLengthLabel(beats: number): string {
   return String(Math.max(0, Math.round(beats * 100) / 100));
 }
 
-/** いちばん近い拍へ寄せる。コマを置く位置に使う */
-export function snapToBeat(
-  seconds: number,
-  bpm: number,
-  originSeconds = 0,
-): number {
-  const interval = secondsPerBeat(bpm);
-  const beat = Math.round((seconds - originSeconds) / interval);
-  return Math.max(0, originSeconds + beat * interval);
-}
+/* **`snapToBeat`（秒→いちばん近い拍の秒）は消した**（2026-09-25）。
+
+   寄せた先は正しいのに、そこから拍へ割り戻す所で 88 が 87.99916… になり、
+   カウントが**1つ手前に表示された**（user の報告）。秒で答える口を
+   残しておく限り、割り戻す工程が付いて回る。
+
+   置き換えたのは `placement.ts` の `nearestBeatAtSeconds`（秒→**拍**）。
+   あちらは載せ方を受け取るので、**曲が変わる作品でも正しい格子**を選ぶ
+   （`snapToBeat` は BPM 1つで寄せていて、2曲目以降がずれていた）。 */
 
 /** いちばん近い8カウントの頭へ寄せる。帯を払ったときの止まり先に使う */
 export function snapToSet(

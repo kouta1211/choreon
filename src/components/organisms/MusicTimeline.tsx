@@ -19,8 +19,10 @@ import {
   scrollForSeconds,
   zoomForCluster,
 } from "@/features/music/lib/timelineScale";
-import { snapToBeat } from "@/features/music/lib/counts";
-import { beatOriginSeconds } from "@/features/music/lib/placement";
+import {
+  beatOriginSeconds,
+  nearestBeatAtSeconds,
+} from "@/features/music/lib/placement";
 import { TimelineWaveform } from "@/components/molecules/TimelineWaveform";
 import { TimelineSceneLayer } from "@/components/molecules/TimelineSceneLayer";
 import { TimelineMinimap } from "@/components/molecules/TimelineMinimap";
@@ -83,7 +85,7 @@ export function MusicTimeline({ project, audioRef }: Props) {
   // 拍子。8カウントの縞は変わらず、太く引く拍線だけがこれで決まる
   const beatsPerBar = useProjectStore((state) => state.project?.beatsPerBar ?? 4);
 
-  const { changeSceneTime, selectSceneManually } = useSceneActions();
+  const { changeSceneBeats, selectSceneManually } = useSceneActions();
   /* 曲へどう載せるか。バーの位置も、引いたときの保存もここが持つ */
   const placement = useMusicPlacement();
   const waveform = useWaveformPeaks();
@@ -307,9 +309,9 @@ export function MusicTimeline({ project, audioRef }: Props) {
            * よい」）。**置くこと**と**聴く場所を選ぶこと**は別の操作。
            */
           onMoveSeconds={(scene, delta) =>
-            void changeSceneTime(
+            void changeSceneBeats(
               scene,
-              snapToBeat(scene.timeSeconds + delta, bpm, beatOrigin),
+              nearestBeatAtSeconds(placements, scene.timeSeconds + delta),
             )
           }
           onZoomCluster={zoomIntoCluster}

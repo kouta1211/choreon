@@ -16,9 +16,21 @@
  * (動画編集でいうリップル編集)。
  */
 
+import { sameBeat } from "@/features/music/lib/placement";
+
 /** シーンとシーンの間に最低限空ける秒数。0にすると2つのシーンが同じ時刻に
  * 重なり、どちらの隊形を出せばよいか決まらなくなる */
 export const MIN_SEGMENT_SECONDS = 0.1;
+
+/**
+ * 同じ拍へ重ねようとしたときに、ずらす拍数。`MIN_SEGMENT_SECONDS` の拍版。
+ *
+ * **秒の側の値を換算してこない。** 換算すると、1拍が何秒かを知るために
+ * 載せ方を渡すことになり、このファイルが「時刻の計算」から「曲の知識」へ
+ * はみ出す。ここで要るのは【重ならない程度の僅かな差】だけで、
+ * 何秒に相当するかは誰も読まない。
+ */
+export const MIN_SEGMENT_BEATS = 0.1;
 
 /**
  * シーンを新しく作るときに空ける秒数。
@@ -44,6 +56,9 @@ export const DEFAULT_SEGMENT_SECONDS = 4;
    端数を丸めたいときは `features/music/lib/counts.ts` の `snapToBeat`。 */
 
 type TimedScene = { id: string; timeSeconds: number };
+
+/** 拍で測ったシーン。**位置の正はこちら**（`scenes.position_beats`） */
+type BeatedScene = { id: string; positionBeats: number };
 
 /**
  * 各シーンへ入ってくるのにかかる時間。先頭は入ってくる元が無いので0。
@@ -165,6 +180,40 @@ export function moveSceneTo(
     taken ? roundSeconds(target + MIN_SEGMENT_SECONDS) : target,
   );
   return timesById;
+}
+
+/**
+ * シーンを**拍で**別の位置へ動かす（カウントの欄で打つ操作）。
+ *
+ * ■ なぜ秒版（`moveSceneTo`）に流さないのか（2026-09-25）
+ * 打たれた `12-1` は拍 88 という**整数**で、欄はそこまで読めている。
+ * それを一度秒へ直すと `moveSceneTo` が**1ミリ秒の格子へ丸め**、拍へ
+ * 割り戻したときに 87.99916… になる。カウントは切り捨てで出すので
+ * **11-8 と表示される**（user の報告 2026-09-25）。整数の BPM 261通りの
+ * うち 111通りがこれに当たる。曲が無いときは 1拍 0.5秒ちょうどなので
+ * 往復しても戻り、**曲を入れて速さを決めたあとだけ**出た。
+ *
+ * 秒は拍から導く派生値なので、**拍で受けたものは拍のまま確定する**。
+ * `counts.ts` が「秒を経由しない」と書いたのと同じ話。
+ *
+ * 前後を追い越してよいのも、負へ行かないのも秒版と同じ。
+ */
+export function moveSceneToBeat(
+  scenes: BeatedScene[],
+  index: number,
+  beats: number,
+): Map<string, number> {
+  const beatsById = new Map(scenes.map((s) => [s.id, s.positionBeats]));
+  if (index < 0 || index >= scenes.length) return beatsById;
+
+  const target = Math.max(0, beats);
+  /* ちょうど同じ拍に重ねると、どちらの隊形を出すか決まらなくなる。
+     既に居るところへ置こうとしたときだけ、最小の間隔ぶんずらす */
+  const taken = scenes.some(
+    (scene, i) => i !== index && sameBeat(scene.positionBeats, target),
+  );
+  beatsById.set(scenes[index].id, taken ? target + MIN_SEGMENT_BEATS : target);
+  return beatsById;
 }
 
 /**

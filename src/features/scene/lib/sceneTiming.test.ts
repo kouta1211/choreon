@@ -5,8 +5,10 @@ import {
   uniformTimes,
   DEFAULT_SEGMENT_SECONDS,
   duplicateTimeSeconds,
+  MIN_SEGMENT_BEATS,
   MIN_SEGMENT_SECONDS,
   moveSceneTo,
+  moveSceneToBeat,
   retimeForOrder,
   sortScenes,
   retimeScene,
@@ -134,6 +136,62 @@ describe("moveSceneTo", () => {
   // 同じ時刻に2つ置くと、どちらの隊形を出すか決まらなくなる
   it("既に居るところへ置こうとしたらずらす", () => {
     expect(moveSceneTo(SCENES, 2, 2).get("c")).toBe(2 + MIN_SEGMENT_SECONDS);
+  });
+});
+
+/**
+ * **拍で打った位置は、拍のまま確定する**（2026-09-25）。
+ *
+ * 秒版（`moveSceneTo`）は1ミリ秒の格子へ丸めるので、拍へ割り戻すと
+ * 88 が 87.99916… になる。カウントは切り捨てで出すため、打った `12-1` が
+ * **11-8 と表示された**（user の報告）。ここは丸めを持たない。
+ */
+describe("moveSceneToBeat", () => {
+  /** 0 / 8 / 20 / 28拍（＝ 1-1 / 2-1 / 3-5 / 4-5） */
+  const BEATED = [
+    { id: "a", positionBeats: 0 },
+    { id: "b", positionBeats: 8 },
+    { id: "c", positionBeats: 20 },
+    { id: "d", positionBeats: 28 },
+  ];
+
+  it("打った拍を、そのまま置く", () => {
+    expect(moveSceneToBeat(BEATED, 2, 88).get("c")).toBe(88);
+  });
+
+  /* **ここが要。** 丸めが1つでも挟まると 87.99… になり、
+     切り捨てで 11-8 になる */
+  it("整数の拍が、整数のまま残る", () => {
+    // 8拍と20拍には既に居るので入れない（下の「ずらす」で見る）
+    for (const beat of [1, 7, 87, 88, 89, 1000]) {
+      expect(moveSceneToBeat(BEATED, 2, beat).get("c")).toBe(beat);
+    }
+  });
+
+  it("触っていないシーンは動かない", () => {
+    const beats = moveSceneToBeat(BEATED, 2, 88);
+    expect(beats.get("a")).toBe(0);
+    expect(beats.get("b")).toBe(8);
+    expect(beats.get("d")).toBe(28);
+  });
+
+  // 並び順は拍の昇順で決まるので、追い越せばそのまま順番が入れ替わる
+  it("前後を追い越せる", () => {
+    expect(moveSceneToBeat(BEATED, 2, 4).get("c")).toBe(4);
+    expect(moveSceneToBeat(BEATED, 2, 999).get("c")).toBe(999);
+  });
+
+  it("振付の頭より手前へは行かない", () => {
+    expect(moveSceneToBeat(BEATED, 0, -5).get("a")).toBe(0);
+  });
+
+  // 同じ拍に2つ置くと、どちらの隊形を出すか決まらなくなる
+  it("既に居るところへ置こうとしたらずらす", () => {
+    expect(moveSceneToBeat(BEATED, 2, 8).get("c")).toBe(8 + MIN_SEGMENT_BEATS);
+  });
+
+  it("範囲の外を指したら、何も動かさない", () => {
+    expect(moveSceneToBeat(BEATED, 9, 88).get("c")).toBe(20);
   });
 });
 
