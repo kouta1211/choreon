@@ -853,6 +853,7 @@ export const ja = {
     bpmNote: "時間軸のバーの取っ手を引いても、同じ速さが変わります",
     tapTempo: "叩いて測る",
     tapTempoNote: "曲に合わせて4回ほど叩いてください",
+    tapTempoFor: (name: string) => `「${name}」を叩いて測る`,
     tapTempoCount: (count: number) => `${count}回ぶん・手を止めると測り直し`,
     beatsPerBar: "拍子",
     beatsPerBarNote:

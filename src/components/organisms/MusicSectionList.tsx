@@ -5,6 +5,7 @@ import { useProjectStore } from "@/features/project/store/useProjectStore";
 import { useUIStore } from "@/features/canvas/store/useUIStore";
 import { useMusicPlacement } from "@/features/music/hooks/useMusicPlacement";
 import { NumberField } from "@/components/molecules/NumberField";
+import { TapTempoButton } from "@/components/molecules/TapTempoButton";
 import { PressableButton } from "@/components/atoms/PressableButton";
 import { BEATS_PER_SET } from "@/features/music/lib/counts";
 import { MAX_SECTION_LABEL_LENGTH } from "@/features/music/lib/placement";
@@ -110,6 +111,26 @@ export function MusicSectionList() {
                 unit={t.music.bpmUnit}
                 size="sheet"
                 onChange={(next) =>
+                  void placement.setSectionBpm(section.index, next)
+                }
+              />
+
+              {/* **区切りごとに1つ置く**（2026-09-25）。
+
+                  はじめは「どの区間を測ったのか読めない」として、
+                  区切りが2つ以上のときは出さなかった。だが
+                  **曲が変わる作品こそ、曲ごとの速さを測りたい** —
+                  いちばん要る場面で使えない作りだった（user の報告
+                  「でてきません」）。行の中に置けば、どの区間かは
+                  画面から読める。
+
+                  読み上げ用の名前だけ、その区間の名前を足す
+                  （同じ字のボタンが並ぶため） */}
+              <TapTempoButton
+                ariaLabel={t.music.tapTempoFor(
+                  section.label ?? t.music.sectionDefaultName(section.index + 1),
+                )}
+                onMeasured={(next) =>
                   void placement.setSectionBpm(section.index, next)
                 }
               />

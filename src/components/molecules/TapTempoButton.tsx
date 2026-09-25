@@ -13,6 +13,14 @@ const MAX_KEPT_TAPS = 16;
 type Props = {
   /** 速さが出たとき。**出た回だけ**呼ぶ（1回目は呼ばない） */
   onMeasured: (bpm: number) => void;
+  /**
+   * 読み上げ用の名前。**画面に出る字は変えない**。
+   *
+   * 区切りごとに1つずつ置くと、同じ名前のボタンが並ぶ。
+   * 目で見ている人には「その行のもの」と分かるが、**読み上げでは
+   * 区別が付かない**ので、どの区間のものかをここで足す。
+   */
+  ariaLabel?: string;
 };
 
 /**
@@ -34,7 +42,7 @@ type Props = {
  * 止めないと1回の打鍵で2つ起きる。**曲を流しながら叩けること自体は
  * 残したい**ので、塞ぐのはこのボタンの上だけ。
  */
-export function TapTempoButton({ onMeasured }: Props) {
+export function TapTempoButton({ onMeasured, ariaLabel }: Props) {
   const t = useT();
   const [taps, setTaps] = useState<number[]>([]);
   const [reading, setReading] = useState<{
@@ -58,6 +66,7 @@ export function TapTempoButton({ onMeasured }: Props) {
     <div className="flex items-center gap-unit">
       <PressableButton
         type="button"
+        aria-label={ariaLabel}
         onClick={tap}
         onKeyDown={(event) => {
           if (event.key === " " || event.code === "Space") {
