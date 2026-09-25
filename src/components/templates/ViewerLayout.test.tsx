@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { ViewerLayout } from "./ViewerLayout";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import {
@@ -8,6 +8,10 @@ import {
   makeProject,
   makeScene,
 } from "@/test/factories";
+import * as sharedTrackApi from "@/features/music/api/sharedTrack";
+import * as musicStorage from "@/features/music/lib/musicStorage";
+
+vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({}) }));
 
 const PROJECT = makeProject({ id: "p1", stageWidth: 12, stageHeight: 9 });
 const DANCERS = [
@@ -62,6 +66,7 @@ function renderViewer(
 }
 
 afterEach(() => {
+  vi.restoreAllMocks();
   localStorage.clear();
   useViewerStore.setState({
     project: null,
@@ -72,6 +77,7 @@ afterEach(() => {
     hasChosen: false,
     currentSeconds: 0,
     isPathVisible: true,
+    isPlaying: false,
   });
 });
 
@@ -274,5 +280,122 @@ describe("ViewerLayout（曲は共有されない）", () => {
 
     expect(screen.queryByText("曲は流れません")).toBeNull();
     expect(screen.queryByText("拍だけ鳴ります")).toBeNull();
+  });
+});
+
+/**
+ * **曲が配られている作品**（2026-09-26）。
+ *
+ * 音源は非公開の置き場にあり、`<audio src>` では鳴らせない
+ * （Authorization ヘッダを付けられない）ので、丸ごと落としてから鳴らす。
+ * 落とすのは **▶ を押したとき**だけ — 道順だけ見たい人の通信量を
+ * 使わないため（user の指示）。
+ */
+describe("ViewerLayout（配られた曲）", () => {
+  const SHARED_SONG = makeProject({
+    id: "p1",
+    stageWidth: 12,
+    stageHeight: 9,
+    musicTitle: "song.mp3",
+    musicPath: "p1/abc.mp3",
+  });
+
+  function openWithSong() {
+    renderViewer("d1", { project: SHARED_SONG, hasMusic: true });
+  }
+
+  /* **ここが user の決めたところ。** 開いただけで8MB落とさない。
+     ⚠️ 落とす処理は非同期なので、**待ってから**見ないと歯が無い
+     （待たずに見ると、開いた瞬間に落とす作りでも緑になる） */
+  it("開いただけでは、曲を落としに行かない", async () => {
+    const download = vi
+      .spyOn(sharedTrackApi, "downloadSharedTrack")
+      .mockResolvedValue(new Blob(["x"]));
+    const cache = vi
+      .spyOn(musicStorage, "loadSharedTrack")
+      .mockResolvedValue(null);
+
+    openWithSong();
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    // 控えすら見に行っていない ＝ 落とす道に入っていない
+    expect(cache).not.toHaveBeenCalled();
+    expect(download).not.toHaveBeenCalled();
+  });
+
+  it("▶ を押したら落としに行く", async () => {
+    const download = vi
+      .spyOn(sharedTrackApi, "downloadSharedTrack")
+      .mockResolvedValue(new Blob(["x"]));
+    vi.spyOn(musicStorage, "loadSharedTrack").mockResolvedValue(null);
+
+    openWithSong();
+    fireEvent.click(screen.getByRole("button", { name: "通しで再生" }));
+
+    await waitFor(() =>
+      expect(download).toHaveBeenCalledWith(expect.anything(), "p1/abc.mp3"),
+    );
+  });
+
+  /* 2回目からは通信しない。稽古場の電波を当てにしない */
+  it("端末に控えがあれば、落としに行かない", async () => {
+    const download = vi
+      .spyOn(sharedTrackApi, "downloadSharedTrack")
+      .mockResolvedValue(new Blob(["x"]));
+    vi.spyOn(musicStorage, "loadSharedTrack").mockResolvedValue({
+      file: new File(["x"], "track", { type: "audio/mpeg" }),
+      fileName: "",
+    });
+
+    openWithSong();
+    fireEvent.click(screen.getByRole("button", { name: "通しで再生" }));
+
+    await waitFor(() =>
+      expect(screen.queryByText("曲を読み込んでいます…")).toBeNull(),
+    );
+    expect(download).not.toHaveBeenCalled();
+  });
+
+  /* **前の便で足した文が、そのままだと嘘になる。**
+     曲が届く作品で「曲は流れません」と出してはいけない */
+  it("曲が配られているなら「流れません」と書かない", () => {
+    vi.spyOn(musicStorage, "loadSharedTrack").mockResolvedValue(null);
+
+    openWithSong();
+
+    expect(screen.queryByText("曲は流れません")).toBeNull();
+    expect(screen.queryByText("拍だけ鳴ります")).toBeNull();
+  });
+
+  /* 落とせなかったら、そう言う。黙ると「壊れている」に見える */
+  it("落とせなかったら、そう書く", async () => {
+    vi.spyOn(musicStorage, "loadSharedTrack").mockResolvedValue(null);
+    vi.spyOn(sharedTrackApi, "downloadSharedTrack").mockRejectedValue(
+      new Error("圏外"),
+    );
+
+    openWithSong();
+    fireEvent.click(screen.getByRole("button", { name: "通しで再生" }));
+
+    expect(
+      await screen.findByText("曲を読み込めませんでした"),
+    ).toBeInTheDocument();
+  });
+
+  /* 配られていない作品は、今までどおりの文のまま */
+  it("配られていない作品では、今までどおり「流れません」", () => {
+    renderViewer("d1", {
+      project: makeProject({
+        id: "p1",
+        stageWidth: 12,
+        stageHeight: 9,
+        musicTitle: "song.mp3",
+      }),
+      hasMusic: true,
+    });
+
+    expect(screen.getByText("曲は流れません")).toBeInTheDocument();
   });
 });

@@ -591,6 +591,8 @@ export const en = {
       paths: "Paths",
       noMusic: "The song will not play",
       clickOnly: "Only the beat plays",
+      musicLoading: "Loading the song…",
+      musicFailed: "Could not load the song",
     },
     entry: {
       question: "Which one are you?",

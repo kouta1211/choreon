@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { ChevronDown, Pause, Play, Spline } from "lucide-react";
+import { ChevronDown, Loader2, Pause, Play, Spline } from "lucide-react";
 import { useViewerStore } from "@/features/viewer/store/useViewerStore";
 import { usePlaybackClock } from "@/features/viewer/hooks/usePlaybackClock";
 import { saveLastViewed } from "@/features/viewer/lib/lastViewed";
@@ -18,7 +18,11 @@ import type { Dancer } from "@/features/dancer/types";
 import type { Project } from "@/features/project/types";
 import type { Position, Scene } from "@/features/scene/types";
 import { useT } from "@/features/i18n/LocaleProvider";
-import { useMetronome } from "@/features/music/hooks/useMetronome";
+import { useViewerMusic } from "@/features/viewer/hooks/useViewerMusic";
+import {
+  OVER_MUSIC_VOLUME,
+  useMetronome,
+} from "@/features/music/hooks/useMetronome";
 import {
   bpmAtSeconds,
   DEFAULT_PLACEMENTS,
@@ -102,7 +106,22 @@ export function ViewerLayout({
   const lastSeconds =
     scenes.length > 0 ? scenes[scenes.length - 1].timeSeconds : 0;
 
-  usePlaybackClock(lastSeconds);
+  /* **配られた曲**（2026-09-26）。▶ を押すまでは落とさない */
+  const {
+    audioRef,
+    objectUrl: musicUrl,
+    status: musicStatus,
+    ensureLoaded: ensureMusicLoaded,
+    isDrivingClock: isMusicDrivingClock,
+  } = useViewerMusic({
+    projectId: project.id,
+    musicPath: project.musicPath,
+    lastSeconds,
+  });
+
+  /* **時計は1つだけ。** 曲が載っている間は曲が進めるので、こちらは休む
+     （両方動くと、同じ currentSeconds を2箇所が書いて必ずずれる） */
+  usePlaybackClock(lastSeconds, !isMusicDrivingClock);
 
   /* 開けたリンクを端末に覚えておく。ホーム画面のアイコンは
      トップページを開くので、圏外だとここへ戻る道が無かった
@@ -123,6 +142,9 @@ export function ViewerLayout({
      稽古場では邪魔にしかならない */
   useMetronome({
     isActive: isPlaying && (project?.isMetronomeEnabled ?? false),
+    /* **曲に重なるときだけ大きくする。** 曲が鳴っていないときの音量は
+       今までどおり（作る側の答え合わせと同じ考え方） */
+    volume: isMusicDrivingClock ? OVER_MUSIC_VOLUME : 1,
     /* **見る人の側も区切りごとの速さで鳴らす**（2026-09-15）。
        音源は共有しないが、載せ方（`musicPlacements`）は共有されるので、
        曲が変わる所でクリックの速さも引き継げる */
@@ -215,14 +237,30 @@ export function ViewerLayout({
         <PressableButton
           kind="icon"
           onClick={() => {
+            if (isPlaying) {
+              setIsPlaying(false);
+              return;
+            }
             if (currentSeconds >= lastSeconds) setCurrentSeconds(0);
-            setIsPlaying(!isPlaying);
+            /* **曲があるなら、鳴らせる状態にしてから始める**（2026-09-26）。
+               非公開の置き場なので丸ごと落とすしかなく、押してから数秒
+               かかる。落とせなかったときも返ってくるので、そのときは
+               今までどおり音無しで進む */
+            void ensureMusicLoaded().then(() => setIsPlaying(true));
           }}
-          aria-label={isPlaying ? t.viewer.route.stop : t.viewer.route.play}
+          aria-label={
+            isPlaying
+              ? t.viewer.route.stop
+              : musicStatus === "loading"
+                ? t.viewer.route.musicLoading
+                : t.viewer.route.play
+          }
           /* 主役はスクラブなので、再生は静かなボタンに格下げしてある */
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-raised text-fg"
         >
-          {isPlaying ? (
+          {musicStatus === "loading" ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : isPlaying ? (
             <Pause size={16} fill="currentColor" />
           ) : (
             <Play size={16} fill="currentColor" />
@@ -247,14 +285,29 @@ export function ViewerLayout({
           </PressableButton>
         )}
 
-        {/* **鳴らない理由を、鳴らすボタンの隣に置く。**
-            別の画面に書いても、押して無音だった人には届かない */}
+        {/* 曲まわりの様子を、鳴らすボタンの隣に置く。
+            別の画面に書いても、押して無音だった人には届かない。
+
+            **曲が配られている作品では「流れません」と言わない**
+            （2026-09-26）。言うのは、落としている最中と、落とせなかった
+            ときだけ。鳴っているなら何も足さない — 読む場所を増やさない */}
         {hasMusicTrack && (
           <span className="min-w-0 flex-1 truncate text-right text-caption text-fg-muted">
-            {project?.isMetronomeEnabled
-              ? t.viewer.route.clickOnly
-              : t.viewer.route.noMusic}
+            {musicStatus === "loading"
+              ? t.viewer.route.musicLoading
+              : musicStatus === "failed"
+                ? t.viewer.route.musicFailed
+                : musicStatus === "none"
+                  ? project?.isMetronomeEnabled
+                    ? t.viewer.route.clickOnly
+                    : t.viewer.route.noMusic
+                  : ""}
           </span>
+        )}
+
+        {/* 鳴らす相手。**落とし終えてから初めて置く** */}
+        {musicUrl && (
+          <audio ref={audioRef} src={musicUrl} preload="auto" hidden />
         )}
       </div>
 

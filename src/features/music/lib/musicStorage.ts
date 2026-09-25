@@ -30,18 +30,33 @@ import Dexie, { type Table } from "dexie";
 
 const DB_NAME = "choreon-music";
 const STORE = "tracks";
+/**
+ * **見る人が落としてきた曲**の控え（2026-09-25）。
+ *
+ * ⚠️ **作る側の `tracks` と混ぜない。** 同じ端末で、作った本人が自分の
+ * 共有リンクを開くことがある。同じ表へ書くと、見る側の控え（名前を
+ * 持たない — `shared_project` は曲名を返さない）が編集側の控えを
+ * 上書きし、次にエディタを開いたとき `trackPresence` が名前の無い曲を
+ * 「この端末にある曲」として読む。**表を分ければ起こらない。**
+ */
+const SHARED_STORE = "sharedTracks";
 
 export type StoredTrack = { file: File; fileName: string };
 
 class MusicDatabase extends Dexie {
   /** キーは projectId。作品ごとに1曲なので、値は1件だけ持つ */
   tracks!: Table<StoredTrack, string>;
+  /** 見る側が落としてきた控え。キーは同じく projectId */
+  sharedTracks!: Table<StoredTrack, string>;
 
   constructor() {
     super(DB_NAME);
     // 空のスキーマ文字列 = キーを外から与えるストア(out-of-line keys)。
     // 以前の createObjectStore(STORE) と同じ形で、既存のデータと互換
     this.version(1).stores({ [STORE]: "" });
+    /* **足すだけ。** 既にある tracks には触らないので、控えてある曲は
+       そのまま読める(Dexie は版を上げても、書いていない表を消さない) */
+    this.version(2).stores({ [STORE]: "", [SHARED_STORE]: "" });
   }
 }
 
@@ -99,5 +114,34 @@ export async function deleteTrack(projectId: string): Promise<void> {
     await db()?.tracks.delete(projectId);
   } catch {
     // 消せなくても、画面の側では既に外れている
+  }
+}
+
+/**
+ * **見る側の控え。** 落としてきた曲を次も使えるようにする。
+ *
+ * 作る側（`saveTrack`）とは別の表。混ぜると、作った本人が自分の共有
+ * リンクを開いたときに編集側の控えを壊す。
+ */
+export async function saveSharedTrack(
+  projectId: string,
+  track: StoredTrack,
+): Promise<void> {
+  try {
+    await db()?.sharedTracks.put(track, projectId);
+  } catch {
+    // 控えられないだけ。いま鳴っている曲には影響しない
+  }
+}
+
+export async function loadSharedTrack(
+  projectId: string,
+): Promise<StoredTrack | null> {
+  try {
+    const value = await db()?.sharedTracks.get(projectId);
+    if (!value || !(value.file instanceof Blob)) return null;
+    return value;
+  } catch {
+    return null;
   }
 }

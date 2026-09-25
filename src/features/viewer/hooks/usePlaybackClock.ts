@@ -7,23 +7,27 @@ import { stepPlayback } from "@/features/viewer/lib/playbackClock";
 /**
  * 通し再生の時計。
  *
- * ■ 素朴な rAF で足りる
- * 見る画面の主操作はスクラブで、再生は主役ではない。
- * **見る人は曲を選べない**（2026-08-18 の決定）ので、この画面で曲が時計に
- * なることは無い。以前あった「曲が入っていれば曲を時計にする」分岐は、
- * 既に消えた部品を指すコメントごと落としてある。
+ * ■ 曲が届いている作品では、こちらは動かない（2026-09-26）
+ * 配られた曲を鳴らしている間は、**曲が時計**になる
+ * （`useViewerMusic`）。rAF で別に進めると、同じ `currentSeconds` を
+ * 2箇所が書いて必ずずれる。**時計は常に1つだけ**で、どちらが動くかは
+ * 呼ぶ側（`ViewerLayout`）が `isEnabled` で決める。
+ * 作る側も同じ形（`useMusicPlayback` と `useSilentClock`）。
+ *
+ * 曲が配られていない作品・落とせなかった作品では、今までどおりここが
+ * 時計になる。
  *
  * ■ 進める量の判断は `lib/playbackClock` が持つ
  * 画面が消えていた間の飛びをここで書くと、確かめる手が無い。
  * 計算を外へ出してテストで縛る。
  */
-export function usePlaybackClock(lastSeconds: number) {
+export function usePlaybackClock(lastSeconds: number, isEnabled = true) {
   const isPlaying = useViewerStore((state) => state.isPlaying);
   const setCurrentSeconds = useViewerStore((state) => state.setCurrentSeconds);
   const setIsPlaying = useViewerStore((state) => state.setIsPlaying);
 
   useEffect(() => {
-    if (!isPlaying) return;
+    if (!isPlaying || !isEnabled) return;
 
     let frame = 0;
     let previous = performance.now();
@@ -47,5 +51,5 @@ export function usePlaybackClock(lastSeconds: number) {
     };
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
-  }, [isPlaying, lastSeconds, setCurrentSeconds, setIsPlaying]);
+  }, [isPlaying, isEnabled, lastSeconds, setCurrentSeconds, setIsPlaying]);
 }

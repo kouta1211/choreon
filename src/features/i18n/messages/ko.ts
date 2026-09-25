@@ -586,6 +586,8 @@ export const ko = {
       paths: "동선",
       noMusic: "곡은 재생되지 않습니다",
       clickOnly: "박자만 울립니다",
+      musicLoading: "곡을 불러오는 중…",
+      musicFailed: "곡을 불러오지 못했습니다",
     },
     entry: {
       question: "본인은 누구인가요?",
