@@ -90,7 +90,13 @@ export function useSharedTrack(projectId: string) {
       // 先に列。ここが通った時点で、もう誰にも届かない
       await updateMusicPath(supabase, projectId, null);
       setMusicPath(null);
-      await removeSharedTrack(supabase, musicPath);
+      try {
+        await removeSharedTrack(supabase, musicPath);
+      } catch {
+        /* 共有の解除は済んでいる（列が null なら誰にも届かない）。
+           片付けだけの失敗で「配れませんでした」と言わない。
+           MusicSheet の detachSharedTrack と同じ扱い */
+      }
     } catch (error) {
       showToast({
         message: toUserMessage(error, t.share.musicUploadFailed),

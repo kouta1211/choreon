@@ -281,4 +281,42 @@ describe("ShareSheet（曲も一緒に配る）", () => {
 
     await waitFor(() => expect(order).toEqual(["列", "実体"]));
   });
+
+  /**
+   * 列を null にできた時点で、共有の解除は済んでいる。実体の片付けだけが
+   * 失敗しても、user にできることは無いので「配れませんでした」と
+   * 言わない（2026-09-29。保守点検 #16 の報告）。
+   */
+  it("実体の片付けだけ失敗しても、エラーを出さない", async () => {
+    deviceHas(8_000_000);
+    useUIStore.setState({ toast: null });
+    vi.spyOn(projectsApi, "updateMusicPath").mockResolvedValue(undefined);
+    const remove = vi
+      .spyOn(sharedTrackApi, "removeSharedTrack")
+      .mockRejectedValue(new Error("storage down"));
+    open({ ...WITH_MUSIC, musicPath: "p1/abc.mp3" });
+
+    fireEvent.click(await screen.findByRole("switch", { name: /曲も一緒に配る/ }));
+
+    await waitFor(() => expect(remove).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(useProjectStore.getState().project?.musicPath).toBeNull(),
+    );
+    expect(useUIStore.getState().toast).toBeNull();
+  });
+
+  it("列を外せなかったときは、エラーを出す", async () => {
+    deviceHas(8_000_000);
+    useUIStore.setState({ toast: null });
+    vi.spyOn(projectsApi, "updateMusicPath").mockRejectedValue(
+      new Error("db down"),
+    );
+    const remove = vi.spyOn(sharedTrackApi, "removeSharedTrack");
+    open({ ...WITH_MUSIC, musicPath: "p1/abc.mp3" });
+
+    fireEvent.click(await screen.findByRole("switch", { name: /曲も一緒に配る/ }));
+
+    await waitFor(() => expect(useUIStore.getState().toast?.type).toBe("error"));
+    expect(remove).not.toHaveBeenCalled();
+  });
 });
