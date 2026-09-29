@@ -137,3 +137,55 @@ describe("ズームの後始末", () => {
     expect(zoomed().style.transform).toContain("scale(2)");
   });
 });
+
+/**
+ * **選んだ人は、いつも一番上に描く**（実機の報告 2026-09-29）。
+ *
+ * 他の人は半透明の入れ物に入っていて、入れ物ごとに重なりの単位になる。
+ * 何もしないと【並びで後ろの人】が上に来るので、すれ違ったり近くに
+ * 立ったりしたとき、選んだ人の名前の上に薄い丸がかぶって透けて見えた。
+ */
+describe("ViewerStage の重なり", () => {
+  function hydrateTwo(focusedDancerId: string) {
+    useViewerStore.setState({
+      project: makeProject({ stageWidth: 8, stageHeight: 8 }),
+      dancers: [
+        makeDancer({ id: "d1", name: "うみ" }),
+        makeDancer({ id: "d2", name: "そら" }),
+      ],
+      scenes: [makeScene({ id: "s1", timeSeconds: 0, orderIndex: 0 })],
+      positionsBySceneId: {
+        s1: {
+          d1: makePosition({ sceneId: "s1", dancerId: "d1", xCoordinate: 4, yCoordinate: 4 }),
+          d2: makePosition({ sceneId: "s1", dancerId: "d2", xCoordinate: 4, yCoordinate: 4 }),
+        },
+      },
+      focusedDancerId,
+      hasChosen: true,
+      currentSeconds: 0,
+    });
+  }
+
+  function layerOf(dancerId: string): number {
+    const el = document.querySelector<HTMLElement>(
+      `[data-viewer-dancer-id="${dancerId}"]`,
+    );
+    if (!el) throw new Error(`${dancerId} が描かれていない`);
+    return Number(el.style.zIndex || 0);
+  }
+
+  /* 並びの先頭（d1）を選ぶ。何もしなければ後ろの d2 が上に来る場合 */
+  it("並びで先の人を選んでも、その人が上に来る", () => {
+    hydrateTwo("d1");
+    render(<ViewerStage />);
+
+    expect(layerOf("d1")).toBeGreaterThan(layerOf("d2"));
+  });
+
+  it("選び直すと、上に来る人も入れ替わる", () => {
+    hydrateTwo("d2");
+    render(<ViewerStage />);
+
+    expect(layerOf("d2")).toBeGreaterThan(layerOf("d1"));
+  });
+});

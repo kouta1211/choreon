@@ -155,11 +155,16 @@ export function ViewerStage() {
              (掛けると二重にずれる。作る側の置き方と同じ) */
             <div
               key={dancer.id}
+              data-viewer-dancer-id={dancer.id}
               className="pointer-events-none absolute"
               style={{
                 left: `${(position.x / project.stageWidth) * 100}%`,
                 top: `${(screenY(position.y) / project.stageHeight) * 100}%`,
                 opacity: isFilled ? 1 : OTHER_OPACITY,
+                /* 選んだ人は一番上へ（実機の報告 2026-09-29）。薄くした人は
+                   入れ物ごとに重なりの単位になり、並びで後ろの人が上に来る。
+                   すれ違ったとき、選んだ人の名前に薄い丸がかぶって透けていた */
+                zIndex: isOwn ? 1 : undefined,
               }}
             >
               {/* 実物のマーカー(頭＋鼻先)。丸だけだと向きが分からない
