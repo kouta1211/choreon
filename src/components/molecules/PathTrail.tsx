@@ -229,6 +229,11 @@ export function PathTrail({
 /**
  * 進捗から「今見えている線」のd属性を組み立てる。
  * eraseは進捗がそのまま切り出し位置、drawは残り(1-進捗)が切り出し位置になる。
+ *
+ * ⚠️ **線は動かない端(矢印の側)から、ダンサーの居る所へ向けて引く。**
+ * 点線の模様は d の始点から刻まれる。ダンサーの側を始点にすると、
+ * 毎フレーム模様の起点が動いて点が流れ、虫食いのように見えていた
+ * (2026-10-06 の報告)。矢印は markerStart で付ける。
  */
 function toTrailPathD(
   segment: TrailSegment,
@@ -248,7 +253,7 @@ function toTrailPathD(
     segment.y2,
     splitAt,
   );
-  return `M${remainingX.from},${remainingY.from} Q${remainingX.control},${remainingY.control} ${segment.x2},${segment.y2}`;
+  return `M${segment.x2},${segment.y2} Q${remainingX.control},${remainingY.control} ${remainingX.from},${remainingY.from}`;
 }
 
 function PathTrailSegment({
@@ -301,7 +306,7 @@ function PathTrailSegment({
       strokeDasharray="6 4"
       strokeLinecap="round"
       vectorEffect="non-scaling-stroke"
-      markerEnd="url(#path-trail-arrow)"
+      markerStart="url(#path-trail-arrow)"
     />
   );
 }

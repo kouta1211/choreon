@@ -51,6 +51,54 @@ describe("PathOverlay", () => {
     ).toBeInTheDocument();
   });
 
+  /* 点線の模様は線の【始点】から刻まれる。始点は「いまの位置」で、
+     見る画面の再生中や掴んでいる間は毎フレーム動く。そちらを始点にすると
+     点が流れて虫食いに見える(2026-10-06 の報告)。動かない行き先から引く */
+  it("直線は行き先から引き、矢印は始点に付ける", () => {
+    render(
+      <PathOverlay
+        currentPositions={{ "dancer-1": makePosition() }}
+        nextPositions={{
+          "dancer-1": makePosition({ xCoordinate: 6, yCoordinate: 6 }),
+        }}
+        dancers={{ "dancer-1": makeDancer() }}
+        stageWidthUnits={8}
+        stageHeightUnits={8}
+      />,
+    );
+
+    const line = document.querySelector("line");
+    expect(line).toHaveAttribute("x1", "75");
+    expect(line).toHaveAttribute("y1", "75");
+    expect(line).toHaveAttribute("x2", "25");
+    expect(line).toHaveAttribute("y2", "25");
+    expect(line?.getAttribute("marker-start")).toMatch(/path-overlay-arrow/);
+    expect(line).not.toHaveAttribute("marker-end");
+  });
+
+  it("曲線も行き先から引き、矢印は始点に付ける", () => {
+    render(
+      <PathOverlay
+        currentPositions={{ "dancer-1": makePosition() }}
+        nextPositions={{
+          "dancer-1": makePosition({
+            xCoordinate: 6,
+            yCoordinate: 6,
+            curveControlX: 5,
+            curveControlY: 1,
+          }),
+        }}
+        dancers={{ "dancer-1": makeDancer() }}
+        stageWidthUnits={8}
+        stageHeightUnits={8}
+      />,
+    );
+
+    const path = screen.getByTestId("path-overlay").querySelector("path[d^='M75']");
+    expect(path).toHaveAttribute("d", "M75,75 Q62.5,12.5 25,25");
+    expect(path?.getAttribute("marker-start")).toMatch(/path-overlay-arrow/);
+  });
+
   it("次のシーンに位置が無いダンサーの線は描画しない", () => {
     render(
       <PathOverlay

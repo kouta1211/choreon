@@ -1,6 +1,26 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { PathTrail } from "./PathTrail";
+
+/* 進捗の途中の線を見るために、アニメーションを「その進捗で1回だけ呼ぶ」
+   ものに差し替えられるようにしておく。null の間は本物のまま */
+let fixedProgress: number | null = null;
+vi.mock("motion/react", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("motion/react")>();
+  return {
+    ...actual,
+    animate: ((...args: Parameters<typeof actual.animate>) => {
+      if (fixedProgress === null) return actual.animate(...args);
+      const options = args[2] as { onUpdate?: (value: number) => void };
+      options.onUpdate?.(fixedProgress);
+      return { stop: () => {} };
+    }) as typeof actual.animate,
+  };
+});
+
+afterEach(() => {
+  fixedProgress = null;
+});
 
 import { makeDancer, makePosition } from "@/test/factories";
 
@@ -40,7 +60,7 @@ describe("PathTrail", () => {
     // 制御点が無い区間は中点(50,50)が制御点になり、直線に一致する
     expect(screen.getByTestId("path-trail-segment")).toHaveAttribute(
       "d",
-      "M25,25 Q50,50 75,75",
+      "M75,75 Q50,50 25,25",
     );
   });
 
@@ -58,7 +78,7 @@ describe("PathTrail", () => {
     // 制御点 (5,1) -> (62.5%, 12.5%)
     expect(screen.getByTestId("path-trail-segment")).toHaveAttribute(
       "d",
-      "M25,25 Q62.5,12.5 75,75",
+      "M75,75 Q62.5,12.5 25,25",
     );
   });
 
@@ -126,13 +146,41 @@ describe("PathTrail", () => {
     renderTrail({ mode: "draw" });
     const drawD = screen.getByTestId("path-trail-segment").getAttribute("d");
 
-    // 進むときは移動先(75,75)が区間の後ろ側なので、そこに矢印が来る
-    expect(eraseD).toBe("M25,25 Q50,50 75,75");
+    // 進むときは移動先(75,75)が区間の後ろ側なので、そこに矢印が来る。
+    // 線は動かない端(=矢印の側)から引くので、d はそこから始まる
+    expect(eraseD).toBe("M75,75 Q50,50 25,25");
     // 戻るときは移動を始めた地点(25,25)の方が区間の後ろ側なので、
     // 矢印はそちらに来る。PathOverlayが描く導線と同じ向きになり、
     // 描き終わったあとに引き継いでも見た目が飛ばない
-    expect(drawD?.endsWith("25,25")).toBe(true);
+    expect(drawD?.startsWith("M25,25")).toBe(true);
   });
+
+  it("矢印は線の始点(動かない端)に付ける", () => {
+    renderTrail();
+
+    const segment = screen.getByTestId("path-trail-segment");
+    expect(segment).toHaveAttribute("marker-start", "url(#path-trail-arrow)");
+    expect(segment).not.toHaveAttribute("marker-end");
+  });
+
+  /* 点線の模様は線の【始点】から刻まれる。始点がダンサーと一緒に動くと、
+     毎フレーム模様が描き直されて虫食いのように見える(2026-10-06 の報告)。
+     動かない端を始点にしておけば、模様は床に留まる */
+  it.each(["erase", "draw"] as const)(
+    "移動の途中でも、線の始点は動かない端のまま(%s)",
+    (mode) => {
+      fixedProgress = 0.5;
+      renderTrail({ mode });
+
+      const d = screen.getByTestId("path-trail-segment").getAttribute("d");
+      // erase は移動先(75,75)、draw は移動を始めた地点(25,25)が動かない端
+      expect(d?.startsWith(mode === "erase" ? "M75,75 " : "M25,25 ")).toBe(
+        true,
+      );
+      // 動く端(ダンサーの居る所)は中ほどまで来ている
+      expect(d?.endsWith(" 50,50")).toBe(true);
+    },
+  );
 
   it("複数のダンサーぶんの線をまとめて描画する", () => {
     const from = {

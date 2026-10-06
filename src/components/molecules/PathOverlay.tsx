@@ -51,6 +51,25 @@ type Props = {
  * 誤タップより「曲げたいのに反応しない」方が体験を損ねるため */
 
 /**
+ * 曲線の d 属性。**動かない端(行き先)から、動く端(いまの位置)へ向けて引く。**
+ *
+ * 点線の模様は d の始点から刻まれる。いまの位置を始点にすると、見る画面の
+ * 再生中や掴んでいる間は始点が毎フレーム動き、点が流れて虫食いのように
+ * 見えていた(2026-10-06 の報告)。行き先を始点にすれば模様は床に留まる。
+ * 矢印は markerStart で付ける(orient="auto-start-reverse" で行き先の向きを指す)。
+ */
+function curveD(
+  fromX: number | string | undefined,
+  fromY: number | string | undefined,
+  controlX: number | string | undefined,
+  controlY: number | string | undefined,
+  toX: number | string | undefined,
+  toY: number | string | undefined,
+): string {
+  return `M${toX},${toY} Q${controlX},${controlY} ${fromX},${fromY}`;
+}
+
+/**
  * 選択中シーン→次のシーンへの移動導線をステージ上に描画するオーバーレイ。
  * ダンサーごとに色分けした矢印付き点線で表示することで、複数人の移動軌跡が
  * 交差する箇所(ぶつかりそうな箇所)を視覚的に見つけやすくする。
@@ -185,7 +204,8 @@ export function PathOverlay({
      移動量は px で来るので、SVG の viewBox（0..100）へ百分率で写す。
 
      元の座標は要素の data-* に持たせてある。ここで属性を書き換えるため、
-     **離したときに必ず書き戻す**必要がある — 掴んだだけで動かさずに離すと
+     **離したときに必ず書き戻す**必要がある。
+     線は行き先から引いているので、動かすのは線の【終点】側 — 掴んだだけで動かさずに離すと
      React 側の値は変わらず、書き換えたままの線が残ってしまう */
   const movingKey = movingDancerIds?.join(",") ?? "";
   useEffect(() => {
@@ -200,13 +220,14 @@ export function PathOverlay({
 
     const reset = (node: SVGLineElement | SVGPathElement) => {
       const from = node.dataset;
+      // 動く端(いまの位置)は線の【終点】側にある(curveD を参照)
       if (isLine(node)) {
-        node.setAttribute("x1", from.x1 ?? "0");
-        node.setAttribute("y1", from.y1 ?? "0");
+        node.setAttribute("x2", from.x1 ?? "0");
+        node.setAttribute("y2", from.y1 ?? "0");
       } else {
         node.setAttribute(
           "d",
-          `M${from.x1},${from.y1} Q${from.cx},${from.cy} ${from.x2},${from.y2}`,
+          curveD(from.x1, from.y1, from.cx, from.cy, from.x2, from.y2),
         );
       }
     };
@@ -227,13 +248,13 @@ export function PathOverlay({
         const y1 = Number(from.y1) + dy;
 
         if (isLine(node)) {
-          node.setAttribute("x1", String(x1));
-          node.setAttribute("y1", String(y1));
+          node.setAttribute("x2", String(x1));
+          node.setAttribute("y2", String(y1));
         } else {
-          // 曲線は d を組み直す。制御点と終点はそのまま
+          // 曲線は d を組み直す。制御点と行き先はそのまま
           node.setAttribute(
             "d",
-            `M${x1},${y1} Q${from.cx},${from.cy} ${from.x2},${from.y2}`,
+            curveD(x1, y1, from.cx, from.cy, from.x2, from.y2),
           );
         }
       }
@@ -298,14 +319,21 @@ export function PathOverlay({
               data-y2={segment.y2}
               data-cx={segment.handleLeftPercent}
               data-cy={segment.handleTopPercent}
-              d={`M${segment.x1},${segment.y1} Q${segment.handleLeftPercent},${segment.handleTopPercent} ${segment.x2},${segment.y2}`}
+              d={curveD(
+                segment.x1,
+                segment.y1,
+                segment.handleLeftPercent,
+                segment.handleTopPercent,
+                segment.x2,
+                segment.y2,
+              )}
               fill="none"
               stroke={segment.color}
               strokeWidth={2}
               strokeDasharray="6 4"
               strokeLinecap="round"
               vectorEffect="non-scaling-stroke"
-              markerEnd={`url(#path-overlay-arrow-${segment.id})`}
+              markerStart={`url(#path-overlay-arrow-${segment.id})`}
             />
           ) : (
             <line
@@ -319,16 +347,17 @@ export function PathOverlay({
               data-y1={segment.y1}
               data-x2={segment.x2}
               data-y2={segment.y2}
-              x1={segment.x1}
-              y1={segment.y1}
-              x2={segment.x2}
-              y2={segment.y2}
+              /* 行き先から引く(curveD と同じ理由) */
+              x1={segment.x2}
+              y1={segment.y2}
+              x2={segment.x1}
+              y2={segment.y1}
               stroke={segment.color}
               strokeWidth={2}
               strokeDasharray="6 4"
               strokeLinecap="round"
               vectorEffect="non-scaling-stroke"
-              markerEnd={`url(#path-overlay-arrow-${segment.id})`}
+              markerStart={`url(#path-overlay-arrow-${segment.id})`}
             />
           ),
         )}

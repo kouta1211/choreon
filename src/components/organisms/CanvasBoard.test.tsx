@@ -488,7 +488,7 @@ describe("掴んでいる間の導線", () => {
     return line;
   }
 
-  it("掴んで動かしている間、線の始点も一緒に動く", () => {
+  it("掴んで動かしている間、線の動く端も一緒に動く", () => {
     const stage = renderWithPath();
     // svg はステージいっぱいなので、同じ矩形を返させる
     const svg = document.querySelector('[data-testid="path-overlay"]');
@@ -496,7 +496,7 @@ describe("掴んでいる間の導線", () => {
       svg.getBoundingClientRect = stage.getBoundingClientRect;
     }
 
-    const before = pathLine().getAttribute("x1");
+    const before = pathLine().getAttribute("x2");
 
     const pointer = { pointerId: 1, isPrimary: true, button: 0 };
     const to = { ...pointer, clientX: 200, clientY: 100 };
@@ -509,7 +509,7 @@ describe("掴んでいる間の導線", () => {
     fireEvent.pointerMove(document, to);
 
     // 100px 動かした = ステージ幅の 1/8 = viewBox で 12.5
-    expect(Number(pathLine().getAttribute("x1"))).toBeCloseTo(
+    expect(Number(pathLine().getAttribute("x2"))).toBeCloseTo(
       Number(before) + 12.5,
     );
 
@@ -524,7 +524,7 @@ describe("掴んでいる間の導線", () => {
     if (svg instanceof SVGElement) {
       svg.getBoundingClientRect = stage.getBoundingClientRect;
     }
-    const before = pathLine().getAttribute("x1");
+    const before = pathLine().getAttribute("x2");
 
     const pointer = { pointerId: 1, isPrimary: true, button: 0 };
     const to = { ...pointer, clientX: 200, clientY: 100 };
@@ -538,7 +538,7 @@ describe("掴んでいる間の導線", () => {
     // 掴んだまま Escape で取り消す
     fireEvent.keyDown(document, { key: "Escape", code: "Escape" });
 
-    expect(pathLine().getAttribute("x1")).toBe(before);
+    expect(pathLine().getAttribute("x2")).toBe(before);
     expect(xOf("dancer-1")).toBe(2);
   });
 });
